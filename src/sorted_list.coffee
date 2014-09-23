@@ -6,13 +6,13 @@ class SortedList extends AbstractList
     @_sourceIdById = {}
     @_idBySourceId = {}
 
-    @_sourceIdById[@headId] = @source.headId
-    @_sourceIdById[@tailId] = @source.tailId
-    @_idBySourceId[@source.headId] = @headId
-    @_idBySourceId[@source.tailId] = @tailId
+    @_sourceIdById[@headEntry] = @source.headEntry
+    @_sourceIdById[@tailEntry] = @source.tailEntry
+    @_idBySourceId[@source.headEntry] = @headEntry
+    @_idBySourceId[@source.tailEntry] = @tailEntry
 
-    @_after[@headId] = @tailId
-    @_before[@tailId] = @headId
+    @_after[@headEntry] = @tailEntry
+    @_before[@tailEntry] = @headEntry
 
   before: ( id ) ->
     @_evaluate() unless @_evaluated
@@ -22,9 +22,10 @@ class SortedList extends AbstractList
     @_evaluate() unless @_evaluated
     super id
 
+  move: ( id, options = {} ) ->
 
 
-  _sort: ( headId = @headId, length = @length ) ->
+  _sort: ( headEntry = @headEntry, length = @length ) ->
 
     half = Math.ceil(length / 2)
     midId = @idAt(half)
@@ -32,16 +33,16 @@ class SortedList extends AbstractList
     @_merge(@_sort(left, half), @_sort(right, length - half))
 
 
-  _merge: ( headId, length ) ->
+  _merge: ( headEntry, length ) ->
 
 
 
 
 
 
-  # _split: ( headId = @headId, length = @length ) ->
+  # _split: ( headEntry = @headEntry, length = @length ) ->
   #   i = 0
-  #   middleId = headId
+  #   middleId = headEntry
   #   while i++ <=
   #     middleId = @_after[middleId]
 
@@ -55,7 +56,7 @@ class SortedList extends AbstractList
 
     while iterator.moveNext()
       sourceId = iterator.id
-      id = @insert iterator.current(), before: @tailId
+      id = @insert iterator.current(), before: @tailEntry
 
       @_sourceIdById[id] = sourceId
       @_idBySourceId[sourceId] = id

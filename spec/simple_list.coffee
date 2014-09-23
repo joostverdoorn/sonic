@@ -7,8 +7,7 @@ describe "SimpleList", ->
 
     it "should insert the given item before the tail", ->
       item = "pear"
-      id = @list.push(item)
-      console.log id, @list.before(@list.tailId)
+      entry = @list.push(item)
       expect(@list.last()).toBe(item)
 
 

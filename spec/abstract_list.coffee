@@ -34,12 +34,12 @@ describe "List", ->
       @item = "apple"
 
     it "should return the id of the newly created entry", ->
-      id = @list.create(@item)
-      expect(@list.get(id)).toBe(@item)
+      entry = @list._create(@item)
+      expect(@list.get(entry.id)).toBe(@item)
 
     it "should increase the length of the list", ->
       length = @list.length
-      @list.create(@item)
+      @list._create(@item)
       expect(@list.length).toBe(length + 1)
 
     it "should emit an event"
@@ -50,35 +50,35 @@ describe "List", ->
 
     it "should delete the item", ->
       item = "mango"
-      id = @list.create(item)
-      expect(@list.get(id)).toBe(item)
+      entry = @list._create(item)
+      expect(@list.get(entry.id)).toBe(item)
 
-      @list.delete(id)
-      expect(@list.get(id)).not.toBeDefined()
+      @list._delete(entry)
+      expect(@list.get(entry.id)).not.toBeDefined()
 
     it "should return false when the item doesn't exist", ->
-      expect(@list.delete("non-existent id")).toBe(false)
+      expect(@list._delete("non-existent id")).toBe(false)
 
     it "should move the item out of the linked list structure", ->
       item1 = "apple"
       item2 = "pear"
       item3 = "banana"
 
-      id1 = @list.create(item1)
+      id1 = @list._create(item1)
       id2 = @list.insert(item2, after: id1)
       id3 = @list.insert(item3, after: id2)
 
-      @list.delete(id2)
+      @list._delete(id2)
 
       expect(@list.after(id1)).toBe(id3)
       expect(@list.before(id3)).toBe(id1)
 
     it "should decrease the length of the list", ->
       item = "mango"
-      id = @list.create(item)
+      id = @list._create(item)
       length = @list.length
 
-      @list.delete(id)
+      @list._delete(id)
       expect(@list.length).toBe(length - 1)
 
     it "should emit an event"
@@ -89,7 +89,7 @@ describe "List", ->
 
     it "should return the item with the specified id", ->
       item = "pear"
-      id = @list.create(item)
+      id = @list._create(item)
       expect(@list.get(id)).toBe(item)
 
 
@@ -101,7 +101,7 @@ describe "List", ->
       @item2 = "pear"
       @item3 = "banana"
 
-      @id1 = @list.create(@item1)
+      @id1 = @list._create(@item1)
       @id2 = @list.insert(@item2, after: @id1)
       @id3 = @list.insert(@item3, after: @id2)
 
@@ -128,8 +128,8 @@ describe "List", ->
       itemA = "apple"
       itemB = "orange"
 
-      idA = @list.insert(itemA, after: @list.headId)
-      idB = @list.insert(itemB, after: idA, before: @list.tailId)
+      idA = @list.insert(itemA, after: @list.headEntry)
+      idB = @list.insert(itemB, after: idA, before: @list.tailEntry)
 
       expect(@list.after(idA)).toBe(idB)
       @list.swap(idA, idB)
@@ -141,7 +141,7 @@ describe "List", ->
 
     it "should remove the item", ->
       item = "orange"
-      @list.create(item)
+      @list._create(item)
       expect(@list.contains(item)).toBe(true)
 
       @list.remove(item)
@@ -164,7 +164,7 @@ describe "List", ->
 
     it "should return the index of the given item when", ->
       item = "grape"
-      @list.insert(item, after: @list.headId)
+      @list.insert(item, after: @list.headEntry)
       expect(@list.indexOf(item)).toBe(0)
 
     it "should return -1 if the item isn't found", ->
@@ -177,7 +177,7 @@ describe "List", ->
 
     it "should return the id of the given item", ->
       item = "strawberry"
-      id = @list.create(item)
+      id = @list._create(item)
       expect(@list.idOf(item)).toBe(id)
 
     it "should return undefined if the item isn't found", ->
@@ -190,7 +190,7 @@ describe "List", ->
 
     it "should return true if the list contains the given item", ->
       item = "pineapple"
-      @list.create(item)
+      @list._create(item)
       expect(@list.contains(item)).toBe(true)
 
     it "should return false if the list doesn't contain the given item", ->
@@ -212,7 +212,7 @@ describe "List", ->
   describe "#each", ->
 
     it "should call the given function for each item", ->
-      id1 = @list.insert(1, after: @list.headId)
+      id1 = @list.insert(1, after: @list.headEntry)
       id2 = @list.insert(4, after: id1)
       id3 = @list.insert(8, after: id2)
 
@@ -269,7 +269,7 @@ describe "List", ->
   describe "#toArray", ->
 
     it "should return the list's items in an array", ->
-      id1 = @list.insert(1, after: @list.headId)
+      id1 = @list.insert(1, after: @list.headEntry)
       id2 = @list.insert(4, after: id1)
       id3 = @list.insert(8, after: id2)
 

@@ -12,15 +12,15 @@ class LinkedList extends AbtractList
     @_before = {}
     @_after  = {}
 
-    @headId = @_uniqueId()
-    @tailId = @_uniqueId()
+    @headEntry = @_uniqueId()
+    @tailEntry = @_uniqueId()
 
     @length = 0
 
   _uniqueId: ( ) ->
     return (++@_uniqueCounter).toString()
 
-  getIterator: ( start = @headId ) ->
+  getIterator: ( start = @headEntry ) ->
     return new Iterator(@, start)
 
   _create: ( item, options = {} ) ->
@@ -66,8 +66,8 @@ class LinkedList extends AbtractList
     before = options.after or (@_before[options.before] if options.after is undefined)
 
     # Make sure no non-existent IDs are having their befores and afters set.
-    unless (not before? or @_byId[before]? or before is @headId) and
-           (not after?  or @_byId[after]?  or after  is @tailId)
+    unless (not before? or @_byId[before]? or before is @headEntry) and
+           (not after?  or @_byId[after]?  or after  is @tailEntry)
       return false
 
     # Finally, set all the ids.
@@ -124,11 +124,11 @@ class LinkedList extends AbtractList
 
   before: ( id ) ->
     beforeId = @_before[id]
-    return beforeId unless beforeId is @headId
+    return beforeId unless beforeId is @headEntry
 
   after: ( id ) ->
     afterId = @_after[id]
-    return afterId unless afterId is @tailId
+    return afterId unless afterId is @tailEntry
 
   contains: ( item ) ->
     return @idOf(item)?
@@ -167,7 +167,7 @@ class LinkedList extends AbtractList
     return @concat(others...).uniq()
 
   first: ( count ) ->
-    return @get(@after(@headId)) unless count
+    return @get(@after(@headEntry)) unless count
 
   skip: ( count ) -> @rest(count)
   tail: ( count ) -> @rest(count)
@@ -177,7 +177,7 @@ class LinkedList extends AbtractList
   initial: ( count ) ->
 
   last: ( count ) ->
-    return @get(@before(@tailId)) unless count
+    return @get(@before(@tailEntry)) unless count
 
   pluck: ( key ) ->
     return @map ( item ) -> item[key]

@@ -6,10 +6,10 @@ class FilteredList extends AbstractList
     @_sourceIdById = {}
     @_idBySourceId = {}
 
-    @_sourceIdById[@headId] = @source.headId
-    @_sourceIdById[@tailId] = @source.tailId
-    @_idBySourceId[@source.headId] = @headId
-    @_idBySourceId[@source.tailId] = @tailId
+    @_sourceIdById[@headEntry] = @source.headEntry
+    @_sourceIdById[@tailEntry] = @source.tailEntry
+    @_idBySourceId[@source.headEntry] = @headEntry
+    @_idBySourceId[@source.tailEntry] = @tailEntry
 
     @source.on 'create', ( sourceId ) =>
       sourceItem = @source.get(sourceId)
@@ -65,7 +65,7 @@ class FilteredList extends AbstractList
 
   before: ( id ) ->
     beforeId = @_before[id]
-    return beforeId if beforeId? and beforeId isnt @headId
+    return beforeId if beforeId? and beforeId isnt @headEntry
 
     sourceId = @_sourceIdById[id]
     iterator = @source.getIterator(sourceId)
@@ -85,7 +85,7 @@ class FilteredList extends AbstractList
 
   after: ( id ) ->
     afterId = @_after[id]
-    return afterId if afterId? and afterId isnt @tailId
+    return afterId if afterId? and afterId isnt @tailEntry
 
     sourceId = @_sourceIdById[id]
     iterator = @source.getIterator(sourceId)

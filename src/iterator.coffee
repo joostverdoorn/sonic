@@ -1,17 +1,17 @@
 class Iterator
 
-  constructor: ( @list, @id ) ->
+  constructor: ( @list, @entry ) ->
 
   current: ( ) ->
-    @list.get(@id)
+    @entry.item
 
   moveNext: ( ) ->
-    if @id = @list.after(@id)
+    if @entry = @list.after(@entry)
       return true
     return false
 
   movePrevious: ( ) ->
-    if @id = @list.before(@id)
+    if @entry = @list.before(@entry)
       return true
     return false
 

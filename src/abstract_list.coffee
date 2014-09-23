@@ -6,106 +6,88 @@ class AbstractList
 
   constructor: ( ) ->
     @_uniqueCounter = 0;
+    @_byId = []
 
-    @_byId = {}
-
-    @_before = {}
-    @_after  = {}
-
-    @headId = @_uniqueId()
-    @tailId = @_uniqueId()
+    @headEntry = {}
+    @tailEntry = {}
 
     @length = 0
 
   _uniqueId: ( ) ->
-    return (++@_uniqueCounter).toString()
+    return ++@_uniqueCounter
 
-  getIterator: ( start = @headId ) ->
-    return new Iterator(@, start)
-
-  create: ( item, options = {} ) ->
+  _create: ( item, options = {} ) ->
     id = @_uniqueId()
-    @_byId[id] = item
+
+    entry =
+      id: id
+      item: item
+
+    @_byId[id] = entry
     @length++
 
-    @trigger('create', id) unless options.silent
-    return id
+    @trigger('create', entry) unless options.silent
+    return entry
 
-  delete: ( id, options = {} ) ->
-    return false unless @_byId[id]?
-
-    @move(id, before: null, after: null)
-    delete @_byId[id]
+  _delete: ( entry, options = {} ) ->
+    @_move(entry, before: null, after: null, silent: true)
+    delete @_byId[entry.id]
     @length--
 
-    @trigger('delete', id) unless options.silent
+    @trigger('delete', entry) unless options.silent
     return true
 
-  get: ( id ) ->
+  getEntry: ( id ) ->
     return @_byId[id]
 
-  set: ( id, value, options = {} ) ->
-    unless @_byId[id]?
-      return false
-
-    @_byId[id] = value
-    @trigger('change', id, value) unless options.silent
+  _set: ( entry, value, options = {} ) ->
+    entry.item = value
+    @trigger('change', entry, value) unless options.silent
     return true
 
-  move: ( id, options = {} ) ->
-    return false unless @_byId[id]?
+  _move: ( entry, options = {} ) ->
+    previous = entry.previous
+    next = entry.next
 
-    # Before moving the element, we make sure to leave no loose ends behind.
-    # We connect the elements previously preceding and following the movee.
-    beforeId = @_before[id]
-    afterId  = @_after[id]
+    previous.next = next if previous
+    next.previous = previous if next
 
-    @_before[afterId] = beforeId if afterId
-    @_after[beforeId] = afterId if beforeId
+    previous = options.after or (options.before.previous if options.before)
+    next = options.before or (options.after.next if options.after)
 
-    # Now that we've closed the gap, let's start moving the id into the correct
-    # position.
-    afterId = options.before or @_after[options.after]
-    beforeId = options.after or @_before[options.before]
+    if previous
+      entry.previous = previous
+      previous.next = entry
 
-    # Finally, set all the ids.
-    if afterId
-      @_after[id] = afterId
-      @_before[afterId] = id
+    if next
+      entry.next = next
+      next.previous = entry
 
-    if beforeId
-      @_before[id] = beforeId
-      @_after[beforeId] = id
-
-    @trigger('move', id) unless options.silent
+    @trigger('move', entry) unless options.silent
     return true
 
-  swap: ( idA, idB ) ->
-    return false unless @_byId[idA]? and @_byId[idB]?
+  _swap: ( a, b ) ->
+    beforeA = a.previous
+    beforeB = b.previous
 
-    beforeIdA = @_before[idA]
-    beforeIdB = @_before[idB]
-    afterIdA = @_after[idA]
-    afterIdB = @_after[idB]
+    afterA = a.next
+    afterB = b.next
 
-    if beforeIdA isnt idB or afterIdB isnt idA
-      return @move(idA, before: afterIdB) and @move(idB, after: beforeIdA)
-    else
-      return @move(idA, after: beforeIdB) and @move(idB, before: afterIdA)
+    if beforeA isnt b or afterB isnt a
+      return @_move(a, before: afterB) and @_move(b, after: beforeA)
+    else return @_move(a, after: beforeB) and @_move(b, before: afterA)
 
-  remove: ( item ) ->
-    id = @idOf(item)
-    return @delete(id)
+  _insert: ( item, options = {} ) ->
+    silent = options.silent
+    before = options.before
+    after = options.after
 
-  insert: ( item, options = {} ) ->
-    { before, after, silent } = options
+    entry = @_create(item, silent: silent)
+    @_move(entry, before: before, after: after, silent: silent)
 
-    id = @create item, { silent }
-    @move id, { before, after, silent }
+    return entry
 
-    return id
-
-  idAt: ( index ) ->
+  _entryAt: ( index ) ->
     i = -1
     iterator = @getIterator()
 
@@ -114,16 +96,39 @@ class AbstractList
 
     return undefined
 
+  # Iterator methods.
+  getIterator: ( start ) ->
+    return new Iterator(@, start or @headEntry)
+
+  before: ( entry ) ->
+    before = entry.previous
+    return before unless before is @headEntry
+    return undefined
+
+  after: ( entry ) ->
+    after = entry.next
+    return after unless after is @tailEntry
+    return undefined
+
+  # Public access methods.
+  get: ( id ) ->
+    entry = @getEntry(id)
+    return entry.item if entry
+    return undefined
+
+  set: ( id, value, options = {} ) ->
+    entry = @getEntry(id)
+    return false unless entry
+    return @_set(entry, value, options)
+
   at: ( index ) ->
-    id = @idAt(index)
+    entry = @_entryAt(index)
     return @get(id)
 
   idOf: ( item ) ->
-    ids = Object.keys(@_byId)
-    for id in ids
-      return id if @get(id) is item
-
-    return undefined
+    iterator = @getIterator()
+    while iterator.moveNext()
+      return iterator.entry.id if iterator.current() is item
 
   indexOf: ( item ) ->
     i = -1
@@ -135,17 +140,10 @@ class AbstractList
 
     return -1
 
-  before: ( id ) ->
-    beforeId = @_before[id]
-    return beforeId unless beforeId is @headId
-
-  after: ( id ) ->
-    afterId = @_after[id]
-    return afterId unless afterId is @tailId
-
   contains: ( item ) ->
     return @idOf(item)?
 
+  # Moar stuff.
   forEach: ( fn ) -> @each(fn)
   each:    ( fn ) ->
     iterator = @getIterator()
@@ -180,7 +178,7 @@ class AbstractList
     return @concat(others...).uniq()
 
   first: ( count ) ->
-    return @get(@after(@headId)) unless count
+    return @after(@headEntry).item unless count
 
   skip: ( count ) -> @rest(count)
   tail: ( count ) -> @rest(count)
@@ -190,7 +188,7 @@ class AbstractList
   initial: ( count ) ->
 
   last: ( count ) ->
-    return @get(@before(@tailId)) unless count
+    return @before(@tailEntry).item unless count
 
   pluck: ( key ) ->
     return @map ( item ) -> item[key]
