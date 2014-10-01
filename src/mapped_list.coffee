@@ -23,14 +23,17 @@ class MappedList extends AbstractList
       before = @_bySourceId[beforeSourceEntry.id]
       after = @_bySourceId[afterSourceEntry.id]
 
-      @move(entry, before: )
+      # @move(entry, before: )
 
     @source.on 'change', ( sourceId, sourceItem ) ->
       id = @_idBySourceId[sourceId]
       item = @mapFn(sourceItem)
       @set(id, item)
 
-  _createBySourceEntry: ( sourceEntry, options ) ->
+  getBySource: ( sourceEntry ) ->
+    @_bySourceId[sourceEntry.id]
+
+  createBySource: ( sourceEntry, options ) ->
     item = @map(sourceEntry.item)
     entry = @_create(item, options)
 
@@ -38,7 +41,7 @@ class MappedList extends AbstractList
     @_bySourceId[sourceEntry.id] = entry
     return entry
 
-  _deleteBySourceEntry: ( sourceEntry, options ) ->
+  deleteBySource: ( sourceEntry, options ) ->
     sourceId = sourceEntry.id
     entry = @_bySourceId[sourceId]
 
