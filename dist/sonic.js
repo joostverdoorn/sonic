@@ -1,7 +1,6 @@
 (function() {
-  var AbstractList, ConcatenatedList, Entry, Events, FilteredList, Iterator, MappedEntry, MappedList, SimpleList, Sonic, SortedList,
+  var AbstractList, ConcatenatedList, Entry, Events, FilteredList, Iterator, MappedEntry, MappedList, SimpleList, Sonic, SortedList, TailingEntry, TailingList,
     __slice = [].slice,
-    __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
     __hasProp = {}.hasOwnProperty,
     __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
@@ -142,11 +141,11 @@
   };
 
   Entry = (function() {
-    function Entry(options) {
+    function Entry(value, options) {
+      this._value = value || options.value;
       if (options) {
         this.id = options.id;
         this.list = options.list;
-        this._value = options.value;
         this._next = options.next;
         this._previous = options.previous;
       }
@@ -176,22 +175,25 @@
 
   })();
 
-  MappedEntry = (function(_super) {
-    __extends(MappedEntry, _super);
+  TailingEntry = (function(_super) {
+    __extends(TailingEntry, _super);
 
-    function MappedEntry(options) {
-      this.value = __bind(this.value, this);
-      if (options) {
-        this.source = options.source;
+    function TailingEntry(source, options) {
+      if (options == null) {
+        options = {};
       }
-      MappedEntry.__super__.constructor.apply(this, arguments);
+      this.source = source || options.source;
+      TailingEntry.__super__.constructor.call(this, void 0, options);
+      if (this.source == null) {
+        debugger;
+      }
     }
 
-    MappedEntry.prototype.value = function() {
-      return this._value || (this._value = this.list.mapFn(this.source.value()));
+    TailingEntry.prototype.value = function() {
+      return this._value || (this._value = this.source.value());
     };
 
-    MappedEntry.prototype.next = function() {
+    TailingEntry.prototype.next = function() {
       var next, sourceNext;
       next = this._next;
       if (next) {
@@ -207,7 +209,7 @@
       return null;
     };
 
-    MappedEntry.prototype.previous = function() {
+    TailingEntry.prototype.previous = function() {
       var previous, sourcePrevious;
       previous = this._previous;
       if (previous) {
@@ -223,14 +225,29 @@
       return null;
     };
 
-    return MappedEntry;
+    return TailingEntry;
 
   })(Entry);
+
+  MappedEntry = (function(_super) {
+    __extends(MappedEntry, _super);
+
+    function MappedEntry() {
+      return MappedEntry.__super__.constructor.apply(this, arguments);
+    }
+
+    MappedEntry.prototype.value = function() {
+      return this._value || (this._value = this.list.mapFn(this.source.value()));
+    };
+
+    return MappedEntry;
+
+  })(TailingEntry);
 
   AbstractList = (function() {
     var fn, key;
 
-    AbstractList.prototype.entry = Entry;
+    AbstractList.prototype.Entry = Entry;
 
     for (key in Events) {
       fn = Events[key];
@@ -240,10 +257,10 @@
     function AbstractList() {
       this._uniqueCounter = 0;
       this._byId = [];
-      this.headEntry = new this.entry({
+      this.headEntry = new this.Entry(null, {
         list: this
       });
-      this.tailEntry = new this.entry({
+      this.tailEntry = new this.Entry(null, {
         list: this
       });
       this.length = 0;
@@ -254,16 +271,15 @@
     };
 
     AbstractList.prototype._create = function(value, options) {
-      var entry, id;
+      var entry, entryOptions, id;
       if (options == null) {
         options = {};
       }
       id = this._uniqueId();
-      entry = new this.entry({
-        id: id,
-        value: value,
-        list: this
-      });
+      entryOptions = options.entryOptions || {};
+      entryOptions.id = id;
+      entryOptions.list = this;
+      entry = new this.Entry(value, entryOptions);
       this._byId[id] = entry;
       this.length++;
       if (!options.silent) {
@@ -500,7 +516,9 @@
     };
 
     AbstractList.prototype.map = function(mapFn) {
-      return new MappedList(this, mapFn);
+      return new MappedList(this, {
+        mapFn: mapFn
+      });
     };
 
     AbstractList.prototype.filter = function(filterFn) {
@@ -652,69 +670,43 @@
 
   })(AbstractList);
 
-  MappedList = (function(_super) {
-    __extends(MappedList, _super);
+  TailingList = (function(_super) {
+    __extends(TailingList, _super);
 
-    MappedList.prototype.entry = MappedEntry;
+    TailingList.prototype.Entry = TailingEntry;
 
-    function MappedList(source, mapFn) {
+    function TailingList(source, options) {
+      if (options == null) {
+        options = {};
+      }
+      TailingList.__super__.constructor.call(this, options);
       this.source = source;
-      this.mapFn = mapFn;
-      MappedList.__super__.constructor.apply(this, arguments);
       this._bySourceId = [];
       this.headEntry.source = this.source.headEntry;
       this.tailEntry.source = this.source.tailEntry;
-      this.source.on('create', (function(_this) {
-        return function(sourceEntry) {
-          return _this._createBySourceEntry(sourceEntry);
-        };
-      })(this));
-      this.source.on('delete', (function(_this) {
-        return function(sourceEntry) {
-          return _this._deleteBySourceEntry(sourceEntry);
-        };
-      })(this));
-      this.source.on('move', (function(_this) {
-        return function(sourceEntry) {
-          var after, afterSourceEntry, before, beforeSourceEntry, entry;
-          entry = _this._bySourceId[sourceEntry.id];
-          beforeSourceEntry = _this.source.before(sourceEntry);
-          afterSourceEntry = _this.source.after(sourceEntry);
-          before = _this._bySourceId[beforeSourceEntry.id];
-          return after = _this._bySourceId[afterSourceEntry.id];
-        };
-      })(this));
-      this.source.on('change', function(sourceId, sourceItem) {
-        var id, value;
-        id = this._idBySourceId[sourceId];
-        value = this.mapFn(sourceItem);
-        return this.set(id, value);
-      });
     }
 
-    MappedList.prototype.getBySource = function(sourceEntry) {
+    TailingList.prototype.getBySource = function(sourceEntry) {
       if (sourceEntry) {
         return this._bySourceId[sourceEntry.id];
       }
       return void 0;
     };
 
-    MappedList.prototype.createBySource = function(sourceEntry, options) {
-      var entry, value;
+    TailingList.prototype.createBySource = function(sourceEntry, options) {
+      var entry;
       if (sourceEntry === this.source.headEntry) {
         return this.headEntry;
       }
       if (sourceEntry === this.source.tailEntry) {
         return this.tailEntry;
       }
-      value = this.mapFn(sourceEntry.value());
-      entry = this._create(value, options);
-      entry.source = sourceEntry;
+      entry = this._create(sourceEntry, options);
       this._bySourceId[sourceEntry.id] = entry;
       return entry;
     };
 
-    MappedList.prototype.deleteBySource = function(sourceEntry, options) {
+    TailingList.prototype.deleteBySource = function(sourceEntry, options) {
       var entry, sourceId;
       sourceId = sourceEntry.id;
       entry = this._bySourceId[sourceId];
@@ -722,27 +714,26 @@
       return delete this._bySourceId[sourceId];
     };
 
-    MappedList.prototype.before = function(id) {
-      var entry, previous;
-      entry = this.getEntry(id);
-      if (previous = entry.previous()) {
-        return previous;
-      }
-      return void 0;
-    };
+    return TailingList;
 
-    MappedList.prototype.after = function(id) {
-      var entry, next;
-      entry = this.getEntry(id);
-      if (next = entry.next()) {
-        return next;
+  })(AbstractList);
+
+  MappedList = (function(_super) {
+    __extends(MappedList, _super);
+
+    MappedList.prototype.Entry = MappedEntry;
+
+    function MappedList(source, options) {
+      if (options == null) {
+        options = {};
       }
-      return void 0;
-    };
+      MappedList.__super__.constructor.call(this, source, options);
+      this.mapFn = options.mapFn;
+    }
 
     return MappedList;
 
-  })(AbstractList);
+  })(TailingList);
 
   FilteredList = (function(_super) {
     __extends(FilteredList, _super);
@@ -1011,8 +1002,12 @@
     exports.create = Sonic.create;
     exports.Iterator = Iterator;
     exports.Event = Event;
+    exports.Entry = Entry;
+    exports.TailingEntry = Entry;
+    exports.MappedEntry = Entry;
     exports.AbstractList = AbstractList;
     exports.SimpleList = SimpleList;
+    exports.TailingList = TailingList;
     exports.FilteredList = FilteredList;
     exports.MappedList = MappedList;
     exports.ConcatenatedList = ConcatenatedList;

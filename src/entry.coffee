@@ -1,10 +1,10 @@
 class Entry
 
-  constructor: ( options ) ->
+  constructor: ( value, options ) ->
+    @_value = value or options.value
     if options
       @id        = options.id
       @list      = options.list
-      @_value    = options.value
       @_next     = options.next
       @_previous = options.previous
 

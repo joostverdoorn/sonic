@@ -1,6 +1,6 @@
 class AbstractList
 
-  entry: Entry
+  Entry: Entry
 
   # Add event bindings
   for key, fn of Events
@@ -10,8 +10,8 @@ class AbstractList
     @_uniqueCounter = 0;
     @_byId = []
 
-    @headEntry = new @entry list: @
-    @tailEntry = new @entry list: @
+    @headEntry = new @Entry null, list: @
+    @tailEntry = new @Entry null, list: @
 
     @length = 0
 
@@ -21,10 +21,11 @@ class AbstractList
   _create: ( value, options = {} ) ->
     id = @_uniqueId()
 
-    entry = new @entry
-      id: id
-      value: value
-      list: @
+    entryOptions = options.entryOptions or {}
+    entryOptions.id = id
+    entryOptions.list = @
+
+    entry = new @Entry value, entryOptions
 
     @_byId[id] = entry
     @length++
@@ -166,7 +167,7 @@ class AbstractList
 
 
   map: ( mapFn ) ->
-    return new MappedList(@, mapFn)
+    return new MappedList @, mapFn: mapFn
 
   filter: ( filterFn ) ->
     return new FilteredList(@, filterFn)

@@ -5,9 +5,11 @@ module.exports = ( grunt ) ->
     'src/events.coffee'
 
     'src/entry.coffee'
+    'src/tailing_entry.coffee'
     'src/mapped_entry.coffee'
     'src/abstract_list.coffee'
     'src/simple_list.coffee'
+    'src/tailing_list.coffee'
     'src/mapped_list.coffee'
     'src/filtered_list.coffee'
     'src/concatenated_list.coffee'

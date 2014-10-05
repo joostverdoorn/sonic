@@ -1,6 +1,8 @@
 class Iterator
 
-  constructor: ( @list, @entry ) ->
+  constructor: ( list, entry ) ->
+    @list = list
+    @entry = entry
 
   current: ( ) ->
     @entry.value()

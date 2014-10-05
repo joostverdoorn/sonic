@@ -4,8 +4,13 @@ Sonic.factory = ( exports ) ->
     exports.Iterator         = Iterator
     exports.Event            = Event
 
+    exports.Entry            = Entry
+    exports.TailingEntry     = Entry
+    exports.MappedEntry      = Entry
+
     exports.AbstractList     = AbstractList
     exports.SimpleList       = SimpleList
+    exports.TailingList      = TailingList
     exports.FilteredList     = FilteredList
     exports.MappedList       = MappedList
     exports.ConcatenatedList = ConcatenatedList
