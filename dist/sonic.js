@@ -1,6 +1,7 @@
 (function() {
-  var AbstractList, ConcatenatedList, Events, FilteredList, Iterator, MappedList, SimpleList, Sonic, SortedList, UniqueList,
+  var AbstractList, ConcatenatedList, Entry, Events, FilteredList, Iterator, MappedEntry, MappedList, SimpleList, Sonic, SortedList,
     __slice = [].slice,
+    __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
     __hasProp = {}.hasOwnProperty,
     __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
@@ -17,27 +18,23 @@
   };
 
   Iterator = (function() {
-    function Iterator(list, id) {
+    function Iterator(list, entry) {
       this.list = list;
-      this.id = id;
+      this.entry = entry;
     }
 
     Iterator.prototype.current = function() {
-      return this.list.get(this.id);
+      return this.entry.value();
     };
 
     Iterator.prototype.moveNext = function() {
-      if (this.id = this.list.after(this.id)) {
-        return true;
-      }
-      return false;
+      this.entry = this.entry.next();
+      return (this.entry != null) && this.entry !== this.list.tailEntry;
     };
 
     Iterator.prototype.movePrevious = function() {
-      if (this.id = this.list.before(this.id)) {
-        return true;
-      }
-      return false;
+      this.entry = this.entry.previous();
+      return (this.entry != null) && this.entry !== this.list.headEntry;
     };
 
     return Iterator;
@@ -144,8 +141,96 @@
     }
   };
 
+  Entry = (function() {
+    function Entry(options) {
+      if (options) {
+        this.id = options.id;
+        this.list = options.list;
+        this._value = options.value;
+        this._next = options.next;
+        this._previous = options.previous;
+      }
+    }
+
+    Entry.prototype.value = function() {
+      return this._value;
+    };
+
+    Entry.prototype.next = function() {
+      return this._next;
+    };
+
+    Entry.prototype.setNext = function(next) {
+      return this._next = next;
+    };
+
+    Entry.prototype.previous = function() {
+      return this._previous;
+    };
+
+    Entry.prototype.setPrevious = function(previous) {
+      return this._previous = previous;
+    };
+
+    return Entry;
+
+  })();
+
+  MappedEntry = (function(_super) {
+    __extends(MappedEntry, _super);
+
+    function MappedEntry(options) {
+      this.value = __bind(this.value, this);
+      if (options) {
+        this.source = options.source;
+      }
+      MappedEntry.__super__.constructor.apply(this, arguments);
+    }
+
+    MappedEntry.prototype.value = function() {
+      return this._value || (this._value = this.list.mapFn(this.source.value()));
+    };
+
+    MappedEntry.prototype.next = function() {
+      var next, sourceNext;
+      next = this._next;
+      if (next) {
+        return next;
+      }
+      if (sourceNext = this.source.next()) {
+        next = this.list.getBySource(sourceNext) || this.list.createBySource(sourceNext, {
+          silent: true,
+          previous: this
+        }) || null;
+        return this._next = next;
+      }
+      return null;
+    };
+
+    MappedEntry.prototype.previous = function() {
+      var previous, sourcePrevious;
+      previous = this._previous;
+      if (previous) {
+        return previous;
+      }
+      if (sourcePrevious = this.source.previous()) {
+        previous = this.list.getBySource(sourcePrevious) || this.list.createBySource(sourcePrevious, {
+          silent: true,
+          next: this
+        }) || null;
+        return this._previous = previous;
+      }
+      return null;
+    };
+
+    return MappedEntry;
+
+  })(Entry);
+
   AbstractList = (function() {
     var fn, key;
+
+    AbstractList.prototype.entry = Entry;
 
     for (key in Events) {
       fn = Events[key];
@@ -154,156 +239,156 @@
 
     function AbstractList() {
       this._uniqueCounter = 0;
-      this._byId = {};
-      this._before = {};
-      this._after = {};
-      this.headId = this._uniqueId();
-      this.tailId = this._uniqueId();
+      this._byId = [];
+      this.headEntry = new this.entry({
+        list: this
+      });
+      this.tailEntry = new this.entry({
+        list: this
+      });
       this.length = 0;
     }
 
     AbstractList.prototype._uniqueId = function() {
-      return (++this._uniqueCounter).toString();
+      return ++this._uniqueCounter;
     };
 
-    AbstractList.prototype.getIterator = function(start) {
-      if (start == null) {
-        start = this.headId;
-      }
-      return new Iterator(this, start);
-    };
-
-    AbstractList.prototype.create = function(item, options) {
-      var id;
+    AbstractList.prototype._create = function(value, options) {
+      var entry, id;
       if (options == null) {
         options = {};
       }
       id = this._uniqueId();
-      this._byId[id] = item;
+      entry = new this.entry({
+        id: id,
+        value: value,
+        list: this
+      });
+      this._byId[id] = entry;
       this.length++;
       if (!options.silent) {
-        this.trigger('create', id);
+        this.trigger('create', entry);
       }
-      return id;
+      return entry;
     };
 
-    AbstractList.prototype["delete"] = function(id, options) {
+    AbstractList.prototype._delete = function(entry, options) {
       if (options == null) {
         options = {};
       }
-      if (this._byId[id] == null) {
+      if (entry == null) {
         return false;
       }
-      this.move(id, {
+      this._move(entry, {
         before: null,
-        after: null
+        after: null,
+        silent: true
       });
-      delete this._byId[id];
+      delete this._byId[entry.id];
       this.length--;
       if (!options.silent) {
-        this.trigger('delete', id);
+        this.trigger('delete', entry);
       }
       return true;
     };
 
-    AbstractList.prototype.get = function(id) {
+    AbstractList.prototype.getEntry = function(id) {
       return this._byId[id];
     };
 
-    AbstractList.prototype.set = function(id, value, options) {
+    AbstractList.prototype._set = function(entry, value, options) {
       if (options == null) {
         options = {};
       }
-      if (this._byId[id] == null) {
-        return false;
-      }
-      this._byId[id] = value;
+      entry.setValue(value);
       if (!options.silent) {
-        this.trigger('change', id, value);
+        this.trigger('change', entry, value);
       }
       return true;
     };
 
-    AbstractList.prototype.move = function(id, options) {
-      var afterId, beforeId;
+    AbstractList.prototype._move = function(entry, options) {
+      var next, previous;
       if (options == null) {
         options = {};
       }
-      if (this._byId[id] == null) {
-        return false;
+      previous = entry.previous();
+      next = entry.next();
+      if (previous) {
+        previous.setNext(next);
       }
-      beforeId = this._before[id];
-      afterId = this._after[id];
-      if (afterId) {
-        this._before[afterId] = beforeId;
+      if (next) {
+        next.setPrevious(previous);
       }
-      if (beforeId) {
-        this._after[beforeId] = afterId;
+      previous = options.after || (options.before ? options.before.previous() : void 0);
+      next = options.before || (options.after ? options.after.next() : void 0);
+      if (previous) {
+        entry.setPrevious(previous);
+        previous.setNext(entry);
       }
-      afterId = options.before || this._after[options.after];
-      beforeId = options.after || this._before[options.before];
-      if (afterId) {
-        this._after[id] = afterId;
-        this._before[afterId] = id;
-      }
-      if (beforeId) {
-        this._before[id] = beforeId;
-        this._after[beforeId] = id;
+      if (next) {
+        entry.setNext(next);
+        next.setPrevious(entry);
       }
       if (!options.silent) {
-        this.trigger('move', id);
+        this.trigger('move', entry);
       }
       return true;
     };
 
-    AbstractList.prototype.swap = function(idA, idB) {
-      var afterIdA, afterIdB, beforeIdA, beforeIdB;
-      if (!((this._byId[idA] != null) && (this._byId[idB] != null))) {
-        return false;
-      }
-      beforeIdA = this._before[idA];
-      beforeIdB = this._before[idB];
-      afterIdA = this._after[idA];
-      afterIdB = this._after[idB];
-      if (beforeIdA !== idB || afterIdB !== idA) {
-        return this.move(idA, {
-          before: afterIdB
-        }) && this.move(idB, {
-          after: beforeIdA
+    AbstractList.prototype._swap = function(a, b) {
+      var afterA, afterB, beforeA, beforeB;
+      beforeA = a.previous();
+      beforeB = b.previous();
+      afterA = a.next();
+      afterB = b.next();
+      if (beforeA !== b || afterB !== a) {
+        return this._move(a, {
+          before: afterB
+        }) && this._move(b, {
+          after: beforeA
         });
       } else {
-        return this.move(idA, {
-          after: beforeIdB
-        }) && this.move(idB, {
-          before: afterIdA
+        return this._move(a, {
+          after: beforeB
+        }) && this._move(b, {
+          before: afterA
         });
       }
     };
 
-    AbstractList.prototype.remove = function(item) {
-      var id;
-      id = this.idOf(item);
-      return this["delete"](id);
-    };
-
-    AbstractList.prototype.insert = function(item, options) {
-      var after, before, id, silent;
+    AbstractList.prototype._insert = function(value, options) {
+      var after, before, entry, silent;
       if (options == null) {
         options = {};
       }
-      before = options.before, after = options.after, silent = options.silent;
-      id = this.create(item, {
+      silent = options.silent;
+      before = options.before;
+      after = options.after;
+      entry = this._create(value, {
         silent: silent
       });
-      this.move(id, {
+      this._move(entry, {
         before: before,
         after: after,
         silent: silent
       });
-      return id;
+      return entry;
     };
 
-    AbstractList.prototype.idAt = function(index) {
+    AbstractList.prototype._entryOf = function(value) {
+      var entry, _i, _len, _ref;
+      _ref = this._byId;
+      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+        entry = _ref[_i];
+        if ((entry != null ? entry.value() : void 0) === value) {
+          return entry;
+        }
+      }
+      return void 0;
+    };
+
+    AbstractList.prototype._entryAt = function(index) {
       var i, iterator;
       i = -1;
       iterator = this.getIterator();
@@ -315,55 +400,75 @@
       return void 0;
     };
 
-    AbstractList.prototype.at = function(index) {
-      var id;
-      id = this.idAt(index);
-      return this.get(id);
+    AbstractList.prototype.getIterator = function(start) {
+      return new Iterator(this, start || this.headEntry);
     };
 
-    AbstractList.prototype.idOf = function(item) {
-      var id, ids, _i, _len;
-      ids = Object.keys(this._byId);
-      for (_i = 0, _len = ids.length; _i < _len; _i++) {
-        id = ids[_i];
-        if (this.get(id) === item) {
-          return id;
-        }
+    AbstractList.prototype.before = function(entry) {
+      var before;
+      before = entry.previous();
+      if (before !== this.headEntry) {
+        return before;
       }
       return void 0;
     };
 
-    AbstractList.prototype.indexOf = function(item) {
+    AbstractList.prototype.after = function(entry) {
+      var after;
+      after = entry.next();
+      if (after !== this.tailEntry) {
+        return after;
+      }
+      return void 0;
+    };
+
+    AbstractList.prototype.get = function(id) {
+      var entry;
+      entry = this.getEntry(id);
+      if (entry) {
+        return entry.value();
+      }
+      return void 0;
+    };
+
+    AbstractList.prototype.set = function(id, value, options) {
+      var entry;
+      if (options == null) {
+        options = {};
+      }
+      entry = this.getEntry(id);
+      if (!entry) {
+        return false;
+      }
+      return this._set(entry, value, options);
+    };
+
+    AbstractList.prototype.at = function(index) {
+      var entry;
+      entry = this._entryAt(index);
+      return this.get(id);
+    };
+
+    AbstractList.prototype.idOf = function(value) {
+      var _ref;
+      return (_ref = this._entryOf(value)) != null ? _ref.id : void 0;
+    };
+
+    AbstractList.prototype.indexOf = function(value) {
       var i, iterator;
       i = -1;
       iterator = this.getIterator();
       while (iterator.moveNext()) {
         i++;
-        if (iterator.current() === item) {
+        if (iterator.current() === value) {
           return i;
         }
       }
       return -1;
     };
 
-    AbstractList.prototype.before = function(id) {
-      var beforeId;
-      beforeId = this._before[id];
-      if (beforeId !== this.headId) {
-        return beforeId;
-      }
-    };
-
-    AbstractList.prototype.after = function(id) {
-      var afterId;
-      afterId = this._after[id];
-      if (afterId !== this.tailId) {
-        return afterId;
-      }
-    };
-
-    AbstractList.prototype.contains = function(item) {
-      return this.idOf(item) != null;
+    AbstractList.prototype.contains = function(value) {
+      return this.idOf(value) != null;
     };
 
     AbstractList.prototype.forEach = function(fn) {
@@ -374,7 +479,7 @@
       var iterator;
       iterator = this.getIterator();
       while (iterator.moveNext()) {
-        if (fn(iterator.current()) === false) {
+        if (fn(iterator.current()) === false || iterator.entry.next() === this.tailEntry) {
           return;
         }
       }
@@ -428,7 +533,7 @@
 
     AbstractList.prototype.first = function(count) {
       if (!count) {
-        return this.get(this.after(this.headId));
+        return this.after(this.headEntry).value();
       }
     };
 
@@ -450,23 +555,23 @@
 
     AbstractList.prototype.last = function(count) {
       if (!count) {
-        return this.get(this.before(this.tailId));
+        return this.before(this.tailEntry).value();
       }
     };
 
     AbstractList.prototype.pluck = function(key) {
-      return this.map(function(item) {
-        return item[key];
+      return this.map(function(value) {
+        return value[key];
       });
     };
 
     AbstractList.prototype.toArray = function() {
-      var items;
-      items = [];
-      this.each(function(item) {
-        return items.push(item);
+      var values;
+      values = [];
+      this.each(function(value) {
+        return values.push(value);
       });
-      return items;
+      return values;
     };
 
     return AbstractList;
@@ -476,64 +581,71 @@
   SimpleList = (function(_super) {
     __extends(SimpleList, _super);
 
-    function SimpleList(items) {
-      var id, item, length, previous, _i, _len;
+    function SimpleList(values) {
+      var entry, id, length, previous, value, _i, _len;
       SimpleList.__super__.constructor.apply(this, arguments);
-      previous = this.headId;
-      if (items != null) {
-        for (_i = 0, _len = items.length; _i < _len; _i++) {
-          item = items[_i];
+      previous = this.headEntry;
+      if (values != null) {
+        for (_i = 0, _len = values.length; _i < _len; _i++) {
+          value = values[_i];
           id = this._uniqueId();
-          this._byId[id] = item;
-          if (previous != null) {
-            this._after[previous] = id;
-            this._before[id] = previous;
-          }
-          previous = id;
+          entry = this._create(value, {
+            silent: true
+          });
+          previous.setNext(entry);
+          entry.setPrevious(previous);
+          previous = entry;
         }
-        length = items.length;
+        length = values.length;
       }
-      this._after[previous] = this.tailId;
-      this._before[this.tailId] = previous;
+      previous.setNext(this.tailEntry);
+      this.tailEntry.setPrevious(previous);
     }
 
-    SimpleList.prototype.push = function(item, options) {
+    SimpleList.prototype.push = function(value, options) {
       if (options == null) {
         options = {};
       }
-      options.before = this.tailId;
-      return this.insert(item, options);
+      options.before = this.tailEntry;
+      return this._insert(value, options).id;
     };
 
-    SimpleList.prototype.add = function(item, options) {
+    SimpleList.prototype.unshift = function(value, options) {
       if (options == null) {
         options = {};
       }
-      return this.push(item, options);
-    };
-
-    SimpleList.prototype.unshift = function(item, options) {
-      if (options == null) {
-        options = {};
-      }
-      options.after = this.headId;
-      return this.insert(item, options);
+      options.after = this.headEntry;
+      return this._insert(value, options).id;
     };
 
     SimpleList.prototype.pop = function(options) {
-      var id, item;
-      id = this.before(this.tailId);
-      item = this._byId[id];
-      this["delete"](id, options);
-      return item;
+      var entry;
+      entry = this.before(this.tailEntry);
+      this._delete(entry, options);
+      return entry.value();
     };
 
     SimpleList.prototype.shift = function(options) {
-      var id, item;
-      id = this.after(this.headId);
-      item = this._byId[id];
-      this["delete"](id, options);
-      return item;
+      var entry;
+      entry = this.after(this.headEntry);
+      this._delete(entry, options);
+      return entry.value();
+    };
+
+    SimpleList.prototype.add = function(value, options) {
+      return this.push(value, options);
+    };
+
+    SimpleList.prototype.remove = function(value, options) {
+      var entry;
+      entry = this._entryOf(value);
+      return this._delete(entry, options);
+    };
+
+    SimpleList.prototype["delete"] = function(id, options) {
+      var entry;
+      entry = this.getEntry(id);
+      return this._delete(entry, options);
     };
 
     return SimpleList;
@@ -543,116 +655,87 @@
   MappedList = (function(_super) {
     __extends(MappedList, _super);
 
+    MappedList.prototype.entry = MappedEntry;
+
     function MappedList(source, mapFn) {
       this.source = source;
       this.mapFn = mapFn;
       MappedList.__super__.constructor.apply(this, arguments);
-      this._sourceIdById = {};
-      this._idBySourceId = {};
-      this._sourceIdById[this.headId] = this.source.headId;
-      this._sourceIdById[this.tailId] = this.source.tailId;
-      this._idBySourceId[this.source.headId] = this.headId;
-      this._idBySourceId[this.source.tailId] = this.tailId;
+      this._bySourceId = [];
+      this.headEntry.source = this.source.headEntry;
+      this.tailEntry.source = this.source.tailEntry;
       this.source.on('create', (function(_this) {
-        return function(sourceId) {
-          var id, item, sourceItem;
-          sourceItem = _this.source.get(sourceId);
-          item = _this.mapFn(sourceItem);
-          id = _this.create(item);
-          _this._sourceIdById[id] = sourceId;
-          return _this._idBySourceId[sourceId] = id;
+        return function(sourceEntry) {
+          return _this._createBySourceEntry(sourceEntry);
         };
       })(this));
       this.source.on('delete', (function(_this) {
-        return function(sourceId) {
-          var id;
-          id = _this._idBySourceId[sourceId];
-          _this["delete"](id);
-          delete _this._idBySourceId[sourceId];
-          return delete _this._sourceIdById[id];
+        return function(sourceEntry) {
+          return _this._deleteBySourceEntry(sourceEntry);
         };
       })(this));
       this.source.on('move', (function(_this) {
-        return function(sourceId) {
-          var afterId, afterSourceId, beforeId, beforeSourceId, id;
-          id = _this._idBySourceId[sourceId];
-          beforeSourceId = _this.source.before(sourceId);
-          afterSourceId = _this.source.after(sourceId);
-          beforeId = _this._idBySourceId[beforeId];
-          afterId = _this._idBySourceId[afterId];
-          return _this.move(id, {
-            before: beforeId,
-            after: afterId
-          });
+        return function(sourceEntry) {
+          var after, afterSourceEntry, before, beforeSourceEntry, entry;
+          entry = _this._bySourceId[sourceEntry.id];
+          beforeSourceEntry = _this.source.before(sourceEntry);
+          afterSourceEntry = _this.source.after(sourceEntry);
+          before = _this._bySourceId[beforeSourceEntry.id];
+          return after = _this._bySourceId[afterSourceEntry.id];
         };
       })(this));
       this.source.on('change', function(sourceId, sourceItem) {
-        var id, item;
+        var id, value;
         id = this._idBySourceId[sourceId];
-        item = this.mapFn(sourceItem);
-        return this.set(id, item);
+        value = this.mapFn(sourceItem);
+        return this.set(id, value);
       });
     }
 
-    MappedList.prototype.before = function(id) {
-      var beforeId, beforeSourceId, item, sourceId;
-      beforeId = this._before[id];
-      if (beforeId) {
-        if (beforeId !== this.headId) {
-          return beforeId;
-        }
-        return void 0;
+    MappedList.prototype.getBySource = function(sourceEntry) {
+      if (sourceEntry) {
+        return this._bySourceId[sourceEntry.id];
       }
-      sourceId = this._sourceIdById[id];
-      beforeSourceId = this.source.before(sourceId);
-      if (beforeSourceId) {
-        beforeId = this._idBySourceId[beforeSourceId];
-        if (beforeId) {
-          this.move(beforeId, {
-            before: id
-          });
-          return beforeId;
-        }
-        item = this.mapFn(this.source.get(beforeSourceId));
-        beforeId = this.insert(item, {
-          before: id,
-          silent: true
-        });
-        this._sourceIdById[beforeId] = beforeSourceId;
-        this._idBySourceId[beforeSourceId] = beforeId;
-        return beforeId;
+      return void 0;
+    };
+
+    MappedList.prototype.createBySource = function(sourceEntry, options) {
+      var entry, value;
+      if (sourceEntry === this.source.headEntry) {
+        return this.headEntry;
+      }
+      if (sourceEntry === this.source.tailEntry) {
+        return this.tailEntry;
+      }
+      value = this.mapFn(sourceEntry.value());
+      entry = this._create(value, options);
+      entry.source = sourceEntry;
+      this._bySourceId[sourceEntry.id] = entry;
+      return entry;
+    };
+
+    MappedList.prototype.deleteBySource = function(sourceEntry, options) {
+      var entry, sourceId;
+      sourceId = sourceEntry.id;
+      entry = this._bySourceId[sourceId];
+      this._delete(entry, options);
+      return delete this._bySourceId[sourceId];
+    };
+
+    MappedList.prototype.before = function(id) {
+      var entry, previous;
+      entry = this.getEntry(id);
+      if (previous = entry.previous()) {
+        return previous;
       }
       return void 0;
     };
 
     MappedList.prototype.after = function(id) {
-      var afterId, afterSourceId, item, sourceId;
-      afterId = this._after[id];
-      if (afterId) {
-        if (afterId !== this.tailId) {
-          return afterId;
-        }
-        return void 0;
-      }
-      sourceId = this._sourceIdById[id];
-      afterSourceId = this.source.after(sourceId);
-      if (afterSourceId) {
-        afterId = this._idBySourceId[afterSourceId];
-        if (afterId) {
-          this.move(afterId, {
-            after: id,
-            silent: true
-          });
-          return afterId;
-        }
-        item = this.mapFn(this.source.get(afterSourceId));
-        afterId = this.insert(item, {
-          after: id,
-          silent: true
-        });
-        this._sourceIdById[afterId] = afterSourceId;
-        this._idBySourceId[afterSourceId] = afterId;
-        return afterId;
+      var entry, next;
+      entry = this.getEntry(id);
+      if (next = entry.next()) {
+        return next;
       }
       return void 0;
     };
@@ -670,10 +753,10 @@
       FilteredList.__super__.constructor.apply(this, arguments);
       this._sourceIdById = {};
       this._idBySourceId = {};
-      this._sourceIdById[this.headId] = this.source.headId;
-      this._sourceIdById[this.tailId] = this.source.tailId;
-      this._idBySourceId[this.source.headId] = this.headId;
-      this._idBySourceId[this.source.tailId] = this.tailId;
+      this._sourceIdById[this.headEntry] = this.source.headEntry;
+      this._sourceIdById[this.tailEntry] = this.source.tailEntry;
+      this._idBySourceId[this.source.headEntry] = this.headEntry;
+      this._idBySourceId[this.source.tailEntry] = this.tailEntry;
       this.source.on('create', (function(_this) {
         return function(sourceId) {
           var id, sourceItem;
@@ -747,7 +830,7 @@
     FilteredList.prototype.before = function(id) {
       var beforeId, beforeSourceId, item, iterator, sourceId;
       beforeId = this._before[id];
-      if ((beforeId != null) && beforeId !== this.headId) {
+      if ((beforeId != null) && beforeId !== this.headEntry) {
         return beforeId;
       }
       sourceId = this._sourceIdById[id];
@@ -771,7 +854,7 @@
     FilteredList.prototype.after = function(id) {
       var afterId, afterSourceId, item, iterator, sourceId;
       afterId = this._after[id];
-      if ((afterId != null) && afterId !== this.tailId) {
+      if ((afterId != null) && afterId !== this.tailEntry) {
         return afterId;
       }
       sourceId = this._sourceIdById[id];
@@ -851,64 +934,6 @@
 
   })(AbstractList);
 
-  UniqueList = (function(_super) {
-    __extends(UniqueList, _super);
-
-    function UniqueList(source) {
-      this.source = source;
-      this.built = false;
-      UniqueList.__super__.constructor.apply(this, arguments);
-    }
-
-    UniqueList.prototype.length = function() {
-      if (!this.built) {
-        this.build();
-      }
-      return UniqueList.__super__.length.apply(this, arguments);
-    };
-
-    UniqueList.prototype.get = function(id) {
-      var item;
-      item = this.source.get(id);
-      return item;
-    };
-
-    UniqueList.prototype.idAt = function(index) {
-      if (!this.built) {
-        this.build();
-      }
-      return UniqueList.__super__.idAt.apply(this, arguments);
-    };
-
-    UniqueList.prototype.build = function() {
-      var found, id, index, item, sourceId, _i, _j, _len, _ref, _ref1, _results;
-      _results = [];
-      for (index = _i = 0, _ref = this.source.length(); 0 <= _ref ? _i < _ref : _i > _ref; index = 0 <= _ref ? ++_i : --_i) {
-        sourceId = this.source.idAt(index);
-        item = this.source.get(sourceId);
-        found = false;
-        _ref1 = this.ids;
-        for (_j = 0, _len = _ref1.length; _j < _len; _j++) {
-          id = _ref1[_j];
-          if (this.items[id] === item) {
-            found = true;
-            break;
-          }
-        }
-        if (!found) {
-          this.items[sourceId] = item;
-          _results.push(this.ids.push(sourceId));
-        } else {
-          _results.push(void 0);
-        }
-      }
-      return _results;
-    };
-
-    return UniqueList;
-
-  })(AbstractList);
-
   SortedList = (function(_super) {
     __extends(SortedList, _super);
 
@@ -918,12 +943,12 @@
       SortedList.__super__.constructor.apply(this, arguments);
       this._sourceIdById = {};
       this._idBySourceId = {};
-      this._sourceIdById[this.headId] = this.source.headId;
-      this._sourceIdById[this.tailId] = this.source.tailId;
-      this._idBySourceId[this.source.headId] = this.headId;
-      this._idBySourceId[this.source.tailId] = this.tailId;
-      this._after[this.headId] = this.tailId;
-      this._before[this.tailId] = this.headId;
+      this._sourceIdById[this.headEntry] = this.source.headEntry;
+      this._sourceIdById[this.tailEntry] = this.source.tailEntry;
+      this._idBySourceId[this.source.headEntry] = this.headEntry;
+      this._idBySourceId[this.source.tailEntry] = this.tailEntry;
+      this._after[this.headEntry] = this.tailEntry;
+      this._before[this.tailEntry] = this.headEntry;
     }
 
     SortedList.prototype.before = function(id) {
@@ -940,10 +965,16 @@
       return SortedList.__super__.after.call(this, id);
     };
 
-    SortedList.prototype._sort = function(headId, length) {
+    SortedList.prototype.move = function(id, options) {
+      if (options == null) {
+        options = {};
+      }
+    };
+
+    SortedList.prototype._sort = function(headEntry, length) {
       var half, midId;
-      if (headId == null) {
-        headId = this.headId;
+      if (headEntry == null) {
+        headEntry = this.headEntry;
       }
       if (length == null) {
         length = this.length;
@@ -953,7 +984,7 @@
       return this._merge(this._sort(left, half), this._sort(right, length - half));
     };
 
-    SortedList.prototype._merge = function(headId, length) {};
+    SortedList.prototype._merge = function(headEntry, length) {};
 
     SortedList.prototype._evaluate = function() {
       var id, iterator, sourceId, _results;
@@ -963,7 +994,7 @@
       while (iterator.moveNext()) {
         sourceId = iterator.id;
         id = this.insert(iterator.current(), {
-          before: this.tailId
+          before: this.tailEntry
         });
         this._sourceIdById[id] = sourceId;
         _results.push(this._idBySourceId[sourceId] = id);

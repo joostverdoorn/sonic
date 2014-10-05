@@ -1,5 +1,7 @@
 class MappedList extends AbstractList
 
+  entry: MappedEntry
+
   constructor: ( @source, @mapFn ) ->
     super
 
@@ -27,15 +29,20 @@ class MappedList extends AbstractList
 
     @source.on 'change', ( sourceId, sourceItem ) ->
       id = @_idBySourceId[sourceId]
-      item = @mapFn(sourceItem)
-      @set(id, item)
+      value = @mapFn(sourceItem)
+      @set(id, value)
 
   getBySource: ( sourceEntry ) ->
-    @_bySourceId[sourceEntry.id]
+    if sourceEntry
+      return @_bySourceId[sourceEntry.id]
+    return undefined
 
   createBySource: ( sourceEntry, options ) ->
-    item = @map(sourceEntry.item)
-    entry = @_create(item, options)
+    return @headEntry if sourceEntry is @source.headEntry
+    return @tailEntry if sourceEntry is @source.tailEntry
+
+    value = @mapFn(sourceEntry.value())
+    entry = @_create(value, options)
 
     entry.source = sourceEntry
     @_bySourceId[sourceEntry.id] = entry
@@ -50,53 +57,15 @@ class MappedList extends AbstractList
 
 
   before: ( id ) ->
-    beforeId = @_before[id]
-    if beforeId
-      return beforeId if beforeId isnt @headEntry
-      return undefined
-
-    sourceId = @_sourceIdById[id]
-    beforeSourceId = @source.before(sourceId)
-    if beforeSourceId
-      beforeId = @_idBySourceId[beforeSourceId]
-      if beforeId
-        @move(beforeId, before: id)
-        return beforeId
-
-      item = @mapFn(@source.get(beforeSourceId))
-      beforeId = @insert(item, before: id, silent: true)
-
-      @_sourceIdById[beforeId] = beforeSourceId
-      @_idBySourceId[beforeSourceId] = beforeId
-
-      return beforeId
-
+    entry = @getEntry(id)
+    if previous = entry.previous()
+      return previous
     return undefined
 
   after: ( id ) ->
-    afterId = @_after[id]
-    if afterId
-      return afterId if afterId isnt @tailEntry
-      return undefined
-
-    sourceId = @_sourceIdById[id]
-    afterSourceId = @source.after(sourceId)
-    if afterSourceId
-      afterId = @_idBySourceId[afterSourceId]
-      if afterId
-        @move(afterId, after: id, silent: true)
-        return afterId
-
-      item = @mapFn(@source.get(afterSourceId))
-      afterId = @insert(item, after: id, silent: true)
-
-      @_sourceIdById[afterId] = afterSourceId
-      @_idBySourceId[afterSourceId] = afterId
-
-      return afterId
-
+    entry = @getEntry(id)
+    if next = entry.next()
+      return next
     return undefined
-
-
 
 

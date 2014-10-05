@@ -4,6 +4,8 @@ module.exports = ( grunt ) ->
     'src/iterator.coffee'
     'src/events.coffee'
 
+    'src/entry.coffee'
+    'src/mapped_entry.coffee'
     'src/abstract_list.coffee'
     'src/simple_list.coffee'
     'src/mapped_list.coffee'
@@ -70,7 +72,7 @@ module.exports = ( grunt ) ->
     watch:
       all:
         files: ['src/**/*.coffee']
-        tasks: ['build']
+        tasks: ['dist']
 
   grunt.loadNpmTasks 'grunt-contrib-coffee'
   grunt.loadNpmTasks 'grunt-contrib-watch'

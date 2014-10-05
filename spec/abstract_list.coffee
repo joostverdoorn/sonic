@@ -19,16 +19,7 @@ describe "List", ->
 
 
 
-  describe "#getIterator", ->
-
-    it "should return a new iterator for this list", ->
-      iterator = @list.getIterator()
-      expect(iterator).toEqual(jasmine.any(Sonic.Iterator))
-      expect(iterator.list).toBe(@list)
-
-
-
-  describe "#create", ->
+  describe "#_create", ->
 
     beforeEach ->
       @item = "apple"
@@ -46,7 +37,7 @@ describe "List", ->
 
 
 
-  describe "#delete", ->
+  describe "#_delete", ->
 
     it "should delete the item", ->
       item = "mango"
@@ -57,21 +48,21 @@ describe "List", ->
       expect(@list.get(entry.id)).not.toBeDefined()
 
     it "should return false when the item doesn't exist", ->
-      expect(@list._delete("non-existent id")).toBe(false)
+      expect(@list._delete(null)).toBe(false)
 
     it "should move the item out of the linked list structure", ->
       item1 = "apple"
       item2 = "pear"
       item3 = "banana"
 
-      id1 = @list._create(item1)
-      id2 = @list.insert(item2, after: id1)
-      id3 = @list.insert(item3, after: id2)
+      entry1 = @list._create(item1)
+      entry2 = @list._insert(item2, after: entry1)
+      entry3 = @list._insert(item3, after: entry2)
 
-      @list._delete(id2)
+      @list._delete(entry2)
 
-      expect(@list.after(id1)).toBe(id3)
-      expect(@list.before(id3)).toBe(id1)
+      expect(@list.after(entry1)).toBe(entry3)
+      expect(@list.before(entry3)).toBe(entry1)
 
     it "should decrease the length of the list", ->
       item = "mango"
@@ -85,71 +76,58 @@ describe "List", ->
 
 
 
-  describe "#get", ->
-
-    it "should return the item with the specified id", ->
-      item = "pear"
-      id = @list._create(item)
-      expect(@list.get(id)).toBe(item)
-
-
-
-  describe "#move", ->
+  describe "#_move", ->
 
     beforeEach ->
       @item1 = "apple"
       @item2 = "pear"
       @item3 = "banana"
 
-      @id1 = @list._create(@item1)
-      @id2 = @list.insert(@item2, after: @id1)
-      @id3 = @list.insert(@item3, after: @id2)
+      @entry1 = @list._create(@item1)
+      @entry2 = @list._insert(@item2, after: @entry1)
+      @entry3 = @list._insert(@item3, after: @entry2)
 
     it "should remove the item from its current position", ->
-      expect(@list.after(@id1)).toBe(@id2)
-      expect(@list.before(@id3)).toBe(@id2)
+      expect(@list.after(@entry1)).toBe(@entry2)
+      expect(@list.before(@entry3)).toBe(@entry2)
 
-      @list.move(@id2, after: @id3)
+      @list._move(@entry2, after: @entry3)
 
-      expect(@list.after(@id1)).toBe(@id3)
-      expect(@list.before(@id3)).toBe(@id1)
+      expect(@list.after(@entry1)).toBe(@entry3)
+      expect(@list.before(@entry3)).toBe(@entry1)
 
     it "should move the item into its new position", ->
-      @list.move(@id2, after: @id3)
+      @list._move(@entry2, after: @entry3)
 
-      expect(@list.after(@id3)).toBe(@id2)
-      expect(@list.before(@id2)).toBe(@id3)
+      expect(@list.after(@entry3)).toBe(@entry2)
+      expect(@list.before(@entry2)).toBe(@entry3)
 
 
 
-  describe "#swap", ->
+  describe "#_swap", ->
 
     it "should swap the position of the given items", ->
       itemA = "apple"
       itemB = "orange"
 
-      idA = @list.insert(itemA, after: @list.headEntry)
-      idB = @list.insert(itemB, after: idA, before: @list.tailEntry)
+      entryA = @list._insert(itemA, after: @list.headEntry)
+      entryB = @list._insert(itemB, after: entryA, before: @list.tailEntry)
 
-      expect(@list.after(idA)).toBe(idB)
-      @list.swap(idA, idB)
-      expect(@list.after(idB)).toBe(idA)
-
-
-
-  describe "#remove", ->
-
-    it "should remove the item", ->
-      item = "orange"
-      @list._create(item)
-      expect(@list.contains(item)).toBe(true)
-
-      @list.remove(item)
-      expect(@list.contains(item)).toBe(false)
+      expect(@list.after(entryA)).toBe(entryB)
+      @list._swap(entryA, entryB)
+      expect(@list.after(entryB)).toBe(entryA)
 
 
+  describe "#_entryOf", ->
 
-  describe "#idAt", ->
+    it "should return the first occurence of the value", ->
+      item = "banana"
+      entry = @list._create(item)
+
+      expect(@list._entryOf(item)).toBe(entry)
+
+
+  describe "#_idAt", ->
 
     it "should return the id of the item at the given index", ->
       @list.items = [1, 5, 4, 3]
@@ -164,7 +142,7 @@ describe "List", ->
 
     it "should return the index of the given item when", ->
       item = "grape"
-      @list.insert(item, after: @list.headEntry)
+      @list._insert(item, after: @list.headEntry)
       expect(@list.indexOf(item)).toBe(0)
 
     it "should return -1 if the item isn't found", ->
@@ -177,13 +155,31 @@ describe "List", ->
 
     it "should return the id of the given item", ->
       item = "strawberry"
-      id = @list._create(item)
+      id = @list._create(item).id
       expect(@list.idOf(item)).toBe(id)
 
     it "should return undefined if the item isn't found", ->
       item = "foo"
       expect(@list.idOf(item)).not.toBeDefined()
 
+
+
+  describe "#getIterator", ->
+
+    it "should return a new iterator for this list", ->
+      iterator = @list.getIterator()
+      expect(iterator).toEqual(jasmine.any(Sonic.Iterator))
+      expect(iterator.list).toBe(@list)
+
+
+
+
+  describe "#get", ->
+
+    it "should return the item with the specified id", ->
+      item = "pear"
+      entry = @list._create(item)
+      expect(@list.get(entry.id)).toBe(item)
 
 
   describe "#contains", ->
@@ -212,9 +208,9 @@ describe "List", ->
   describe "#each", ->
 
     it "should call the given function for each item", ->
-      id1 = @list.insert(1, after: @list.headEntry)
-      id2 = @list.insert(4, after: id1)
-      id3 = @list.insert(8, after: id2)
+      entry1 = @list._insert(1, after: @list.headEntry)
+      entry2 = @list._insert(4, after: entry1)
+      entry3 = @list._insert(8, after: entry2)
 
       items = []
       fn = ( item ) -> items.push(item)
@@ -269,8 +265,8 @@ describe "List", ->
   describe "#toArray", ->
 
     it "should return the list's items in an array", ->
-      id1 = @list.insert(1, after: @list.headEntry)
-      id2 = @list.insert(4, after: id1)
-      id3 = @list.insert(8, after: id2)
+      entry1 = @list._insert(1, after: @list.headEntry)
+      entry2 = @list._insert(4, after: entry1)
+      entry3 = @list._insert(8, after: entry2)
 
       expect(@list.toArray()).toEqual([1, 4, 8])

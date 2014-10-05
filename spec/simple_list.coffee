@@ -15,9 +15,9 @@ describe "SimpleList", ->
   describe "#add", ->
 
     it "should call #push and forward the arguments", ->
-      spyOn @list, 'push'
-      @list.add(3)
-      expect(@list.push).toHaveBeenCalledWith(3)
+      item = "pear"
+      entry = @list.push(item)
+      expect(@list.last()).toBe(item)
 
 
 
@@ -45,3 +45,15 @@ describe "SimpleList", ->
       item = @list.first()
       shifted = @list.shift()
       expect(shifted).toBe(item)
+
+
+
+  describe "#remove", ->
+
+    it "should remove the item", ->
+      item = "orange"
+      @list._create(item)
+      expect(@list.contains(item)).toBe(true)
+
+      @list.remove(item)
+      expect(@list.contains(item)).toBe(false)

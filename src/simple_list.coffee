@@ -1,47 +1,47 @@
 class SimpleList extends AbstractList
 
-  constructor: ( items ) ->
+  constructor: ( values ) ->
     super
 
     previous = @headEntry
 
-    if items?
-      for item in items
+    if values?
+      for value in values
         id = @_uniqueId()
-        entry = @_create(item, silent: true)
+        entry = @_create(value, silent: true)
 
-        previous.next = entry
-        entry.previous = previous
+        previous.setNext(entry)
+        entry.setPrevious(previous)
 
         previous = entry
-      length = items.length
+      length = values.length
 
-    previous.next = @tailEntry
-    @tailEntry.previous = previous
+    previous.setNext(@tailEntry)
+    @tailEntry.setPrevious(previous)
 
-  push: ( item, options = {} ) ->
+  push: ( value, options = {} ) ->
     options.before = @tailEntry
-    return @_insert(item, options)
+    return @_insert(value, options).id
 
-  unshift: ( item, options = {}) ->
+  unshift: ( value, options = {}) ->
     options.after = @headEntry
-    return @_insert(item, options)
+    return @_insert(value, options).id
 
   pop: ( options ) ->
     entry = @before @tailEntry
     @_delete entry, options
-    return entry.item
+    return entry.value()
 
   shift: ( options ) ->
     entry = @after @headEntry
     @_delete entry, options
-    return entry.item
+    return entry.value()
 
-  add:  ( item, options ) ->
-    return @push(item, options)
+  add:  ( value, options ) ->
+    return @push(value, options)
 
-  remove: ( item, options ) ->
-    entry = @_entryOf(item)
+  remove: ( value, options ) ->
+    entry = @_entryOf(value)
     return @_delete(entry, options)
 
   delete: ( id, options ) ->

@@ -3,15 +3,13 @@ class Iterator
   constructor: ( @list, @entry ) ->
 
   current: ( ) ->
-    @entry.item
+    @entry.value()
 
   moveNext: ( ) ->
-    if @entry = @list.after(@entry)
-      return true
-    return false
+    @entry = @entry.next()
+    return @entry? and @entry isnt @list.tailEntry
 
   movePrevious: ( ) ->
-    if @entry = @list.before(@entry)
-      return true
-    return false
+    @entry = @entry.previous()
+    return @entry? and @entry isnt @list.headEntry
 

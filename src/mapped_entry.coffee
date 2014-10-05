@@ -2,25 +2,34 @@ class MappedEntry extends Entry
 
   constructor: ( options ) ->
     if options
-      @id        = options.id
-      @list      = options.list
       @source    = options.source
-      @_next     = options.next
-      @_previous = options.previous
+    super
 
-  value: ( ) ->
+  value: ( ) =>
     return @_value ||= @list.mapFn(@source.value())
 
   next: ( ) ->
-    return @_next ||=
-      @list.getBySource(@source.next()) ||
-      @list.createBySource(@source.next(), silent: true, previous: @) ||
-      null
+    next = @_next
+    return next if next
+
+    if sourceNext = @source.next()
+      next = @list.getBySource(sourceNext) or
+             @list.createBySource(sourceNext, silent: true, previous: @) or
+             null
+
+      return @_next = next
+    return null
+
 
   previous: ( ) ->
-    return @_previous ||=
-      @list.getBySource(@source.previous()) ||
-      @list.createBySource(@source.previous(), silent: true, next: @) ||
-      null
+    previous = @_previous
+    return previous if previous
 
+    if sourcePrevious = @source.previous()
+      previous = @list.getBySource(sourcePrevious) or
+                 @list.createBySource(sourcePrevious, silent: true, next: @) or
+                 null
+
+      return @_previous = previous
+    return null
 
