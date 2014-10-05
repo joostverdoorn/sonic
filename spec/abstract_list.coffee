@@ -61,8 +61,8 @@ describe "List", ->
 
       @list._delete(entry2)
 
-      expect(@list.after(entry1)).toBe(entry3)
-      expect(@list.before(entry3)).toBe(entry1)
+      expect(entry1.next()).toBe(entry3)
+      expect(entry3.previous()).toBe(entry1)
 
     it "should decrease the length of the list", ->
       item = "mango"
@@ -88,19 +88,19 @@ describe "List", ->
       @entry3 = @list._insert(@item3, after: @entry2)
 
     it "should remove the item from its current position", ->
-      expect(@list.after(@entry1)).toBe(@entry2)
-      expect(@list.before(@entry3)).toBe(@entry2)
+      expect(@entry1.next()).toBe(@entry2)
+      expect(@entry3.previous()).toBe(@entry2)
 
       @list._move(@entry2, after: @entry3)
 
-      expect(@list.after(@entry1)).toBe(@entry3)
-      expect(@list.before(@entry3)).toBe(@entry1)
+      expect(@entry1.next()).toBe(@entry3)
+      expect(@entry3.previous()).toBe(@entry1)
 
     it "should move the item into its new position", ->
       @list._move(@entry2, after: @entry3)
 
-      expect(@list.after(@entry3)).toBe(@entry2)
-      expect(@list.before(@entry2)).toBe(@entry3)
+      expect(@entry3.next()).toBe(@entry2)
+      expect(@entry2.previous()).toBe(@entry3)
 
 
 
@@ -113,9 +113,9 @@ describe "List", ->
       entryA = @list._insert(itemA, after: @list.headEntry)
       entryB = @list._insert(itemB, after: entryA, before: @list.tailEntry)
 
-      expect(@list.after(entryA)).toBe(entryB)
+      expect(entryA.next()).toBe(entryB)
       @list._swap(entryA, entryB)
-      expect(@list.after(entryB)).toBe(entryA)
+      expect(entryB.next()).toBe(entryA)
 
 
   describe "#_entryOf", ->

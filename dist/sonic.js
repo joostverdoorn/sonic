@@ -1,10 +1,11 @@
 (function() {
-  var AbstractList, ConcatenatedList, Entry, Events, FilteredList, Iterator, MappedEntry, MappedList, SimpleList, Sonic, SortedList, TailingEntry, TailingList,
+  var AbstractList, ConcatenatedEntry, ConcatenatedList, Entry, Events, FilteredEntry, FilteredList, Iterator, MappedEntry, MappedList, SimpleList, Sonic, SortedList, TailingEntry, TailingList, UniqueList,
     __slice = [].slice,
     __hasProp = {}.hasOwnProperty,
     __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
   Sonic = {
+    _uniqueCounter: 0,
     create: function(items) {
       if (items == null) {
         items = [];
@@ -13,6 +14,11 @@
         return items;
       }
       return new SimpleList(items);
+    },
+    uniqueId: function() {
+      var uniqueId;
+      uniqueId = Sonic._uniqueCounter++;
+      return uniqueId;
     }
   };
 
@@ -151,6 +157,10 @@
       }
     }
 
+    Entry.prototype.root = function() {
+      return this;
+    };
+
     Entry.prototype.value = function() {
       return this._value;
     };
@@ -184,10 +194,11 @@
       }
       this.source = source || options.source;
       TailingEntry.__super__.constructor.call(this, void 0, options);
-      if (this.source == null) {
-        debugger;
-      }
     }
+
+    TailingEntry.prototype.root = function() {
+      return this.source.root();
+    };
 
     TailingEntry.prototype.value = function() {
       return this._value || (this._value = this.source.value());
@@ -244,6 +255,127 @@
 
   })(TailingEntry);
 
+  FilteredEntry = (function(_super) {
+    __extends(FilteredEntry, _super);
+
+    function FilteredEntry() {
+      return FilteredEntry.__super__.constructor.apply(this, arguments);
+    }
+
+    FilteredEntry.prototype.value = function() {
+      return this._value || (this._value = this.source.value());
+    };
+
+    FilteredEntry.prototype.next = function() {
+      var next, source;
+      next = this._next;
+      if (next) {
+        return next;
+      }
+      source = this.source;
+      while (source = source.next()) {
+        if (this.list.filterFn(source.value())) {
+          break;
+        }
+      }
+      if (source) {
+        next = this.list.getBySource(source) || this.list.createBySource(source, {
+          silent: true,
+          previous: this
+        }) || null;
+        return this._next = next;
+      }
+      return null;
+    };
+
+    FilteredEntry.prototype.previous = function() {
+      var previous, source;
+      previous = this._previous;
+      if (previous) {
+        return previous;
+      }
+      source = this.source;
+      while (!this.list.filterFn(source.previous())) {
+        source = source.previous();
+      }
+      if (source) {
+        previous = this.list.getBySource(source) || this.list.createBySource(source, {
+          silent: true,
+          previous: this
+        }) || null;
+        return this._previous = previous;
+      }
+      return null;
+    };
+
+    return FilteredEntry;
+
+  })(TailingEntry);
+
+  ConcatenatedEntry = (function(_super) {
+    __extends(ConcatenatedEntry, _super);
+
+    function ConcatenatedEntry(source, options) {
+      if (options == null) {
+        options = {};
+      }
+      ConcatenatedEntry.__super__.constructor.call(this, source, options);
+    }
+
+    ConcatenatedEntry.prototype.value = function() {
+      return this._value || (this._value = this.source.value());
+    };
+
+    ConcatenatedEntry.prototype.next = function() {
+      var next, nextSourceList, sourceNext;
+      next = this._next;
+      if (next) {
+        return next;
+      }
+      sourceNext = this.source.next();
+      if (sourceNext === this.source.list.tailEntry) {
+        nextSourceList = this.list.sources.after(this.source.list);
+        if (nextSourceList) {
+          sourceNext = nextSourceList.headEntry.next();
+        }
+      }
+      if (sourceNext) {
+        next = this.list.getBySource(sourceNext) || this.list.createBySource(sourceNext, {
+          silent: true,
+          previous: this
+        }) || null;
+        return this._next = next;
+      }
+      return null;
+    };
+
+    ConcatenatedEntry.prototype.previous = function() {
+      var previous, previousSourceList, sourcePrevious;
+      previous = this._previous;
+      if (previous) {
+        return previous;
+      }
+      sourcePrevious = this.source.previous();
+      if (sourcePrevious === this.source.list.headEntry) {
+        previousSourceList = this.list.sources.before(this.source.list);
+        if (previousSourceList) {
+          sourcePrevious = nextSourceList.tailEntry.previous();
+        }
+      }
+      if (sourcePrevious) {
+        previous = this.list.getBySource(sourcePrevious) || this.list.createBySource(sourcePrevious, {
+          silent: true,
+          next: this
+        }) || null;
+        return this._previous = previous;
+      }
+      return null;
+    };
+
+    return ConcatenatedEntry;
+
+  })(TailingEntry);
+
   AbstractList = (function() {
     var fn, key;
 
@@ -255,8 +387,7 @@
     }
 
     function AbstractList() {
-      this._uniqueCounter = 0;
-      this._byId = [];
+      this._byId = {};
       this.headEntry = new this.Entry(null, {
         list: this
       });
@@ -266,16 +397,12 @@
       this.length = 0;
     }
 
-    AbstractList.prototype._uniqueId = function() {
-      return ++this._uniqueCounter;
-    };
-
     AbstractList.prototype._create = function(value, options) {
       var entry, entryOptions, id;
       if (options == null) {
         options = {};
       }
-      id = this._uniqueId();
+      id = Sonic.uniqueId();
       entryOptions = options.entryOptions || {};
       entryOptions.id = id;
       entryOptions.list = this;
@@ -393,10 +520,11 @@
     };
 
     AbstractList.prototype._entryOf = function(value) {
-      var entry, _i, _len, _ref;
-      _ref = this._byId;
+      var entry, id, _i, _len, _ref;
+      _ref = Object.keys(this._byId);
       for (_i = 0, _len = _ref.length; _i < _len; _i++) {
-        entry = _ref[_i];
+        id = _ref[_i];
+        entry = this._byId[id];
         if ((entry != null ? entry.value() : void 0) === value) {
           return entry;
         }
@@ -418,24 +546,6 @@
 
     AbstractList.prototype.getIterator = function(start) {
       return new Iterator(this, start || this.headEntry);
-    };
-
-    AbstractList.prototype.before = function(entry) {
-      var before;
-      before = entry.previous();
-      if (before !== this.headEntry) {
-        return before;
-      }
-      return void 0;
-    };
-
-    AbstractList.prototype.after = function(entry) {
-      var after;
-      after = entry.next();
-      if (after !== this.tailEntry) {
-        return after;
-      }
-      return void 0;
     };
 
     AbstractList.prototype.get = function(id) {
@@ -463,6 +573,26 @@
       var entry;
       entry = this._entryAt(index);
       return this.get(id);
+    };
+
+    AbstractList.prototype.before = function(value) {
+      var entry, previous;
+      entry = this._entryOf(value);
+      previous = entry.previous();
+      if (previous !== this.headEntry) {
+        return previous.value();
+      }
+      return void 0;
+    };
+
+    AbstractList.prototype.after = function(value) {
+      var entry, next;
+      entry = this._entryOf(value);
+      next = entry.next();
+      if (next !== this.tailEntry) {
+        return next.value();
+      }
+      return void 0;
     };
 
     AbstractList.prototype.idOf = function(value) {
@@ -522,7 +652,9 @@
     };
 
     AbstractList.prototype.filter = function(filterFn) {
-      return new FilteredList(this, filterFn);
+      return new FilteredList(this, {
+        filterFn: filterFn
+      });
     };
 
     AbstractList.prototype.sort = function(sortFn) {
@@ -533,6 +665,10 @@
       var others;
       others = 1 <= arguments.length ? __slice.call(arguments, 0) : [];
       return new ConcatenatedList([this].concat(others));
+    };
+
+    AbstractList.prototype.flatten = function() {
+      return new ConcatenatedList(this);
     };
 
     AbstractList.prototype.unique = function() {
@@ -551,7 +687,7 @@
 
     AbstractList.prototype.first = function(count) {
       if (!count) {
-        return this.after(this.headEntry).value();
+        return this.headEntry.next().value();
       }
     };
 
@@ -573,7 +709,7 @@
 
     AbstractList.prototype.last = function(count) {
       if (!count) {
-        return this.before(this.tailEntry).value();
+        return this.tailEntry.previous().value();
       }
     };
 
@@ -600,13 +736,12 @@
     __extends(SimpleList, _super);
 
     function SimpleList(values) {
-      var entry, id, length, previous, value, _i, _len;
+      var entry, length, previous, value, _i, _len;
       SimpleList.__super__.constructor.apply(this, arguments);
       previous = this.headEntry;
       if (values != null) {
         for (_i = 0, _len = values.length; _i < _len; _i++) {
           value = values[_i];
-          id = this._uniqueId();
           entry = this._create(value, {
             silent: true
           });
@@ -638,14 +773,14 @@
 
     SimpleList.prototype.pop = function(options) {
       var entry;
-      entry = this.before(this.tailEntry);
+      entry = this.tailEntry.previous();
       this._delete(entry, options);
       return entry.value();
     };
 
     SimpleList.prototype.shift = function(options) {
       var entry;
-      entry = this.after(this.headEntry);
+      entry = this.headEntry.next();
       this._delete(entry, options);
       return entry.value();
     };
@@ -738,192 +873,57 @@
   FilteredList = (function(_super) {
     __extends(FilteredList, _super);
 
-    function FilteredList(source, filterFn) {
-      this.source = source;
-      this.filterFn = filterFn;
-      FilteredList.__super__.constructor.apply(this, arguments);
-      this._sourceIdById = {};
-      this._idBySourceId = {};
-      this._sourceIdById[this.headEntry] = this.source.headEntry;
-      this._sourceIdById[this.tailEntry] = this.source.tailEntry;
-      this._idBySourceId[this.source.headEntry] = this.headEntry;
-      this._idBySourceId[this.source.tailEntry] = this.tailEntry;
-      this.source.on('create', (function(_this) {
-        return function(sourceId) {
-          var id, sourceItem;
-          sourceItem = _this.source.get(sourceId);
-          if (_this.filterFn(sourceItem)) {
-            id = _this.create(sourceItem);
-            _this._sourceIdById[id] = sourceId;
-            return _this._idBySourceId[sourceId] = id;
-          }
-        };
-      })(this));
-      this.source.on('delete', (function(_this) {
-        return function(sourceId) {
-          var id;
-          id = _this._idBySourceId[sourceId];
-          if (id != null) {
-            _this["delete"](id);
-            delete _this._idBySourceId[sourceId];
-            return delete _this._sourceIdById[id];
-          }
-        };
-      })(this));
-      this.source.on('move', (function(_this) {
-        return function(sourceId) {
-          var afterId, afterSourceId, beforeId, beforeSourceId, id, iterator, _results;
-          id = _this._idBySourceId[sourceId];
-          beforeSourceId = _this.source.before(sourceId);
-          afterSourceId = _this.source.after(sourceId);
-          iterator = _this.source.getIterator(sourceId);
-          _results = [];
-          while (iterator.moveNext()) {
-            afterSourceId = iterator.id;
-            afterId = _this._idBySourceId[afterSourceId];
-            if (afterId != null) {
-              iterator = _this.source.getIterator(sourceId);
-              while (iterator.movePrevious()) {
-                beforeSourceId = iterator.id;
-                beforeId = _this._idBySourceId[beforeSourceId];
-                if ((beforeId != null) && _this._before[afterId] === beforeId && _this._after[beforeId] === afterId) {
-                  _this.move(id, {
-                    before: beforeId,
-                    after: afterId
-                  });
-                  break;
-                }
-              }
-              break;
-            } else {
-              _results.push(void 0);
-            }
-          }
-          return _results;
-        };
-      })(this));
-      this.source.on('change', (function(_this) {
-        return function(sourceId, sourceItem) {
-          var id;
-          id = _this._idBySourceId[sourceId];
-          if (id == null) {
-            return false;
-          }
-          if (_this.filterFn(sourceItem)) {
-            return _this.set(id, sourceItem);
-          } else {
-            return _this["delete"](id);
-          }
-        };
-      })(this));
+    FilteredList.prototype.Entry = FilteredEntry;
+
+    function FilteredList(source, options) {
+      FilteredList.__super__.constructor.call(this, source, options);
+      this.filterFn = options.filterFn;
     }
-
-    FilteredList.prototype.before = function(id) {
-      var beforeId, beforeSourceId, item, iterator, sourceId;
-      beforeId = this._before[id];
-      if ((beforeId != null) && beforeId !== this.headEntry) {
-        return beforeId;
-      }
-      sourceId = this._sourceIdById[id];
-      iterator = this.source.getIterator(sourceId);
-      while (iterator.movePrevious()) {
-        beforeSourceId = iterator.id;
-        item = this.source.get(beforeSourceId);
-        if (this.filterFn(item)) {
-          beforeId = this.insert(item, {
-            before: id,
-            silent: true
-          });
-          this._sourceIdById[beforeId] = beforeSourceId;
-          this._idBySourceId[beforeSourceId] = beforeId;
-          return beforeId;
-        }
-      }
-      return void 0;
-    };
-
-    FilteredList.prototype.after = function(id) {
-      var afterId, afterSourceId, item, iterator, sourceId;
-      afterId = this._after[id];
-      if ((afterId != null) && afterId !== this.tailEntry) {
-        return afterId;
-      }
-      sourceId = this._sourceIdById[id];
-      iterator = this.source.getIterator(sourceId);
-      while (iterator.moveNext()) {
-        afterSourceId = iterator.id;
-        item = this.source.get(afterSourceId);
-        if (this.filterFn(item)) {
-          afterId = this.insert(item, {
-            after: id,
-            silent: true
-          });
-          this._sourceIdById[afterId] = afterSourceId;
-          this._idBySourceId[afterSourceId] = afterId;
-          return afterId;
-        }
-      }
-      return void 0;
-    };
 
     return FilteredList;
 
-  })(AbstractList);
+  })(TailingList);
 
   ConcatenatedList = (function(_super) {
     __extends(ConcatenatedList, _super);
 
-    function ConcatenatedList(sources) {
-      this._sources = Sonic.create(sources);
-      this.built = false;
-      ConcatenatedList.__super__.constructor.apply(this, arguments);
+    ConcatenatedList.prototype.Entry = ConcatenatedEntry;
+
+    function ConcatenatedList(sources, options) {
+      var source;
+      if (options == null) {
+        options = {};
+      }
+      this.sources = Sonic.create(sources);
+      source = {
+        headEntry: this.sources.first().headEntry,
+        tailEntry: this.sources.last().tailEntry
+      };
+      ConcatenatedList.__super__.constructor.call(this, source, options);
     }
-
-    ConcatenatedList.prototype.length = function() {
-      if (!this.built) {
-        this.build();
-      }
-      return ConcatenatedList.__super__.length.apply(this, arguments);
-    };
-
-    ConcatenatedList.prototype.get = function(id) {
-      var item, source, _i, _len, _ref;
-      _ref = this.sources;
-      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
-        source = _ref[_i];
-        if (item = source.get(id)) {
-          this.items[id] = item;
-          return item;
-        }
-      }
-      return void 0;
-    };
-
-    ConcatenatedList.prototype.idAt = function(index) {
-      if (!this.built) {
-        this.build();
-      }
-      return ConcatenatedList.__super__.idAt.apply(this, arguments);
-    };
-
-    ConcatenatedList.prototype.build = function() {
-      var id, index, item, source, _i, _j, _len, _ref, _ref1;
-      _ref = this.sources;
-      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
-        source = _ref[_i];
-        for (index = _j = 0, _ref1 = source.length(); 0 <= _ref1 ? _j < _ref1 : _j > _ref1; index = 0 <= _ref1 ? ++_j : --_j) {
-          id = source.idAt(index);
-          item = source.get(id);
-          this.items[id] = item;
-          this.ids.push(id);
-        }
-      }
-      return this.built = true;
-    };
 
     return ConcatenatedList;
 
-  })(AbstractList);
+  })(TailingList);
+
+  UniqueList = (function(_super) {
+    __extends(UniqueList, _super);
+
+    function UniqueList(source, options) {
+      if (options == null) {
+        options = {};
+      }
+      options.filterFn = (function(_this) {
+        return function(value) {
+          return !_this.contains(value);
+        };
+      })(this);
+      UniqueList.__super__.constructor.call(this, source, options);
+    }
+
+    return UniqueList;
+
+  })(FilteredList);
 
   SortedList = (function(_super) {
     __extends(SortedList, _super);
@@ -932,14 +932,6 @@
       this.source = source;
       this.sortFn = sortFn;
       SortedList.__super__.constructor.apply(this, arguments);
-      this._sourceIdById = {};
-      this._idBySourceId = {};
-      this._sourceIdById[this.headEntry] = this.source.headEntry;
-      this._sourceIdById[this.tailEntry] = this.source.tailEntry;
-      this._idBySourceId[this.source.headEntry] = this.headEntry;
-      this._idBySourceId[this.source.tailEntry] = this.tailEntry;
-      this._after[this.headEntry] = this.tailEntry;
-      this._before[this.tailEntry] = this.headEntry;
     }
 
     SortedList.prototype.before = function(id) {
@@ -1003,8 +995,10 @@
     exports.Iterator = Iterator;
     exports.Event = Event;
     exports.Entry = Entry;
-    exports.TailingEntry = Entry;
-    exports.MappedEntry = Entry;
+    exports.TailingEntry = TailingEntry;
+    exports.MappedEntry = MappedEntry;
+    exports.FilteredEntry = FilteredEntry;
+    exports.ConcatenatedEntry = ConcatenatedEntry;
     exports.AbstractList = AbstractList;
     exports.SimpleList = SimpleList;
     exports.TailingList = TailingList;

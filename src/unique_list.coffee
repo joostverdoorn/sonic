@@ -1,22 +1,5 @@
-# class UniqueList extends SortedList
+class UniqueList extends FilteredList
 
-#   constructor: ( @source, sortFn = @sortFn ) ->
-#     super
-
-#   sortFn: ( item ) ->
-#     # switch typeof item
-#     #   when "number"
-#     #     return item
-#     #   when "string"
-
-#     #   when "object"
-#     #   else
-#     #     return false
-
-
-
-#   before: (id) ->
-#     super
-
-#   after: (id) ->
-#     super
+  constructor: ( source, options = {} ) ->
+    options.filterFn = ( value ) => not @contains value
+    super source, options

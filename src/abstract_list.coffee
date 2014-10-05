@@ -7,19 +7,15 @@ class AbstractList
     @::[key] = fn
 
   constructor: ( ) ->
-    @_uniqueCounter = 0;
-    @_byId = []
+    @_byId = {}
 
     @headEntry = new @Entry null, list: @
     @tailEntry = new @Entry null, list: @
 
     @length = 0
 
-  _uniqueId: ( ) ->
-    return ++@_uniqueCounter
-
   _create: ( value, options = {} ) ->
-    id = @_uniqueId()
+    id = Sonic.uniqueId()
 
     entryOptions = options.entryOptions or {}
     entryOptions.id = id
@@ -93,7 +89,8 @@ class AbstractList
     return entry
 
   _entryOf: ( value ) ->
-    for entry in @_byId
+    for id in Object.keys(@_byId)
+      entry = @_byId[id]
       return entry if entry?.value() is value
     return undefined
 
@@ -110,15 +107,15 @@ class AbstractList
   getIterator: ( start ) ->
     return new Iterator(@, start or @headEntry)
 
-  before: ( entry ) ->
-    before = entry.previous()
-    return before unless before is @headEntry
-    return undefined
+  # _before: ( entry ) ->
+  #   before = entry.previous()
+  #   return before unless before is @headEntry
+  #   return undefined
 
-  after: ( entry ) ->
-    after = entry.next()
-    return after unless after is @tailEntry
-    return undefined
+  # _after: ( entry ) ->
+  #   after = entry.next()
+  #   return after unless after is @tailEntry
+  #   return undefined
 
   # Public access methods.
   get: ( id ) ->
@@ -134,6 +131,20 @@ class AbstractList
   at: ( index ) ->
     entry = @_entryAt(index)
     return @get(id)
+
+  before: ( value ) ->
+    entry = @_entryOf(value)
+    previous = entry.previous()
+
+    return previous.value() unless previous is @headEntry
+    return undefined
+
+  after: ( value ) ->
+    entry = @_entryOf(value)
+    next = entry.next()
+
+    return next.value() unless next is @tailEntry
+    return undefined
 
   idOf: ( value ) ->
     return @_entryOf(value)?.id
@@ -170,13 +181,16 @@ class AbstractList
     return new MappedList @, mapFn: mapFn
 
   filter: ( filterFn ) ->
-    return new FilteredList(@, filterFn)
+    return new FilteredList(@, filterFn: filterFn)
 
   sort: ( sortFn ) ->
     return new SortedList(@, sortFn)
 
   concat: ( others... ) ->
     return new ConcatenatedList([@].concat(others))
+
+  flatten: ( ) ->
+    return new ConcatenatedList(@)
 
   unique: ( ) -> @uniq()
   uniq:   ( ) ->
@@ -186,7 +200,7 @@ class AbstractList
     return @concat(others...).uniq()
 
   first: ( count ) ->
-    return @after(@headEntry).value() unless count
+    return @headEntry.next().value() unless count
 
   skip: ( count ) -> @rest(count)
   tail: ( count ) -> @rest(count)
@@ -196,7 +210,7 @@ class AbstractList
   initial: ( count ) ->
 
   last: ( count ) ->
-    return @before(@tailEntry).value() unless count
+    return @tailEntry.previous().value() unless count
 
   pluck: ( key ) ->
     return @map ( value ) -> value[key]

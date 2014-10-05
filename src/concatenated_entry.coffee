@@ -1,11 +1,7 @@
-class TailingEntry extends Entry
+class ConcatenatedEntry extends TailingEntry
 
   constructor: ( source, options = {} ) ->
-    @source = source or options.source
-    super undefined, options
-
-  root: ( ) ->
-    return @source.root()
+    super source, options
 
   value: ( ) ->
     return @_value ||= @source.value()
@@ -14,7 +10,13 @@ class TailingEntry extends Entry
     next = @_next
     return next if next
 
-    if sourceNext = @source.next()
+    sourceNext = @source.next()
+
+    if sourceNext is @source.list.tailEntry
+      nextSourceList = @list.sources.after(@source.list)
+      sourceNext = nextSourceList.headEntry.next() if nextSourceList
+
+    if sourceNext
       next = @list.getBySource(sourceNext) or
              @list.createBySource(sourceNext, silent: true, previous: @) or
              null
@@ -22,12 +24,17 @@ class TailingEntry extends Entry
       return @_next = next
     return null
 
-
   previous: ( ) ->
     previous = @_previous
     return previous if previous
 
-    if sourcePrevious = @source.previous()
+    sourcePrevious = @source.previous()
+
+    if sourcePrevious is @source.list.headEntry
+      previousSourceList = @list.sources.before(@source.list)
+      sourcePrevious = nextSourceList.tailEntry.previous() if previousSourceList
+
+    if sourcePrevious
       previous = @list.getBySource(sourcePrevious) or
                  @list.createBySource(sourcePrevious, silent: true, next: @) or
                  null

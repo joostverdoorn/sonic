@@ -8,6 +8,9 @@ class Entry
       @_next     = options.next
       @_previous = options.previous
 
+  root: ( ) ->
+    return @
+
   value: ( ) ->
     return @_value
 

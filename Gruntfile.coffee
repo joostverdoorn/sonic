@@ -7,6 +7,9 @@ module.exports = ( grunt ) ->
     'src/entry.coffee'
     'src/tailing_entry.coffee'
     'src/mapped_entry.coffee'
+    'src/filtered_entry.coffee'
+    'src/concatenated_entry.coffee'
+
     'src/abstract_list.coffee'
     'src/simple_list.coffee'
     'src/tailing_list.coffee'
@@ -27,8 +30,8 @@ module.exports = ( grunt ) ->
     '.grunt/sonic/spec_compiled/simple_list.js'
     '.grunt/sonic/spec_compiled/mapped_list.js'
     '.grunt/sonic/spec_compiled/filtered_list.js'
-    # '.grunt/sonic/spec_compiled/concatenated_list.js'
-    # '.grunt/sonic/spec_compiled/unique_list.js'
+    '.grunt/sonic/spec_compiled/concatenated_list.js'
+    '.grunt/sonic/spec_compiled/unique_list.js'
     '.grunt/sonic/spec_compiled/sorted_list.js'
 
     # '.grunt/sonic/spec_compiled/export.js'

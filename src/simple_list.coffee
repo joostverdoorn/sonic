@@ -7,7 +7,6 @@ class SimpleList extends AbstractList
 
     if values?
       for value in values
-        id = @_uniqueId()
         entry = @_create(value, silent: true)
 
         previous.setNext(entry)
@@ -28,12 +27,12 @@ class SimpleList extends AbstractList
     return @_insert(value, options).id
 
   pop: ( options ) ->
-    entry = @before @tailEntry
+    entry = @tailEntry.previous()
     @_delete entry, options
     return entry.value()
 
   shift: ( options ) ->
-    entry = @after @headEntry
+    entry = @headEntry.next()
     @_delete entry, options
     return entry.value()
 

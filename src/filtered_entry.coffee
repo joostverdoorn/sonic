@@ -1,46 +1,38 @@
-class FilteredEntry extends Entry
-
-  constructor: ( id, list, source, options ) ->
-    @id     = id
-    @list   = list
-    @source = source
-
-    if options
-      @_value    = options.value
-      @_next     = options.next
-      @_previous = options.previous
+class FilteredEntry extends TailingEntry
 
   value: ( ) ->
     return @_value ||= @source.value()
 
   next: ( ) ->
-    if next = @_next
-      return next
+    next = @_next
+    return next if next
 
     source = @source
-    filterFn = @list.filterFn
-
     while source = source.next()
-      if filterFn(source.value())
-        unless next = @list.getBySource(source)
-          next = @list.createBySource(source, silent: true)
-          next.setPrevious(@)
+      break if @list.filterFn(source.value())
 
-        return next
 
+    if source
+      next = @list.getBySource(source) or
+             @list.createBySource(source, silent: true, previous: @) or
+             null
+
+      return @_next = next
     return null
 
   previous: ( ) ->
-    if previous = @_previous
-      return previous
+    previous = @_previous
+    return previous if previous
 
     source = @source
-    filterFn = @list.filterFn
+    while not @list.filterFn(source.previous())
+      source = source.previous()
 
-    while source = source.previous()
-      if filterFn(source.value())
-        return @_previous =
-          @list.getBySource(source) ||
-          @list.createBySource(source, silent: true, next: @)
 
+    if source
+      previous = @list.getBySource(source) or
+             @list.createBySource(source, silent: true, previous: @) or
+             null
+
+      return @_previous = previous
     return null
