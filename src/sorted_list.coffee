@@ -1,67 +1,80 @@
-class SortedList extends AbstractList
+class SortedList extends TailingList
 
-  constructor: ( @source, @sortFn ) ->
-    super
+  Entry: SortedEntry
 
-    @_sourceIdById = {}
-    @_idBySourceId = {}
+  HeadEntry : () -> new @Entry @source.headEntry, list: @, sortVal: -Infinity
+  TailEntry : () -> new @Entry @source.tailEntry, list: @, sortVal:  Infinity
 
-    @_sourceIdById[@headEntry] = @source.headEntry
-    @_sourceIdById[@tailEntry] = @source.tailEntry
-    @_idBySourceId[@source.headEntry] = @headEntry
-    @_idBySourceId[@source.tailEntry] = @tailEntry
+  constructor: ( source, options = {} ) ->
+    @rootNode = new TreeNode(0)
+    @sortFn = options.sortFn
+    @_evaluated = false
 
-    @_after[@headEntry] = @tailEntry
-    @_before[@tailEntry] = @headEntry
+    super source, options
+    @evaluate()
 
-  before: ( id ) ->
-    @_evaluate() unless @_evaluated
-    super id
+  evaluate: ( ) ->
+    unless @_evaluated
+      iterator = @source.getIterator()
 
-  after: ( id ) ->
-    @_evaluate() unless @_evaluated
-    super id
+      while iterator.moveNext()
+        sourceEntry = iterator.entry
+        unless @_bySourceId[sourceEntry]
+          @createBySource(sourceEntry, silent: true)
 
-  move: ( id, options = {} ) ->
-
-
-  _sort: ( headEntry = @headEntry, length = @length ) ->
-
-    half = Math.ceil(length / 2)
-    midId = @idAt(half)
-
-    @_merge(@_sort(left, half), @_sort(right, length - half))
-
-
-  _merge: ( headEntry, length ) ->
+      return @_evaluated = true
+    return false
 
 
 
+  # before: ( id ) ->
+  #   @_evaluate() unless @_evaluated
+  #   super id
+
+  # after: ( id ) ->
+  #   @_evaluate() unless @_evaluated
+  #   super id
+
+  # move: ( id, options = {} ) ->
+
+
+  # _sort: ( headEntry = @headEntry, length = @length ) ->
+
+  #   half = Math.ceil(length / 2)
+  #   midId = @idAt(half)
+
+  #   @_merge(@_sort(left, half), @_sort(right, length - half))
+
+
+  # _merge: ( headEntry, length ) ->
 
 
 
-  # _split: ( headEntry = @headEntry, length = @length ) ->
-  #   i = 0
-  #   middleId = headEntry
-  #   while i++ <=
-  #     middleId = @_after[middleId]
-
-  #   return middleId
 
 
 
-  _evaluate: ( ) ->
-    @_evaluated = true
-    iterator = @source.getIterator()
+  # # _split: ( headEntry = @headEntry, length = @length ) ->
+  # #   i = 0
+  # #   middleId = headEntry
+  # #   while i++ <=
+  # #     middleId = @_after[middleId]
 
-    while iterator.moveNext()
-      sourceId = iterator.id
-      id = @insert iterator.current(), before: @tailEntry
+  # #   return middleId
 
-      @_sourceIdById[id] = sourceId
-      @_idBySourceId[sourceId] = id
 
-    # @mergeSort()
+
+  # _evaluate: ( ) ->
+  #   @_evaluated = true
+  #   iterator = @source.getIterator()
+
+  #   while iterator.moveNext()
+  #     sourceId = iterator.id
+  #     id = @insert iterator.current(), before: @tailEntry
+
+  #     @_sourceIdById[id] = sourceId
+  #     @_idBySourceId[sourceId] = id
+
+  #   # @mergeSort()
 
 
 

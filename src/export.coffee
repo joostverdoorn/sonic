@@ -4,11 +4,16 @@ Sonic.factory = ( exports ) ->
     exports.Iterator            = Iterator
     exports.Event               = Event
 
+    exports.TreeNode            = TreeNode
+    # exports.Tree                = Tree
+
     exports.Entry               = Entry
     exports.TailingEntry        = TailingEntry
     exports.MappedEntry         = MappedEntry
     exports.FilteredEntry       = FilteredEntry
     exports.ConcatenatedEntry   = ConcatenatedEntry
+    exports.SortedEntry         = SortedEntry
+    exports.ReversedEntry       = ReversedEntry
 
     exports.AbstractList        = AbstractList
     exports.SimpleList          = SimpleList
@@ -18,6 +23,8 @@ Sonic.factory = ( exports ) ->
     exports.ConcatenatedList    = ConcatenatedList
     exports.UniqueList          = UniqueList
     exports.SortedList          = SortedList
+    exports.ReversedList        = ReversedList
+
 
 
 # Exports Sonic for CommonJS, AMD and the browser.

@@ -1,5 +1,5 @@
 (function() {
-  var AbstractList, ConcatenatedEntry, ConcatenatedList, Entry, Events, FilteredEntry, FilteredList, Iterator, MappedEntry, MappedList, SimpleList, Sonic, SortedList, TailingEntry, TailingList, UniqueList,
+  var AbstractList, ConcatenatedEntry, ConcatenatedList, Entry, Events, FilteredEntry, FilteredList, Iterator, MappedEntry, MappedList, ReversedEntry, ReversedList, SimpleList, Sonic, SortedEntry, SortedList, TailingEntry, TailingList, TreeNode, UniqueList,
     __slice = [].slice,
     __hasProp = {}.hasOwnProperty,
     __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
@@ -146,14 +146,211 @@
     }
   };
 
+  TreeNode = (function() {
+    function TreeNode(value, options) {
+      if (options == null) {
+        options = {};
+      }
+      this._value = value;
+      this._parent = options.parent;
+      this.entry = options.entry;
+    }
+
+    TreeNode.prototype.size = function() {
+      var _ref, _ref1;
+      return (((_ref = this.left()) != null ? _ref.size() : void 0) || 0) + (((_ref1 = this.right()) != null ? _ref1.size() : void 0) || 0) + 1;
+    };
+
+    TreeNode.prototype.depth = function() {
+      return Math.ceil(1 + Math.log(this.size()) / Math.LN2);
+    };
+
+    TreeNode.prototype.balance = function() {
+      var _ref, _ref1;
+      return (((_ref = this.right()) != null ? _ref.depth() : void 0) || 0) - (((_ref1 = this.left()) != null ? _ref1.depth() : void 0) || 0);
+    };
+
+    TreeNode.prototype.value = function() {
+      return this._value;
+    };
+
+    TreeNode.prototype.parent = function() {
+      return this._parent;
+    };
+
+    TreeNode.prototype.insert = function(node) {
+      var left, right;
+      console.log('insert', node.value(), 'in', this.value());
+      if (node.value() < this.value()) {
+        if (left = this.left()) {
+          left.insert(node);
+        } else {
+          this.setLeft(node);
+        }
+      } else {
+        if (right = this.right()) {
+          right.insert(node);
+        } else {
+          this.setRight(node);
+        }
+      }
+      console.log('balance in', this.value(), 'is', this.balance());
+      if (!this.isRoot()) {
+        if (this.balance() > 1) {
+          return this.rotateLeft();
+        } else if (this.balance() < -1) {
+          return this.rotateRight();
+        }
+      }
+    };
+
+    TreeNode.prototype.left = function() {
+      return this._left;
+    };
+
+    TreeNode.prototype.leftMost = function() {
+      var left;
+      if (left = this.left()) {
+        return left.leftMost();
+      }
+      return this;
+    };
+
+    TreeNode.prototype.right = function() {
+      return this._right;
+    };
+
+    TreeNode.prototype.rightMost = function() {
+      var right;
+      if (right = this.right()) {
+        return right.rightMost();
+      }
+      return this;
+    };
+
+    TreeNode.prototype.rotateLeft = function() {
+      var isLeft, parent, pivot;
+      console.log('rotate left', this.value());
+      pivot = this.right();
+      if (!pivot) {
+        return;
+      }
+      parent = this.parent();
+      isLeft = this.isLeft();
+      if (pivot.left()) {
+        pivot.rotateRight();
+        pivot = this.right();
+      }
+      this.setRight(null);
+      pivot.setLeft(this);
+      if (!parent) {
+        debugger;
+      }
+      if (isLeft) {
+        return parent.setLeft(pivot);
+      } else {
+        return parent.setRight(pivot);
+      }
+    };
+
+    TreeNode.prototype.rotateRight = function() {
+      var isLeft, parent, pivot;
+      console.log('rotate right', this.value());
+      pivot = this.left();
+      if (!pivot) {
+        return;
+      }
+      parent = this.parent();
+      isLeft = this.isLeft();
+      if (pivot.right()) {
+        pivot.rotateLeft();
+        pivot = this.left();
+      }
+      this.setLeft(null);
+      pivot.setRight(this);
+      if (!parent) {
+        debugger;
+      }
+      if (isLeft) {
+        return parent.setLeft(pivot);
+      } else {
+        return parent.setRight(pivot);
+      }
+    };
+
+    TreeNode.prototype.isRoot = function() {
+      return !this.parent();
+    };
+
+    TreeNode.prototype.isLeft = function() {
+      var parent;
+      if (parent = this.parent()) {
+        return this === parent.left();
+      }
+      return false;
+    };
+
+    TreeNode.prototype.isRight = function() {
+      var parent;
+      if (parent = this.parent()) {
+        return this === parent.right();
+      }
+      return false;
+    };
+
+    TreeNode.prototype.setParent = function(node) {
+      console.log('set', node != null ? node.value() : void 0, 'parent of', this.value());
+      if (!this.isRoot()) {
+        if (this.isLeft()) {
+          this._parent._left = null;
+        } else {
+          this._parent._right = null;
+        }
+      }
+      return this._parent = node;
+    };
+
+    TreeNode.prototype.setLeft = function(node) {
+      console.log('set', node != null ? node.value() : void 0, 'left of', this.value());
+      if (node) {
+        node.setParent(this);
+      }
+      return this._left = node;
+    };
+
+    TreeNode.prototype.setRight = function(node) {
+      console.log('set', node != null ? node.value() : void 0, 'right of', this.value());
+      if (node) {
+        node.setParent(this);
+      }
+      return this._right = node;
+    };
+
+    TreeNode.prototype.toJSON = function() {
+      var json, _ref, _ref1;
+      json = {};
+      json[this.value()] = [(_ref = this.left()) != null ? _ref.toJSON() : void 0, (_ref1 = this.right()) != null ? _ref1.toJSON() : void 0];
+      return json;
+    };
+
+    TreeNode.prototype.toString = function() {
+      return JSON.stringify(this);
+    };
+
+    return TreeNode;
+
+  })();
+
   Entry = (function() {
     function Entry(value, options) {
-      this._value = value || options.value;
+      if (value != null) {
+        this._value = value;
+      } else {
+        this._value = options.value;
+      }
       if (options) {
         this.id = options.id;
         this.list = options.list;
-        this._next = options.next;
-        this._previous = options.previous;
       }
     }
 
@@ -376,10 +573,133 @@
 
   })(TailingEntry);
 
+  SortedEntry = (function(_super) {
+    __extends(SortedEntry, _super);
+
+    function SortedEntry(source, options) {
+      var sortVal;
+      if (options == null) {
+        options = {};
+      }
+      SortedEntry.__super__.constructor.call(this, source, options);
+      sortVal = options.sortVal || this.list.sortFn(this.value());
+      this.node = new TreeNode(sortVal, {
+        entry: this
+      });
+      this.list.rootNode.insert(this.node);
+    }
+
+    SortedEntry.prototype.next = function() {
+      var parentNode, right;
+      if (this === this.list.tailEntry) {
+        return null;
+      }
+      if (right = this.node.right()) {
+        return right.leftMost().entry;
+      } else if (parentNode = this.node.parent()) {
+        if (this.node.isLeft()) {
+          return parentNode.entry;
+        } else {
+          while (parentNode && parentNode.value() < this.node.value()) {
+            parentNode = parentNode.parent();
+          }
+          return parentNode.entry;
+        }
+      } else {
+        return null;
+      }
+    };
+
+    SortedEntry.prototype.previous = function() {
+      var left, parentNode;
+      if (this === this.list.headEntry) {
+        return null;
+      }
+      if (left = this.node.left()) {
+        return left.rightMost().entry;
+      } else if (parentNode = this.node.parent()) {
+        if (this.node.isRight()) {
+          return parentNode.entry;
+        } else {
+          while (parentNode && parentNode.value() >= this.node.value()) {
+            parentNode = parentNode.parent();
+          }
+          return parentNode.entry;
+        }
+      } else {
+        return null;
+      }
+    };
+
+    return SortedEntry;
+
+  })(TailingEntry);
+
+  ReversedEntry = (function(_super) {
+    __extends(ReversedEntry, _super);
+
+    function ReversedEntry() {
+      return ReversedEntry.__super__.constructor.apply(this, arguments);
+    }
+
+    ReversedEntry.prototype.previous = function() {
+      var next, previous, sourceNext;
+      if (this === this.list.headEntry) {
+        return null;
+      }
+      previous = this._previous;
+      if (previous) {
+        return previous;
+      }
+      if (sourceNext = this.source.next()) {
+        next = this.list.getBySource(sourceNext) || this.list.createBySource(sourceNext, {
+          silent: true,
+          next: this
+        }) || null;
+        return this._previous = next;
+      }
+      return null;
+    };
+
+    ReversedEntry.prototype.next = function() {
+      var next, previous, sourcePrevious;
+      if (this === this.list.tailEntry) {
+        return null;
+      }
+      next = this._next;
+      if (next) {
+        return next;
+      }
+      if (sourcePrevious = this.source.previous()) {
+        previous = this.list.getBySource(sourcePrevious) || this.list.createBySource(sourcePrevious, {
+          silent: true,
+          previous: this
+        }) || null;
+        return this._next = previous;
+      }
+      return null;
+    };
+
+    return ReversedEntry;
+
+  })(TailingEntry);
+
   AbstractList = (function() {
     var fn, key;
 
     AbstractList.prototype.Entry = Entry;
+
+    AbstractList.prototype.HeadEntry = function() {
+      return new this.Entry(null, {
+        list: this
+      });
+    };
+
+    AbstractList.prototype.TailEntry = function() {
+      return new this.Entry(null, {
+        list: this
+      });
+    };
 
     for (key in Events) {
       fn = Events[key];
@@ -388,25 +708,19 @@
 
     function AbstractList() {
       this._byId = {};
-      this.headEntry = new this.Entry(null, {
-        list: this
-      });
-      this.tailEntry = new this.Entry(null, {
-        list: this
-      });
+      this.headEntry = this.HeadEntry();
+      this.tailEntry = this.TailEntry();
       this.length = 0;
     }
 
     AbstractList.prototype._create = function(value, options) {
-      var entry, entryOptions, id;
+      var entry, id;
       if (options == null) {
         options = {};
       }
-      id = Sonic.uniqueId();
-      entryOptions = options.entryOptions || {};
-      entryOptions.id = id;
-      entryOptions.list = this;
-      entry = new this.Entry(value, entryOptions);
+      id = options.id = Sonic.uniqueId();
+      options.list = this;
+      entry = new this.Entry(value, options);
       this._byId[id] = entry;
       this.length++;
       if (!options.silent) {
@@ -557,18 +871,6 @@
       return void 0;
     };
 
-    AbstractList.prototype.set = function(id, value, options) {
-      var entry;
-      if (options == null) {
-        options = {};
-      }
-      entry = this.getEntry(id);
-      if (!entry) {
-        return false;
-      }
-      return this._set(entry, value, options);
-    };
-
     AbstractList.prototype.at = function(index) {
       var entry;
       entry = this._entryAt(index);
@@ -658,7 +960,9 @@
     };
 
     AbstractList.prototype.sort = function(sortFn) {
-      return new SortedList(this, sortFn);
+      return new SortedList(this, {
+        sortFn: sortFn
+      });
     };
 
     AbstractList.prototype.concat = function() {
@@ -669,6 +973,10 @@
 
     AbstractList.prototype.flatten = function() {
       return new ConcatenatedList(this);
+    };
+
+    AbstractList.prototype.reverse = function() {
+      return new ReversedList(this);
     };
 
     AbstractList.prototype.unique = function() {
@@ -755,6 +1063,18 @@
       this.tailEntry.setPrevious(previous);
     }
 
+    SimpleList.prototype.set = function(id, value, options) {
+      var entry;
+      if (options == null) {
+        options = {};
+      }
+      entry = this.getEntry(id);
+      if (!entry) {
+        return false;
+      }
+      return this._set(entry, value, options);
+    };
+
     SimpleList.prototype.push = function(value, options) {
       if (options == null) {
         options = {};
@@ -810,18 +1130,34 @@
 
     TailingList.prototype.Entry = TailingEntry;
 
+    TailingList.prototype.HeadEntry = function() {
+      return new this.Entry(this.source.headEntry, {
+        list: this
+      });
+    };
+
+    TailingList.prototype.TailEntry = function() {
+      return new this.Entry(this.source.tailEntry, {
+        list: this
+      });
+    };
+
     function TailingList(source, options) {
       if (options == null) {
         options = {};
       }
-      TailingList.__super__.constructor.call(this, options);
       this.source = source;
-      this._bySourceId = [];
-      this.headEntry.source = this.source.headEntry;
-      this.tailEntry.source = this.source.tailEntry;
+      this._bySourceId = {};
+      TailingList.__super__.constructor.call(this, options);
     }
 
     TailingList.prototype.getBySource = function(sourceEntry) {
+      if (sourceEntry === this.headEntry.source) {
+        return this.headEntry;
+      }
+      if (sourceEntry === this.tailEntry.source) {
+        return this.tailEntry;
+      }
       if (sourceEntry) {
         return this._bySourceId[sourceEntry.id];
       }
@@ -830,10 +1166,10 @@
 
     TailingList.prototype.createBySource = function(sourceEntry, options) {
       var entry;
-      if (sourceEntry === this.source.headEntry) {
+      if (sourceEntry === this.headEntry.source) {
         return this.headEntry;
       }
-      if (sourceEntry === this.source.tailEntry) {
+      if (sourceEntry === this.tailEntry.source) {
         return this.tailEntry;
       }
       entry = this._create(sourceEntry, options);
@@ -928,77 +1264,92 @@
   SortedList = (function(_super) {
     __extends(SortedList, _super);
 
-    function SortedList(source, sortFn) {
-      this.source = source;
-      this.sortFn = sortFn;
-      SortedList.__super__.constructor.apply(this, arguments);
-    }
+    SortedList.prototype.Entry = SortedEntry;
 
-    SortedList.prototype.before = function(id) {
-      if (!this._evaluated) {
-        this._evaluate();
-      }
-      return SortedList.__super__.before.call(this, id);
+    SortedList.prototype.HeadEntry = function() {
+      return new this.Entry(this.source.headEntry, {
+        list: this,
+        sortVal: -Infinity
+      });
     };
 
-    SortedList.prototype.after = function(id) {
-      if (!this._evaluated) {
-        this._evaluate();
-      }
-      return SortedList.__super__.after.call(this, id);
+    SortedList.prototype.TailEntry = function() {
+      return new this.Entry(this.source.tailEntry, {
+        list: this,
+        sortVal: Infinity
+      });
     };
 
-    SortedList.prototype.move = function(id, options) {
+    function SortedList(source, options) {
       if (options == null) {
         options = {};
       }
-    };
+      this.rootNode = new TreeNode(0);
+      this.sortFn = options.sortFn;
+      this._evaluated = false;
+      SortedList.__super__.constructor.call(this, source, options);
+      this.evaluate();
+    }
 
-    SortedList.prototype._sort = function(headEntry, length) {
-      var half, midId;
-      if (headEntry == null) {
-        headEntry = this.headEntry;
+    SortedList.prototype.evaluate = function() {
+      var iterator, sourceEntry;
+      if (!this._evaluated) {
+        iterator = this.source.getIterator();
+        while (iterator.moveNext()) {
+          sourceEntry = iterator.entry;
+          if (!this._bySourceId[sourceEntry]) {
+            this.createBySource(sourceEntry, {
+              silent: true
+            });
+          }
+        }
+        return this._evaluated = true;
       }
-      if (length == null) {
-        length = this.length;
-      }
-      half = Math.ceil(length / 2);
-      midId = this.idAt(half);
-      return this._merge(this._sort(left, half), this._sort(right, length - half));
-    };
-
-    SortedList.prototype._merge = function(headEntry, length) {};
-
-    SortedList.prototype._evaluate = function() {
-      var id, iterator, sourceId, _results;
-      this._evaluated = true;
-      iterator = this.source.getIterator();
-      _results = [];
-      while (iterator.moveNext()) {
-        sourceId = iterator.id;
-        id = this.insert(iterator.current(), {
-          before: this.tailEntry
-        });
-        this._sourceIdById[id] = sourceId;
-        _results.push(this._idBySourceId[sourceId] = id);
-      }
-      return _results;
+      return false;
     };
 
     return SortedList;
 
-  })(AbstractList);
+  })(TailingList);
+
+  ReversedList = (function(_super) {
+    __extends(ReversedList, _super);
+
+    function ReversedList() {
+      return ReversedList.__super__.constructor.apply(this, arguments);
+    }
+
+    ReversedList.prototype.Entry = ReversedEntry;
+
+    ReversedList.prototype.HeadEntry = function() {
+      return new this.Entry(this.source.tailEntry, {
+        list: this
+      });
+    };
+
+    ReversedList.prototype.TailEntry = function() {
+      return new this.Entry(this.source.headEntry, {
+        list: this
+      });
+    };
+
+    return ReversedList;
+
+  })(TailingList);
 
   Sonic.factory = function(exports) {
     exports._ = Sonic;
     exports.create = Sonic.create;
     exports.Iterator = Iterator;
     exports.Event = Event;
+    exports.TreeNode = TreeNode;
     exports.Entry = Entry;
     exports.TailingEntry = TailingEntry;
     exports.MappedEntry = MappedEntry;
     exports.FilteredEntry = FilteredEntry;
     exports.ConcatenatedEntry = ConcatenatedEntry;
+    exports.SortedEntry = SortedEntry;
+    exports.ReversedEntry = ReversedEntry;
     exports.AbstractList = AbstractList;
     exports.SimpleList = SimpleList;
     exports.TailingList = TailingList;
@@ -1006,7 +1357,8 @@
     exports.MappedList = MappedList;
     exports.ConcatenatedList = ConcatenatedList;
     exports.UniqueList = UniqueList;
-    return exports.SortedList = SortedList;
+    exports.SortedList = SortedList;
+    return exports.ReversedList = ReversedList;
   };
 
   if (typeof exports === 'object') {

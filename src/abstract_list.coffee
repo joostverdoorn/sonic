@@ -2,6 +2,9 @@ class AbstractList
 
   Entry: Entry
 
+  HeadEntry: -> new @Entry null, list: @
+  TailEntry: -> new @Entry null, list: @
+
   # Add event bindings
   for key, fn of Events
     @::[key] = fn
@@ -9,19 +12,16 @@ class AbstractList
   constructor: ( ) ->
     @_byId = {}
 
-    @headEntry = new @Entry null, list: @
-    @tailEntry = new @Entry null, list: @
+    @headEntry = @HeadEntry()
+    @tailEntry = @TailEntry()
 
     @length = 0
 
   _create: ( value, options = {} ) ->
-    id = Sonic.uniqueId()
+    id = options.id = Sonic.uniqueId()
+    options.list = @
 
-    entryOptions = options.entryOptions or {}
-    entryOptions.id = id
-    entryOptions.list = @
-
-    entry = new @Entry value, entryOptions
+    entry = new @Entry value, options
 
     @_byId[id] = entry
     @length++
@@ -123,11 +123,6 @@ class AbstractList
     return entry.value() if entry
     return undefined
 
-  set: ( id, value, options = {} ) ->
-    entry = @getEntry(id)
-    return false unless entry
-    return @_set(entry, value, options)
-
   at: ( index ) ->
     entry = @_entryAt(index)
     return @get(id)
@@ -184,13 +179,16 @@ class AbstractList
     return new FilteredList(@, filterFn: filterFn)
 
   sort: ( sortFn ) ->
-    return new SortedList(@, sortFn)
+    return new SortedList(@, sortFn: sortFn)
 
   concat: ( others... ) ->
     return new ConcatenatedList([@].concat(others))
 
   flatten: ( ) ->
     return new ConcatenatedList(@)
+
+  reverse: ( ) ->
+    return new ReversedList(@)
 
   unique: ( ) -> @uniq()
   uniq:   ( ) ->

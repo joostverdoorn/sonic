@@ -18,6 +18,11 @@ class SimpleList extends AbstractList
     previous.setNext(@tailEntry)
     @tailEntry.setPrevious(previous)
 
+  set: ( id, value, options = {} ) ->
+    entry = @getEntry(id)
+    return false unless entry
+    return @_set(entry, value, options)
+
   push: ( value, options = {} ) ->
     options.before = @tailEntry
     return @_insert(value, options).id
