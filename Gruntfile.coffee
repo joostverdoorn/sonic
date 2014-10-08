@@ -39,7 +39,7 @@ module.exports = ( grunt ) ->
     '.grunt/sonic/spec_compiled/concatenated_list.js'
     '.grunt/sonic/spec_compiled/unique_list.js'
     '.grunt/sonic/spec_compiled/sorted_list.js'
-    '.grunt/sonic/spec_compiled/tree.js'
+    '.grunt/sonic/spec_compiled/tree_node.js'
 
     # '.grunt/sonic/spec_compiled/export.js'
   ]

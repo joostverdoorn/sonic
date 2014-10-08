@@ -154,11 +154,21 @@
       this._value = value;
       this._parent = options.parent;
       this.entry = options.entry;
+      this.balanced = true;
     }
 
     TreeNode.prototype.size = function() {
-      var _ref, _ref1;
-      return (((_ref = this.left()) != null ? _ref.size() : void 0) || 0) + (((_ref1 = this.right()) != null ? _ref1.size() : void 0) || 0) + 1;
+      return this.leftSize() + this.rightSize() + 1;
+    };
+
+    TreeNode.prototype.leftSize = function() {
+      var _ref;
+      return ((_ref = this.left()) != null ? _ref.size() : void 0) || 0;
+    };
+
+    TreeNode.prototype.rightSize = function() {
+      var _ref;
+      return ((_ref = this.right()) != null ? _ref.size() : void 0) || 0;
     };
 
     TreeNode.prototype.depth = function() {
@@ -174,34 +184,20 @@
       return this._value;
     };
 
-    TreeNode.prototype.parent = function() {
-      return this._parent;
+    TreeNode.prototype.setParent = function(node) {
+      return this._parent = node;
     };
 
-    TreeNode.prototype.insert = function(node) {
-      var left, right;
-      console.log('insert', node.value(), 'in', this.value());
-      if (node.value() < this.value()) {
-        if (left = this.left()) {
-          left.insert(node);
-        } else {
-          this.setLeft(node);
-        }
-      } else {
-        if (right = this.right()) {
-          right.insert(node);
-        } else {
-          this.setRight(node);
-        }
-      }
-      console.log('balance in', this.value(), 'is', this.balance());
-      if (!this.isRoot()) {
-        if (this.balance() > 1) {
-          return this.rotateLeft();
-        } else if (this.balance() < -1) {
-          return this.rotateRight();
-        }
-      }
+    TreeNode.prototype.setLeft = function(node) {
+      return this._left = node;
+    };
+
+    TreeNode.prototype.setRight = function(node) {
+      return this._right = node;
+    };
+
+    TreeNode.prototype.parent = function() {
+      return this._parent;
     };
 
     TreeNode.prototype.left = function() {
@@ -216,6 +212,21 @@
       return this;
     };
 
+    TreeNode.prototype.isLeft = function() {
+      if (!this.isRoot()) {
+        return this === this.parent().left();
+      }
+      return false;
+    };
+
+    TreeNode.prototype.detachLeft = function() {
+      var _ref;
+      if ((_ref = this._left) != null) {
+        _ref.setParent(null);
+      }
+      return this._left = null;
+    };
+
     TreeNode.prototype.right = function() {
       return this._right;
     };
@@ -228,53 +239,29 @@
       return this;
     };
 
-    TreeNode.prototype.rotateLeft = function() {
-      var isLeft, parent, pivot;
-      console.log('rotate left', this.value());
-      pivot = this.right();
-      if (!pivot) {
-        return;
+    TreeNode.prototype.isRight = function() {
+      if (!this.isRoot()) {
+        return this === this.parent().right();
       }
-      parent = this.parent();
-      isLeft = this.isLeft();
-      if (pivot.left()) {
-        pivot.rotateRight();
-        pivot = this.right();
-      }
-      this.setRight(null);
-      pivot.setLeft(this);
-      if (!parent) {
-        debugger;
-      }
-      if (isLeft) {
-        return parent.setLeft(pivot);
-      } else {
-        return parent.setRight(pivot);
-      }
+      return false;
     };
 
-    TreeNode.prototype.rotateRight = function() {
-      var isLeft, parent, pivot;
-      console.log('rotate right', this.value());
-      pivot = this.left();
-      if (!pivot) {
-        return;
+    TreeNode.prototype.detachRight = function() {
+      var _ref;
+      if ((_ref = this._right) != null) {
+        _ref.setParent(null);
       }
-      parent = this.parent();
-      isLeft = this.isLeft();
-      if (pivot.right()) {
-        pivot.rotateLeft();
-        pivot = this.left();
-      }
-      this.setLeft(null);
-      pivot.setRight(this);
-      if (!parent) {
-        debugger;
-      }
-      if (isLeft) {
-        return parent.setLeft(pivot);
-      } else {
-        return parent.setRight(pivot);
+      return this._right = null;
+    };
+
+    TreeNode.prototype.detach = function() {
+      if (!this.isRoot()) {
+        if (this.isLeft()) {
+          this.parent().detachLeft();
+        } else {
+          this.parent().detachRight();
+        }
+        return this._parent = null;
       }
     };
 
@@ -282,48 +269,77 @@
       return !this.parent();
     };
 
-    TreeNode.prototype.isLeft = function() {
-      var parent;
-      if (parent = this.parent()) {
-        return this === parent.left();
-      }
-      return false;
+    TreeNode.prototype.isLeaf = function() {
+      return !this.left() && !this.right();
     };
 
-    TreeNode.prototype.isRight = function() {
-      var parent;
-      if (parent = this.parent()) {
-        return this === parent.right();
+    TreeNode.prototype.attach = function(node) {
+      if (!node) {
+        return;
       }
-      return false;
+      node.setParent(this);
+      if (node.value() < this.value()) {
+        return this.setLeft(node);
+      } else {
+        return this.setRight(node);
+      }
     };
 
-    TreeNode.prototype.setParent = function(node) {
-      console.log('set', node != null ? node.value() : void 0, 'parent of', this.value());
-      if (!this.isRoot()) {
-        if (this.isLeft()) {
-          this._parent._left = null;
+    TreeNode.prototype.insert = function(node) {
+      var left, right;
+      if (node.value() < this.value()) {
+        if (left = this.left()) {
+          left.insert(node);
         } else {
-          this._parent._right = null;
+          this.attach(node);
+        }
+      } else {
+        if (right = this.right()) {
+          right.insert(node);
+        } else {
+          this.attach(node);
         }
       }
-      return this._parent = node;
+      if (!this.balanced) {
+        return;
+      }
+      if (!this.isRoot()) {
+        if (this.balance() === -2) {
+          return this.rotateRight();
+        } else if (this.balance() === 2) {
+          return this.rotateLeft();
+        }
+      }
     };
 
-    TreeNode.prototype.setLeft = function(node) {
-      console.log('set', node != null ? node.value() : void 0, 'left of', this.value());
-      if (node) {
-        node.setParent(this);
+    TreeNode.prototype.rotateLeft = function() {
+      var parent, pivot;
+      pivot = this.right();
+      parent = this.parent();
+      if (pivot.balance() === -1) {
+        pivot.rotateRight();
       }
-      return this._left = node;
+      pivot = this.right();
+      pivot.detach();
+      this.attach(pivot.left());
+      pivot.detachLeft();
+      pivot.attach(this);
+      return parent.attach(pivot);
     };
 
-    TreeNode.prototype.setRight = function(node) {
-      console.log('set', node != null ? node.value() : void 0, 'right of', this.value());
-      if (node) {
-        node.setParent(this);
+    TreeNode.prototype.rotateRight = function() {
+      var parent, pivot;
+      pivot = this.left();
+      parent = this.parent();
+      if (pivot.balance() === 1) {
+        pivot.rotateLeft();
       }
-      return this._right = node;
+      pivot = this.left();
+      pivot.detach();
+      this.attach(pivot.right());
+      pivot.detachRight();
+      pivot.attach(this);
+      return parent.attach(pivot);
     };
 
     TreeNode.prototype.toJSON = function() {
@@ -398,7 +414,11 @@
     };
 
     TailingEntry.prototype.value = function() {
-      return this._value || (this._value = this.source.value());
+      if (this._value != null) {
+        return this._value;
+      } else {
+        return this.source.value();
+      }
     };
 
     TailingEntry.prototype.next = function() {
@@ -582,7 +602,11 @@
         options = {};
       }
       SortedEntry.__super__.constructor.call(this, source, options);
-      sortVal = options.sortVal || this.list.sortFn(this.value());
+      if (options.sortVal != null) {
+        sortVal = options.sortVal;
+      } else {
+        sortVal = this.list.sortFn(this.value());
+      }
       this.node = new TreeNode(sortVal, {
         entry: this
       });
@@ -591,9 +615,7 @@
 
     SortedEntry.prototype.next = function() {
       var parentNode, right;
-      if (this === this.list.tailEntry) {
-        return null;
-      }
+      console.log("Running next in", this, " with value", this.node.value());
       if (right = this.node.right()) {
         return right.leftMost().entry;
       } else if (parentNode = this.node.parent()) {
@@ -606,15 +628,12 @@
           return parentNode.entry;
         }
       } else {
-        return null;
+        return console.log("testing");
       }
     };
 
     SortedEntry.prototype.previous = function() {
       var left, parentNode;
-      if (this === this.list.headEntry) {
-        return null;
-      }
       if (left = this.node.left()) {
         return left.rightMost().entry;
       } else if (parentNode = this.node.parent()) {

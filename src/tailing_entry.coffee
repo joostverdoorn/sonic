@@ -8,7 +8,9 @@ class TailingEntry extends Entry
     return @source.root()
 
   value: ( ) ->
-    return @_value ||= @source.value()
+    if @_value?
+      @_value
+    else @source.value()
 
   next: ( ) ->
     next = @_next
