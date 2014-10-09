@@ -1,20 +1,22 @@
 {
-  "name": "collection",
+  "name": "sonic",
   "description": "",
   "version": "0.0.1",
+  "author" : "Joost Verdoorn",
   "contributors": [
-    "Joost Verdoorn"
+    "Joost Verdoorn",
+    "Steffan Sluis"
   ],
-  "main": "./dist/collection.js",
+  "main": "./dist/sonic.js",
   "licenses": [
     {
       "type": "MIT",
-      "url": "https://github.com/joostverdoorn/collection/blob/master/LICENSE"
+      "url": "https://github.com/joostverdoorn/sonic/blob/master/LICENSE"
     }
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/collection/collection.git"
+    "url": "https://github.com/joostverdoorn/sonic.git"
   },
   "devDependencies": {
     "grunt": "~0.4.5",
