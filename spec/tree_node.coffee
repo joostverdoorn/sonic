@@ -5,7 +5,7 @@ describe "TreeNode", ->
     @n = 10
     @nodes = [@root]
 
-    
+
   describe "always", ->
     beforeEach ->
       for i in [1..@n]
@@ -38,10 +38,10 @@ describe "TreeNode", ->
       for i in [1...@n]
         node = @nodes[i]
         expect(node.right()?.value() or Infinity).not.toBeLessThan(node.value())
-  
+
   describe "setLeft", ->
   describe "setRight", ->
-  describe "setParent", ->
+  describe "insert", ->
 
     beforeEach ->
       @oldParent = new Sonic.TreeNode(0)

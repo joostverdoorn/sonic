@@ -59,7 +59,7 @@ class TreeNode
   rightMost: ( ) ->
     if right = @right()
       return right.rightMost()
-    return @  
+    return @
 
   isRight: ( ) ->
     unless @isRoot()
@@ -75,7 +75,6 @@ class TreeNode
       if @isLeft()
         @parent().detachLeft()
       else @parent().detachRight()
-      @_parent = null
 
   isRoot: ( ) ->
     return not @parent()
@@ -84,7 +83,9 @@ class TreeNode
     not @left() and not @right()
 
   attach: ( node ) ->
-    return unless node
+    unless node
+      console.log "Attach break"
+      return
     node.setParent @
     if node.value() < @value()
       @setLeft node
@@ -101,14 +102,14 @@ class TreeNode
       if left = @left()
         # And we have a left subtree, delegate the insertion
           left.insert(node)
-      else 
+      else
         # Remove the node from it's old parent and attach it to us
-        @attach(node)   
-    else # Node belongs on our right
+        @attach(node)
+    else if node.value() >= @value() # Node belongs on our right
       if right = @right()
         # If we have a right subtree, delegate the insertion
         right.insert(node)
-      else  
+      else
         # Remove the node from it's old parent and attach it to us
         @attach(node)
 
@@ -132,15 +133,18 @@ class TreeNode
 
     # We are rotating left so we want to place our right child in our place and ourself left of it
     pivot = @right()
-    parent = @parent()
+    return if pivot.value() <= @value()
 
     pivot.rotateRight() if pivot.balance() is -1
+    pivot = @right()
+    parent = @parent()
 
-    pivot = @right()    
     pivot.detach()
-    
-    @attach pivot.left()
-    pivot.detachLeft()
+
+    if left = pivot.left()
+      pivot.detachLeft()
+      @attach left
+
     pivot.attach(@)
     parent.attach(pivot)
 
@@ -158,15 +162,19 @@ class TreeNode
     # Now we start the rotation by detaching ourself and our pivot
 
     pivot = @left()
-    parent = @parent()
+    return if pivot.value() > @value()
 
     pivot.rotateLeft() if pivot.balance() is 1
     pivot = @left()
+    parent = @parent()
 
     pivot.detach()
 
-    @attach pivot.right()
-    pivot.detachRight()
+
+    if right = pivot.right()
+      pivot.detachRight()
+      @attach right
+
     pivot.attach(@)
     parent.attach(pivot)
 

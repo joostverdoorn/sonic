@@ -3,16 +3,15 @@ class SortedEntry extends TailingEntry
   constructor: ( source, options = {} ) ->
     super source, options
 
-    if options.sortVal? 
-      sortVal = options.sortVal 
+    if options.sortVal?
+      sortVal = options.sortVal
     else sortVal = @list.sortFn(@value())
 
     @node = new TreeNode(sortVal, entry: @)
-    @list.rootNode.insert(@node)
+    # @list.headEntry.node.insert(@node) unless @value() is -Infinity
 
 
   next: ( ) ->
-    console.log "Running next in", @, " with value", @node.value()
     # # Stop when whe reach the tailEntry
     # return null if @ is @list.tailEntry
 
@@ -25,12 +24,11 @@ class SortedEntry extends TailingEntry
       if @node.isLeft() # If we are smaller, then it is our parent
         return parentNode.entry
       else # If we are bigger
-        while parentNode and parentNode.value() < @node.value()
+        while parentNode and parentNode.value() <= @node.value()
           parentNode = parentNode.parent() # Find the next biggest thing
         return parentNode.entry
 
-    else
-      console.log "testing"
+    else return null
 
   previous: ( ) ->
     # return null if @ is @list.headEntry
@@ -43,7 +41,7 @@ class SortedEntry extends TailingEntry
       if @node.isRight()
         return parentNode.entry
       else
-        while parentNode and parentNode.value() >= @node.value()
+        while parentNode and parentNode.value() > @node.value()
           parentNode = parentNode.parent()
         return parentNode.entry
     else return null

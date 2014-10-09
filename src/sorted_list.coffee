@@ -13,6 +13,8 @@ class SortedList extends TailingList
     super source, options
     @evaluate()
 
+    @headEntry.node.insert(@tailEntry.node)
+
   evaluate: ( ) ->
     unless @_evaluated
       iterator = @source.getIterator()
@@ -24,6 +26,11 @@ class SortedList extends TailingList
 
       return @_evaluated = true
     return false
+
+  createBySource: (sourceEntry, options = {}) ->
+    entry = super sourceEntry, options
+    @headEntry.node.insert(entry.node)
+
 
 
 

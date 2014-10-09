@@ -257,11 +257,10 @@
     TreeNode.prototype.detach = function() {
       if (!this.isRoot()) {
         if (this.isLeft()) {
-          this.parent().detachLeft();
+          return this.parent().detachLeft();
         } else {
-          this.parent().detachRight();
+          return this.parent().detachRight();
         }
-        return this._parent = null;
       }
     };
 
@@ -275,6 +274,7 @@
 
     TreeNode.prototype.attach = function(node) {
       if (!node) {
+        console.log("Attach break");
         return;
       }
       node.setParent(this);
@@ -293,7 +293,7 @@
         } else {
           this.attach(node);
         }
-      } else {
+      } else if (node.value() >= this.value()) {
         if (right = this.right()) {
           right.insert(node);
         } else {
@@ -313,31 +313,41 @@
     };
 
     TreeNode.prototype.rotateLeft = function() {
-      var parent, pivot;
+      var left, parent, pivot;
       pivot = this.right();
-      parent = this.parent();
+      if (pivot.value() <= this.value()) {
+        return;
+      }
       if (pivot.balance() === -1) {
         pivot.rotateRight();
       }
       pivot = this.right();
+      parent = this.parent();
       pivot.detach();
-      this.attach(pivot.left());
-      pivot.detachLeft();
+      if (left = pivot.left()) {
+        pivot.detachLeft();
+        this.attach(left);
+      }
       pivot.attach(this);
       return parent.attach(pivot);
     };
 
     TreeNode.prototype.rotateRight = function() {
-      var parent, pivot;
+      var parent, pivot, right;
       pivot = this.left();
-      parent = this.parent();
+      if (pivot.value() > this.value()) {
+        return;
+      }
       if (pivot.balance() === 1) {
         pivot.rotateLeft();
       }
       pivot = this.left();
+      parent = this.parent();
       pivot.detach();
-      this.attach(pivot.right());
-      pivot.detachRight();
+      if (right = pivot.right()) {
+        pivot.detachRight();
+        this.attach(right);
+      }
       pivot.attach(this);
       return parent.attach(pivot);
     };
@@ -610,25 +620,23 @@
       this.node = new TreeNode(sortVal, {
         entry: this
       });
-      this.list.rootNode.insert(this.node);
     }
 
     SortedEntry.prototype.next = function() {
       var parentNode, right;
-      console.log("Running next in", this, " with value", this.node.value());
       if (right = this.node.right()) {
         return right.leftMost().entry;
       } else if (parentNode = this.node.parent()) {
         if (this.node.isLeft()) {
           return parentNode.entry;
         } else {
-          while (parentNode && parentNode.value() < this.node.value()) {
+          while (parentNode && parentNode.value() <= this.node.value()) {
             parentNode = parentNode.parent();
           }
           return parentNode.entry;
         }
       } else {
-        return console.log("testing");
+        return null;
       }
     };
 
@@ -640,7 +648,7 @@
         if (this.node.isRight()) {
           return parentNode.entry;
         } else {
-          while (parentNode && parentNode.value() >= this.node.value()) {
+          while (parentNode && parentNode.value() > this.node.value()) {
             parentNode = parentNode.parent();
           }
           return parentNode.entry;
@@ -1308,6 +1316,7 @@
       this._evaluated = false;
       SortedList.__super__.constructor.call(this, source, options);
       this.evaluate();
+      this.headEntry.node.insert(this.tailEntry.node);
     }
 
     SortedList.prototype.evaluate = function() {
@@ -1325,6 +1334,15 @@
         return this._evaluated = true;
       }
       return false;
+    };
+
+    SortedList.prototype.createBySource = function(sourceEntry, options) {
+      var entry;
+      if (options == null) {
+        options = {};
+      }
+      entry = SortedList.__super__.createBySource.call(this, sourceEntry, options);
+      return this.headEntry.node.insert(entry.node);
     };
 
     return SortedList;
