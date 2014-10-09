@@ -176,6 +176,11 @@
       return 1 + Math.log(this.size()) / Math.LN2;
     };
 
+    TreeNode.prototype.balance = function() {
+      var _ref, _ref1;
+      return (((_ref = this.right) != null ? _ref.depth() : void 0) || 0) - (((_ref1 = this.left) != null ? _ref1.depth() : void 0) || 0);
+    };
+
     TreeNode.prototype.isRoot = function() {
       return !this.parent;
     };
@@ -308,7 +313,7 @@
       pivot.attach(left);
       pivot.attach(right);
       parent.attach(pivot);
-      pivot.balance();
+      pivot.normalize();
       return true;
     };
 
@@ -345,16 +350,16 @@
             this.attachRight(node);
           }
       }
-      this.balance();
+      this.normalize();
       return true;
     };
 
-    TreeNode.prototype.balance = function() {
-      var balance, _ref, _ref1;
+    TreeNode.prototype.normalize = function() {
+      var balance;
       if (this.isRoot()) {
         return;
       }
-      balance = (((_ref = this.right) != null ? _ref.depth() : void 0) || 0) - (((_ref1 = this.left) != null ? _ref1.depth() : void 0) || 0);
+      balance = this.balance();
       if (balance <= -2) {
         this.rotateRight();
         return true;
@@ -1009,6 +1014,8 @@
       }
       return false;
     };
+
+    AbstractList.prototype.reduce = function(reduceFn) {};
 
     AbstractList.prototype.map = function(mapFn) {
       return new MappedList(this, {

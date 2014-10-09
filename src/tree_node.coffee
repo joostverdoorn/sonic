@@ -19,6 +19,9 @@ class TreeNode
   depth: ( ) ->
     return 1 + Math.log(@size()) / Math.LN2
 
+  balance: ( ) ->
+    return (@right?.depth() or 0) - (@left?.depth() or 0)
+
   isRoot: ( ) ->
     return not @parent
 
@@ -122,7 +125,7 @@ class TreeNode
     pivot.attach(right)
     parent.attach(pivot)
 
-    pivot.balance()
+    pivot.normalize()
     return true
 
   insert: ( node ) ->
@@ -157,14 +160,13 @@ class TreeNode
           @rightSize = undefined
         else @attachRight(node)
 
-    @balance()
+    @normalize()
     return true
 
-  balance: ( ) ->
+  normalize: ( ) ->
     return if @isRoot()
 
-    balance = (@right?.depth() or 0) - (@left?.depth() or 0)
-
+    balance = @balance()
     if balance <= -2
       @rotateRight()
       return true

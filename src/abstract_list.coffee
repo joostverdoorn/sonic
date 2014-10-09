@@ -160,6 +160,8 @@ class AbstractList
       return true if predicate(@at(index))
     return false
 
+  reduce: ( reduceFn ) ->
+
 
   map: ( mapFn ) ->
     return new MappedList @, mapFn: mapFn
@@ -195,6 +197,8 @@ class AbstractList
   rest: ( count ) ->
 
   initial: ( count ) ->
+
+
 
   last: ( count ) ->
     return @tailEntry.previous().value() unless count
