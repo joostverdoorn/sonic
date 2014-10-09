@@ -173,7 +173,7 @@
     };
 
     TreeNode.prototype.depth = function() {
-      return Math.ceil(1 + Math.log(this.size()) / Math.LN2);
+      return 1 + Math.log(this.size()) / Math.LN2;
     };
 
     TreeNode.prototype.isRoot = function() {
@@ -1361,7 +1361,7 @@
         iterator = this.source.getIterator();
         while (iterator.moveNext()) {
           sourceEntry = iterator.entry;
-          if (!this._bySourceId[sourceEntry]) {
+          if (!this._bySourceId[sourceEntry.id]) {
             this.createBySource(sourceEntry, {
               silent: true
             });
@@ -1378,7 +1378,8 @@
         options = {};
       }
       entry = SortedList.__super__.createBySource.call(this, sourceEntry, options);
-      return this.headEntry.node.insert(entry.node);
+      this.headEntry.node.insert(entry.node);
+      return entry;
     };
 
     return SortedList;

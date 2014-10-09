@@ -17,7 +17,7 @@ class TreeNode
     return @leftSize + @rightSize + 1
 
   depth: ( ) ->
-    return Math.ceil(1 + Math.log(@size()) / Math.LN2)
+    return 1 + Math.log(@size()) / Math.LN2
 
   isRoot: ( ) ->
     return not @parent
