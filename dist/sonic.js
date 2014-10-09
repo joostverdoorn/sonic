@@ -217,34 +217,43 @@
     };
 
     TreeNode.prototype.detach = function() {
-      if (this.isLeft()) {
-        return this.parent.detachLeft();
-      } else if (this.isRight()) {
-        return this.parent.detachRight();
+      var parent;
+      if (!(parent = this.parent)) {
+        return null;
       }
+      if (this.isLeft()) {
+        this.parent.detachLeft();
+      } else {
+        this.parent.detachRight();
+      }
+      return parent;
     };
 
     TreeNode.prototype.detachLeft = function() {
-      if (!this.left) {
-        return;
+      var left;
+      if (!(left = this.left)) {
+        return null;
       }
-      this.left.parent = null;
+      left.parent = null;
       this.left = null;
-      return this.leftSize = 0;
+      this.leftSize = 0;
+      return left;
     };
 
     TreeNode.prototype.detachRight = function() {
-      if (!this.right) {
-        return;
+      var right;
+      if (!(right = this.right)) {
+        return null;
       }
       this.right.parent = null;
       this.right = null;
-      return this.rightSize = 0;
+      this.rightSize = 0;
+      return right;
     };
 
     TreeNode.prototype.attach = function(node) {
       if (!node) {
-        return;
+        return false;
       }
       if (node.value < this.value) {
         return this.attachLeft(node);
@@ -262,7 +271,8 @@
         node.parent = this;
       }
       this.left = node;
-      return this.leftSize = void 0;
+      this.leftSize = void 0;
+      return true;
     };
 
     TreeNode.prototype.attachRight = function(node) {
@@ -274,7 +284,8 @@
         node.parent = this;
       }
       this.right = node;
-      return this.rightSize = void 0;
+      this.rightSize = void 0;
+      return true;
     };
 
     TreeNode.prototype.remove = function() {
@@ -297,7 +308,8 @@
       pivot.attach(left);
       pivot.attach(right);
       parent.attach(pivot);
-      return pivot.balance();
+      pivot.balance();
+      return true;
     };
 
     TreeNode.prototype.insert = function(node) {
@@ -333,7 +345,8 @@
             this.attachRight(node);
           }
       }
-      return this.balance();
+      this.balance();
+      return true;
     };
 
     TreeNode.prototype.balance = function() {
@@ -343,17 +356,20 @@
       }
       balance = (((_ref = this.right) != null ? _ref.depth() : void 0) || 0) - (((_ref1 = this.left) != null ? _ref1.depth() : void 0) || 0);
       if (balance <= -2) {
-        return this.rotateRight();
+        this.rotateRight();
+        return true;
       } else if (balance >= 2) {
-        return this.rotateLeft();
+        this.rotateLeft();
+        return true;
       }
+      return false;
     };
 
     TreeNode.prototype.rotateLeft = function() {
       var parent, pivot;
       pivot = this.right;
       if (pivot.value <= this.value) {
-        return;
+        return false;
       }
       if (pivot.balance() === -1) {
         pivot.rotateRight();
@@ -362,14 +378,15 @@
       parent = this.parent;
       this.attachRight(pivot.left);
       pivot.attachLeft(this);
-      return parent.attach(pivot);
+      parent.attach(pivot);
+      return true;
     };
 
     TreeNode.prototype.rotateRight = function() {
       var parent, pivot;
       pivot = this.left;
       if (pivot.value > this.value) {
-        return;
+        return false;
       }
       if (pivot.balance() === 1) {
         pivot.rotateLeft();
@@ -378,7 +395,8 @@
       parent = this.parent;
       this.attachLeft(pivot.right);
       pivot.attachRight(this);
-      return parent.attach(pivot);
+      parent.attach(pivot);
+      return true;
     };
 
     return TreeNode;

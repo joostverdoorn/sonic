@@ -17,13 +17,13 @@ class TreeNode
     return @leftSize + @rightSize + 1
 
   depth: ( ) ->
-    Math.ceil(1 + Math.log(@size()) / Math.LN2)
+    return Math.ceil(1 + Math.log(@size()) / Math.LN2)
 
   isRoot: ( ) ->
     return not @parent
 
   isLeaf: ( ) ->
-    not @left and not @right
+    return not @left and not @right
 
   leftMost: ( ) ->
     if left = @left
@@ -46,30 +46,38 @@ class TreeNode
     return false
 
   detach: ( ) ->
+    return null unless parent = @parent
+
     if @isLeft()
       @parent.detachLeft()
-    else if @isRight()
-      @parent.detachRight()
+    else @parent.detachRight()
+
+    return parent
 
   detachLeft: ( ) ->
-    return unless @left
-    @left.parent = null
+    return null unless left = @left
+
+    left.parent = null
     @left = null
 
     @leftSize = 0
+    return left
 
   detachRight: ( ) ->
-    return unless @right
+    return null unless right = @right
+
     @right.parent = null
     @right = null
 
     @rightSize = 0
+    return right
 
   attach: ( node ) ->
-    return unless node
+    return false unless node
+
     if node.value < @value
-      @attachLeft(node)
-    else @attachRight(node)
+      return @attachLeft(node)
+    else return @attachRight(node)
 
   attachLeft: ( node ) ->
     @left.parent = null if @left
@@ -80,6 +88,7 @@ class TreeNode
     @left = node
 
     @leftSize = undefined
+    return true
 
   attachRight: ( node ) ->
     @right.parent = null if @right
@@ -90,6 +99,7 @@ class TreeNode
     @right = node
 
     @rightSize = undefined
+    return true
 
   remove: ( ) ->
     left = @left
@@ -113,6 +123,7 @@ class TreeNode
     parent.attach(pivot)
 
     pivot.balance()
+    return true
 
   insert: ( node ) ->
     value = @value
@@ -147,6 +158,7 @@ class TreeNode
         else @attachRight(node)
 
     @balance()
+    return true
 
   balance: ( ) ->
     return if @isRoot()
@@ -155,12 +167,16 @@ class TreeNode
 
     if balance <= -2
       @rotateRight()
+      return true
     else if balance >= 2
       @rotateLeft()
+      return true
+
+    return false
 
   rotateLeft: ( ) ->
     pivot = @right
-    return if pivot.value <= @value
+    return false if pivot.value <= @value
 
     pivot.rotateRight() if pivot.balance() is -1
     pivot = @right
@@ -169,10 +185,11 @@ class TreeNode
     @attachRight(pivot.left)
     pivot.attachLeft(@)
     parent.attach(pivot)
+    return true
 
   rotateRight: ( ) ->
     pivot = @left
-    return if pivot.value > @value
+    return false if pivot.value > @value
 
     pivot.rotateLeft() if pivot.balance() is 1
     pivot = @left
@@ -181,3 +198,4 @@ class TreeNode
     @attachLeft(pivot.right)
     pivot.attachRight(@)
     parent.attach(pivot)
+    return true
