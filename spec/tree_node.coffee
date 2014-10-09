@@ -15,7 +15,7 @@ describe "TreeNode", ->
 
     it "should have a root node with a size equal to n + 1 (the root node)", ->
       expect(@root.size()).toEqual(@n + 1)
-      console.log @root.toString()
+      # console.log @root.toString()
 
     it "should have a balance between -depth <= x <= depth", ->
       for i in [1...@n]
@@ -27,17 +27,17 @@ describe "TreeNode", ->
     it "should have a size of 1 + leftSize + rightSize", ->
       for i in [1...@n]
         node = @nodes[i]
-        expect(node.size()).toEqual(1 + (node.left()?.size() or 0) + (node.right()?.size() or 0))
+        expect(node.size()).toEqual(1 + (node.left?.size() or 0) + (node.right?.size() or 0))
 
     it "should have a smaller values on the left side", ->
       for i in [1...@n]
         node = @nodes[i]
-        expect(node.left()?.value() or -Infinity).toBeLessThan(node.value())
+        expect(node.left?.value or -Infinity).toBeLessThan(node.value)
 
     it "should have a greater or equal values on the right side", ->
       for i in [1...@n]
         node = @nodes[i]
-        expect(node.right()?.value() or Infinity).not.toBeLessThan(node.value())
+        expect(node.right?.value or Infinity).not.toBeLessThan(node.value)
 
   describe "setLeft", ->
   describe "setRight", ->
@@ -53,20 +53,20 @@ describe "TreeNode", ->
       @oldParent.insert(@child)
       @oldParent.insert(@otherChild)
 
-      @child.setParent(@newParent)
-      @otherChild.setParent(@newParent)
+      @child.parent = @newParent
+      @otherChild.parent = @newParent
 
     it "should have set the parent of the children to the root node", ->
-      expect(@child.parent()).toBe(@newParent)
-      expect(@otherChild.parent()).toBe(@newParent)
+      expect(@child.parent).toBe(@newParent)
+      expect(@otherChild.parent).toBe(@newParent)
 
     it "should not have set the children to the appropriate side of the parent", ->
-      expect(@newParent.right()).not.toBe(@child)
-      expect(@newParent.left()).not.toBe(@otherChild)
+      expect(@newParent.right).not.toBe(@child)
+      expect(@newParent.left).not.toBe(@otherChild)
 
     it "should not have removed the children from their original parent", ->
-      expect(@oldParent.right()).toBe(@child)
-      expect(@oldParent.left()).toBe(@otherChild)
+      expect(@oldParent.right).toBe(@child)
+      expect(@oldParent.left).toBe(@otherChild)
 
 
   # describe "rotateLeft", ->

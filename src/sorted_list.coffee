@@ -11,9 +11,9 @@ class SortedList extends TailingList
     @_evaluated = false
 
     super source, options
-    @evaluate()
 
     @headEntry.node.insert(@tailEntry.node)
+    @evaluate()
 
   evaluate: ( ) ->
     unless @_evaluated

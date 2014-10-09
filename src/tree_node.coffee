@@ -1,189 +1,183 @@
 class TreeNode
 
   constructor: ( value, options = {} ) ->
-    @_value = value
-    @_parent = options.parent
     @entry = options.entry
-    @balanced = true
+    @value = value
+
+    @left = null
+    @right = null
+    @parent = null
+
+    leftSize = undefined
+    rightSize = undefined
 
   size: ( ) ->
-    @leftSize() + @rightSize() + 1
-
-  leftSize: () ->
-    @left()?.size() or 0
-
-  rightSize: () ->
-    @right()?.size() or 0
+    @leftSize ?= @left?.size() or 0
+    @rightSize ?= @right?.size() or 0
+    return @leftSize + @rightSize + 1
 
   depth: ( ) ->
     Math.ceil(1 + Math.log(@size()) / Math.LN2)
 
-  balance: ( ) ->
-    (@right()?.depth() or 0) - (@left()?.depth() or 0)
+  isRoot: ( ) ->
+    return not @parent
 
-  value: ( ) ->
-    return @_value
-
-  setParent: ( node ) ->
-    @_parent = node
-
-  setLeft: ( node ) ->
-    @_left = node
-
-  setRight: ( node ) ->
-    @_right = node
-
-  parent: ( ) ->
-    return @_parent
-
-  left: ( ) ->
-    return @_left
+  isLeaf: ( ) ->
+    not @left and not @right
 
   leftMost: ( ) ->
-    if left = @left()
+    if left = @left
       return left.leftMost()
     return @
 
-  isLeft: ( ) ->
-    unless @isRoot()
-      return @ is @parent().left()
-    return false
-
-  detachLeft: ( ) ->
-    @_left?.setParent null
-    @_left = null
-
-  right: ( ) ->
-    return @_right
-
   rightMost: ( ) ->
-    if right = @right()
+    if right = @right
       return right.rightMost()
     return @
 
-  isRight: ( ) ->
-    unless @isRoot()
-      return @ is @parent().right()
+  isLeft: ( ) ->
+    if parent = @parent
+      return @ is parent.left
     return false
 
-  detachRight: ( ) ->
-    @_right?.setParent null
-    @_right = null
+  isRight: ( ) ->
+    if parent = @parent
+      return @ is parent.right
+    return false
 
   detach: ( ) ->
-    unless @isRoot()
-      if @isLeft()
-        @parent().detachLeft()
-      else @parent().detachRight()
+    if @isLeft()
+      @parent.detachLeft()
+    else if @isRight()
+      @parent.detachRight()
 
-  isRoot: ( ) ->
-    return not @parent()
+  detachLeft: ( ) ->
+    return unless @left
+    @left.parent = null
+    @left = null
 
-  isLeaf: ( ) ->
-    not @left() and not @right()
+    @leftSize = 0
+
+  detachRight: ( ) ->
+    return unless @right
+    @right.parent = null
+    @right = null
+
+    @rightSize = 0
 
   attach: ( node ) ->
-    unless node
-      console.log "Attach break"
-      return
-    node.setParent @
-    if node.value() < @value()
-      @setLeft node
-      # console.log "Attaching", node.value(), "left of", @value()
-    else
-      @setRight node
-      # console.log "Attaching", node.value(), "right of", @value()
+    return unless node
+    if node.value < @value
+      @attachLeft(node)
+    else @attachRight(node)
+
+  attachLeft: ( node ) ->
+    @left.parent = null if @left
+
+    if node
+      node.detach()
+      node.parent = @
+    @left = node
+
+    @leftSize = undefined
+
+  attachRight: ( node ) ->
+    @right.parent = null if @right
+
+    if node
+      node.detach()
+      node.parent = @
+    @right = node
+
+    @rightSize = undefined
+
+  remove: ( ) ->
+    left = @left
+    right = @right
+    parent = @parent
+
+    @detach()
+    @detachLeft()
+    @detachRight()
+
+    if left
+      pivot = left.rightMost()
+      pivot.parent.attachRight(pivot.left)
+    else if right
+      pivot = right.leftMost()
+      pivot.parent.attachLeft(pivot.right)
+    else return
+
+    pivot.attach(left)
+    pivot.attach(right)
+    parent.attach(pivot)
+
+    pivot.balance()
 
   insert: ( node ) ->
-    # console.log 'insert', node.value(), 'in', @value()
+    value = @value
+    otherValue = node.value
 
-    # If the node belongs on our left
-    if node.value() < @value()
-      if left = @left()
-        # And we have a left subtree, delegate the insertion
+    left = @left
+    right = @right
+    parent = @parent
+
+    switch
+      # Set the node as our parent
+      when otherValue is value
+        @detach()
+        @detachLeft()
+
+        node.attach(@)
+        node.attach(left) if left
+        parent.attach(node)
+
+      # Set the node as our left
+      when otherValue < value
+        if left
           left.insert(node)
-      else
-        # Remove the node from it's old parent and attach it to us
-        @attach(node)
-    else if node.value() >= @value() # Node belongs on our right
-      if right = @right()
-        # If we have a right subtree, delegate the insertion
-        right.insert(node)
-      else
-        # Remove the node from it's old parent and attach it to us
-        @attach(node)
+          @leftSize = undefined
+        else @attachLeft(node)
 
-    # console.log 'balance in', @value(), 'is', @balance()
-    # And end with a balancing step
-    return unless @balanced
-    unless @isRoot()
-      if @balance() is -2
-        @rotateRight()
-      else if @balance() is 2
-        @rotateLeft()
+      # Set the node as our right
+      when otherValue > value
+        if right
+          right.insert(node)
+          @rightSize = undefined
+        else @attachRight(node)
+
+    @balance()
+
+  balance: ( ) ->
+    return if @isRoot()
+
+    balance = (@right?.depth() or 0) - (@left?.depth() or 0)
+
+    if balance <= -2
+      @rotateRight()
+    else if balance >= 2
+      @rotateLeft()
 
   rotateLeft: ( ) ->
-    # return unless pivot
-
-    # console.log 'rotate left', @value()
-    # If the pivot already has a child where we want to be, rotate it first
-    # if pivot.left()
-    #   pivot.rotateRight()
-    #   pivot = @right() # Our pivot has changed because of the rotation
-
-    # We are rotating left so we want to place our right child in our place and ourself left of it
-    pivot = @right()
-    return if pivot.value() <= @value()
+    pivot = @right
+    return if pivot.value <= @value
 
     pivot.rotateRight() if pivot.balance() is -1
-    pivot = @right()
-    parent = @parent()
+    pivot = @right
+    parent = @parent
 
-    pivot.detach()
-
-    if left = pivot.left()
-      pivot.detachLeft()
-      @attach left
-
-    pivot.attach(@)
+    @attachRight(pivot.left)
+    pivot.attachLeft(@)
     parent.attach(pivot)
-
 
   rotateRight: ( ) ->
-    # return unless pivot
-    # We are rotating right so we want to place our left child in our place and ourself right of it
-
-    # console.log 'rotate right', @value()
-    # # If the pivot already has a child where we want to be, rotate it first
-    # if pivot.right()
-    #   pivot.rotateLeft()
-    #   pivot = @left() # Our pivot has changed because of the rotation
-
-    # Now we start the rotation by detaching ourself and our pivot
-
-    pivot = @left()
-    return if pivot.value() > @value()
+    pivot = @left
+    return if pivot.value > @value
 
     pivot.rotateLeft() if pivot.balance() is 1
-    pivot = @left()
-    parent = @parent()
+    pivot = @left
+    parent = @parent
 
-    pivot.detach()
-
-
-    if right = pivot.right()
-      pivot.detachRight()
-      @attach right
-
-    pivot.attach(@)
+    @attachLeft(pivot.right)
+    pivot.attachRight(@)
     parent.attach(pivot)
-
-  toJSON: ( ) ->
-    json = {}
-    json[@value()] = [@left()?.toJSON(), @right()?.toJSON()]
-    return json
-
-  toString:() ->
-    JSON.stringify @
-
-

@@ -45,7 +45,7 @@ class SimpleList extends AbstractList
     return @push(value, options)
 
   remove: ( value, options ) ->
-    entry = @_entryOf(value)
+    entry = @entryOf(value)
     return @_delete(entry, options)
 
   delete: ( id, options ) ->

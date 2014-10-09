@@ -38,9 +38,6 @@ class AbstractList
     @trigger('delete', entry) unless options.silent
     return true
 
-  getEntry: ( id ) ->
-    return @_byId[id]
-
   _set: ( entry, value, options = {} ) ->
     entry.setValue(value)
     @trigger('change', entry, value) unless options.silent
@@ -88,13 +85,20 @@ class AbstractList
 
     return entry
 
-  _entryOf: ( value ) ->
-    for id in Object.keys(@_byId)
-      entry = @_byId[id]
-      return entry if entry?.value() is value
+  # Iterator methods.
+  getIterator: ( start ) ->
+    return new Iterator(@, start or @headEntry)
+
+  # Public access methods.
+  getEntry: ( id ) ->
+    return @_byId[id]
+
+  get: ( id ) ->
+    entry = @getEntry(id)
+    return entry.value() if entry
     return undefined
 
-  _entryAt: ( index ) ->
+  entryAt: ( index ) ->
     i = -1
     iterator = @getIterator()
 
@@ -103,51 +107,22 @@ class AbstractList
 
     return undefined
 
-  # Iterator methods.
-  getIterator: ( start ) ->
-    return new Iterator(@, start or @headEntry)
-
-  # _before: ( entry ) ->
-  #   before = entry.previous()
-  #   return before unless before is @headEntry
-  #   return undefined
-
-  # _after: ( entry ) ->
-  #   after = entry.next()
-  #   return after unless after is @tailEntry
-  #   return undefined
-
-  # Public access methods.
-  get: ( id ) ->
-    entry = @getEntry(id)
-    return entry.value() if entry
-    return undefined
-
   at: ( index ) ->
-    entry = @_entryAt(index)
+    entry = @entryAt(index)
     return @get(id)
 
-  before: ( value ) ->
-    entry = @_entryOf(value)
-    previous = entry.previous()
-
-    return previous.value() unless previous is @headEntry
-    return undefined
-
-  after: ( value ) ->
-    entry = @_entryOf(value)
-    next = entry.next()
-
-    return next.value() unless next is @tailEntry
+  entryOf: ( value ) ->
+    for id in Object.keys(@_byId)
+      entry = @_byId[id]
+      return entry if entry?.value() is value
     return undefined
 
   idOf: ( value ) ->
-    return @_entryOf(value)?.id
+    return @entryOf(value)?.id
 
   indexOf: ( value ) ->
     i = -1
     iterator = @getIterator()
-
     while iterator.moveNext()
       i++
       return i if iterator.current() is value
@@ -156,6 +131,20 @@ class AbstractList
 
   contains: ( value ) ->
     return @idOf(value)?
+
+  before: ( value ) ->
+    entry = @entryOf(value)
+    previous = entry.previous()
+
+    return previous.value() unless previous is @headEntry
+    return undefined
+
+  after: ( value ) ->
+    entry = @entryOf(value)
+    next = entry.next()
+
+    return next.value() unless next is @tailEntry
+    return undefined
 
   # Moar stuff.
   forEach: ( fn ) -> @each(fn)

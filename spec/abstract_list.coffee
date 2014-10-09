@@ -118,13 +118,13 @@ describe "List", ->
       expect(entryB.next()).toBe(entryA)
 
 
-  describe "#_entryOf", ->
+  describe "#entryOf", ->
 
     it "should return the first occurence of the value", ->
       item = "banana"
       entry = @list._create(item)
 
-      expect(@list._entryOf(item)).toBe(entry)
+      expect(@list.entryOf(item)).toBe(entry)
 
 
   describe "#_idAt", ->
