@@ -160,8 +160,10 @@ class AbstractList
       return true if predicate(@at(index))
     return false
 
-  reduce: ( reduceFn ) ->
-
+  reduce: ( reduceFn, memo = 0 ) ->
+    @each ( value ) ->
+      memo = reduceFn(value, memo)
+    return memo
 
   map: ( mapFn ) ->
     return new MappedList @, mapFn: mapFn

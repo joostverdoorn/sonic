@@ -1015,7 +1015,15 @@
       return false;
     };
 
-    AbstractList.prototype.reduce = function(reduceFn) {};
+    AbstractList.prototype.reduce = function(reduceFn, memo) {
+      if (memo == null) {
+        memo = 0;
+      }
+      this.each(function(value) {
+        return memo = reduceFn(value, memo);
+      });
+      return memo;
+    };
 
     AbstractList.prototype.map = function(mapFn) {
       return new MappedList(this, {
