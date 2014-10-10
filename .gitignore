@@ -1,3 +1,6 @@
 node_modules
 .grunt/
 build/*
+bower_components/*
+_SpecRunner.html
+statistics/*
