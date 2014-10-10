@@ -426,11 +426,15 @@
     };
 
     Entry.prototype.value = function() {
-      return this._value;
+      if (this._value != null) {
+        return this._value;
+      }
     };
 
     Entry.prototype.next = function() {
-      return this._next;
+      if (this._next != null) {
+        return this._next;
+      }
     };
 
     Entry.prototype.setNext = function(next) {
@@ -438,7 +442,9 @@
     };
 
     Entry.prototype.previous = function() {
-      return this._previous;
+      if (this._previous != null) {
+        return this._previous;
+      }
     };
 
     Entry.prototype.setPrevious = function(previous) {
@@ -465,43 +471,26 @@
     };
 
     TailingEntry.prototype.value = function() {
-      if (this._value != null) {
-        return this._value;
-      } else {
-        return this.source.value();
-      }
+      return this._value || (this._value = this.source.value());
     };
 
     TailingEntry.prototype.next = function() {
-      var next, sourceNext;
-      next = this._next;
-      if (next) {
-        return next;
-      }
-      if (sourceNext = this.source.next()) {
-        next = this.list.getBySource(sourceNext) || this.list.createBySource(sourceNext, {
-          silent: true,
-          previous: this
-        }) || null;
-        return this._next = next;
-      }
-      return null;
+      var sourceNext;
+      sourceNext = this.source.next();
+      return this._next || (this._next = TailingEntry.__super__.next.call(this) || this.tail(sourceNext));
     };
 
     TailingEntry.prototype.previous = function() {
-      var previous, sourcePrevious;
-      previous = this._previous;
-      if (previous) {
-        return previous;
-      }
-      if (sourcePrevious = this.source.previous()) {
-        previous = this.list.getBySource(sourcePrevious) || this.list.createBySource(sourcePrevious, {
-          silent: true,
-          next: this
-        }) || null;
-        return this._previous = previous;
-      }
-      return null;
+      var sourcePrevious;
+      sourcePrevious = this.source.previous();
+      return this._previous || (this._previous = TailingEntry.__super__.previous.call(this) || this.tail(sourcePrevious));
+    };
+
+    TailingEntry.prototype.tail = function(source) {
+      return this.list.getBySource(source) || this.list.createBySource(source, {
+        silent: true,
+        previous: this
+      }) || null;
     };
 
     return TailingEntry;
@@ -530,15 +519,10 @@
       return FilteredEntry.__super__.constructor.apply(this, arguments);
     }
 
-    FilteredEntry.prototype.value = function() {
-      return this._value || (this._value = this.source.value());
-    };
-
     FilteredEntry.prototype.next = function() {
-      var next, source;
-      next = this._next;
-      if (next) {
-        return next;
+      var source;
+      if (this._next != null) {
+        return this._next;
       }
       source = this.source;
       while (source = source.next()) {
@@ -546,34 +530,19 @@
           break;
         }
       }
-      if (source) {
-        next = this.list.getBySource(source) || this.list.createBySource(source, {
-          silent: true,
-          previous: this
-        }) || null;
-        return this._next = next;
-      }
-      return null;
+      return this._next || (this._next = this.tail(source));
     };
 
     FilteredEntry.prototype.previous = function() {
-      var previous, source;
-      previous = this._previous;
-      if (previous) {
-        return previous;
+      var source;
+      if (this._previous != null) {
+        return this._previous;
       }
       source = this.source;
       while (!this.list.filterFn(source.previous())) {
         source = source.previous();
       }
-      if (source) {
-        previous = this.list.getBySource(source) || this.list.createBySource(source, {
-          silent: true,
-          previous: this
-        }) || null;
-        return this._previous = previous;
-      }
-      return null;
+      return this._previous || (this._previous = this.tail(source));
     };
 
     return FilteredEntry;
@@ -583,22 +552,14 @@
   ConcatenatedEntry = (function(_super) {
     __extends(ConcatenatedEntry, _super);
 
-    function ConcatenatedEntry(source, options) {
-      if (options == null) {
-        options = {};
-      }
-      ConcatenatedEntry.__super__.constructor.call(this, source, options);
+    function ConcatenatedEntry() {
+      return ConcatenatedEntry.__super__.constructor.apply(this, arguments);
     }
 
-    ConcatenatedEntry.prototype.value = function() {
-      return this._value || (this._value = this.source.value());
-    };
-
     ConcatenatedEntry.prototype.next = function() {
-      var next, nextSourceList, sourceNext;
-      next = this._next;
-      if (next) {
-        return next;
+      var nextSourceList, sourceNext;
+      if (this._next != null) {
+        return this._next;
       }
       sourceNext = this.source.next();
       if (sourceNext === this.source.list.tailEntry) {
@@ -607,21 +568,13 @@
           sourceNext = nextSourceList.headEntry.next();
         }
       }
-      if (sourceNext) {
-        next = this.list.getBySource(sourceNext) || this.list.createBySource(sourceNext, {
-          silent: true,
-          previous: this
-        }) || null;
-        return this._next = next;
-      }
-      return null;
+      return this._next || (this._next = this.tail(sourceNext));
     };
 
     ConcatenatedEntry.prototype.previous = function() {
-      var previous, previousSourceList, sourcePrevious;
-      previous = this._previous;
-      if (previous) {
-        return previous;
+      var previousSourceList, sourcePrevious;
+      if (this._previous != null) {
+        return this._previous;
       }
       sourcePrevious = this.source.previous();
       if (sourcePrevious === this.source.list.headEntry) {
@@ -630,14 +583,7 @@
           sourcePrevious = nextSourceList.tailEntry.previous();
         }
       }
-      if (sourcePrevious) {
-        previous = this.list.getBySource(sourcePrevious) || this.list.createBySource(sourcePrevious, {
-          silent: true,
-          next: this
-        }) || null;
-        return this._previous = previous;
-      }
-      return null;
+      return this._previous || (this._previous = this.tail(sourcePrevious));
     };
 
     return ConcatenatedEntry;
@@ -711,41 +657,17 @@
     }
 
     ReversedEntry.prototype.previous = function() {
-      var next, previous, sourceNext;
       if (this === this.list.headEntry) {
         return null;
       }
-      previous = this._previous;
-      if (previous) {
-        return previous;
-      }
-      if (sourceNext = this.source.next()) {
-        next = this.list.getBySource(sourceNext) || this.list.createBySource(sourceNext, {
-          silent: true,
-          next: this
-        }) || null;
-        return this._previous = next;
-      }
-      return null;
+      return this._previous || (this._previous = this.tail(this.source.next()));
     };
 
     ReversedEntry.prototype.next = function() {
-      var next, previous, sourcePrevious;
       if (this === this.list.tailEntry) {
         return null;
       }
-      next = this._next;
-      if (next) {
-        return next;
-      }
-      if (sourcePrevious = this.source.previous()) {
-        previous = this.list.getBySource(sourcePrevious) || this.list.createBySource(sourcePrevious, {
-          silent: true,
-          previous: this
-        }) || null;
-        return this._next = previous;
-      }
-      return null;
+      return this._next || (this._next = this.tail(this.source.previous()));
     };
 
     return ReversedEntry;
