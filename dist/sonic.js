@@ -415,8 +415,8 @@
       } else {
         this._value = options.value;
       }
+      this.id = Sonic.uniqueId();
       if (options) {
-        this.id = options.id;
         this.list = options.list;
       }
     }
@@ -786,9 +786,9 @@
       if (options == null) {
         options = {};
       }
-      id = options.id = Sonic.uniqueId();
       options.list = this;
       entry = new this.Entry(value, options);
+      id = entry.id;
       this._byId[id] = entry;
       this.length++;
       if (!options.silent) {

@@ -18,10 +18,10 @@ class AbstractList
     @length = 0
 
   _create: ( value, options = {} ) ->
-    id = options.id = Sonic.uniqueId()
     options.list = @
 
     entry = new @Entry value, options
+    id = entry.id
 
     @_byId[id] = entry
     @length++

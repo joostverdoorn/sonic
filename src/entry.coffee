@@ -5,8 +5,8 @@ class Entry
       @_value = value
     else @_value = options.value
 
+    @id = Sonic.uniqueId()
     if options
-      @id        = options.id
       @list      = options.list
       # @_next     = options.next
       # @_previous = options.previous
