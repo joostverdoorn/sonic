@@ -18,15 +18,26 @@ class Entry
     @_value if @_value?
 
   next: ( ) ->
-    return @_next if @_next?
+    @attachNext @_next if @_next
+
+  previous: ( ) ->
+    if @_previous?
+      @_previous.setNext @
+    return @_previous
 
   setNext: ( next ) ->
     @_next = next
-
-  previous: ( ) ->
-    return @_previous if @_previous?
+    return @
 
   setPrevious: ( previous ) ->
     @_previous = previous
+    return @
 
+  attachNext: ( next ) ->
+    @setNext next
+    @_next.setPrevious @
 
+  attachPrevious: ( previous ) ->
+    @setPrevious previous
+    @_previous.setNext @
+    return @

@@ -432,23 +432,37 @@
     };
 
     Entry.prototype.next = function() {
-      if (this._next != null) {
-        return this._next;
+      if (this._next) {
+        return this.attachNext(this._next);
       }
-    };
-
-    Entry.prototype.setNext = function(next) {
-      return this._next = next;
     };
 
     Entry.prototype.previous = function() {
       if (this._previous != null) {
-        return this._previous;
+        this._previous.setNext(this);
       }
+      return this._previous;
+    };
+
+    Entry.prototype.setNext = function(next) {
+      this._next = next;
+      return this;
     };
 
     Entry.prototype.setPrevious = function(previous) {
-      return this._previous = previous;
+      this._previous = previous;
+      return this;
+    };
+
+    Entry.prototype.attachNext = function(next) {
+      this.setNext(next);
+      return this._next.setPrevious(this);
+    };
+
+    Entry.prototype.attachPrevious = function(previous) {
+      this.setPrevious(previous);
+      this._previous.setNext(this);
+      return this;
     };
 
     return Entry;
@@ -530,7 +544,7 @@
           break;
         }
       }
-      return this._next || (this._next = this.tail(source));
+      return this.attachNext(this._next || (this._next = this.tail(source)));
     };
 
     FilteredEntry.prototype.previous = function() {
@@ -542,7 +556,7 @@
       while (!this.list.filterFn(source.previous())) {
         source = source.previous();
       }
-      return this._previous || (this._previous = this.tail(source));
+      return this.attachPrevious(this._previous || (this._previous = this.tail(source)));
     };
 
     return FilteredEntry;

@@ -7,7 +7,7 @@ class FilteredEntry extends TailingEntry
     while source = source.next()
       break if @list.filterFn(source.value())
 
-    @_next ||= @tail(source)
+    @attachNext @_next ||= @tail(source)
 
   previous: ( ) ->
     return @_previous if @_previous?
@@ -16,4 +16,4 @@ class FilteredEntry extends TailingEntry
     while not @list.filterFn(source.previous())
       source = source.previous()
 
-    @_previous ||= @tail(source)
+    @attachPrevious @_previous ||= @tail(source)
