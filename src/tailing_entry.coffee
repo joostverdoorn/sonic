@@ -8,32 +8,17 @@ class TailingEntry extends Entry
     return @source.root()
 
   value: ( ) ->
-    if @_value?
-      @_value
-    else @source.value()
+    @_value ||= @source.value()
 
   next: ( ) ->
-    next = @_next
-    return next if next
-
-    if sourceNext = @source.next()
-      next = @list.getBySource(sourceNext) or
-             @list.createBySource(sourceNext, silent: true, previous: @) or
-             null
-
-      return @_next = next
-    return null
-
+    sourceNext = @source.next()
+    @_next ||= super() or @tail(sourceNext)
 
   previous: ( ) ->
-    previous = @_previous
-    return previous if previous
+    sourcePrevious = @source.previous()
+    @_previous ||= super() or @tail(sourcePrevious)
 
-    if sourcePrevious = @source.previous()
-      previous = @list.getBySource(sourcePrevious) or
-                 @list.createBySource(sourcePrevious, silent: true, next: @) or
-                 null
-
-      return @_previous = previous
-    return null
-
+  tail: ( source ) ->
+    @list.getBySource(source) or
+    @list.createBySource(source, silent: true, previous: @) or
+    null

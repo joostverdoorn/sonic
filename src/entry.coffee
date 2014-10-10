@@ -15,16 +15,16 @@ class Entry
     return @
 
   value: ( ) ->
-    return @_value
+    @_value if @_value?
 
   next: ( ) ->
-    return @_next
+    return @_next if @_next?
 
   setNext: ( next ) ->
     @_next = next
 
   previous: ( ) ->
-    return @_previous
+    return @_previous if @_previous?
 
   setPrevious: ( previous ) ->
     @_previous = previous
