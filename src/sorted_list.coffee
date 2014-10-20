@@ -1,34 +1,43 @@
 class SortedList extends TailingList
 
   Entry: SortedEntry
+  Iterator: SortedIterator
 
-  HeadEntry: -> new @Entry @source.headEntry, list: @, sortVal: -Infinity
-  TailEntry: -> new @Entry @source.tailEntry, list: @, sortVal:  Infinity
+  HeadEntry: -> @_create(@source.headEntry, sortValue: -Infinity)
+  TailEntry: -> @_create(@source.tailEntry, sortValue:  Infinity)
 
   constructor: ( source, options = {} ) ->
-    @rootNode = new TreeNode(0)
     @sortFn = options.sortFn
     @_evaluated = false
 
-    super source, options
+    super(source, options)
 
-    @headEntry.node.insert(@tailEntry.node)
+    @headEntry.insert(@tailEntry)
     @evaluate()
 
   evaluate: ( ) ->
-    unless @_evaluated
-      iterator = @source.getIterator()
+    return false if @_evaluated
 
-      while iterator.moveNext()
-        sourceEntry = iterator.entry
+    iterator = @source.getIterator()
 
-        unless @_bySourceId[sourceEntry.id]
-          @createBySource(sourceEntry, silent: true)
+    while iterator.moveNext()
+      sourceEntry = iterator.entry
 
-      return @_evaluated = true
-    return false
+      unless @_bySourceId[sourceEntry.id]
+        @_insert(sourceEntry, silent: true)
 
-  createBySource: (sourceEntry, options = {}) ->
-    entry = super sourceEntry, options
-    @headEntry.node.insert(entry.node)
-    return entry
+    return @_evaluated = true
+
+  _move: ( entry, options = {} ) ->
+    @_remove(entry, silent: true)
+    @headEntry.insert(entry)
+
+    @trigger('move', entry.id) unless options.silent
+    return true
+
+  _set: ( entry, value, options = {} ) ->
+    super(entry, value, options)
+    @_move(entry, silent: options.silent)
+
+    return true
+

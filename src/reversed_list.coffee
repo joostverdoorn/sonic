@@ -1,6 +1,6 @@
 class ReversedList extends TailingList
 
-  Entry: ReversedEntry
+  Iterator: ReversedIterator
 
-  HeadEntry: -> new @Entry @source.tailEntry, list: @
-  TailEntry: -> new @Entry @source.headEntry, list: @
+  HeadEntry: -> @_create(@source.tailEntry, silent: true)
+  TailEntry: -> @_create(@source.headEntry, silent: true)

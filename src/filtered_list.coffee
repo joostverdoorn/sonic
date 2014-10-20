@@ -1,7 +1,7 @@
 class FilteredList extends TailingList
 
-  Entry: FilteredEntry
+  Iterator: FilteredIterator
 
   constructor: ( source, options ) ->
-    super source, options
     @filterFn = options.filterFn
+    super source, options

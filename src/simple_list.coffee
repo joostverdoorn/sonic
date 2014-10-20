@@ -9,14 +9,14 @@ class SimpleList extends AbstractList
       for value in values
         entry = @_create(value, silent: true)
 
-        previous.setNext(entry)
-        entry.setPrevious(previous)
+        previous.next = entry
+        entry.previous = previous
 
         previous = entry
       length = values.length
 
-    previous.setNext(@tailEntry)
-    @tailEntry.setPrevious(previous)
+    previous.next = @tailEntry
+    @tailEntry.previous = previous
 
   set: ( id, value, options = {} ) ->
     entry = @getEntry(id)
@@ -32,13 +32,13 @@ class SimpleList extends AbstractList
     return @_insert(value, options).id
 
   pop: ( options ) ->
-    entry = @tailEntry.previous()
-    @_delete entry, options
+    entry = @tailEntry.previous
+    @_delete(entry, options)
     return entry.value()
 
   shift: ( options ) ->
-    entry = @headEntry.next()
-    @_delete entry, options
+    entry = @headEntry.next
+    @_delete(entry, options)
     return entry.value()
 
   add:  ( value, options ) ->

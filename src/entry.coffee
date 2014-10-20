@@ -5,11 +5,12 @@ class Entry
       @_value = value
     else @_value = options.value
 
-    @id = Sonic.uniqueId()
+    @id = Sonic.uniqueId() or options.id
+
     if options
-      @list      = options.list
-      # @_next     = options.next
-      # @_previous = options.previous
+      @list     = options.list
+      @next     = options.next
+      @previous = options.previous
 
   root: ( ) ->
     return @
@@ -17,27 +18,29 @@ class Entry
   value: ( ) ->
     @_value if @_value?
 
-  next: ( ) ->
-    @attachNext @_next if @_next
+  setValue: ( value ) ->
+    @_value = value
 
-  previous: ( ) ->
-    if @_previous?
-      @_previous.setNext @
-    return @_previous
+  getIterator: ( ) ->
+    return @list.getIterator(@)
 
-  setNext: ( next ) ->
-    @_next = next
-    return @
+  remove: ( ) ->
+    next = @next
+    previous = @previous
 
-  setPrevious: ( previous ) ->
-    @_previous = previous
-    return @
+    next.previous = previous if next
+    previous.next = next if previous
+
+    @next = null
+    @previous = null
+    return true
 
   attachNext: ( next ) ->
-    @setNext next
-    @_next.setPrevious @
+    @next = next
+    @next.previous = @
+    return true
 
   attachPrevious: ( previous ) ->
-    @setPrevious previous
-    @_previous.setNext @
-    return @
+    @previous = previous
+    @previous.next = @
+    return true

@@ -1,11 +1,13 @@
 module.exports = ( grunt ) ->
   srcs = [
     'src/sonic.coffee'
-    'src/iterator.coffee'
     'src/events.coffee'
 
-    'src/tree_node.coffee'
-    'src/tree.coffee'
+    'src/iterator.coffee'
+    'src/tailing_iterator.coffee'
+    'src/filtered_iterator.coffee'
+    'src/sorted_iterator.coffee'
+    'src/reversed_iterator.coffee'
 
     'src/entry.coffee'
     'src/tailing_entry.coffee'
@@ -13,7 +15,6 @@ module.exports = ( grunt ) ->
     'src/filtered_entry.coffee'
     'src/concatenated_entry.coffee'
     'src/sorted_entry.coffee'
-    'src/reversed_entry.coffee'
 
     'src/abstract_list.coffee'
     'src/simple_list.coffee'
@@ -30,16 +31,20 @@ module.exports = ( grunt ) ->
 
   specs = [
     # '.grunt/sonic/spec_compiled/sonic.js'
-    # '.grunt/sonic/spec_compiled/iterator.js'
+    '.grunt/sonic/spec_compiled/iterator.js'
+    '.grunt/sonic/spec_compiled/tailing_iterator.js'
+
+    '.grunt/sonic/spec_compiled/sorted_entry.js'
 
     '.grunt/sonic/spec_compiled/abstract_list.js'
     '.grunt/sonic/spec_compiled/simple_list.js'
+    '.grunt/sonic/spec_compiled/tailing_list.js'
     '.grunt/sonic/spec_compiled/mapped_list.js'
     '.grunt/sonic/spec_compiled/filtered_list.js'
     '.grunt/sonic/spec_compiled/concatenated_list.js'
     '.grunt/sonic/spec_compiled/unique_list.js'
     '.grunt/sonic/spec_compiled/sorted_list.js'
-    '.grunt/sonic/spec_compiled/tree_node.js'
+    '.grunt/sonic/spec_compiled/reversed_list.js'
 
     # '.grunt/sonic/spec_compiled/export.js'
   ]
@@ -74,19 +79,20 @@ module.exports = ( grunt ) ->
       build:
         src: ['build/**/*.js']
         options:
+          keepRunner: true
           specs: specs #'.grunt/sonic/spec_compiled/**/*.js'
-          template: require('grunt-template-jasmine-istanbul')
-          templateOptions:
-            coverage: 'statistics/coverage/coverage.json'
-            report:
-              type: 'lcovonly'
-              options:
-                dir: 'statistics/coverage/lcov'
-            thresholds:
-              lines: 60
-              statements: 60
-              branches: 60
-              functions: 60
+          # template: require('grunt-template-jasmine-istanbul')
+          # templateOptions:
+          #   coverage: 'statistics/coverage/coverage.json'
+          #   report:
+          #     type: 'lcovonly'
+          #     options:
+          #       dir: 'statistics/coverage/lcov'
+          #   thresholds:
+          #     lines: 60
+          #     statements: 60
+          #     branches: 60
+          #     functions: 60
 
     clean:
       build: ['build']
@@ -94,9 +100,13 @@ module.exports = ( grunt ) ->
       grunt: ['.grunt']
 
     watch:
-      all:
+
+      dist:
         files: ['src/**/*.coffee']
-        tasks: ['dist']
+        tasks: ['coffee:dist']
+      spec:
+        files: ['**/*.coffee']
+        tasks: ['spec']
 
   grunt.loadNpmTasks 'grunt-contrib-coffee'
   grunt.loadNpmTasks 'grunt-contrib-watch'

@@ -1,7 +1,7 @@
-describe "TreeNode", ->
+describe "SortedEntry", ->
 
   beforeEach ->
-    @root = new Sonic.TreeNode(0)
+    @root = new Sonic.SortedEntry(null, sortValue: 0)
     @n = 10
     @nodes = [@root]
 
@@ -9,7 +9,7 @@ describe "TreeNode", ->
   describe "always", ->
     beforeEach ->
       for i in [1..@n]
-        node = new Sonic.TreeNode(i)
+        node = new Sonic.SortedEntry(null, sortValue: i)
         @nodes[i] = node
         @root.insert node
 
@@ -32,23 +32,23 @@ describe "TreeNode", ->
     it "should have a smaller values on the left side", ->
       for i in [1...@n]
         node = @nodes[i]
-        expect(node.left?.value or -Infinity).toBeLessThan(node.value)
+        expect(node.left?.sortValue() or -Infinity).toBeLessThan(node.sortValue())
 
     it "should have a greater or equal values on the right side", ->
       for i in [1...@n]
         node = @nodes[i]
-        expect(node.right?.value or Infinity).not.toBeLessThan(node.value)
+        expect(node.right?.sortValue() or Infinity).not.toBeLessThan(node.sortValue())
 
   describe "setLeft", ->
   describe "setRight", ->
   describe "insert", ->
 
     beforeEach ->
-      @oldParent = new Sonic.TreeNode(0)
+      @oldParent = new Sonic.SortedEntry(null, sortValue: 0)
       @newParent = @root
 
-      @child = new Sonic.TreeNode(2)
-      @otherChild = new Sonic.TreeNode(-2)
+      @child = new Sonic.SortedEntry(null, sortValue: 2)
+      @otherChild = new Sonic.SortedEntry(null, sortValue: -2)
 
       @oldParent.insert(@child)
       @oldParent.insert(@otherChild)
@@ -73,7 +73,7 @@ describe "TreeNode", ->
   #   beforeEach ->
   #     @n = 3
   #     for i in [1..@n]
-  #       node = new Sonic.TreeNode(i)
+  #       node = new Sonic.SortedEntry(i)
   #       @nodes[i] = node
   #       @root.insert node
 
@@ -96,7 +96,7 @@ describe "TreeNode", ->
   #     beforeEach ->
   #       @n = 6
   #       for i in [1..@n]
-  #         node = new Sonic.TreeNode(i)
+  #         node = new Sonic.SortedEntry(i)
   #         @nodes[i] = node
   #         @root.insert node
 
@@ -104,7 +104,7 @@ describe "TreeNode", ->
   #   beforeEach ->
   #     @n = 6
   #     for i in [1..@n]
-  #       node = new Sonic.TreeNode(-i)
+  #       node = new Sonic.SortedEntry(-i)
   #       @nodes[i] = node
   #       @root.insert node
 
@@ -129,7 +129,7 @@ describe "TreeNode", ->
   #     beforeEach ->
   #       @n = 6
   #       for i in [1..@n]
-  #         node = new Sonic.TreeNode(i)
+  #         node = new Sonic.SortedEntry(i)
   #         @nodes[i] = node
   #         @root.insert node
 

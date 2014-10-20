@@ -4,19 +4,10 @@ describe "List", ->
     @list = new Sonic.AbstractList()
 
 
-
-  describe "#constructor", ->
-
-    it "should construct a list with an empty array of indices to the items", ->
-      expect(@list._byId).toEqual({})
-
-
-
   describe "#length", ->
 
     it "should be 0 for an empty list", ->
       expect(@list.length).toBe(0)
-
 
 
   describe "#_create", ->
@@ -47,9 +38,6 @@ describe "List", ->
       @list._delete(entry)
       expect(@list.get(entry.id)).not.toBeDefined()
 
-    it "should return false when the item doesn't exist", ->
-      expect(@list._delete(null)).toBe(false)
-
     it "should move the item out of the linked list structure", ->
       item1 = "apple"
       item2 = "pear"
@@ -61,8 +49,8 @@ describe "List", ->
 
       @list._delete(entry2)
 
-      expect(entry1.next()).toBe(entry3)
-      expect(entry3.previous()).toBe(entry1)
+      expect(entry1.next).toBe(entry3)
+      expect(entry3.previous).toBe(entry1)
 
     it "should decrease the length of the list", ->
       item = "mango"
@@ -88,19 +76,19 @@ describe "List", ->
       @entry3 = @list._insert(@item3, after: @entry2)
 
     it "should remove the item from its current position", ->
-      expect(@entry1.next()).toBe(@entry2)
-      expect(@entry3.previous()).toBe(@entry2)
+      expect(@entry1.next).toBe(@entry2)
+      expect(@entry3.previous).toBe(@entry2)
 
       @list._move(@entry2, after: @entry3)
 
-      expect(@entry1.next()).toBe(@entry3)
-      expect(@entry3.previous()).toBe(@entry1)
+      expect(@entry1.next).toBe(@entry3)
+      expect(@entry3.previous).toBe(@entry1)
 
     it "should move the item into its new position", ->
       @list._move(@entry2, after: @entry3)
 
-      expect(@entry3.next()).toBe(@entry2)
-      expect(@entry2.previous()).toBe(@entry3)
+      expect(@entry3.next).toBe(@entry2)
+      expect(@entry2.previous).toBe(@entry3)
 
 
 
@@ -113,9 +101,9 @@ describe "List", ->
       entryA = @list._insert(itemA, after: @list.headEntry)
       entryB = @list._insert(itemB, after: entryA, before: @list.tailEntry)
 
-      expect(entryA.next()).toBe(entryB)
+      expect(entryA.next).toBe(entryB)
       @list._swap(entryA, entryB)
-      expect(entryB.next()).toBe(entryA)
+      expect(entryB.next).toBe(entryA)
 
 
   describe "#entryOf", ->
@@ -231,6 +219,12 @@ describe "List", ->
 
     it "should return a new FilteredList", ->
       expect(@list.filter(->) instanceof Sonic.FilteredList).toBe(true)
+
+
+  describe "#reverse", ->
+
+    it "should return a new ReversedList", ->
+      expect(@list.reverse() instanceof Sonic.ReversedList).toBe(true)
 
 
 

@@ -1,9 +1,10 @@
 class AbstractList
 
   Entry: Entry
+  Iterator: Iterator
 
-  HeadEntry: -> new @Entry null, list: @
-  TailEntry: -> new @Entry null, list: @
+  HeadEntry: -> @_create(null, silent: true)
+  TailEntry: -> @_create(null, silent: true)
 
   # Add event bindings
   for key, fn of Events
@@ -20,74 +21,77 @@ class AbstractList
   _create: ( value, options = {} ) ->
     options.list = @
 
-    entry = new @Entry value, options
+    entry = new @Entry(value, options)
     id = entry.id
 
     @_byId[id] = entry
     @length++
 
-    @trigger('create', entry) unless options.silent
+    @trigger('create', entry.id) unless options.silent
     return entry
 
   _delete: ( entry, options = {} ) ->
-    return false unless entry?
-    @_move(entry, before: null, after: null, silent: true)
+    @_remove(entry, silent: true)
     delete @_byId[entry.id]
     @length--
 
-    @trigger('delete', entry) unless options.silent
+    @trigger('delete', entry.id) unless options.silent
     return true
 
   _set: ( entry, value, options = {} ) ->
     entry.setValue(value)
-    @trigger('change', entry, value) unless options.silent
+
+    @trigger('update', entry.id, entry.value()) unless options.silent
+    return true
+
+  _reset: ( entry, options = {} ) ->
+    @_set(entry, undefined, options)
+
+  _remove: ( entry, options = {} ) ->
+    entry.remove()
+
+    @trigger('move', entry.id) unless options.silent
     return true
 
   _move: ( entry, options = {} ) ->
-    previous = entry.previous()
-    next = entry.next()
+    @_remove(entry, silent: true)
 
-    previous.setNext(next) if previous
-    next.setPrevious(previous) if next
-
-    previous = options.after or (options.before.previous() if options.before)
-    next = options.before or (options.after.next() if options.after)
+    previous = options.after or (options.before.previous if options.before)
+    next = options.before or (options.after.next if options.after)
 
     if previous
-      entry.setPrevious(previous)
-      previous.setNext(entry)
+      entry.previous = previous
+      previous.next = entry
 
     if next
-      entry.setNext(next)
-      next.setPrevious(entry)
+      entry.next = next
+      next.previous = entry
 
-    @trigger('move', entry) unless options.silent
+    @trigger('move', entry.id) unless options.silent
     return true
 
   _swap: ( a, b ) ->
-    beforeA = a.previous()
-    beforeB = b.previous()
+    beforeA = a.previous
+    beforeB = b.previous
 
-    afterA = a.next()
-    afterB = b.next()
+    afterA = a.next
+    afterB = b.next
 
     if beforeA isnt b or afterB isnt a
       return @_move(a, before: afterB) and @_move(b, after: beforeA)
     else return @_move(a, after: beforeB) and @_move(b, before: afterA)
 
   _insert: ( value, options = {} ) ->
-    silent = options.silent
-    before = options.before
-    after = options.after
-
-    entry = @_create(value, silent: silent)
-    @_move(entry, before: before, after: after, silent: silent)
+    entry = @_create(value, silent: options.silent)
+    @_move(entry, options)
 
     return entry
 
   # Iterator methods.
   getIterator: ( start ) ->
-    return new Iterator(@, start or @headEntry)
+    start ||= @headEntry
+    # console.log "Get iterator", start
+    return new @Iterator(@, start)
 
   # Public access methods.
   getEntry: ( id ) ->
@@ -103,7 +107,7 @@ class AbstractList
     iterator = @getIterator()
 
     while iterator.moveNext()
-      return iterator.current if ++i is index
+      return iterator.entry if ++i is index
 
     return undefined
 
@@ -134,14 +138,14 @@ class AbstractList
 
   before: ( value ) ->
     entry = @entryOf(value)
-    previous = entry.previous()
+    previous = entry.previous
 
     return previous.value() unless previous is @headEntry
     return undefined
 
   after: ( value ) ->
     entry = @entryOf(value)
-    next = entry.next()
+    next = entry.next
 
     return next.value() unless next is @tailEntry
     return undefined
@@ -152,7 +156,7 @@ class AbstractList
     iterator = @getIterator()
 
     while iterator.moveNext()
-      return if fn(iterator.current()) is false or iterator.entry.next() is @tailEntry
+      return if fn(iterator.current()) is false or iterator.entry.next is @tailEntry
 
   any:  ( predicate ) -> @some(predicate)
   some: ( predicate ) ->
@@ -191,7 +195,9 @@ class AbstractList
     return @concat(others...).uniq()
 
   first: ( count ) ->
-    return @headEntry.next().value() unless count
+    iterator = @getIterator()
+    iterator.moveNext()
+    return iterator.current()
 
   skip: ( count ) -> @rest(count)
   tail: ( count ) -> @rest(count)
@@ -203,7 +209,7 @@ class AbstractList
 
 
   last: ( count ) ->
-    return @tailEntry.previous().value() unless count
+    return @tailEntry.previous.value() unless count
 
   pluck: ( key ) ->
     return @map ( value ) -> value[key]

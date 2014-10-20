@@ -1,19 +1,19 @@
 Sonic.factory = ( exports ) ->
     exports._                   = Sonic
     exports.create              = Sonic.create
-    exports.Iterator            = Iterator
     exports.Event               = Event
 
-    exports.TreeNode            = TreeNode
-    # exports.Tree                = Tree
+    exports.Iterator            = Iterator
+    exports.TailingIterator     = TailingIterator
+    exports.FilteredIterator    = FilteredIterator
+    exports.SortedIterator      = SortedIterator
+    exports.ReversedIterator    = ReversedIterator
 
     exports.Entry               = Entry
     exports.TailingEntry        = TailingEntry
     exports.MappedEntry         = MappedEntry
-    exports.FilteredEntry       = FilteredEntry
     exports.ConcatenatedEntry   = ConcatenatedEntry
     exports.SortedEntry         = SortedEntry
-    exports.ReversedEntry       = ReversedEntry
 
     exports.AbstractList        = AbstractList
     exports.SimpleList          = SimpleList

@@ -56,16 +56,15 @@ Events =
 
     return @
 
-  trigger: ( name ) ->
+  trigger: ( name, args... ) ->
     return unless @_events?
 
     if @_events[name]?.length > 0
       for event in @_events[name]
-        event.callback.apply(event.context ? @, arguments.slice(1))
+        event.callback.apply(event.context ? @, args)
 
     # Trigger an event for catch-all listeners.
     unless name is '*' or @_events['*']?.length is 0
-      args = arguments.slice()
       args.unshift('*')
       @trigger.apply(@, args)
 

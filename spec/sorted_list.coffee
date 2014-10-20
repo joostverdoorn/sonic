@@ -7,6 +7,9 @@ describe "SortedList", ->
     sortedList = list.sort(sortFn)
     expect(sortedList.toArray()).toEqual([31..0])
 
+  describe "_create", ->
+    it "should insert the new element at the proper place", ->
+
   # describe "#split", ->
 
   #   it "should work", ->
