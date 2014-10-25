@@ -1,31 +1,28 @@
 Sonic.factory = ( exports ) ->
-    exports._                   = Sonic
-    exports.create              = Sonic.create
-    exports.Event               = Event
+    exports._                     = Sonic
+    exports.create                = Sonic.create
+    exports.Event                 = Event
 
-    exports.Iterator            = Iterator
-    exports.TailingIterator     = TailingIterator
-    exports.FilteredIterator    = FilteredIterator
-    exports.SortedIterator      = SortedIterator
-    exports.ReversedIterator    = ReversedIterator
+    exports.Iterator              = Iterator
+    exports.TailingIterator       = TailingIterator
+    exports.SortedIterator        = SortedIterator
+    exports.ReversedIterator      = ReversedIterator
+    exports.ConcatenatedIterator  = ConcatenatedIterator
 
-    exports.Entry               = Entry
-    exports.TailingEntry        = TailingEntry
-    exports.MappedEntry         = MappedEntry
-    exports.ConcatenatedEntry   = ConcatenatedEntry
-    exports.SortedEntry         = SortedEntry
+    exports.Entry                 = Entry
+    exports.TailingEntry          = TailingEntry
+    exports.MappedEntry           = MappedEntry
+    exports.SortedEntry           = SortedEntry
 
-    exports.AbstractList        = AbstractList
-    exports.SimpleList          = SimpleList
-    exports.TailingList         = TailingList
-    exports.FilteredList        = FilteredList
-    exports.MappedList          = MappedList
-    exports.ConcatenatedList    = ConcatenatedList
-    exports.UniqueList          = UniqueList
-    exports.SortedList          = SortedList
-    exports.ReversedList        = ReversedList
-
-
+    exports.AbstractList          = AbstractList
+    exports.SimpleList            = SimpleList
+    exports.TailingList           = TailingList
+    exports.FilteredList          = FilteredList
+    exports.MappedList            = MappedList
+    exports.ConcatenatedList      = ConcatenatedList
+    exports.UniqueList            = UniqueList
+    exports.SortedList            = SortedList
+    exports.ReversedList          = ReversedList
 
 # Exports Sonic for CommonJS, AMD and the browser.
 if typeof exports == 'object'

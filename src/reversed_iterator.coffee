@@ -1,24 +1,29 @@
 class ReversedIterator extends TailingIterator
 
-  _attachNext: ( ) ->
+  attachNext: ( ) ->
     return true if @entry.next
 
-    nextSource = @entry.source.getIterator().previous().entry
-    return false unless nextSource
+    iterator = @entry.source.getIterator()
+    while iterator.movePrevious()
+      next = @list.getBySource(iterator.entry)
+      break if next
 
-    next = @list.getBySource(nextSource)
+    return false unless next
     @entry.attachNext(next)
 
     return true
 
-  _attachPrevious: ( ) ->
+  attachPrevious: ( ) ->
     return true if @entry.previous
 
-    previousSource = @entry.source.getIterator().next().entry
-    return false unless previousSource
+    iterator = @entry.source.getIterator()
+    while iterator.moveNext()
+      previous = @list.getBySource(iterator.entry)
+      break if previous
 
-    previous = @list.getBySource(previousSource)
+    return false unless previous
     @entry.attachPrevious(previous)
 
     return true
+
 

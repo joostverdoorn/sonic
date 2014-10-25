@@ -1,11 +1,8 @@
 class Entry
 
-  constructor: ( value, options ) ->
-    if value?
-      @_value = value
-    else @_value = options.value
-
-    @id = Sonic.uniqueId() or options.id
+  constructor: ( value, options = {} ) ->
+    @id = options.id ? Sonic.uniqueId()
+    @_value = value ? options.value
 
     if options
       @list     = options.list

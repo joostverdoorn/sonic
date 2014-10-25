@@ -1,10 +1,10 @@
 class SortedList extends TailingList
 
-  Entry: SortedEntry
+  Entry:    SortedEntry
   Iterator: SortedIterator
 
-  HeadEntry: -> @_create(@source.headEntry, sortValue: -Infinity)
-  TailEntry: -> @_create(@source.tailEntry, sortValue:  Infinity)
+  HeadEntry: -> new @Entry(null, list: @, source: @source.headEntry, sortValue: -Infinity)
+  TailEntry: -> new @Entry(null, list: @, source: @source.tailEntry, sortValue:  Infinity)
 
   constructor: ( source, options = {} ) ->
     @sortFn = options.sortFn

@@ -9,3 +9,6 @@ class TailingEntry extends Entry
 
   value: ( ) ->
     @_value ?= @source.value()
+
+  reset: ( ) ->
+    @_value = undefined

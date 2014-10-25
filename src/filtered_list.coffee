@@ -1,7 +1,9 @@
 class FilteredList extends TailingList
 
-  Iterator: FilteredIterator
-
-  constructor: ( source, options ) ->
+  constructor: ( source, options = {} ) ->
     @filterFn = options.filterFn
-    super source, options
+    super(source, options)
+
+  _create: ( sourceEntry, options ) ->
+    return null unless @filterFn(sourceEntry.value())
+    return super(sourceEntry, options)

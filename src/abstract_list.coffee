@@ -1,10 +1,10 @@
 class AbstractList
 
-  Entry: Entry
+  Entry:    Entry
   Iterator: Iterator
 
-  HeadEntry: -> @_create(null, silent: true)
-  TailEntry: -> @_create(null, silent: true)
+  HeadEntry: -> new @Entry(null, list: @)
+  TailEntry: -> new @Entry(null, list: @)
 
   # Add event bindings
   for key, fn of Events
@@ -83,14 +83,13 @@ class AbstractList
 
   _insert: ( value, options = {} ) ->
     entry = @_create(value, silent: options.silent)
-    @_move(entry, options)
+    @_move(entry, options) if entry
 
     return entry
 
   # Iterator methods.
   getIterator: ( start ) ->
     start ||= @headEntry
-    # console.log "Get iterator", start
     return new @Iterator(@, start)
 
   # Public access methods.
@@ -151,18 +150,38 @@ class AbstractList
     return undefined
 
   # Moar stuff.
-  forEach: ( fn ) -> @each(fn)
+  forEach: ( fn ) ->
+    return @each(fn)
+
   each:    ( fn ) ->
+    @eachEntry ( entry ) -> fn(entry.value())
+
+  eachEntry: ( fn ) ->
     iterator = @getIterator()
-
     while iterator.moveNext()
-      return if fn(iterator.current()) is false or iterator.entry.next is @tailEntry
+      return false if fn(iterator.entry) is false
+    return true
 
-  any:  ( predicate ) -> @some(predicate)
+  any:  ( predicate ) ->
+    return @some(predicate)
+
   some: ( predicate ) ->
     for index in [0 ... @length()]
       return true if predicate(@at(index))
     return false
+
+  find: ( fn ) ->
+    @findEntry ( entry ) -> fn(entry.value())
+
+  findEntry: ( fn ) ->
+    result = undefined
+
+    @eachEntry ( entry ) ->
+      if fn(entry)
+        result = entry
+        return false
+
+    return result
 
   reduce: ( reduceFn, memo = 0 ) ->
     @each ( value ) ->
@@ -187,7 +206,9 @@ class AbstractList
   reverse: ( ) ->
     return new ReversedList(@)
 
-  unique: ( ) -> @uniq()
+  unique: ( ) ->
+    return @uniq()
+
   uniq:   ( ) ->
     return new UniqueList(@)
 

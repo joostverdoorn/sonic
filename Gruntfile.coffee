@@ -5,15 +5,13 @@ module.exports = ( grunt ) ->
 
     'src/iterator.coffee'
     'src/tailing_iterator.coffee'
-    'src/filtered_iterator.coffee'
     'src/sorted_iterator.coffee'
     'src/reversed_iterator.coffee'
+    'src/concatenated_iterator.coffee'
 
     'src/entry.coffee'
     'src/tailing_entry.coffee'
     'src/mapped_entry.coffee'
-    'src/filtered_entry.coffee'
-    'src/concatenated_entry.coffee'
     'src/sorted_entry.coffee'
 
     'src/abstract_list.coffee'

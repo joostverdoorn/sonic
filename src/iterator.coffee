@@ -30,4 +30,3 @@ class Iterator
     if @movePrevious()
       return { value: @current(), done: false, entry: @entry }
     else return { done: true, entry: @entry }
-

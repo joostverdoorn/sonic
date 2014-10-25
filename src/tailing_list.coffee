@@ -1,27 +1,28 @@
 class TailingList extends AbstractList
 
-  Entry: TailingEntry
+  Entry:    TailingEntry
   Iterator: TailingIterator
 
-  HeadEntry: -> @_create(@source.headEntry, silent: true)
-  TailEntry: -> @_create(@source.tailEntry, silent: true)
+  HeadEntry: -> new @Entry(null, list: @, source: @source.headEntry)
+  TailEntry: -> new @Entry(null, list: @, source: @source.tailEntry)
 
   constructor: ( source, options = {} ) ->
     @source = source
     @_bySourceId = {}
 
-    @source.on 'create', @_onSourceCreate, @
-    @source.on 'delete', @_onSourceDelete, @
-    @source.on 'update', @_onSourceUpdate, @
-    @source.on 'move',   @_onSourceMove,   @
+    @source.on('create', @_onSourceCreate, @)
+    @source.on('delete', @_onSourceDelete, @)
+    @source.on('update', @_onSourceUpdate, @)
+    @source.on('move',   @_onSourceMove,   @)
 
     super options
 
   getBySource: ( sourceEntry ) ->
-    if entry = @_bySourceId[sourceEntry.id]
-      return entry
+    return @headEntry if sourceEntry is @headEntry.source
+    return @tailEntry if sourceEntry is @tailEntry.source
 
-    entry = @_create(sourceEntry, silent: true)
+    entry = @_bySourceId[sourceEntry.id] or
+      @_create(sourceEntry, silent: true)
     return entry
 
   _create: ( sourceEntry, options = {} ) ->
@@ -33,12 +34,20 @@ class TailingList extends AbstractList
     delete @_bySourceId[entry.source.id]
     super(entry, options)
 
-  _move: ( entry, options = {} ) ->
-    iterator = @getIterator(entry)
-    previous = iterator.previous().entry
-    next = iterator.reset().next().entry
+  _set: ( entry, options = {} ) ->
+    entry.reset()
+    @trigger('update', entry.id, entry.value())
+    return true
 
-    super(entry, before: next, after: previous, silent: options.silent)
+  _move: ( entry, options = {} ) ->
+    @_remove(entry, silent: true)
+
+    iterator = @getIterator(entry)
+    iterator.attachNext()
+    iterator.attachPrevious()
+
+    @trigger('move', entry.id) unless options.silent
+    return true
 
   _onSourceCreate: ( sourceId ) ->
     sourceEntry = @source.getEntry(sourceId)
@@ -50,7 +59,7 @@ class TailingList extends AbstractList
 
   _onSourceUpdate: ( sourceId, value ) ->
     entry = @_bySourceId[sourceId]
-    @_reset(entry) if entry
+    @_set(entry) if entry
 
   _onSourceMove: ( sourceId ) ->
     entry = @_bySourceId[sourceId]

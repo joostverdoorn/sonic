@@ -1,5 +1,5 @@
 (function() {
-  var AbstractList, ConcatenatedEntry, ConcatenatedList, Entry, Events, FilteredIterator, FilteredList, Iterator, MappedEntry, MappedList, ReversedIterator, ReversedList, SimpleList, Sonic, SortedEntry, SortedIterator, SortedList, TailingEntry, TailingIterator, TailingList, UniqueList,
+  var AbstractList, ConcatenatedIterator, ConcatenatedList, Entry, Events, FilteredList, Iterator, MappedEntry, MappedList, ReversedIterator, ReversedList, SimpleList, Sonic, SortedEntry, SortedIterator, SortedList, TailingEntry, TailingIterator, TailingList, UniqueList,
     __slice = [].slice,
     __hasProp = {}.hasOwnProperty,
     __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
@@ -190,42 +190,52 @@
 
     TailingIterator.prototype.moveNext = function() {
       if (!this.entry.next) {
-        this._attachNext();
+        this.attachNext();
       }
       return TailingIterator.__super__.moveNext.apply(this, arguments);
     };
 
     TailingIterator.prototype.movePrevious = function() {
       if (!this.entry.previous) {
-        this._attachPrevious();
+        this.attachPrevious();
       }
       return TailingIterator.__super__.movePrevious.apply(this, arguments);
     };
 
-    TailingIterator.prototype._attachNext = function() {
-      var next, nextSource;
+    TailingIterator.prototype.attachNext = function() {
+      var iterator, next;
       if (this.entry.next) {
         return true;
       }
-      nextSource = this.entry.source.getIterator().next().entry;
-      if (!nextSource) {
+      iterator = this.entry.source.getIterator();
+      while (iterator.moveNext()) {
+        next = this.list.getBySource(iterator.entry);
+        if (next) {
+          break;
+        }
+      }
+      if (!next) {
         return false;
       }
-      next = this.list.getBySource(nextSource);
       this.entry.attachNext(next);
       return true;
     };
 
-    TailingIterator.prototype._attachPrevious = function() {
-      var previous, previousSource;
+    TailingIterator.prototype.attachPrevious = function() {
+      var iterator, previous;
       if (this.entry.previous) {
         return true;
       }
-      previousSource = this.entry.source.getIterator().previous().entry;
-      if (!previousSource) {
+      iterator = this.entry.source.getIterator();
+      while (iterator.movePrevious()) {
+        previous = this.list.getBySource(iterator.entry);
+        if (previous) {
+          break;
+        }
+      }
+      if (!previous) {
         return false;
       }
-      previous = this.list.getBySource(previousSource);
       this.entry.attachPrevious(previous);
       return true;
     };
@@ -233,51 +243,6 @@
     return TailingIterator;
 
   })(Iterator);
-
-  FilteredIterator = (function(_super) {
-    __extends(FilteredIterator, _super);
-
-    function FilteredIterator() {
-      return FilteredIterator.__super__.constructor.apply(this, arguments);
-    }
-
-    FilteredIterator.prototype._attachNext = function() {
-      var filterFn, iterator, next;
-      if (this.entry.next) {
-        return true;
-      }
-      iterator = this.entry.source.getIterator();
-      filterFn = this.list.filterFn;
-      while (iterator.moveNext()) {
-        if (filterFn(iterator.current())) {
-          break;
-        }
-      }
-      next = this.list.getBySource(iterator.entry);
-      this.entry.attachNext(next);
-      return true;
-    };
-
-    FilteredIterator.prototype._attachPrevious = function() {
-      var filterFn, iterator, previous;
-      if (this.entry.previous) {
-        return true;
-      }
-      iterator = this.entry.source.getIterator();
-      filterFn = this.list.filterFn;
-      while (iterator.movePrevious()) {
-        if (filterFn(iterator.current())) {
-          break;
-        }
-      }
-      previous = this.list.getBySource(iterator.entry);
-      this.entry.attachPrevious(previous);
-      return true;
-    };
-
-    return FilteredIterator;
-
-  })(TailingIterator);
 
   SortedIterator = (function(_super) {
     __extends(SortedIterator, _super);
@@ -339,30 +304,40 @@
       return ReversedIterator.__super__.constructor.apply(this, arguments);
     }
 
-    ReversedIterator.prototype._attachNext = function() {
-      var next, nextSource;
+    ReversedIterator.prototype.attachNext = function() {
+      var iterator, next;
       if (this.entry.next) {
         return true;
       }
-      nextSource = this.entry.source.getIterator().previous().entry;
-      if (!nextSource) {
+      iterator = this.entry.source.getIterator();
+      while (iterator.movePrevious()) {
+        next = this.list.getBySource(iterator.entry);
+        if (next) {
+          break;
+        }
+      }
+      if (!next) {
         return false;
       }
-      next = this.list.getBySource(nextSource);
       this.entry.attachNext(next);
       return true;
     };
 
-    ReversedIterator.prototype._attachPrevious = function() {
-      var previous, previousSource;
+    ReversedIterator.prototype.attachPrevious = function() {
+      var iterator, previous;
       if (this.entry.previous) {
         return true;
       }
-      previousSource = this.entry.source.getIterator().next().entry;
-      if (!previousSource) {
+      iterator = this.entry.source.getIterator();
+      while (iterator.moveNext()) {
+        previous = this.list.getBySource(iterator.entry);
+        if (previous) {
+          break;
+        }
+      }
+      if (!previous) {
         return false;
       }
-      previous = this.list.getBySource(previousSource);
       this.entry.attachPrevious(previous);
       return true;
     };
@@ -371,14 +346,60 @@
 
   })(TailingIterator);
 
+  ConcatenatedIterator = (function(_super) {
+    __extends(ConcatenatedIterator, _super);
+
+    function ConcatenatedIterator() {
+      return ConcatenatedIterator.__super__.constructor.apply(this, arguments);
+    }
+
+    ConcatenatedIterator.prototype._attachNext = function() {
+      var next, nextSource, nextSourceList;
+      if (this.entry.next) {
+        return true;
+      }
+      nextSource = this.entry.source.getIterator().next().entry;
+      if (!nextSource) {
+        return false;
+      }
+      if (nextSource === this.source.list.tailEntry) {
+        nextSourceList = this.list.sources.after(this.source.list);
+        if (nextSourceList) {
+          nextSource = nextSourceList.headEntry.next;
+        }
+      }
+      next = this.list.getBySource(nextSource);
+      this.entry.attachNext(next);
+      return true;
+    };
+
+    ConcatenatedIterator.prototype._attachPrevious = function() {
+      var previousSourceList, sourcePrevious;
+      if (this._previous != null) {
+        return this._previous;
+      }
+      sourcePrevious = this.source.previous;
+      if (sourcePrevious === this.source.list.headEntry) {
+        previousSourceList = this.list.sources.before(this.source.list);
+        if (previousSourceList) {
+          sourcePrevious = nextSourceList.tailEntry.previous;
+        }
+      }
+      return this._previous || (this._previous = this.tail(sourcePrevious));
+    };
+
+    return ConcatenatedIterator;
+
+  })(TailingIterator);
+
   Entry = (function() {
     function Entry(value, options) {
-      if (value != null) {
-        this._value = value;
-      } else {
-        this._value = options.value;
+      var _ref;
+      if (options == null) {
+        options = {};
       }
-      this.id = Sonic.uniqueId() || options.id;
+      this.id = (_ref = options.id) != null ? _ref : Sonic.uniqueId();
+      this._value = value != null ? value : options.value;
       if (options) {
         this.list = options.list;
         this.next = options.next;
@@ -454,6 +475,10 @@
       return this._value != null ? this._value : this._value = this.source.value();
     };
 
+    TailingEntry.prototype.reset = function() {
+      return this._value = void 0;
+    };
+
     return TailingEntry;
 
   })(Entry);
@@ -470,47 +495,6 @@
     };
 
     return MappedEntry;
-
-  })(TailingEntry);
-
-  ConcatenatedEntry = (function(_super) {
-    __extends(ConcatenatedEntry, _super);
-
-    function ConcatenatedEntry() {
-      return ConcatenatedEntry.__super__.constructor.apply(this, arguments);
-    }
-
-    ConcatenatedEntry.prototype.next = function() {
-      var nextSourceList, sourceNext;
-      if (this._next != null) {
-        return this._next;
-      }
-      sourceNext = this.source.next;
-      if (sourceNext === this.source.list.tailEntry) {
-        nextSourceList = this.list.sources.after(this.source.list);
-        if (nextSourceList) {
-          sourceNext = nextSourceList.headEntry.next;
-        }
-      }
-      return this._next || (this._next = this.tail(sourceNext));
-    };
-
-    ConcatenatedEntry.prototype.previous = function() {
-      var previousSourceList, sourcePrevious;
-      if (this._previous != null) {
-        return this._previous;
-      }
-      sourcePrevious = this.source.previous;
-      if (sourcePrevious === this.source.list.headEntry) {
-        previousSourceList = this.list.sources.before(this.source.list);
-        if (previousSourceList) {
-          sourcePrevious = nextSourceList.tailEntry.previous;
-        }
-      }
-      return this._previous || (this._previous = this.tail(sourcePrevious));
-    };
-
-    return ConcatenatedEntry;
 
   })(TailingEntry);
 
@@ -806,14 +790,14 @@
     AbstractList.prototype.Iterator = Iterator;
 
     AbstractList.prototype.HeadEntry = function() {
-      return this._create(null, {
-        silent: true
+      return new this.Entry(null, {
+        list: this
       });
     };
 
     AbstractList.prototype.TailEntry = function() {
-      return this._create(null, {
-        silent: true
+      return new this.Entry(null, {
+        list: this
       });
     };
 
@@ -942,7 +926,9 @@
       entry = this._create(value, {
         silent: options.silent
       });
-      this._move(entry, options);
+      if (entry) {
+        this._move(entry, options);
+      }
       return entry;
     };
 
@@ -1042,13 +1028,20 @@
     };
 
     AbstractList.prototype.each = function(fn) {
+      return this.eachEntry(function(entry) {
+        return fn(entry.value());
+      });
+    };
+
+    AbstractList.prototype.eachEntry = function(fn) {
       var iterator;
       iterator = this.getIterator();
       while (iterator.moveNext()) {
-        if (fn(iterator.current()) === false || iterator.entry.next === this.tailEntry) {
-          return;
+        if (fn(iterator.entry) === false) {
+          return false;
         }
       }
+      return true;
     };
 
     AbstractList.prototype.any = function(predicate) {
@@ -1063,6 +1056,24 @@
         }
       }
       return false;
+    };
+
+    AbstractList.prototype.find = function(fn) {
+      return this.findEntry(function(entry) {
+        return fn(entry.value());
+      });
+    };
+
+    AbstractList.prototype.findEntry = function(fn) {
+      var result;
+      result = void 0;
+      this.eachEntry(function(entry) {
+        if (fn(entry)) {
+          result = entry;
+          return false;
+        }
+      });
+      return result;
     };
 
     AbstractList.prototype.reduce = function(reduceFn, memo) {
@@ -1262,14 +1273,16 @@
     TailingList.prototype.Iterator = TailingIterator;
 
     TailingList.prototype.HeadEntry = function() {
-      return this._create(this.source.headEntry, {
-        silent: true
+      return new this.Entry(null, {
+        list: this,
+        source: this.source.headEntry
       });
     };
 
     TailingList.prototype.TailEntry = function() {
-      return this._create(this.source.tailEntry, {
-        silent: true
+      return new this.Entry(null, {
+        list: this,
+        source: this.source.tailEntry
       });
     };
 
@@ -1288,10 +1301,13 @@
 
     TailingList.prototype.getBySource = function(sourceEntry) {
       var entry;
-      if (entry = this._bySourceId[sourceEntry.id]) {
-        return entry;
+      if (sourceEntry === this.headEntry.source) {
+        return this.headEntry;
       }
-      entry = this._create(sourceEntry, {
+      if (sourceEntry === this.tailEntry.source) {
+        return this.tailEntry;
+      }
+      entry = this._bySourceId[sourceEntry.id] || this._create(sourceEntry, {
         silent: true
       });
       return entry;
@@ -1315,19 +1331,30 @@
       return TailingList.__super__._delete.call(this, entry, options);
     };
 
-    TailingList.prototype._move = function(entry, options) {
-      var iterator, next, previous;
+    TailingList.prototype._set = function(entry, options) {
       if (options == null) {
         options = {};
       }
-      iterator = this.getIterator(entry);
-      previous = iterator.previous().entry;
-      next = iterator.reset().next().entry;
-      return TailingList.__super__._move.call(this, entry, {
-        before: next,
-        after: previous,
-        silent: options.silent
+      entry.reset();
+      this.trigger('update', entry.id, entry.value());
+      return true;
+    };
+
+    TailingList.prototype._move = function(entry, options) {
+      var iterator;
+      if (options == null) {
+        options = {};
+      }
+      this._remove(entry, {
+        silent: true
       });
+      iterator = this.getIterator(entry);
+      iterator.attachNext();
+      iterator.attachPrevious();
+      if (!options.silent) {
+        this.trigger('move', entry.id);
+      }
+      return true;
     };
 
     TailingList.prototype._onSourceCreate = function(sourceId) {
@@ -1348,7 +1375,7 @@
       var entry;
       entry = this._bySourceId[sourceId];
       if (entry) {
-        return this._reset(entry);
+        return this._set(entry);
       }
     };
 
@@ -1373,8 +1400,8 @@
       if (options == null) {
         options = {};
       }
-      MappedList.__super__.constructor.call(this, source, options);
       this.mapFn = options.mapFn;
+      MappedList.__super__.constructor.call(this, source, options);
     }
 
     return MappedList;
@@ -1384,12 +1411,20 @@
   FilteredList = (function(_super) {
     __extends(FilteredList, _super);
 
-    FilteredList.prototype.Iterator = FilteredIterator;
-
     function FilteredList(source, options) {
+      if (options == null) {
+        options = {};
+      }
       this.filterFn = options.filterFn;
       FilteredList.__super__.constructor.call(this, source, options);
     }
+
+    FilteredList.prototype._create = function(sourceEntry, options) {
+      if (!this.filterFn(sourceEntry.value())) {
+        return null;
+      }
+      return FilteredList.__super__._create.call(this, sourceEntry, options);
+    };
 
     return FilteredList;
 
@@ -1398,7 +1433,7 @@
   ConcatenatedList = (function(_super) {
     __extends(ConcatenatedList, _super);
 
-    ConcatenatedList.prototype.Entry = ConcatenatedEntry;
+    ConcatenatedList.prototype.Iterator = ConcatenatedIterator;
 
     function ConcatenatedList(sources, options) {
       var source;
@@ -1413,6 +1448,25 @@
       ConcatenatedList.__super__.constructor.call(this, source, options);
     }
 
+    ConcatenatedList.prototype.getBySource = function(sourceEntry) {
+      var listId, sourceList;
+      listId = this.sources.idOf(sourceEntry.list);
+      sourceList = this.sources.entryOf(listId);
+      return this._bySourceId[listId][sourceEntry.id] || this._create(sourceEntry, {
+        silent: true
+      });
+    };
+
+    ConcatenatedList.prototype._create = function(sourceEntry, options) {
+      var entry;
+      if (options == null) {
+        options = {};
+      }
+      entry = ConcatenatedList.__super__._create.call(this, sourceEntry, options);
+      this._bySourceId[sourceEntry.id] = entry;
+      return entry;
+    };
+
     return ConcatenatedList;
 
   })(TailingList);
@@ -1425,11 +1479,44 @@
         options = {};
       }
       UniqueList.__super__.constructor.call(this, source, options);
+      this._duplicates = new SimpleList();
     }
+
+    UniqueList.prototype._create = function(sourceEntry, options) {
+      if (this.contains(sourceEntry.value())) {
+        this._duplicates.push(sourceEntry);
+        return null;
+      }
+      return UniqueList.__super__._create.call(this, sourceEntry, options);
+    };
+
+    UniqueList.prototype._delete = function(entry, options) {
+      var value, wrapper;
+      value = entry.value();
+      if (!UniqueList.__super__._delete.call(this, entry, options)) {
+        return false;
+      }
+      wrapper = this._duplicates.findEntry(function(wrapper) {
+        return value === wrapper.value().value();
+      });
+      if (wrapper) {
+        this._duplicates["delete"](wrapper.id);
+        this._insert(wrapper.value());
+      }
+      return true;
+    };
+
+    UniqueList.prototype._set = function(entry, options) {
+      if (options == null) {
+        options = {};
+      }
+      this._delete(entry);
+      return this._insert(entry.source);
+    };
 
     return UniqueList;
 
-  })(FilteredList);
+  })(TailingList);
 
   SortedList = (function(_super) {
     __extends(SortedList, _super);
@@ -1439,13 +1526,17 @@
     SortedList.prototype.Iterator = SortedIterator;
 
     SortedList.prototype.HeadEntry = function() {
-      return this._create(this.source.headEntry, {
+      return new this.Entry(null, {
+        list: this,
+        source: this.source.headEntry,
         sortValue: -Infinity
       });
     };
 
     SortedList.prototype.TailEntry = function() {
-      return this._create(this.source.tailEntry, {
+      return new this.Entry(null, {
+        list: this,
+        source: this.source.tailEntry,
         sortValue: Infinity
       });
     };
@@ -1517,14 +1608,16 @@
     ReversedList.prototype.Iterator = ReversedIterator;
 
     ReversedList.prototype.HeadEntry = function() {
-      return this._create(this.source.tailEntry, {
-        silent: true
+      return new this.Entry(null, {
+        list: this,
+        source: this.source.tailEntry
       });
     };
 
     ReversedList.prototype.TailEntry = function() {
-      return this._create(this.source.headEntry, {
-        silent: true
+      return new this.Entry(null, {
+        list: this,
+        source: this.source.headEntry
       });
     };
 
@@ -1538,13 +1631,12 @@
     exports.Event = Event;
     exports.Iterator = Iterator;
     exports.TailingIterator = TailingIterator;
-    exports.FilteredIterator = FilteredIterator;
     exports.SortedIterator = SortedIterator;
     exports.ReversedIterator = ReversedIterator;
+    exports.ConcatenatedIterator = ConcatenatedIterator;
     exports.Entry = Entry;
     exports.TailingEntry = TailingEntry;
     exports.MappedEntry = MappedEntry;
-    exports.ConcatenatedEntry = ConcatenatedEntry;
     exports.SortedEntry = SortedEntry;
     exports.AbstractList = AbstractList;
     exports.SimpleList = SimpleList;
