@@ -1,5 +1,5 @@
 (function() {
-  var AbstractList, ConcatenatedIterator, ConcatenatedList, Entry, Events, FilteredList, Iterator, MappedEntry, MappedList, ReversedIterator, ReversedList, SimpleList, Sonic, SortedEntry, SortedIterator, SortedList, TailingEntry, TailingIterator, TailingList, UniqueList,
+  var AbstractList, ConcatenatedIterator, ConcatenatedList, Entry, Events, FilteredList, GeneratedList, Generator, Iterator, MappedEntry, MappedList, ReversedIterator, ReversedList, SimpleList, Sonic, SortedEntry, SortedIterator, SortedList, TailingEntry, TailingIterator, TailingList, UniqueList,
     __slice = [].slice,
     __hasProp = {}.hasOwnProperty,
     __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
@@ -389,6 +389,29 @@
     };
 
     return ConcatenatedIterator;
+
+  })(TailingIterator);
+
+  Generator = (function(_super) {
+    __extends(Generator, _super);
+
+    function Generator() {
+      return Generator.__super__.constructor.apply(this, arguments);
+    }
+
+    Generator.prototype.attachNext = function() {
+      var next, nextSource, nextSourceId, nextVal;
+      nextVal = this.list.generatorFn(this.list.source);
+      nextSourceId = this.list.source.push(nextVal, {
+        silent: true
+      });
+      nextSource = this.list.source.getEntry(nextSourceId);
+      next = this.list.getBySource(nextSource);
+      this.entry.attachNext(next);
+      return true;
+    };
+
+    return Generator;
 
   })(TailingIterator);
 
@@ -1625,6 +1648,25 @@
 
   })(TailingList);
 
+  GeneratedList = (function(_super) {
+    __extends(GeneratedList, _super);
+
+    GeneratedList.prototype.Iterator = Generator;
+
+    function GeneratedList(fn, options) {
+      var source;
+      if (options == null) {
+        options = {};
+      }
+      this.generatorFn = fn;
+      source = Sonic.create(options.init);
+      GeneratedList.__super__.constructor.call(this, source, options);
+    }
+
+    return GeneratedList;
+
+  })(TailingList);
+
   Sonic.factory = function(exports) {
     exports._ = Sonic;
     exports.create = Sonic.create;
@@ -1634,6 +1676,7 @@
     exports.SortedIterator = SortedIterator;
     exports.ReversedIterator = ReversedIterator;
     exports.ConcatenatedIterator = ConcatenatedIterator;
+    exports.Generator = Generator;
     exports.Entry = Entry;
     exports.TailingEntry = TailingEntry;
     exports.MappedEntry = MappedEntry;
@@ -1646,7 +1689,8 @@
     exports.ConcatenatedList = ConcatenatedList;
     exports.UniqueList = UniqueList;
     exports.SortedList = SortedList;
-    return exports.ReversedList = ReversedList;
+    exports.ReversedList = ReversedList;
+    return exports.GeneratedList = GeneratedList;
   };
 
   if (typeof exports === 'object') {

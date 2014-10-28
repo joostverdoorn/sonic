@@ -8,6 +8,7 @@ Sonic.factory = ( exports ) ->
     exports.SortedIterator        = SortedIterator
     exports.ReversedIterator      = ReversedIterator
     exports.ConcatenatedIterator  = ConcatenatedIterator
+    exports.Generator             = Generator
 
     exports.Entry                 = Entry
     exports.TailingEntry          = TailingEntry
@@ -23,6 +24,7 @@ Sonic.factory = ( exports ) ->
     exports.UniqueList            = UniqueList
     exports.SortedList            = SortedList
     exports.ReversedList          = ReversedList
+    exports.GeneratedList         = GeneratedList
 
 # Exports Sonic for CommonJS, AMD and the browser.
 if typeof exports == 'object'

@@ -8,6 +8,7 @@ module.exports = ( grunt ) ->
     'src/sorted_iterator.coffee'
     'src/reversed_iterator.coffee'
     'src/concatenated_iterator.coffee'
+    'src/generator.coffee'
 
     'src/entry.coffee'
     'src/tailing_entry.coffee'
@@ -23,6 +24,7 @@ module.exports = ( grunt ) ->
     'src/unique_list.coffee'
     'src/sorted_list.coffee'
     'src/reversed_list.coffee'
+    'src/generated_list.coffee'
 
     'src/export.coffee'
   ]
@@ -31,6 +33,7 @@ module.exports = ( grunt ) ->
     # '.grunt/sonic/spec_compiled/sonic.js'
     '.grunt/sonic/spec_compiled/iterator.js'
     '.grunt/sonic/spec_compiled/tailing_iterator.js'
+    '.grunt/sonic/spec_compiled/generator.js'
 
     '.grunt/sonic/spec_compiled/sorted_entry.js'
 
@@ -43,6 +46,7 @@ module.exports = ( grunt ) ->
     '.grunt/sonic/spec_compiled/unique_list.js'
     '.grunt/sonic/spec_compiled/sorted_list.js'
     '.grunt/sonic/spec_compiled/reversed_list.js'
+    '.grunt/sonic/spec_compiled/generated_list.js'
 
     # '.grunt/sonic/spec_compiled/export.js'
   ]
