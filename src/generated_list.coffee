@@ -8,3 +8,6 @@ class GeneratedList extends TailingList
     source = Sonic.create(options.init)
 
     super source, options
+
+  toArray: () ->
+    return @source.toArray()

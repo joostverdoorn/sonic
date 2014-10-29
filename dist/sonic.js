@@ -401,6 +401,9 @@
 
     Generator.prototype.attachNext = function() {
       var next, nextSource, nextSourceId, nextVal;
+      if (this.entry.next) {
+        return true;
+      }
       nextVal = this.list.generatorFn(this.list.source);
       nextSourceId = this.list.source.push(nextVal, {
         silent: true
@@ -1662,6 +1665,10 @@
       source = Sonic.create(options.init);
       GeneratedList.__super__.constructor.call(this, source, options);
     }
+
+    GeneratedList.prototype.toArray = function() {
+      return this.source.toArray();
+    };
 
     return GeneratedList;
 
