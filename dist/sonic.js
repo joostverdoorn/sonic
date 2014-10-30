@@ -1,5 +1,5 @@
 (function() {
-  var AbstractList, ConcatenatedIterator, ConcatenatedList, Entry, Events, FilteredList, GeneratedList, Generator, Iterator, MappedEntry, MappedList, ReversedIterator, ReversedList, SimpleList, Sonic, SortedEntry, SortedIterator, SortedList, TailingEntry, TailingIterator, TailingList, UniqueList,
+  var AbstractList, ConcatenatedIterator, ConcatenatedList, Entry, FilteredList, GeneratedList, Generator, Iterator, MappedEntry, MappedList, Observable, ReversedIterator, ReversedList, SimpleList, Sonic, SortedEntry, SortedIterator, SortedList, TailingEntry, TailingIterator, TailingList, UniqueList,
     __slice = [].slice,
     __hasProp = {}.hasOwnProperty,
     __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
@@ -22,105 +22,75 @@
     }
   };
 
-  Events = {
-    on: function() {
-      var bindings, callback, context, event, name;
-      if (typeof arguments[0] === 'string') {
-        name = arguments[0];
-        callback = arguments[1];
-        context = arguments[2] || null;
-        if (this._events == null) {
-          this._events = {};
-        }
-        if (this._events[name] == null) {
-          this._events[name] = [];
-        }
-        event = {
+  Observable = (function() {
+    function Observable() {
+      this._events = {};
+    }
+
+    Observable.prototype.on = function(name, callback, context) {
+      var _ref;
+      ((_ref = this._events[name]) != null ? _ref.push({
+        callback: callback,
+        context: context
+      }) : void 0) || (this._events[name] = [
+        {
           callback: callback,
           context: context
-        };
-        this._events[name].push(event);
-      } else if (typeof arguments[0] === 'object') {
-        bindings = arguments[0];
-        for (name in bindings) {
-          callback = bindings[name];
-          this.on(name, callback);
+        }
+      ]);
+      return true;
+    };
+
+    Observable.prototype.off = function(name, callback, context) {
+      var event, events, i, _i, _ref;
+      if (!this._events) {
+        return false;
+      }
+      events = this._events[name];
+      for (i = _i = 0, _ref = events.length; 0 <= _ref ? _i < _ref : _i > _ref; i = 0 <= _ref ? ++_i : --_i) {
+        event = events[i];
+        if ((!callback || callback === event.callback) && (!context || context === event.context)) {
+          events.splice(i, 1);
         }
       }
-      return this;
-    },
-    off: function(name, callback, context) {
-      var event, names, _i, _j, _len, _len1, _ref;
-      if (name == null) {
-        name = null;
-      }
-      if (callback == null) {
-        callback = null;
-      }
-      if (context == null) {
-        context = null;
-      }
-      if (this._events == null) {
-        return;
-      }
-      names = name ? [name] : _.keys(this._events);
-      for (_i = 0, _len = names.length; _i < _len; _i++) {
-        name = names[_i];
-        if (this._events[name] == null) {
-          return;
-        }
-        _ref = this._events[name];
-        for (_j = 0, _len1 = _ref.length; _j < _len1; _j++) {
-          event = _ref[_j];
-          if (((callback == null) || callback === event.callback) && ((context == null) || context === event.context)) {
-            this._events[name] = _(this._events[name]).without(event);
-          }
-        }
-      }
-      return this;
-    },
-    once: function() {
-      var bindings, callback, context, fn, name;
-      if (typeof arguments[0] === 'string') {
-        name = arguments[0];
-        callback = arguments[1];
-        context = arguments[2] || null;
-        fn = function() {
-          var args;
-          args = 1 <= arguments.length ? __slice.call(arguments, 0) : [];
-          callback.apply(context, args);
-          return this.off(name, arguments.callee, context);
-        };
-        this.on(name, fn, context);
-      } else if (typeof arguments[0] === 'object') {
-        bindings = arguments[0];
-        for (name in bindings) {
-          callback = bindings[name];
-          this.once(name, callback);
-        }
-      }
-      return this;
-    },
-    trigger: function() {
-      var args, event, name, _i, _len, _ref, _ref1, _ref2, _ref3;
+      return true;
+    };
+
+    Observable.prototype.once = function(name, callback, context) {
+      var fn;
+      fn = function() {
+        var args;
+        args = 1 <= arguments.length ? __slice.call(arguments, 0) : [];
+        callback.apply(null, args);
+        return this.off(name, fn, context);
+      };
+      this.on(name, fn, context);
+      return true;
+    };
+
+    Observable.prototype.trigger = function() {
+      var args, event, events, name, _i, _len;
       name = arguments[0], args = 2 <= arguments.length ? __slice.call(arguments, 1) : [];
-      if (this._events == null) {
+      if (!this._events) {
+        return false;
+      }
+      events = this._events[name];
+      if (!(events && events.length > 0)) {
         return;
       }
-      if (((_ref = this._events[name]) != null ? _ref.length : void 0) > 0) {
-        _ref1 = this._events[name];
-        for (_i = 0, _len = _ref1.length; _i < _len; _i++) {
-          event = _ref1[_i];
-          event.callback.apply((_ref2 = event.context) != null ? _ref2 : this, args);
-        }
+      for (_i = 0, _len = events.length; _i < _len; _i++) {
+        event = events[_i];
+        event.callback.apply(event.context || this, args);
       }
-      if (!(name === '*' || ((_ref3 = this._events['*']) != null ? _ref3.length : void 0) === 0)) {
-        args.unshift('*');
-        this.trigger.apply(this, args);
+      if (name !== '*') {
+        this.trigger.apply(this, ['*', name].concat(__slice.call(args)));
       }
-      return this;
-    }
-  };
+      return true;
+    };
+
+    return Observable;
+
+  })();
 
   Iterator = (function() {
     function Iterator(list, entry) {
@@ -208,11 +178,8 @@
         return true;
       }
       iterator = this.entry.source.getIterator();
-      while (iterator.moveNext()) {
-        next = this.list.getBySource(iterator.entry);
-        if (next) {
-          break;
-        }
+      while (next == null) {
+        next = this.list.getBySource(iterator.next().entry);
       }
       if (!next) {
         return false;
@@ -227,11 +194,8 @@
         return true;
       }
       iterator = this.entry.source.getIterator();
-      while (iterator.movePrevious()) {
-        previous = this.list.getBySource(iterator.entry);
-        if (previous) {
-          break;
-        }
+      while (previous == null) {
+        previous = this.list.getBySource(iterator.previous().entry);
       }
       if (!previous) {
         return false;
@@ -418,12 +382,15 @@
 
   })(TailingIterator);
 
-  Entry = (function() {
+  Entry = (function(_super) {
+    __extends(Entry, _super);
+
     function Entry(value, options) {
       var _ref;
       if (options == null) {
         options = {};
       }
+      Entry.__super__.constructor.call(this);
       this.id = (_ref = options.id) != null ? _ref : Sonic.uniqueId();
       this._value = value != null ? value : options.value;
       if (options) {
@@ -438,13 +405,17 @@
     };
 
     Entry.prototype.value = function() {
-      if (this._value != null) {
-        return this._value;
+      var oldValue, value;
+      if (arguments.length > 0) {
+        value = arguments[0];
+        if (this._value === value) {
+          return;
+        }
+        oldValue = this._value;
+        this._value = value;
+        this.trigger('update', this, oldValue);
       }
-    };
-
-    Entry.prototype.setValue = function(value) {
-      return this._value = value;
+      return this._value;
     };
 
     Entry.prototype.getIterator = function() {
@@ -480,7 +451,7 @@
 
     return Entry;
 
-  })();
+  })(Observable);
 
   TailingEntry = (function(_super) {
     __extends(TailingEntry, _super);
@@ -490,6 +461,9 @@
         options = {};
       }
       this.source = source || options.source;
+      if (this.source) {
+        this.source.on('update', this._onSourceUpdate, this);
+      }
       TailingEntry.__super__.constructor.call(this, void 0, options);
     }
 
@@ -501,8 +475,9 @@
       return this._value != null ? this._value : this._value = this.source.value();
     };
 
-    TailingEntry.prototype.reset = function() {
-      return this._value = void 0;
+    TailingEntry.prototype._onSourceUpdate = function() {
+      this._value = void 0;
+      return this.trigger('update', this);
     };
 
     return TailingEntry;
@@ -808,8 +783,8 @@
 
   })(TailingEntry);
 
-  AbstractList = (function() {
-    var fn, key;
+  AbstractList = (function(_super) {
+    __extends(AbstractList, _super);
 
     AbstractList.prototype.Entry = Entry;
 
@@ -827,16 +802,11 @@
       });
     };
 
-    for (key in Events) {
-      fn = Events[key];
-      AbstractList.prototype[key] = fn;
-    }
-
     function AbstractList() {
+      AbstractList.__super__.constructor.call(this);
       this._byId = {};
       this.headEntry = this.HeadEntry();
       this.tailEntry = this.TailEntry();
-      this.length = 0;
     }
 
     AbstractList.prototype._create = function(value, options) {
@@ -846,9 +816,9 @@
       }
       options.list = this;
       entry = new this.Entry(value, options);
+      entry.on('*', this._onEntryEvent, this);
       id = entry.id;
       this._byId[id] = entry;
-      this.length++;
       if (!options.silent) {
         this.trigger('create', entry.id);
       }
@@ -862,8 +832,8 @@
       this._remove(entry, {
         silent: true
       });
+      entry.off('*', this._onEntryEvent, this);
       delete this._byId[entry.id];
-      this.length--;
       if (!options.silent) {
         this.trigger('delete', entry.id);
       }
@@ -874,18 +844,8 @@
       if (options == null) {
         options = {};
       }
-      entry.setValue(value);
-      if (!options.silent) {
-        this.trigger('update', entry.id, entry.value());
-      }
+      entry.value(value);
       return true;
-    };
-
-    AbstractList.prototype._reset = function(entry, options) {
-      if (options == null) {
-        options = {};
-      }
-      return this._set(entry, void 0, options);
     };
 
     AbstractList.prototype._remove = function(entry, options) {
@@ -1193,6 +1153,14 @@
       });
     };
 
+    AbstractList.prototype.invoke = function() {
+      var args, key;
+      key = arguments[0], args = 2 <= arguments.length ? __slice.call(arguments, 1) : [];
+      return this.map(function(value) {
+        return value[key].apply(value, args);
+      });
+    };
+
     AbstractList.prototype.toArray = function() {
       var values;
       values = [];
@@ -1202,9 +1170,15 @@
       return values;
     };
 
+    AbstractList.prototype._onEntryEvent = function() {
+      var args, entry, event;
+      event = arguments[0], entry = arguments[1], args = 3 <= arguments.length ? __slice.call(arguments, 2) : [];
+      return this.trigger.apply(this, [event, entry.id].concat(__slice.call(args)));
+    };
+
     return AbstractList;
 
-  })();
+  })(Observable);
 
   SimpleList = (function(_super) {
     __extends(SimpleList, _super);
@@ -1320,7 +1294,6 @@
       this._bySourceId = {};
       this.source.on('create', this._onSourceCreate, this);
       this.source.on('delete', this._onSourceDelete, this);
-      this.source.on('update', this._onSourceUpdate, this);
       this.source.on('move', this._onSourceMove, this);
       TailingList.__super__.constructor.call(this, options);
     }
@@ -1357,15 +1330,6 @@
       return TailingList.__super__._delete.call(this, entry, options);
     };
 
-    TailingList.prototype._set = function(entry, options) {
-      if (options == null) {
-        options = {};
-      }
-      entry.reset();
-      this.trigger('update', entry.id, entry.value());
-      return true;
-    };
-
     TailingList.prototype._move = function(entry, options) {
       var iterator;
       if (options == null) {
@@ -1394,14 +1358,6 @@
       entry = this._bySourceId[sourceId];
       if (entry) {
         return this._delete(entry);
-      }
-    };
-
-    TailingList.prototype._onSourceUpdate = function(sourceId, value) {
-      var entry;
-      entry = this._bySourceId[sourceId];
-      if (entry) {
-        return this._set(entry);
       }
     };
 
@@ -1506,14 +1462,23 @@
       }
       UniqueList.__super__.constructor.call(this, source, options);
       this._duplicates = new SimpleList();
+      if (typeof Map !== "undefined" && Map !== null) {
+        this._map = new Map();
+      }
+      this.on('update', this._onUpdate, this);
     }
 
     UniqueList.prototype._create = function(sourceEntry, options) {
+      var entry;
       if (this.contains(sourceEntry.value())) {
         this._duplicates.push(sourceEntry);
         return null;
       }
-      return UniqueList.__super__._create.call(this, sourceEntry, options);
+      entry = UniqueList.__super__._create.call(this, sourceEntry, options);
+      if (this._map) {
+        this._map.set(entry.value(), entry);
+      }
+      return entry;
     };
 
     UniqueList.prototype._delete = function(entry, options) {
@@ -1521,6 +1486,9 @@
       value = entry.value();
       if (!UniqueList.__super__._delete.call(this, entry, options)) {
         return false;
+      }
+      if (this._map) {
+        this._map["delete"](value);
       }
       wrapper = this._duplicates.findEntry(function(wrapper) {
         return value === wrapper.value().value();
@@ -1532,10 +1500,15 @@
       return true;
     };
 
-    UniqueList.prototype._set = function(entry, options) {
-      if (options == null) {
-        options = {};
+    UniqueList.prototype.entryOf = function(value) {
+      if (this._map) {
+        return this._map.get(value);
+      } else {
+        return UniqueList.__super__.entryOf.apply(this, arguments);
       }
+    };
+
+    UniqueList.prototype._onUpdate = function(entry) {
       this._delete(entry);
       return this._insert(entry.source);
     };
@@ -1677,7 +1650,7 @@
   Sonic.factory = function(exports) {
     exports._ = Sonic;
     exports.create = Sonic.create;
-    exports.Event = Event;
+    exports.Observable = Observable;
     exports.Iterator = Iterator;
     exports.TailingIterator = TailingIterator;
     exports.SortedIterator = SortedIterator;

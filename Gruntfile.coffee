@@ -1,7 +1,7 @@
 module.exports = ( grunt ) ->
   srcs = [
     'src/sonic.coffee'
-    'src/events.coffee'
+    'src/observable.coffee'
 
     'src/iterator.coffee'
     'src/tailing_iterator.coffee'

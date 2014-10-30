@@ -12,7 +12,6 @@ class TailingList extends AbstractList
 
     @source.on('create', @_onSourceCreate, @)
     @source.on('delete', @_onSourceDelete, @)
-    @source.on('update', @_onSourceUpdate, @)
     @source.on('move',   @_onSourceMove,   @)
 
     super options
@@ -34,11 +33,6 @@ class TailingList extends AbstractList
     delete @_bySourceId[entry.source.id]
     super(entry, options)
 
-  _set: ( entry, options = {} ) ->
-    entry.reset()
-    @trigger('update', entry.id, entry.value())
-    return true
-
   _move: ( entry, options = {} ) ->
     @_remove(entry, silent: true)
 
@@ -56,10 +50,6 @@ class TailingList extends AbstractList
   _onSourceDelete: ( sourceId ) ->
     entry = @_bySourceId[sourceId]
     @_delete(entry) if entry
-
-  _onSourceUpdate: ( sourceId, value ) ->
-    entry = @_bySourceId[sourceId]
-    @_set(entry) if entry
 
   _onSourceMove: ( sourceId ) ->
     entry = @_bySourceId[sourceId]

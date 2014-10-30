@@ -13,7 +13,6 @@ class ConcatenatedList extends TailingList
 
   getBySource: ( sourceEntry ) ->
     listId = @sources.idOf(sourceEntry.list)
-
     sourceList = @sources.entryOf(listId)
 
     return @_bySourceId[listId][sourceEntry.id] or

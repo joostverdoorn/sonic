@@ -1,7 +1,8 @@
 Sonic.factory = ( exports ) ->
     exports._                     = Sonic
     exports.create                = Sonic.create
-    exports.Event                 = Event
+
+    exports.Observable            = Observable
 
     exports.Iterator              = Iterator
     exports.TailingIterator       = TailingIterator

@@ -4,11 +4,6 @@ describe "List", ->
     @list = new Sonic.AbstractList()
 
 
-  describe "#length", ->
-
-    it "should be 0 for an empty list", ->
-      expect(@list.length).toBe(0)
-
 
   describe "#_create", ->
 
@@ -19,12 +14,7 @@ describe "List", ->
       entry = @list._create(@item)
       expect(@list.get(entry.id)).toBe(@item)
 
-    it "should increase the length of the list", ->
-      length = @list.length
-      @list._create(@item)
-      expect(@list.length).toBe(length + 1)
-
-    it "should emit an event"
+      it "should emit an event"
 
 
 
@@ -51,14 +41,6 @@ describe "List", ->
 
       expect(entry1.next).toBe(entry3)
       expect(entry3.previous).toBe(entry1)
-
-    it "should decrease the length of the list", ->
-      item = "mango"
-      id = @list._create(item)
-      length = @list.length
-
-      @list._delete(id)
-      expect(@list.length).toBe(length - 1)
 
     it "should emit an event"
 

@@ -1,6 +1,8 @@
-class Entry
+class Entry extends Observable
 
   constructor: ( value, options = {} ) ->
+    super()
+
     @id = options.id ? Sonic.uniqueId()
     @_value = value ? options.value
 
@@ -13,10 +15,15 @@ class Entry
     return @
 
   value: ( ) ->
-    @_value if @_value?
+    if arguments.length > 0
+      value = arguments[0]
+      return if @_value is value
 
-  setValue: ( value ) ->
-    @_value = value
+      oldValue = @_value
+      @_value = value
+      @trigger('update', @, oldValue)
+
+    return @_value
 
   getIterator: ( ) ->
     return @list.getIterator(@)

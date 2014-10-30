@@ -1,4 +1,4 @@
-class AbstractList
+class AbstractList extends Observable
 
   Entry:    Entry
   Iterator: Iterator
@@ -6,46 +6,40 @@ class AbstractList
   HeadEntry: -> new @Entry(null, list: @)
   TailEntry: -> new @Entry(null, list: @)
 
-  # Add event bindings
-  for key, fn of Events
-    @::[key] = fn
+
 
   constructor: ( ) ->
+    super()
+
     @_byId = {}
 
     @headEntry = @HeadEntry()
     @tailEntry = @TailEntry()
 
-    @length = 0
-
   _create: ( value, options = {} ) ->
     options.list = @
 
     entry = new @Entry(value, options)
-    id = entry.id
+    entry.on('*', @_onEntryEvent, @)
 
+    id = entry.id
     @_byId[id] = entry
-    @length++
 
     @trigger('create', entry.id) unless options.silent
     return entry
 
   _delete: ( entry, options = {} ) ->
     @_remove(entry, silent: true)
+
+    entry.off('*', @_onEntryEvent, @)
     delete @_byId[entry.id]
-    @length--
 
     @trigger('delete', entry.id) unless options.silent
     return true
 
   _set: ( entry, value, options = {} ) ->
-    entry.setValue(value)
-
-    @trigger('update', entry.id, entry.value()) unless options.silent
+    entry.value(value)
     return true
-
-  _reset: ( entry, options = {} ) ->
-    @_set(entry, undefined, options)
 
   _remove: ( entry, options = {} ) ->
     entry.remove()
@@ -235,9 +229,14 @@ class AbstractList
   pluck: ( key ) ->
     return @map ( value ) -> value[key]
 
+  invoke: ( key, args... ) ->
+    return @map ( value ) -> value[key](args...)
+
   toArray: ( ) ->
     values = []
     @each ( value ) -> values.push value
     return values
 
-
+  # Event handling
+  _onEntryEvent: ( event, entry, args... ) ->
+    @trigger(event, entry.id, args...)

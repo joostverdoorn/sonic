@@ -12,9 +12,8 @@ class TailingIterator extends Iterator
     return true if @entry.next
 
     iterator = @entry.source.getIterator()
-    while iterator.moveNext()
-      next = @list.getBySource(iterator.entry)
-      break if next
+    until next?
+      next = @list.getBySource(iterator.next().entry)
 
     return false unless next
     @entry.attachNext(next)
@@ -25,9 +24,8 @@ class TailingIterator extends Iterator
     return true if @entry.previous
 
     iterator = @entry.source.getIterator()
-    while iterator.movePrevious()
-      previous = @list.getBySource(iterator.entry)
-      break if previous
+    until previous?
+      previous = @list.getBySource(iterator.previous().entry)
 
     return false unless previous
     @entry.attachPrevious(previous)
