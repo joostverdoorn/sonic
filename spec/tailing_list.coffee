@@ -38,17 +38,6 @@ describe "TailingList", ->
       @list._delete(sourceEntry)
       expect(@tailingList.toArray()).toEqual([1,2,4,5])
 
-  describe "#_onUpdate", ->
-
-    it "should update the tailing entry", ->
-      oldVal = 3
-      newVal = 6
-
-      sourceEntry = @list.entryOf(oldVal)
-      @list._set(sourceEntry, newVal)
-
-      expect(@tailingList.toArray()).toEqual([1,2,6,4,5])
-
   describe "#_onMove", ->
 
     it "should move the tailing entry", ->

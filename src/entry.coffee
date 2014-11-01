@@ -29,22 +29,23 @@ class Entry extends Observable
     return @list.getIterator(@)
 
   remove: ( ) ->
-    next = @next
+    next     = @next
     previous = @previous
+    return true unless next or previous
 
     next.previous = previous if next
     previous.next = next if previous
 
-    @next = null
+    @next     = null
     @previous = null
     return true
 
   attachNext: ( next ) ->
     @next = next
-    @next.previous = @
+    @next.previous = @ if next
     return true
 
   attachPrevious: ( previous ) ->
     @previous = previous
-    @previous.next = @
+    @previous.next = @ if previous
     return true

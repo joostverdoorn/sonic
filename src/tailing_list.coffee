@@ -30,8 +30,10 @@ class TailingList extends AbstractList
     return entry
 
   _delete: ( entry, options = {} ) ->
-    delete @_bySourceId[entry.source.id]
-    super(entry, options)
+    if super(entry, options)
+      delete @_bySourceId[entry.source.id]
+      return true
+    return false
 
   _move: ( entry, options = {} ) ->
     @_remove(entry, silent: true)

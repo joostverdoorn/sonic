@@ -29,15 +29,13 @@ class SortedList extends TailingList
     return @_evaluated = true
 
   _move: ( entry, options = {} ) ->
-    @_remove(entry, silent: true)
+    entry.remove()
     @headEntry.insert(entry)
 
     @trigger('move', entry.id) unless options.silent
     return true
 
-  _set: ( entry, value, options = {} ) ->
-    super(entry, value, options)
-    @_move(entry, silent: options.silent)
-
-    return true
+  _onEntryEvent: ( event, entry ) ->
+    @_move(entry) if event is 'update'
+    super
 

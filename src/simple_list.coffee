@@ -21,7 +21,9 @@ class SimpleList extends AbstractList
   set: ( id, value, options = {} ) ->
     entry = @getEntry(id)
     return false unless entry
-    return @_set(entry, value, options)
+
+    entry.value(value)
+    return true
 
   push: ( value, options = {} ) ->
     options.before = @tailEntry
@@ -32,12 +34,12 @@ class SimpleList extends AbstractList
     return @_insert(value, options).id
 
   pop: ( options ) ->
-    entry = @tailEntry.previous
+    entry = @getIterator(@tailEntry).previous().entry
     @_delete(entry, options)
     return entry.value()
 
   shift: ( options ) ->
-    entry = @headEntry.next
+    entry = @getIterator(@headEntry).next().entry
     @_delete(entry, options)
     return entry.value()
 

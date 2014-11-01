@@ -24,6 +24,7 @@ module.exports = ( grunt ) ->
     'src/unique_list.coffee'
     'src/sorted_list.coffee'
     'src/reversed_list.coffee'
+    'src/take_list.coffee'
     'src/generated_list.coffee'
 
     'src/export.coffee'
@@ -46,6 +47,7 @@ module.exports = ( grunt ) ->
     '.grunt/sonic/spec_compiled/unique_list.js'
     '.grunt/sonic/spec_compiled/sorted_list.js'
     '.grunt/sonic/spec_compiled/reversed_list.js'
+    '.grunt/sonic/spec_compiled/take_list.js'
     '.grunt/sonic/spec_compiled/generated_list.js'
 
     # '.grunt/sonic/spec_compiled/export.js'

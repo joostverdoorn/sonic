@@ -6,8 +6,6 @@ class AbstractList extends Observable
   HeadEntry: -> new @Entry(null, list: @)
   TailEntry: -> new @Entry(null, list: @)
 
-
-
   constructor: ( ) ->
     super()
 
@@ -29,57 +27,37 @@ class AbstractList extends Observable
     return entry
 
   _delete: ( entry, options = {} ) ->
-    @_remove(entry, silent: true)
-
+    entry.remove()
     entry.off('*', @_onEntryEvent, @)
+
     delete @_byId[entry.id]
 
     @trigger('delete', entry.id) unless options.silent
     return true
 
-  _set: ( entry, value, options = {} ) ->
-    entry.value(value)
-    return true
-
-  _remove: ( entry, options = {} ) ->
-    entry.remove()
-
-    @trigger('move', entry.id) unless options.silent
-    return true
-
   _move: ( entry, options = {} ) ->
-    @_remove(entry, silent: true)
+    entry.remove()
 
     previous = options.after or (options.before.previous if options.before)
     next = options.before or (options.after.next if options.after)
 
-    if previous
-      entry.previous = previous
-      previous.next = entry
-
-    if next
-      entry.next = next
-      next.previous = entry
+    entry.attachNext(next)
+    entry.attachPrevious(previous)
 
     @trigger('move', entry.id) unless options.silent
     return true
-
-  _swap: ( a, b ) ->
-    beforeA = a.previous
-    beforeB = b.previous
-
-    afterA = a.next
-    afterB = b.next
-
-    if beforeA isnt b or afterB isnt a
-      return @_move(a, before: afterB) and @_move(b, after: beforeA)
-    else return @_move(a, after: beforeB) and @_move(b, before: afterA)
 
   _insert: ( value, options = {} ) ->
     entry = @_create(value, silent: options.silent)
     @_move(entry, options) if entry
 
     return entry
+
+  _remove: ( entry, options = {} ) ->
+    entry.remove()
+
+    @trigger('move', entry.id) unless options.silent
+    return true
 
   # Iterator methods.
   getIterator: ( start ) ->
@@ -91,8 +69,8 @@ class AbstractList extends Observable
     return @_byId[id]
 
   get: ( id ) ->
-    entry = @getEntry(id)
-    return entry.value() if entry
+    if entry = @getEntry(id)
+      return entry.value()
     return undefined
 
   entryAt: ( index ) ->
@@ -101,12 +79,17 @@ class AbstractList extends Observable
 
     while iterator.moveNext()
       return iterator.entry if ++i is index
+    return undefined
 
+  idAt: ( index ) ->
+    if entry = @entryAt(index)
+      return entry.id
     return undefined
 
   at: ( index ) ->
-    entry = @entryAt(index)
-    return @get(id)
+    if entry = @entryAt(index)
+      return entry.value()
+    return undefined
 
   entryOf: ( value ) ->
     for id in Object.keys(@_byId)
@@ -117,11 +100,20 @@ class AbstractList extends Observable
   idOf: ( value ) ->
     return @entryOf(value)?.id
 
-  indexOf: ( value ) ->
+  indexOfEntry: ( entry, limit = Infinity ) ->
     i = -1
     iterator = @getIterator()
-    while iterator.moveNext()
-      i++
+
+    while iterator.moveNext() and ++i < limit
+      return i if iterator.entry is entry
+
+    return -1
+
+  indexOf: ( value, limit = Infinity ) ->
+    i = -1
+    iterator = @getIterator()
+
+    while iterator.moveNext() and ++i < limit
       return i if iterator.current() is value
 
     return -1
@@ -129,21 +121,6 @@ class AbstractList extends Observable
   contains: ( value ) ->
     return @idOf(value)?
 
-  before: ( value ) ->
-    entry = @entryOf(value)
-    previous = entry.previous
-
-    return previous.value() unless previous is @headEntry
-    return undefined
-
-  after: ( value ) ->
-    entry = @entryOf(value)
-    next = entry.next
-
-    return next.value() unless next is @tailEntry
-    return undefined
-
-  # Moar stuff.
   forEach: ( fn ) ->
     return @each(fn)
 
@@ -183,7 +160,7 @@ class AbstractList extends Observable
     return memo
 
   map: ( mapFn ) ->
-    return new MappedList @, mapFn: mapFn
+    return new MappedList(@, mapFn: mapFn)
 
   filter: ( filterFn ) ->
     return new FilteredList(@, filterFn: filterFn)
@@ -209,10 +186,13 @@ class AbstractList extends Observable
   union: ( others... ) ->
     return @concat(others...).uniq()
 
+  take: ( count ) ->
+    return new TakeList(@, count: count)
+
   first: ( count ) ->
-    iterator = @getIterator()
-    iterator.moveNext()
-    return iterator.current()
+    if count
+      return @take(count)
+    else return @getIterator(@headEntry).next().value
 
   skip: ( count ) -> @rest(count)
   tail: ( count ) -> @rest(count)
@@ -234,7 +214,7 @@ class AbstractList extends Observable
 
   toArray: ( ) ->
     values = []
-    @each ( value ) -> values.push value
+    @each ( value ) -> values.push(value)
     return values
 
   # Event handling

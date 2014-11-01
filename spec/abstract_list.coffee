@@ -4,6 +4,9 @@ describe "List", ->
     @list = new Sonic.AbstractList()
 
 
+    entry = @list.headEntry
+    for i in [0...10]
+      entry = @list._insert(i, after: entry)
 
   describe "#_create", ->
 
@@ -74,20 +77,6 @@ describe "List", ->
 
 
 
-  describe "#_swap", ->
-
-    it "should swap the position of the given items", ->
-      itemA = "apple"
-      itemB = "orange"
-
-      entryA = @list._insert(itemA, after: @list.headEntry)
-      entryB = @list._insert(itemB, after: entryA, before: @list.tailEntry)
-
-      expect(entryA.next).toBe(entryB)
-      @list._swap(entryA, entryB)
-      expect(entryB.next).toBe(entryA)
-
-
   describe "#entryOf", ->
 
     it "should return the first occurence of the value", ->
@@ -97,27 +86,49 @@ describe "List", ->
       expect(@list.entryOf(item)).toBe(entry)
 
 
-  describe "#_idAt", ->
+
+  describe "#entryAt", ->
+
+    it "should return the entry of the item at the given index", ->
+      entry = @list.entryOf(5)
+      expect(@list.entryAt(5)).toBe(entry)
+
+
+
+  describe "#idAt", ->
 
     it "should return the id of the item at the given index", ->
-      @list.items = [1, 5, 4, 3]
-      @list.ids   = [3, 0, 2, 1]
+      id = @list.idOf(5)
+      expect(@list.idAt(5)).toBe(id)
 
-      for i in [0 ... @list.length]
-        expect(@list.idAt(i)).toBe(@list.entries[i].item)
+
+
+  describe "#indexOfEntry", ->
+
+    it "should return the index of the given item when it exists", ->
+      entry = @list.entryOf(5)
+      expect(@list.indexOfEntry(entry)).toBe(5)
+
+    it "should return -1 when the isn't found within the limit", ->
+      entry = @list.entryOf(5)
+      expect(@list.indexOf(entry, 5)).toBe(-1)
+
+    it "should return -1 if the item isn't found", ->
+      entry = new Sonic.Entry(10)
+      expect(@list.indexOf(entry)).toBe(-1)
 
 
 
   describe "#indexOf", ->
 
-    it "should return the index of the given item when", ->
-      item = "grape"
-      @list._insert(item, after: @list.headEntry)
-      expect(@list.indexOf(item)).toBe(0)
+    it "should return the index of the given item when it exists", ->
+      expect(@list.indexOf(5)).toBe(5)
+
+    it "should return -1 when the isn't found within the limit", ->
+      expect(@list.indexOf(5, 5)).toBe(-1)
 
     it "should return -1 if the item isn't found", ->
-      item = "foo"
-      expect(@list.indexOf(item)).toBe(-1)
+      expect(@list.indexOf(10)).toBe(-1)
 
 
 
@@ -143,13 +154,13 @@ describe "List", ->
 
 
 
-
   describe "#get", ->
 
     it "should return the item with the specified id", ->
       item = "pear"
       entry = @list._create(item)
       expect(@list.get(entry.id)).toBe(item)
+
 
 
   describe "#contains", ->
@@ -178,15 +189,11 @@ describe "List", ->
   describe "#each", ->
 
     it "should call the given function for each item", ->
-      entry1 = @list._insert(1, after: @list.headEntry)
-      entry2 = @list._insert(4, after: entry1)
-      entry3 = @list._insert(8, after: entry2)
-
       items = []
       fn = ( item ) -> items.push(item)
       @list.each fn
 
-      expect(items).toEqual([1,4,8])
+      expect(items).toEqual([0...10])
 
 
 
@@ -241,8 +248,4 @@ describe "List", ->
   describe "#toArray", ->
 
     it "should return the list's items in an array", ->
-      entry1 = @list._insert(1, after: @list.headEntry)
-      entry2 = @list._insert(4, after: entry1)
-      entry3 = @list._insert(8, after: entry2)
-
-      expect(@list.toArray()).toEqual([1, 4, 8])
+      expect(@list.toArray()).toEqual([0...10])

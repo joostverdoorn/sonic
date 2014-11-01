@@ -1,5 +1,5 @@
 (function() {
-  var AbstractList, ConcatenatedIterator, ConcatenatedList, Entry, FilteredList, GeneratedList, Generator, Iterator, MappedEntry, MappedList, Observable, ReversedIterator, ReversedList, SimpleList, Sonic, SortedEntry, SortedIterator, SortedList, TailingEntry, TailingIterator, TailingList, UniqueList,
+  var AbstractList, ConcatenatedIterator, ConcatenatedList, Entry, FilteredList, GeneratedList, Generator, Iterator, MappedEntry, MappedList, Observable, ReversedIterator, ReversedList, SimpleList, Sonic, SortedEntry, SortedIterator, SortedList, TailingEntry, TailingIterator, TailingList, TakeList, UniqueList,
     __slice = [].slice,
     __hasProp = {}.hasOwnProperty,
     __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
@@ -178,7 +178,7 @@
         return true;
       }
       iterator = this.entry.source.getIterator();
-      while (next == null) {
+      while (!next) {
         next = this.list.getBySource(iterator.next().entry);
       }
       if (!next) {
@@ -194,7 +194,7 @@
         return true;
       }
       iterator = this.entry.source.getIterator();
-      while (previous == null) {
+      while (!previous) {
         previous = this.list.getBySource(iterator.previous().entry);
       }
       if (!previous) {
@@ -426,6 +426,9 @@
       var next, previous;
       next = this.next;
       previous = this.previous;
+      if (!(next || previous)) {
+        return true;
+      }
       if (next) {
         next.previous = previous;
       }
@@ -439,13 +442,17 @@
 
     Entry.prototype.attachNext = function(next) {
       this.next = next;
-      this.next.previous = this;
+      if (next) {
+        this.next.previous = this;
+      }
       return true;
     };
 
     Entry.prototype.attachPrevious = function(previous) {
       this.previous = previous;
-      this.previous.next = this;
+      if (previous) {
+        this.previous.next = this;
+      }
       return true;
     };
 
@@ -829,32 +836,11 @@
       if (options == null) {
         options = {};
       }
-      this._remove(entry, {
-        silent: true
-      });
+      entry.remove();
       entry.off('*', this._onEntryEvent, this);
       delete this._byId[entry.id];
       if (!options.silent) {
         this.trigger('delete', entry.id);
-      }
-      return true;
-    };
-
-    AbstractList.prototype._set = function(entry, value, options) {
-      if (options == null) {
-        options = {};
-      }
-      entry.value(value);
-      return true;
-    };
-
-    AbstractList.prototype._remove = function(entry, options) {
-      if (options == null) {
-        options = {};
-      }
-      entry.remove();
-      if (!options.silent) {
-        this.trigger('move', entry.id);
       }
       return true;
     };
@@ -864,44 +850,15 @@
       if (options == null) {
         options = {};
       }
-      this._remove(entry, {
-        silent: true
-      });
+      entry.remove();
       previous = options.after || (options.before ? options.before.previous : void 0);
       next = options.before || (options.after ? options.after.next : void 0);
-      if (previous) {
-        entry.previous = previous;
-        previous.next = entry;
-      }
-      if (next) {
-        entry.next = next;
-        next.previous = entry;
-      }
+      entry.attachNext(next);
+      entry.attachPrevious(previous);
       if (!options.silent) {
         this.trigger('move', entry.id);
       }
       return true;
-    };
-
-    AbstractList.prototype._swap = function(a, b) {
-      var afterA, afterB, beforeA, beforeB;
-      beforeA = a.previous;
-      beforeB = b.previous;
-      afterA = a.next;
-      afterB = b.next;
-      if (beforeA !== b || afterB !== a) {
-        return this._move(a, {
-          before: afterB
-        }) && this._move(b, {
-          after: beforeA
-        });
-      } else {
-        return this._move(a, {
-          after: beforeB
-        }) && this._move(b, {
-          before: afterA
-        });
-      }
     };
 
     AbstractList.prototype._insert = function(value, options) {
@@ -918,6 +875,17 @@
       return entry;
     };
 
+    AbstractList.prototype._remove = function(entry, options) {
+      if (options == null) {
+        options = {};
+      }
+      entry.remove();
+      if (!options.silent) {
+        this.trigger('move', entry.id);
+      }
+      return true;
+    };
+
     AbstractList.prototype.getIterator = function(start) {
       start || (start = this.headEntry);
       return new this.Iterator(this, start);
@@ -929,8 +897,7 @@
 
     AbstractList.prototype.get = function(id) {
       var entry;
-      entry = this.getEntry(id);
-      if (entry) {
+      if (entry = this.getEntry(id)) {
         return entry.value();
       }
       return void 0;
@@ -948,10 +915,20 @@
       return void 0;
     };
 
+    AbstractList.prototype.idAt = function(index) {
+      var entry;
+      if (entry = this.entryAt(index)) {
+        return entry.id;
+      }
+      return void 0;
+    };
+
     AbstractList.prototype.at = function(index) {
       var entry;
-      entry = this.entryAt(index);
-      return this.get(id);
+      if (entry = this.entryAt(index)) {
+        return entry.value();
+      }
+      return void 0;
     };
 
     AbstractList.prototype.entryOf = function(value) {
@@ -972,12 +949,29 @@
       return (_ref = this.entryOf(value)) != null ? _ref.id : void 0;
     };
 
-    AbstractList.prototype.indexOf = function(value) {
+    AbstractList.prototype.indexOfEntry = function(entry, limit) {
       var i, iterator;
+      if (limit == null) {
+        limit = Infinity;
+      }
       i = -1;
       iterator = this.getIterator();
-      while (iterator.moveNext()) {
-        i++;
+      while (iterator.moveNext() && ++i < limit) {
+        if (iterator.entry === entry) {
+          return i;
+        }
+      }
+      return -1;
+    };
+
+    AbstractList.prototype.indexOf = function(value, limit) {
+      var i, iterator;
+      if (limit == null) {
+        limit = Infinity;
+      }
+      i = -1;
+      iterator = this.getIterator();
+      while (iterator.moveNext() && ++i < limit) {
         if (iterator.current() === value) {
           return i;
         }
@@ -987,26 +981,6 @@
 
     AbstractList.prototype.contains = function(value) {
       return this.idOf(value) != null;
-    };
-
-    AbstractList.prototype.before = function(value) {
-      var entry, previous;
-      entry = this.entryOf(value);
-      previous = entry.previous;
-      if (previous !== this.headEntry) {
-        return previous.value();
-      }
-      return void 0;
-    };
-
-    AbstractList.prototype.after = function(value) {
-      var entry, next;
-      entry = this.entryOf(value);
-      next = entry.next;
-      if (next !== this.tailEntry) {
-        return next.value();
-      }
-      return void 0;
     };
 
     AbstractList.prototype.forEach = function(fn) {
@@ -1118,11 +1092,18 @@
       return this.concat.apply(this, others).uniq();
     };
 
+    AbstractList.prototype.take = function(count) {
+      return new TakeList(this, {
+        count: count
+      });
+    };
+
     AbstractList.prototype.first = function(count) {
-      var iterator;
-      iterator = this.getIterator();
-      iterator.moveNext();
-      return iterator.current();
+      if (count) {
+        return this.take(count);
+      } else {
+        return this.getIterator(this.headEntry).next().value;
+      }
     };
 
     AbstractList.prototype.skip = function(count) {
@@ -1212,7 +1193,8 @@
       if (!entry) {
         return false;
       }
-      return this._set(entry, value, options);
+      entry.value(value);
+      return true;
     };
 
     SimpleList.prototype.push = function(value, options) {
@@ -1233,14 +1215,14 @@
 
     SimpleList.prototype.pop = function(options) {
       var entry;
-      entry = this.tailEntry.previous;
+      entry = this.getIterator(this.tailEntry).previous().entry;
       this._delete(entry, options);
       return entry.value();
     };
 
     SimpleList.prototype.shift = function(options) {
       var entry;
-      entry = this.headEntry.next;
+      entry = this.getIterator(this.headEntry).next().entry;
       this._delete(entry, options);
       return entry.value();
     };
@@ -1326,8 +1308,11 @@
       if (options == null) {
         options = {};
       }
-      delete this._bySourceId[entry.source.id];
-      return TailingList.__super__._delete.call(this, entry, options);
+      if (TailingList.__super__._delete.call(this, entry, options)) {
+        delete this._bySourceId[entry.source.id];
+        return true;
+      }
+      return false;
     };
 
     TailingList.prototype._move = function(entry, options) {
@@ -1572,9 +1557,7 @@
       if (options == null) {
         options = {};
       }
-      this._remove(entry, {
-        silent: true
-      });
+      entry.remove();
       this.headEntry.insert(entry);
       if (!options.silent) {
         this.trigger('move', entry.id);
@@ -1582,15 +1565,11 @@
       return true;
     };
 
-    SortedList.prototype._set = function(entry, value, options) {
-      if (options == null) {
-        options = {};
+    SortedList.prototype._onEntryEvent = function(event, entry) {
+      if (event === 'update') {
+        this._move(entry);
       }
-      SortedList.__super__._set.call(this, entry, value, options);
-      this._move(entry, {
-        silent: options.silent
-      });
-      return true;
+      return SortedList.__super__._onEntryEvent.apply(this, arguments);
     };
 
     return SortedList;
@@ -1621,6 +1600,45 @@
     };
 
     return ReversedList;
+
+  })(TailingList);
+
+  TakeList = (function(_super) {
+    __extends(TakeList, _super);
+
+    TakeList.prototype.HeadEntry = function() {
+      return new this.Entry(null, {
+        list: this,
+        source: this.source.headEntry
+      });
+    };
+
+    TakeList.prototype.TailEntry = function() {
+      return new this.Entry(null, {
+        list: this,
+        source: this.source.entryAt(this.count)
+      });
+    };
+
+    function TakeList(source, options) {
+      if (options == null) {
+        options = {};
+      }
+      this.count = options.count;
+      TakeList.__super__.constructor.call(this, source, options);
+    }
+
+    TakeList.prototype._create = function(sourceEntry, options) {
+      if (options == null) {
+        options = {};
+      }
+      if (this.source.indexOfEntry(sourceEntry, this.count) > -1) {
+        return TakeList.__super__._create.call(this, sourceEntry, options);
+      }
+      return null;
+    };
+
+    return TakeList;
 
   })(TailingList);
 
@@ -1670,6 +1688,7 @@
     exports.UniqueList = UniqueList;
     exports.SortedList = SortedList;
     exports.ReversedList = ReversedList;
+    exports.TakeList = TakeList;
     return exports.GeneratedList = GeneratedList;
   };
 

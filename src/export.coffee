@@ -25,6 +25,7 @@ Sonic.factory = ( exports ) ->
     exports.UniqueList            = UniqueList
     exports.SortedList            = SortedList
     exports.ReversedList          = ReversedList
+    exports.TakeList              = TakeList
     exports.GeneratedList         = GeneratedList
 
 # Exports Sonic for CommonJS, AMD and the browser.
