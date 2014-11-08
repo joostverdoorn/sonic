@@ -18,21 +18,21 @@ class AbstractList extends Observable
     options.list = @
 
     entry = new @Entry(value, options)
-    entry.on('*', @_onEntryEvent, @)
+    # entry.on('*', @_onEntryEvent, @)
 
     id = entry.id
     @_byId[id] = entry
 
-    @trigger('create', entry.id) unless options.silent
+    # @trigger('create', entry.id) unless options.silent
     return entry
 
   _delete: ( entry, options = {} ) ->
     entry.remove()
-    entry.off('*', @_onEntryEvent, @)
+    # entry.off('*', @_onEntryEvent, @)
 
     delete @_byId[entry.id]
 
-    @trigger('delete', entry.id) unless options.silent
+    # @trigger('delete', entry.id) unless options.silent
     return true
 
   _move: ( entry, options = {} ) ->
@@ -44,7 +44,7 @@ class AbstractList extends Observable
     entry.attachNext(next)
     entry.attachPrevious(previous)
 
-    @trigger('move', entry.id) unless options.silent
+    # @trigger('move', entry.id) unless options.silent
     return true
 
   _insert: ( value, options = {} ) ->
@@ -56,7 +56,7 @@ class AbstractList extends Observable
   _remove: ( entry, options = {} ) ->
     entry.remove()
 
-    @trigger('move', entry.id) unless options.silent
+    # @trigger('move', entry.id) unless options.silent
     return true
 
   # Iterator methods.
@@ -217,6 +217,6 @@ class AbstractList extends Observable
     @each ( value ) -> values.push(value)
     return values
 
-  # Event handling
-  _onEntryEvent: ( event, entry, args... ) ->
-    @trigger(event, entry.id, args...)
+  # # Event handling
+  # _onEntryEvent: ( event, entry, args... ) ->
+  #   @trigger(event, entry.id, args...)

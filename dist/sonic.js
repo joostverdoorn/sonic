@@ -1,5 +1,5 @@
 (function() {
-  var AbstractList, ConcatenatedIterator, ConcatenatedList, Entry, FilteredList, GeneratedList, Generator, Iterator, MappedEntry, MappedList, Observable, ReversedIterator, ReversedList, SimpleList, Sonic, SortedEntry, SortedIterator, SortedList, TailingEntry, TailingIterator, TailingList, TakeList, UniqueList,
+  var AbstractList, ConcatenatedIterator, ConcatenatedList, Entry, FilteredList, GeneratedList, Generator, Iterator, MappedEntry, MappedList, Observable, ReversedIterator, ReversedList, Signal, SimpleList, Sonic, SortedEntry, SortedIterator, SortedList, TailingEntry, TailingIterator, TailingList, TakeList, Transformer, UniqueList,
     __slice = [].slice,
     __hasProp = {}.hasOwnProperty,
     __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
@@ -382,6 +382,56 @@
 
   })(TailingIterator);
 
+  Signal = (function() {
+    function Signal() {
+      this._handlers = [];
+    }
+
+    Signal.prototype.value = function() {
+      return this._value;
+    };
+
+    Signal.prototype.set = function(value) {
+      this._value = value;
+      return this["yield"](value);
+    };
+
+    Signal.prototype["yield"] = function(value) {
+      return this._handlers.forEach(function(handler) {
+        return handler(value);
+      });
+    };
+
+    Signal.prototype.forEach = function(handler) {
+      return this._handlers.push(handler);
+    };
+
+    return Signal;
+
+  })();
+
+  Transformer = (function() {
+    function Transformer(transformation) {
+      this._transformation = transformation;
+    }
+
+    Transformer.prototype.transform = function(signal) {
+      var newSignal;
+      newSignal = new Signal();
+      signal.forEach((function(_this) {
+        return function(value) {
+          var newValue;
+          newValue = _this._transformation(value);
+          return newSignal.set(newValue);
+        };
+      })(this));
+      return newSignal;
+    };
+
+    return Transformer;
+
+  })();
+
   Entry = (function(_super) {
     __extends(Entry, _super);
 
@@ -458,7 +508,7 @@
 
     return Entry;
 
-  })(Observable);
+  })(Signal);
 
   TailingEntry = (function(_super) {
     __extends(TailingEntry, _super);
@@ -823,12 +873,8 @@
       }
       options.list = this;
       entry = new this.Entry(value, options);
-      entry.on('*', this._onEntryEvent, this);
       id = entry.id;
       this._byId[id] = entry;
-      if (!options.silent) {
-        this.trigger('create', entry.id);
-      }
       return entry;
     };
 
@@ -837,11 +883,7 @@
         options = {};
       }
       entry.remove();
-      entry.off('*', this._onEntryEvent, this);
       delete this._byId[entry.id];
-      if (!options.silent) {
-        this.trigger('delete', entry.id);
-      }
       return true;
     };
 
@@ -855,9 +897,6 @@
       next = options.before || (options.after ? options.after.next : void 0);
       entry.attachNext(next);
       entry.attachPrevious(previous);
-      if (!options.silent) {
-        this.trigger('move', entry.id);
-      }
       return true;
     };
 
@@ -880,9 +919,6 @@
         options = {};
       }
       entry.remove();
-      if (!options.silent) {
-        this.trigger('move', entry.id);
-      }
       return true;
     };
 
@@ -1149,12 +1185,6 @@
         return values.push(value);
       });
       return values;
-    };
-
-    AbstractList.prototype._onEntryEvent = function() {
-      var args, entry, event;
-      event = arguments[0], entry = arguments[1], args = 3 <= arguments.length ? __slice.call(arguments, 2) : [];
-      return this.trigger.apply(this, [event, entry.id].concat(__slice.call(args)));
     };
 
     return AbstractList;
@@ -1689,7 +1719,9 @@
     exports.SortedList = SortedList;
     exports.ReversedList = ReversedList;
     exports.TakeList = TakeList;
-    return exports.GeneratedList = GeneratedList;
+    exports.GeneratedList = GeneratedList;
+    exports.Signal = Signal;
+    return exports.Transformer = Transformer;
   };
 
   if (typeof exports === 'object') {

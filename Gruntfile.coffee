@@ -10,6 +10,9 @@ module.exports = ( grunt ) ->
     'src/concatenated_iterator.coffee'
     'src/generator.coffee'
 
+    'src/signal.coffee'
+    'src/transformer.coffee'
+
     'src/entry.coffee'
     'src/tailing_entry.coffee'
     'src/mapped_entry.coffee'
@@ -26,6 +29,8 @@ module.exports = ( grunt ) ->
     'src/reversed_list.coffee'
     'src/take_list.coffee'
     'src/generated_list.coffee'
+
+
 
     'src/export.coffee'
   ]

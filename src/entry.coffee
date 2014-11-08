@@ -1,4 +1,4 @@
-class Entry extends Observable
+class Entry extends Signal
 
   constructor: ( value, options = {} ) ->
     super()

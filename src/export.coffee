@@ -28,6 +28,9 @@ Sonic.factory = ( exports ) ->
     exports.TakeList              = TakeList
     exports.GeneratedList         = GeneratedList
 
+    exports.Signal                = Signal
+    exports.Transformer           = Transformer
+
 # Exports Sonic for CommonJS, AMD and the browser.
 if typeof exports == 'object'
   Sonic.factory(exports)
