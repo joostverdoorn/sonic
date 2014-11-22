@@ -1,32 +1,32 @@
 class Iterator
 
-  constructor: ( list, entry ) ->
+  constructor: ( list, signal ) ->
     @list = list
-    @start = @entry = entry
+    @start = @signal = signal
 
   current: ( ) ->
-    return @entry.value()
+    return @signal.value()
 
   reset: () ->
-    @entry = @start
+    @signal = @start
     return @
 
   moveNext: ( ) ->
-    @entry = @entry.next
-    return @entry? and @entry isnt @list.tailEntry
+    @signal = @list.after @signal
+    return @signal?
 
   movePrevious: ( ) ->
-    @entry = @entry.previous
-    return @entry? and @entry isnt @list.headEntry
+    @signal = @list.before @signal
+    return @signal?
 
   # We also implement the ES6 iterator protocol.
   # https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/The_Iterator_protocol
   next: ( ) ->
     if @moveNext()
-      return { value: @current(), done: false, entry: @entry }
-    else return { done: true, entry: @entry }
+      return { value: @current(), done: false, signal: @signal }
+    else return { done: true, signal: @signal }
 
   previous: ( ) ->
     if @movePrevious()
-      return { value: @current(), done: false, entry: @entry }
-    else return { done: true, entry: @entry }
+      return { value: @current(), done: false, signal: @signal }
+    else return { done: true, signal: @signal }

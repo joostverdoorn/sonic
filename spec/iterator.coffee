@@ -8,3 +8,5 @@ describe "Iterator", ->
     iterator = list.getIterator()
 
 
+    for i in values
+      expect(iterator.next().value).toBe(i)

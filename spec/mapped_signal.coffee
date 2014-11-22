@@ -1,20 +1,17 @@
-class Signal
+class MappedSignal extends Signal
 
-  constructor: ( value ) ->
-    @_handlers = []
-    @id = Sonic.uniqueId()
-    @_value = value
+  constructor: ( source, mapFn = @_noop ) ->
+    @_source = source
+    @_mapFn = mapFn
 
+    super undefined
 
   value: ( ) ->
-    return @_value
-
-
+    @_value ?= @_mapFn @_source
 
   yield: ( value ) ->
     @_value = value
     @_handlers.forEach ( handler ) -> handler(value)
-
 
   each: ( handler ) ->
     @forEach(handler)

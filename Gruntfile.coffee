@@ -2,6 +2,8 @@ module.exports = ( grunt ) ->
   srcs = [
     'src/sonic.coffee'
     'src/observable.coffee'
+    'src/signal.coffee'
+    'src/transformer.coffee'
 
     'src/iterator.coffee'
     'src/tailing_iterator.coffee'
@@ -10,8 +12,6 @@ module.exports = ( grunt ) ->
     'src/concatenated_iterator.coffee'
     'src/generator.coffee'
 
-    'src/signal.coffee'
-    'src/transformer.coffee'
 
     'src/entry.coffee'
     'src/tailing_entry.coffee'
@@ -116,6 +116,9 @@ module.exports = ( grunt ) ->
       spec:
         files: ['**/*.coffee']
         tasks: ['spec']
+      build:
+        files: ['src/**/*.coffee']
+        tasks: ['coffee:build']
 
   grunt.loadNpmTasks 'grunt-contrib-coffee'
   grunt.loadNpmTasks 'grunt-contrib-watch'

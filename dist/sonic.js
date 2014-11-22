@@ -92,29 +92,85 @@
 
   })();
 
+  Signal = (function() {
+    function Signal(value) {
+      this._handlers = [];
+      this.id = Sonic.uniqueId();
+      this._value = value;
+    }
+
+    Signal.prototype.value = function() {
+      return this._value;
+    };
+
+    Signal.prototype["yield"] = function(value) {
+      this._value = value;
+      return this._handlers.forEach(function(handler) {
+        return handler(value);
+      });
+    };
+
+    Signal.prototype.each = function(handler) {
+      return this.forEach(handler);
+    };
+
+    Signal.prototype.forEach = function(handler) {
+      return this._handlers.push(handler);
+    };
+
+    Signal.prototype._noop = function(item) {
+      return item;
+    };
+
+    return Signal;
+
+  })();
+
+  Transformer = (function() {
+    function Transformer(transformation) {
+      this._transformation = transformation;
+    }
+
+    Transformer.prototype.transform = function(signal) {
+      var newSignal;
+      newSignal = new Signal();
+      signal.forEach((function(_this) {
+        return function(value) {
+          var newValue;
+          newValue = _this._transformation(value);
+          return newSignal.set(newValue);
+        };
+      })(this));
+      return newSignal;
+    };
+
+    return Transformer;
+
+  })();
+
   Iterator = (function() {
-    function Iterator(list, entry) {
+    function Iterator(list, signal) {
       this.list = list;
-      this.start = this.entry = entry;
+      this.start = this.signal = signal;
     }
 
     Iterator.prototype.current = function() {
-      return this.entry.value();
+      return this.signal.value();
     };
 
     Iterator.prototype.reset = function() {
-      this.entry = this.start;
+      this.signal = this.start;
       return this;
     };
 
     Iterator.prototype.moveNext = function() {
-      this.entry = this.entry.next;
-      return (this.entry != null) && this.entry !== this.list.tailEntry;
+      this.signal = this.list.after(this.signal);
+      return this.signal != null;
     };
 
     Iterator.prototype.movePrevious = function() {
-      this.entry = this.entry.previous;
-      return (this.entry != null) && this.entry !== this.list.headEntry;
+      this.signal = this.list.before(this.signal);
+      return this.signal != null;
     };
 
     Iterator.prototype.next = function() {
@@ -122,12 +178,12 @@
         return {
           value: this.current(),
           done: false,
-          entry: this.entry
+          signal: this.signal
         };
       } else {
         return {
           done: true,
-          entry: this.entry
+          signal: this.signal
         };
       }
     };
@@ -137,12 +193,12 @@
         return {
           value: this.current(),
           done: false,
-          entry: this.entry
+          signal: this.signal
         };
       } else {
         return {
           done: true,
-          entry: this.entry
+          signal: this.signal
         };
       }
     };
@@ -381,56 +437,6 @@
     return Generator;
 
   })(TailingIterator);
-
-  Signal = (function() {
-    function Signal() {
-      this._handlers = [];
-    }
-
-    Signal.prototype.value = function() {
-      return this._value;
-    };
-
-    Signal.prototype.set = function(value) {
-      this._value = value;
-      return this["yield"](value);
-    };
-
-    Signal.prototype["yield"] = function(value) {
-      return this._handlers.forEach(function(handler) {
-        return handler(value);
-      });
-    };
-
-    Signal.prototype.forEach = function(handler) {
-      return this._handlers.push(handler);
-    };
-
-    return Signal;
-
-  })();
-
-  Transformer = (function() {
-    function Transformer(transformation) {
-      this._transformation = transformation;
-    }
-
-    Transformer.prototype.transform = function(signal) {
-      var newSignal;
-      newSignal = new Signal();
-      signal.forEach((function(_this) {
-        return function(value) {
-          var newValue;
-          newValue = _this._transformation(value);
-          return newSignal.set(newValue);
-        };
-      })(this));
-      return newSignal;
-    };
-
-    return Transformer;
-
-  })();
 
   Entry = (function(_super) {
     __extends(Entry, _super);
@@ -843,138 +849,174 @@
   AbstractList = (function(_super) {
     __extends(AbstractList, _super);
 
-    AbstractList.prototype.Entry = Entry;
-
     AbstractList.prototype.Iterator = Iterator;
-
-    AbstractList.prototype.HeadEntry = function() {
-      return new this.Entry(null, {
-        list: this
-      });
-    };
-
-    AbstractList.prototype.TailEntry = function() {
-      return new this.Entry(null, {
-        list: this
-      });
-    };
 
     function AbstractList() {
       AbstractList.__super__.constructor.call(this);
       this._byId = {};
-      this.headEntry = this.HeadEntry();
-      this.tailEntry = this.TailEntry();
+      this._next = {};
+      this._previous = {};
+      this._headSignal = this._create(null);
+      this._tailSignal = this._create(null);
     }
 
-    AbstractList.prototype._create = function(value, options) {
-      var entry, id;
-      if (options == null) {
-        options = {};
-      }
-      options.list = this;
-      entry = new this.Entry(value, options);
-      id = entry.id;
-      this._byId[id] = entry;
-      return entry;
+    AbstractList.prototype._create = function(value) {
+      var signal;
+      signal = new Signal(value);
+      this._add(signal);
+      return signal;
     };
 
-    AbstractList.prototype._delete = function(entry, options) {
-      if (options == null) {
-        options = {};
-      }
-      entry.remove();
-      delete this._byId[entry.id];
+    AbstractList.prototype._add = function(signal, options) {
+      this._byId[signal.id] = signal;
+      this.trigger('add', signal.id);
+      this._move(signal, options);
       return true;
     };
 
-    AbstractList.prototype._move = function(entry, options) {
-      var next, previous;
+    AbstractList.prototype._delete = function(signal) {
+      var id;
+      id = signal.id;
+      this._move(signal);
+      delete this._byId[id];
+      delete this._next[id];
+      delete this._previous[id];
+      this.trigger('delete', id);
+      return true;
+    };
+
+    AbstractList.prototype._remove = function(signal) {
+      var id;
+      id = signal.id;
+      if (this._next[id]) {
+        this._previous[this._next[id].id] = this._previous[id];
+      }
+      if (this._previous[id]) {
+        this._next[this._previous[id].id] = this._next[id];
+      }
+      return true;
+    };
+
+    AbstractList.prototype._move = function(signal, options) {
+      var id, next, previous;
       if (options == null) {
         options = {};
       }
-      entry.remove();
-      previous = options.after || (options.before ? options.before.previous : void 0);
-      next = options.before || (options.after ? options.after.next : void 0);
-      entry.attachNext(next);
-      entry.attachPrevious(previous);
+      this._remove(signal);
+      id = signal.id;
+      previous = options.after || (options.before ? this._previous[options.before.id] : void 0);
+      next = options.before || (options.after ? this._next[options.after.id] : void 0);
+      this._previous[id] = previous;
+      this._next[id] = next;
+      if (previous) {
+        this._next[previous.id] = signal;
+      }
+      if (next) {
+        this._previous[next.id] = signal;
+      }
+      this.trigger('move', signal, previous, next);
       return true;
+    };
+
+    AbstractList.prototype._moveBefore = function(signal, other) {
+      return this._move(signal, {
+        before: other
+      });
+    };
+
+    AbstractList.prototype._moveAfter = function(signal, other) {
+      return this._move(signal, {
+        after: other
+      });
     };
 
     AbstractList.prototype._insert = function(value, options) {
-      var entry;
-      if (options == null) {
-        options = {};
-      }
-      entry = this._create(value, {
-        silent: options.silent
-      });
-      if (entry) {
-        this._move(entry, options);
-      }
-      return entry;
+      var signal;
+      signal = this._create(value);
+      this._move(signal, options);
+      return signal;
     };
 
-    AbstractList.prototype._remove = function(entry, options) {
-      if (options == null) {
-        options = {};
+    AbstractList.prototype._insertBefore = function(value, other) {
+      if (other == null) {
+        other = this._tailSignal;
       }
-      entry.remove();
-      return true;
+      return this._insert(value, {
+        before: other
+      });
+    };
+
+    AbstractList.prototype._insertAfter = function(value, other) {
+      if (other == null) {
+        other = this._headSignal;
+      }
+      return this._insert(value, {
+        after: other
+      });
     };
 
     AbstractList.prototype.getIterator = function(start) {
-      start || (start = this.headEntry);
+      start || (start = this._headSignal);
       return new this.Iterator(this, start);
     };
 
-    AbstractList.prototype.getEntry = function(id) {
+    AbstractList.prototype.before = function(signal) {
+      if (signal !== this._headSignal) {
+        return this._previous[signal != null ? signal.id : void 0];
+      }
+    };
+
+    AbstractList.prototype.after = function(signal) {
+      if (signal !== this._tailSignal) {
+        return this._next[signal != null ? signal.id : void 0];
+      }
+    };
+
+    AbstractList.prototype.getSignal = function(id) {
       return this._byId[id];
     };
 
     AbstractList.prototype.get = function(id) {
-      var entry;
-      if (entry = this.getEntry(id)) {
-        return entry.value();
-      }
-      return void 0;
+      var _ref;
+      return (_ref = this.getSignal(id)) != null ? _ref.value() : void 0;
     };
 
-    AbstractList.prototype.entryAt = function(index) {
+    AbstractList.prototype.signalAt = function(index) {
       var i, iterator;
       i = -1;
       iterator = this.getIterator();
       while (iterator.moveNext()) {
         if (++i === index) {
-          return iterator.entry;
+          return iterator.signal;
         }
       }
       return void 0;
     };
 
     AbstractList.prototype.idAt = function(index) {
-      var entry;
-      if (entry = this.entryAt(index)) {
-        return entry.id;
+      var signal;
+      if (signal = this.signalAt(index)) {
+        return signal.id;
       }
       return void 0;
     };
 
     AbstractList.prototype.at = function(index) {
-      var entry;
-      if (entry = this.entryAt(index)) {
-        return entry.value();
+      var signal;
+      if (signal = this.signalAt(index)) {
+        return signal.value();
       }
       return void 0;
     };
 
-    AbstractList.prototype.entryOf = function(value) {
-      var entry, id, _i, _len, _ref;
+    AbstractList.prototype.signalOf = function(value) {
+      var id, signal, _i, _len, _ref;
       _ref = Object.keys(this._byId);
       for (_i = 0, _len = _ref.length; _i < _len; _i++) {
         id = _ref[_i];
-        entry = this._byId[id];
-        if ((entry != null ? entry.value() : void 0) === value) {
-          return entry;
+        signal = this._byId[id];
+        if ((signal != null ? signal.value() : void 0) === value) {
+          return signal;
         }
       }
       return void 0;
@@ -982,10 +1024,10 @@
 
     AbstractList.prototype.idOf = function(value) {
       var _ref;
-      return (_ref = this.entryOf(value)) != null ? _ref.id : void 0;
+      return (_ref = this.signalOf(value)) != null ? _ref.id : void 0;
     };
 
-    AbstractList.prototype.indexOfEntry = function(entry, limit) {
+    AbstractList.prototype.indexOfSignal = function(signal, limit) {
       var i, iterator;
       if (limit == null) {
         limit = Infinity;
@@ -993,7 +1035,7 @@
       i = -1;
       iterator = this.getIterator();
       while (iterator.moveNext() && ++i < limit) {
-        if (iterator.entry === entry) {
+        if (iterator.signal === signal) {
           return i;
         }
       }
@@ -1024,16 +1066,16 @@
     };
 
     AbstractList.prototype.each = function(fn) {
-      return this.eachEntry(function(entry) {
-        return fn(entry.value());
+      return this.eachSignal(function(signal) {
+        return fn(signal.value());
       });
     };
 
-    AbstractList.prototype.eachEntry = function(fn) {
+    AbstractList.prototype.eachSignal = function(fn) {
       var iterator;
       iterator = this.getIterator();
       while (iterator.moveNext()) {
-        if (fn(iterator.entry) === false) {
+        if (fn(iterator.signal) === false) {
           return false;
         }
       }
@@ -1055,17 +1097,17 @@
     };
 
     AbstractList.prototype.find = function(fn) {
-      return this.findEntry(function(entry) {
-        return fn(entry.value());
+      return this.findSignal(function(signal) {
+        return fn(signal.value());
       });
     };
 
-    AbstractList.prototype.findEntry = function(fn) {
+    AbstractList.prototype.findSignal = function(fn) {
       var result;
       result = void 0;
-      this.eachEntry(function(entry) {
-        if (fn(entry)) {
-          result = entry;
+      this.eachSignal(function(signal) {
+        if (fn(signal)) {
+          result = signal;
           return false;
         }
       });
@@ -1138,7 +1180,7 @@
       if (count) {
         return this.take(count);
       } else {
-        return this.getIterator(this.headEntry).next().value;
+        return this.getIterator(this.headSignal).next().value;
       }
     };
 
@@ -1160,7 +1202,7 @@
 
     AbstractList.prototype.last = function(count) {
       if (!count) {
-        return this.tailEntry.previous.value();
+        return this.before(this._tailSignal).value();
       }
     };
 
@@ -1195,35 +1237,28 @@
     __extends(SimpleList, _super);
 
     function SimpleList(values) {
-      var entry, length, previous, value, _i, _len;
+      var signal, value, _i, _len;
       SimpleList.__super__.constructor.apply(this, arguments);
-      previous = this.headEntry;
-      if (values != null) {
+      this._previous[this._tailSignal.id] = this._headSignal;
+      this._next[this._headSignal.id] = this._tailSignal;
+      if (values) {
         for (_i = 0, _len = values.length; _i < _len; _i++) {
           value = values[_i];
-          entry = this._create(value, {
-            silent: true
-          });
-          previous.next = entry;
-          entry.previous = previous;
-          previous = entry;
+          signal = this._insertAfter(value, signal);
         }
-        length = values.length;
       }
-      previous.next = this.tailEntry;
-      this.tailEntry.previous = previous;
     }
 
     SimpleList.prototype.set = function(id, value, options) {
-      var entry;
+      var signal;
       if (options == null) {
         options = {};
       }
-      entry = this.getEntry(id);
-      if (!entry) {
+      signal = this.getSignal(id);
+      if (!signal) {
         return false;
       }
-      entry.value(value);
+      signal.value(value);
       return true;
     };
 
@@ -1231,30 +1266,28 @@
       if (options == null) {
         options = {};
       }
-      options.before = this.tailEntry;
-      return this._insert(value, options).id;
+      return this._insertBefore(value).id;
     };
 
     SimpleList.prototype.unshift = function(value, options) {
       if (options == null) {
         options = {};
       }
-      options.after = this.headEntry;
-      return this._insert(value, options).id;
+      return this._insertAfter(value).id;
     };
 
     SimpleList.prototype.pop = function(options) {
-      var entry;
-      entry = this.getIterator(this.tailEntry).previous().entry;
-      this._delete(entry, options);
-      return entry.value();
+      var signal;
+      signal = this.before(this._tailSignal);
+      this._delete(signal, options);
+      return signal.value();
     };
 
     SimpleList.prototype.shift = function(options) {
-      var entry;
-      entry = this.getIterator(this.headEntry).next().entry;
-      this._delete(entry, options);
-      return entry.value();
+      var signal;
+      signal = this.after(this._headSignal);
+      this._delete(signal, options);
+      return signal.value();
     };
 
     SimpleList.prototype.add = function(value, options) {
@@ -1262,15 +1295,15 @@
     };
 
     SimpleList.prototype.remove = function(value, options) {
-      var entry;
-      entry = this.entryOf(value);
-      return this._delete(entry, options);
+      var signal;
+      signal = this.signalOf(value);
+      return this._delete(signal, options);
     };
 
     SimpleList.prototype["delete"] = function(id, options) {
-      var entry;
-      entry = this.getEntry(id);
-      return this._delete(entry, options);
+      var signal;
+      signal = this.getSignal(id);
+      return this._delete(signal, options);
     };
 
     return SimpleList;

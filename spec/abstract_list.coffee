@@ -2,22 +2,18 @@ describe "List", ->
 
   beforeEach ->
     @list = new Sonic.AbstractList()
-
-
-    entry = @list.headEntry
-    for i in [0...10]
-      entry = @list._insert(i, after: entry)
+    @list._insertAfter(i) for i in [9..0]
 
   describe "#_create", ->
 
     beforeEach ->
       @item = "apple"
 
-    it "should return the id of the newly created entry", ->
-      entry = @list._create(@item)
-      expect(@list.get(entry.id)).toBe(@item)
+    it "should return the id of the newly created signal", ->
+      signal = @list._create(@item)
+      expect(@list.get(signal.id)).toBe(@item)
 
-      it "should emit an event"
+    it "should emit an event"
 
 
 
@@ -25,25 +21,25 @@ describe "List", ->
 
     it "should delete the item", ->
       item = "mango"
-      entry = @list._create(item)
-      expect(@list.get(entry.id)).toBe(item)
+      signal = @list._create(item)
+      expect(@list.get(signal.id)).toBe(item)
 
-      @list._delete(entry)
-      expect(@list.get(entry.id)).not.toBeDefined()
+      @list._delete(signal)
+      expect(@list.get(signal.id)).not.toBeDefined()
 
     it "should move the item out of the linked list structure", ->
       item1 = "apple"
       item2 = "pear"
       item3 = "banana"
 
-      entry1 = @list._create(item1)
-      entry2 = @list._insert(item2, after: entry1)
-      entry3 = @list._insert(item3, after: entry2)
+      signal1 = @list._create(item1)
+      signal2 = @list._insert(item2, after: signal1)
+      signal3 = @list._insert(item3, after: signal2)
 
-      @list._delete(entry2)
+      @list._delete(signal2)
 
-      expect(entry1.next).toBe(entry3)
-      expect(entry3.previous).toBe(entry1)
+      expect(@list.after signal1).toBe(signal3)
+      expect(@list.before signal3).toBe(signal1)
 
     it "should emit an event"
 
@@ -56,153 +52,75 @@ describe "List", ->
       @item2 = "pear"
       @item3 = "banana"
 
-      @entry1 = @list._create(@item1)
-      @entry2 = @list._insert(@item2, after: @entry1)
-      @entry3 = @list._insert(@item3, after: @entry2)
+      @signal1 = @list._create(@item1)
+      @signal2 = @list._insert(@item2, after: @signal1)
+      @signal3 = @list._insert(@item3, after: @signal2)
 
     it "should remove the item from its current position", ->
-      expect(@entry1.next).toBe(@entry2)
-      expect(@entry3.previous).toBe(@entry2)
+      expect(@list.after(@signal1)).toBe(@signal2)
+      expect(@list.before(@signal3)).toBe(@signal2)
 
-      @list._move(@entry2, after: @entry3)
+      @list._move(@signal2, after: @signal3)
 
-      expect(@entry1.next).toBe(@entry3)
-      expect(@entry3.previous).toBe(@entry1)
+      expect(@list.after @signal1).toBe(@signal3)
+      expect(@list.before @signal3).toBe(@signal1)
 
     it "should move the item into its new position", ->
-      @list._move(@entry2, after: @entry3)
+      @list._move(@signal2, after: @signal3)
 
-      expect(@entry3.next).toBe(@entry2)
-      expect(@entry2.previous).toBe(@entry3)
-
-
-
-  describe "#entryOf", ->
-
-    it "should return the first occurence of the value", ->
-      item = "banana"
-      entry = @list._create(item)
-
-      expect(@list.entryOf(item)).toBe(entry)
+      expect(@list.after @signal3).toBe(@signal2)
+      expect(@list.before @signal2).toBe(@signal3)
 
 
 
-  describe "#entryAt", ->
+  describe "#_insert", ->
 
-    it "should return the entry of the item at the given index", ->
-      entry = @list.entryOf(5)
-      expect(@list.entryAt(5)).toBe(entry)
+    beforeEach ->
+      @item1 = "apple"
+      @item2 = "pear"
+      @item3 = "banana"
 
+      @signal1 = @list._create(@item1)
 
+    it "should insert the item at the given position", ->
+      @signal2 = @list._insert(@item2, after: @signal1)
+      @signal3 = @list._insert(@item3, before: @signal2)
 
-  describe "#idAt", ->
-
-    it "should return the id of the item at the given index", ->
-      id = @list.idOf(5)
-      expect(@list.idAt(5)).toBe(id)
-
-
-
-  describe "#indexOfEntry", ->
-
-    it "should return the index of the given item when it exists", ->
-      entry = @list.entryOf(5)
-      expect(@list.indexOfEntry(entry)).toBe(5)
-
-    it "should return -1 when the isn't found within the limit", ->
-      entry = @list.entryOf(5)
-      expect(@list.indexOf(entry, 5)).toBe(-1)
-
-    it "should return -1 if the item isn't found", ->
-      entry = new Sonic.Entry(10)
-      expect(@list.indexOf(entry)).toBe(-1)
+      expect( @list.after @signal1).toBe(@signal3)
+      expect( @list.before @signal2 ).toBe(@signal3)
 
 
+  describe "#_insertBefore", ->
 
-  describe "#indexOf", ->
+    beforeEach ->
+      @item1 = "apple"
+      @item2 = "pear"
+      @item3 = "banana"
 
-    it "should return the index of the given item when it exists", ->
-      expect(@list.indexOf(5)).toBe(5)
+      @signal1 = @list._create(@item1)
 
-    it "should return -1 when the isn't found within the limit", ->
-      expect(@list.indexOf(5, 5)).toBe(-1)
+    it "should insert the item at the given position", ->
+      @signal2 = @list._insertBefore(@item2, @signal1)
+      @signal3 = @list._insertBefore(@item3, @signal2)
 
-    it "should return -1 if the item isn't found", ->
-      expect(@list.indexOf(10)).toBe(-1)
+      expect( @list.before @signal1).toBe(@signal2)
+      expect( @list.before @signal2 ).toBe(@signal3)
 
+  describe "#_insertAfter", ->
 
+    beforeEach ->
+      @item1 = "apple"
+      @item2 = "pear"
+      @item3 = "banana"
 
-  describe "#idOf", ->
+      @signal1 = @list._create(@item1)
 
-    it "should return the id of the given item", ->
-      item = "strawberry"
-      id = @list._create(item).id
-      expect(@list.idOf(item)).toBe(id)
+    it "should insert the item at the given position", ->
+      @signal2 = @list._insertAfter(@item2, @signal1)
+      @signal3 = @list._insertAfter(@item3, @signal2)
 
-    it "should return undefined if the item isn't found", ->
-      item = "foo"
-      expect(@list.idOf(item)).not.toBeDefined()
-
-
-
-  describe "#getIterator", ->
-
-    it "should return a new iterator for this list", ->
-      iterator = @list.getIterator()
-      expect(iterator).toEqual(jasmine.any(Sonic.Iterator))
-      expect(iterator.list).toBe(@list)
-
-
-
-  describe "#get", ->
-
-    it "should return the item with the specified id", ->
-      item = "pear"
-      entry = @list._create(item)
-      expect(@list.get(entry.id)).toBe(item)
-
-
-
-  describe "#contains", ->
-
-    it "should return true if the list contains the given item", ->
-      item = "pineapple"
-      @list._create(item)
-      expect(@list.contains(item)).toBe(true)
-
-    it "should return false if the list doesn't contain the given item", ->
-      item = "foo"
-      expect(@list.contains(item)).toBe(false)
-
-
-
-  describe "#forEach", ->
-
-    it "should call #each and forward the arguments", ->
-      spyOn @list, 'each'
-      fn = ->
-      @list.forEach(fn)
-      expect(@list.each).toHaveBeenCalledWith(fn)
-
-
-
-  describe "#each", ->
-
-    it "should call the given function for each item", ->
-      items = []
-      fn = ( item ) -> items.push(item)
-      @list.each fn
-
-      expect(items).toEqual([0...10])
-
-
-
-  describe "#map", ->
-
-    it "should return a new MappedList", ->
-      expect(@list.map(->) instanceof Sonic.MappedList).toBe(true)
-
-
+      expect( @list.after @signal1).toBe(@signal2)
+      expect( @list.after @signal2 ).toBe(@signal3)
 
   describe "#filter", ->
 
@@ -249,3 +167,127 @@ describe "List", ->
 
     it "should return the list's items in an array", ->
       expect(@list.toArray()).toEqual([0...10])
+  describe "#signalOf", ->
+
+    it "should return the first occurence of the value", ->
+      item = "banana"
+      signal = @list._create(item)
+
+      expect(@list.signalOf(item)).toBe(signal)
+
+
+
+  describe "#signalAt", ->
+
+    it "should return the signal of the item at the given index", ->
+      signal = @list.signalOf(5)
+      expect(@list.signalAt(5)).toBe(signal)
+
+
+
+  describe "#idAt", ->
+
+    it "should return the id of the item at the given index", ->
+      id = @list.idOf(5)
+      expect(@list.idAt(5)).toBe(id)
+
+
+
+  describe "#indexOfsignal", ->
+
+    it "should return the index of the given item when it exists", ->
+      signal = @list.signalOf(5)
+      expect(@list.indexOfSignal(signal)).toBe(5)
+
+    it "should return -1 when the isn't found within the limit", ->
+      signal = @list.signalOf(5)
+      expect(@list.indexOf(signal, 5)).toBe(-1)
+
+    it "should return -1 if the item isn't found", ->
+      signal = new Sonic.Signal(10)
+      expect(@list.indexOf(signal)).toBe(-1)
+
+
+
+  describe "#indexOf", ->
+
+    it "should return the index of the given item when it exists", ->
+      expect(@list.indexOf(5)).toBe(5)
+
+    it "should return -1 when the isn't found within the limit", ->
+      expect(@list.indexOf(5, 5)).toBe(-1)
+
+    it "should return -1 if the item isn't found", ->
+      expect(@list.indexOf(10)).toBe(-1)
+
+
+
+  describe "#idOf", ->
+
+    it "should return the id of the given item", ->
+      item = "strawberry"
+      id = @list._create(item).id
+      expect(@list.idOf(item)).toBe(id)
+
+    it "should return undefined if the item isn't found", ->
+      item = "foo"
+      expect(@list.idOf(item)).not.toBeDefined()
+
+
+
+  describe "#getIterator", ->
+
+    it "should return a new iterator for this list", ->
+      iterator = @list.getIterator()
+      expect(iterator).toEqual(jasmine.any(Sonic.Iterator))
+      expect(iterator.list).toBe(@list)
+
+
+
+  describe "#get", ->
+
+    it "should return the item with the specified id", ->
+      item = "pear"
+      signal = @list._create(item)
+      expect(@list.get(signal.id)).toBe(item)
+
+
+
+  describe "#contains", ->
+
+    it "should return true if the list contains the given item", ->
+      item = "pineapple"
+      @list._create(item)
+      expect(@list.contains(item)).toBe(true)
+
+    it "should return false if the list doesn't contain the given item", ->
+      item = "foo"
+      expect(@list.contains(item)).toBe(false)
+
+
+
+  describe "#forEach", ->
+
+    it "should call #each and forward the arguments", ->
+      spyOn @list, 'each'
+      fn = ->
+      @list.forEach(fn)
+      expect(@list.each).toHaveBeenCalledWith(fn)
+
+
+
+  describe "#each", ->
+
+    it "should call the given function for each item", ->
+      items = []
+      fn = ( item ) -> items.push(item)
+      @list.each fn
+
+      expect(items).toEqual([0...10])
+
+
+
+  describe "#map", ->
+
+    it "should return a new MappedList", ->
+      expect(@list.map(->) instanceof Sonic.MappedList).toBe(true)

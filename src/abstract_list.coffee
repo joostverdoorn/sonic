@@ -1,111 +1,131 @@
 class AbstractList extends Observable
 
-  Entry:    Entry
   Iterator: Iterator
-
-  HeadEntry: -> new @Entry(null, list: @)
-  TailEntry: -> new @Entry(null, list: @)
 
   constructor: ( ) ->
     super()
 
     @_byId = {}
+    @_next = {}
+    @_previous = {}
 
-    @headEntry = @HeadEntry()
-    @tailEntry = @TailEntry()
+    @_headSignal = @_create null
+    @_tailSignal = @_create null
 
-  _create: ( value, options = {} ) ->
-    options.list = @
+  _create: ( value ) ->
+    signal = new Signal value
+    @_add(signal)
+    return signal
 
-    entry = new @Entry(value, options)
-    # entry.on('*', @_onEntryEvent, @)
+  _add: ( signal, options ) ->
+    @_byId[signal.id] = signal
+    @trigger('add', signal.id)
 
-    id = entry.id
-    @_byId[id] = entry
-
-    # @trigger('create', entry.id) unless options.silent
-    return entry
-
-  _delete: ( entry, options = {} ) ->
-    entry.remove()
-    # entry.off('*', @_onEntryEvent, @)
-
-    delete @_byId[entry.id]
-
-    # @trigger('delete', entry.id) unless options.silent
+    @_move(signal, options)
     return true
 
-  _move: ( entry, options = {} ) ->
-    entry.remove()
+  _delete: ( signal ) ->
+    id = signal.id
+    @_move(signal)
 
-    previous = options.after or (options.before.previous if options.before)
-    next = options.before or (options.after.next if options.after)
+    delete @_byId[id]
+    delete @_next[id]
+    delete @_previous[id]
 
-    entry.attachNext(next)
-    entry.attachPrevious(previous)
-
-    # @trigger('move', entry.id) unless options.silent
+    @trigger('delete', id)
     return true
 
-  _insert: ( value, options = {} ) ->
-    entry = @_create(value, silent: options.silent)
-    @_move(entry, options) if entry
-
-    return entry
-
-  _remove: ( entry, options = {} ) ->
-    entry.remove()
-
-    # @trigger('move', entry.id) unless options.silent
+  _remove: ( signal ) ->
+    id = signal.id
+    @_previous[@_next[id].id] = @_previous[id] if @_next[id]
+    @_next[@_previous[id].id] = @_next[id] if @_previous[id]
     return true
+
+  _move: ( signal, options = {} ) ->
+    @_remove(signal)
+
+    id = signal.id
+    previous = options.after or (@_previous[options.before.id] if options.before)
+    next = options.before or (@_next[options.after.id] if options.after)
+
+    # Attach
+    @_previous[id] = previous
+    @_next[id] = next
+
+    @_next[previous.id] = signal if previous
+    @_previous[next.id] = signal if next
+
+    @trigger('move', signal, previous, next)
+    return true
+
+  _moveBefore: ( signal, other ) ->
+    return @_move(signal, before: other)
+
+  _moveAfter: ( signal, other ) ->
+    return @_move(signal, after: other)
+
+  _insert: ( value, options ) ->
+    signal = @_create(value)
+    @_move(signal, options)
+    return signal
+
+  _insertBefore: ( value, other = @_tailSignal ) ->
+    @_insert value, before: other
+
+  _insertAfter: ( value, other = @_headSignal) ->
+    @_insert value, after: other
 
   # Iterator methods.
   getIterator: ( start ) ->
-    start ||= @headEntry
+    start ||= @_headSignal
     return new @Iterator(@, start)
 
+  before: ( signal ) ->
+    return @_previous[signal?.id] unless signal is @_headSignal
+
+  after: ( signal ) ->
+    return @_next[signal?.id] unless signal is @_tailSignal
+
   # Public access methods.
-  getEntry: ( id ) ->
+  getSignal: ( id ) ->
     return @_byId[id]
 
   get: ( id ) ->
-    if entry = @getEntry(id)
-      return entry.value()
-    return undefined
+    return @getSignal(id)?.value()
 
-  entryAt: ( index ) ->
+  signalAt: ( index ) ->
     i = -1
     iterator = @getIterator()
 
     while iterator.moveNext()
-      return iterator.entry if ++i is index
+      return iterator.signal if ++i is index
     return undefined
 
   idAt: ( index ) ->
-    if entry = @entryAt(index)
-      return entry.id
+    if signal = @signalAt(index)
+      return signal.id
     return undefined
 
   at: ( index ) ->
-    if entry = @entryAt(index)
-      return entry.value()
+    if signal = @signalAt(index)
+      return signal.value()
     return undefined
 
-  entryOf: ( value ) ->
+  signalOf: ( value ) ->
     for id in Object.keys(@_byId)
-      entry = @_byId[id]
-      return entry if entry?.value() is value
+      signal = @_byId[id]
+      return signal if signal?.value() is value
     return undefined
 
   idOf: ( value ) ->
-    return @entryOf(value)?.id
+    return @signalOf(value)?.id
 
-  indexOfEntry: ( entry, limit = Infinity ) ->
+  indexOfSignal: ( signal, limit = Infinity ) ->
     i = -1
     iterator = @getIterator()
 
     while iterator.moveNext() and ++i < limit
-      return i if iterator.entry is entry
+      return i if iterator.signal is signal
 
     return -1
 
@@ -125,12 +145,12 @@ class AbstractList extends Observable
     return @each(fn)
 
   each:    ( fn ) ->
-    @eachEntry ( entry ) -> fn(entry.value())
+    @eachSignal ( signal ) -> fn(signal.value())
 
-  eachEntry: ( fn ) ->
+  eachSignal: ( fn ) ->
     iterator = @getIterator()
     while iterator.moveNext()
-      return false if fn(iterator.entry) is false
+      return false if fn(iterator.signal) is false
     return true
 
   any:  ( predicate ) ->
@@ -142,14 +162,14 @@ class AbstractList extends Observable
     return false
 
   find: ( fn ) ->
-    @findEntry ( entry ) -> fn(entry.value())
+    @findSignal ( signal ) -> fn(signal.value())
 
-  findEntry: ( fn ) ->
+  findSignal: ( fn ) ->
     result = undefined
 
-    @eachEntry ( entry ) ->
-      if fn(entry)
-        result = entry
+    @eachSignal ( signal ) ->
+      if fn(signal)
+        result = signal
         return false
 
     return result
@@ -192,7 +212,7 @@ class AbstractList extends Observable
   first: ( count ) ->
     if count
       return @take(count)
-    else return @getIterator(@headEntry).next().value
+    else return @getIterator(@headSignal).next().value
 
   skip: ( count ) -> @rest(count)
   tail: ( count ) -> @rest(count)
@@ -204,7 +224,7 @@ class AbstractList extends Observable
 
 
   last: ( count ) ->
-    return @tailEntry.previous.value() unless count
+    return @before(@_tailSignal).value() unless count
 
   pluck: ( key ) ->
     return @map ( value ) -> value[key]
@@ -218,5 +238,5 @@ class AbstractList extends Observable
     return values
 
   # # Event handling
-  # _onEntryEvent: ( event, entry, args... ) ->
-  #   @trigger(event, entry.id, args...)
+  # _onSignalEvent: ( event, signal, args... ) ->
+  #   @trigger(event, signal.id, args...)
