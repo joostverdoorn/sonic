@@ -1,61 +1,164 @@
-class AbstractList extends Observable
+class AbstractList
 
   Iterator: Iterator
 
   constructor: ( ) ->
-    super()
-
     @_byId = {}
     @_next = {}
     @_previous = {}
 
-    @_headSignal = @_create null
-    @_tailSignal = @_create null
+    @_headSignal = { id: Sonic.uniqueId() }
+    @_tailSignal = { id: Sonic.uniqueId() }
 
-  _create: ( value ) ->
-    signal = new Signal value
-    @_add(signal)
+    @_byId[@_headSignal.id] = @_headSignal
+    @_byId[@_tailSignal.id] = @_tailSignal
+
+    @events = new Signal null
+
+  _onSignalUpdate: ( value, signal ) =>
+    return false unless @_byId[signal.id]
+    @events.yield
+      type: 'update'
+      object: @
+      key: signal.id
+      value: signal
+
+  # Constructs and adds a new signal.
+  #
+  # @param [Object] value Any value
+  # @param [Object] options The options
+  # @option options [Boolean] silent Whether or not to trigger an event
+  # @option options [Signal] before The signal after which to place it
+  # @option options [Signal] after The signal before which to place it
+  #
+  _create: ( value, options ) ->
+    signal = new Signal(value)
+    signal.forEach(@_onSignalUpdate)
+
+    @_add(signal, options)
     return signal
 
-  _add: ( signal, options ) ->
-    @_byId[signal.id] = signal
-    @trigger('add', signal.id)
+  # Constructs and adds a new signal before the given signal.
+  # If no signal is given, the new signal is appended to the list.
+  #
+  # @param [Object] value Any value
+  # @param [Signal] other The signal before which to place it
+  # @param [Object] options The options
+  # @option options [Boolean] silent Wether or not to trigger an event
+  #
+  _createBefore: ( value, other = @_tailSignal, options = {} ) ->
+    options.before = other
+    return @_create(value, options)
 
-    @_move(signal, options)
+  # Constructs and adds a new signal after the given signal.
+  # If no signal is given, the new signal is prepended to the list.
+  #
+  # @param [Object] value Any value
+  # @param [Signal] other The signal before which to place it
+  # @param [Object] options The options
+  # @option options [Boolean] silent Wether or not to trigger an event
+  #
+  _createAfter: ( value, other = @_headSignal, options = {} ) ->
+    options.after = other
+    return @_create(value, options)
+
+  # Adds a signal
+  #
+  # @param [Signal] signal The signal to add
+  # @param [Object] options The options
+  # @option options [Boolean] silent Whether or not to trigger an event
+  # @option options [Signal] before The signal after which to place it
+  # @option options [Signal] after The signal before which to place it
+  #
+  _add: ( signal, options ) ->
+    unless @_byId[signal.id]
+      @_byId[signal.id] = signal
+
+    unless options?.silent
+      @events.yield
+        type: 'add'
+        object: @
+        key: signal.id
+        value: signal
+
+    if options and (options.before or options.after)
+      @_move(signal, options)
+
     return true
 
-  _delete: ( signal ) ->
-    id = signal.id
-    @_move(signal)
+  # Adds a signal before the given signal.
+  # If no signal is given, the new signal is appended to the list.
+  #
+  # @param [Signal] signal The signal to add
+  # @param [Signal] other The signal before which to place it
+  # @param [Object] options The options
+  # @option options [Boolean] silent Wether or not to trigger an event
+  #
+  _addBefore: ( signal, other = @_tailSignal, options = {} ) ->
+    options.before = other
+    return @_add(signal, options)
 
+  # Adds a signal after the given signal.
+  # If no signal is given, the new signal is prepended to the list.
+  #
+  # @param [Signal] signal The signal to add
+  # @param [Signal] other The signal after which to place it
+  # @param [Object] options The options
+  # @option options [Boolean] silent Wether or not to trigger an event
+  #
+  _addAfter: ( signal, other = @_headSignal, options = {} ) ->
+    options.after = other
+    return @_add(signal, options)
+
+  # Deletes a Signal
+  #
+  # @param [Signal] signal The signal to delete
+  # @param [Object] options The options
+  # @option options [Boolean] silent Whether or not to trigger an event
+  #
+  _delete: ( signal, options ) ->
+    @_remove(signal)
+
+    id = signal.id
     delete @_byId[id]
     delete @_next[id]
     delete @_previous[id]
 
-    @trigger('delete', id)
+    @events.yield(
+      type: 'delete'
+      object: @
+      key: signal.id
+      value: signal
+    ) unless options?.silent
+
     return true
 
   _remove: ( signal ) ->
+    return @_move(signal)
+
+  _move: ( signal, options ) ->
     id = signal.id
+
     @_previous[@_next[id].id] = @_previous[id] if @_next[id]
     @_next[@_previous[id].id] = @_next[id] if @_previous[id]
-    return true
 
-  _move: ( signal, options = {} ) ->
-    @_remove(signal)
+    if options and (options.before or options.after)
+      previous = options.after or (@_previous[options.before.id] if options.before)
+      next = options.before or (@_next[options.after.id] if options.after)
 
-    id = signal.id
-    previous = options.after or (@_previous[options.before.id] if options.before)
-    next = options.before or (@_next[options.after.id] if options.after)
+      @_previous[id] = previous
+      @_next[id]     = next
 
-    # Attach
-    @_previous[id] = previous
-    @_next[id] = next
+      @_next[previous.id] = signal if previous
+      @_previous[next.id] = signal if next
 
-    @_next[previous.id] = signal if previous
-    @_previous[next.id] = signal if next
+    @events.yield(
+      type: 'move'
+      object: @
+      key: signal.id
+      value: signal
+    ) unless options?.silent
 
-    @trigger('move', signal, previous, next)
     return true
 
   _moveBefore: ( signal, other ) ->
@@ -64,16 +167,21 @@ class AbstractList extends Observable
   _moveAfter: ( signal, other ) ->
     return @_move(signal, after: other)
 
-  _insert: ( value, options ) ->
-    signal = @_create(value)
-    @_move(signal, options)
-    return signal
 
-  _insertBefore: ( value, other = @_tailSignal ) ->
-    @_insert value, before: other
 
-  _insertAfter: ( value, other = @_headSignal) ->
-    @_insert value, after: other
+
+  # _set: ( signal, value ) ->
+
+  # _insert: ( signal, options ) ->
+  #   signal = @_add(signal, options)
+  #   move
+  #   return signal
+
+  # _insertBefore: ( value, other = @_tailSignal ) ->
+  #   @_insert value, before: other
+
+  # _insertAfter: ( value, other = @_headSignal) ->
+  #   @_insert value, after: other
 
   # Iterator methods.
   getIterator: ( start ) ->
@@ -81,10 +189,16 @@ class AbstractList extends Observable
     return new @Iterator(@, start)
 
   before: ( signal ) ->
-    return @_previous[signal?.id] unless signal is @_headSignal
+    previous = @_previous[signal?.id or @_tailSignal.id]
+    if previous is @_headSignal
+      return null
+    return previous
 
   after: ( signal ) ->
-    return @_next[signal?.id] unless signal is @_tailSignal
+    next = @_next[signal?.id or @_headSignal.id]
+    if next is @_tailSignal
+      return null
+    return next
 
   # Public access methods.
   getSignal: ( id ) ->
@@ -114,6 +228,7 @@ class AbstractList extends Observable
   signalOf: ( value ) ->
     for id in Object.keys(@_byId)
       signal = @_byId[id]
+      continue if signal is @_headSignal or signal is @_tailSignal
       return signal if signal?.value() is value
     return undefined
 
@@ -179,14 +294,17 @@ class AbstractList extends Observable
       memo = reduceFn(value, memo)
     return memo
 
+  transform: ( options ) ->
+    return new TransformedList(@, options)
+
   map: ( mapFn ) ->
-    return new MappedList(@, mapFn: mapFn)
+    return @transform(mapFn: mapFn)
 
   filter: ( filterFn ) ->
-    return new FilteredList(@, filterFn: filterFn)
+    return @transform(filterFn: filterFn)
 
   sort: ( sortFn ) ->
-    return new SortedList(@, sortFn: sortFn)
+    return new SortedList(@, sortFn)
 
   concat: ( others... ) ->
     return new ConcatenatedList([@].concat(others))
@@ -207,7 +325,7 @@ class AbstractList extends Observable
     return @concat(others...).uniq()
 
   take: ( count ) ->
-    return new TakeList(@, count: count)
+    return new TakeList(@, count)
 
   first: ( count ) ->
     if count
@@ -237,6 +355,3 @@ class AbstractList extends Observable
     @each ( value ) -> values.push(value)
     return values
 
-  # # Event handling
-  # _onSignalEvent: ( event, signal, args... ) ->
-  #   @trigger(event, signal.id, args...)

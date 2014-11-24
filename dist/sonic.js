@@ -1,8 +1,9 @@
 (function() {
-  var AbstractList, ConcatenatedIterator, ConcatenatedList, Entry, FilteredList, GeneratedList, Generator, Iterator, MappedEntry, MappedList, Observable, ReversedIterator, ReversedList, Signal, SimpleList, Sonic, SortedEntry, SortedIterator, SortedList, TailingEntry, TailingIterator, TailingList, TakeList, Transformer, UniqueList,
+  var AbstractList, ConcatenatedIterator, ConcatenatedList, FilteredList, GeneratedList, Generator, Iterator, MappedEntry, MappedList, MappedSignal, Observable, ReversedIterator, ReversedList, Signal, SimpleList, Sonic, SortedEntry, SortedIterator, SortedList, TailingEntry, TailingIterator, TailingList, TakeList, TransformedList, Transformer, UniqueList,
     __slice = [].slice,
     __hasProp = {}.hasOwnProperty,
-    __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
+    __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
+    __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; };
 
   Sonic = {
     _uniqueCounter: 0,
@@ -94,8 +95,8 @@
 
   Signal = (function() {
     function Signal(value) {
-      this._handlers = [];
       this.id = Sonic.uniqueId();
+      this._handlers = [];
       this._value = value;
     }
 
@@ -104,10 +105,25 @@
     };
 
     Signal.prototype["yield"] = function(value) {
+      var index, item, toRemove, _i, _len;
       this._value = value;
-      return this._handlers.forEach(function(handler) {
-        return handler(value);
-      });
+      toRemove = [];
+      this._handlers.forEach((function(_this) {
+        return function(handler) {
+          var res;
+          res = handler(value, _this);
+          if (!res) {
+            toRemove.push(res);
+          }
+          return res;
+        };
+      })(this));
+      for (_i = 0, _len = toRemove.length; _i < _len; _i++) {
+        item = toRemove[_i];
+        index = this._handlers.indexOf(item);
+        this._handlers.splice(index, 1);
+      }
+      return true;
     };
 
     Signal.prototype.each = function(handler) {
@@ -118,13 +134,48 @@
       return this._handlers.push(handler);
     };
 
-    Signal.prototype._noop = function(item) {
-      return item;
+    Signal.prototype.root = function() {
+      return this;
     };
 
     return Signal;
 
   })();
+
+  MappedSignal = (function(_super) {
+    __extends(MappedSignal, _super);
+
+    function MappedSignal(source, mapFn) {
+      if (mapFn == null) {
+        mapFn = this._noop;
+      }
+      if (this._source = source) {
+        this._source.each(this["yield"]);
+      }
+      this._mapFn = mapFn;
+      MappedSignal.__super__.constructor.call(this, void 0);
+    }
+
+    MappedSignal.prototype.value = function() {
+      return this._value != null ? this._value : this._value = this._mapFn(this._source.value());
+    };
+
+    MappedSignal.prototype["yield"] = function(value) {
+      return MappedSignal.__super__["yield"].call(this, this._mapFn(value));
+    };
+
+    MappedSignal.prototype.root = function() {
+      var _ref;
+      return (_ref = this._source) != null ? _ref.root() : void 0;
+    };
+
+    MappedSignal.prototype._noop = function(item) {
+      return item;
+    };
+
+    return MappedSignal;
+
+  })(Signal);
 
   Transformer = (function() {
     function Transformer(transformation) {
@@ -226,38 +277,6 @@
         this.attachPrevious();
       }
       return TailingIterator.__super__.movePrevious.apply(this, arguments);
-    };
-
-    TailingIterator.prototype.attachNext = function() {
-      var iterator, next;
-      if (this.entry.next) {
-        return true;
-      }
-      iterator = this.entry.source.getIterator();
-      while (!next) {
-        next = this.list.getBySource(iterator.next().entry);
-      }
-      if (!next) {
-        return false;
-      }
-      this.entry.attachNext(next);
-      return true;
-    };
-
-    TailingIterator.prototype.attachPrevious = function() {
-      var iterator, previous;
-      if (this.entry.previous) {
-        return true;
-      }
-      iterator = this.entry.source.getIterator();
-      while (!previous) {
-        previous = this.list.getBySource(iterator.previous().entry);
-      }
-      if (!previous) {
-        return false;
-      }
-      this.entry.attachPrevious(previous);
-      return true;
     };
 
     return TailingIterator;
@@ -438,87 +457,7 @@
 
   })(TailingIterator);
 
-  Entry = (function(_super) {
-    __extends(Entry, _super);
-
-    function Entry(value, options) {
-      var _ref;
-      if (options == null) {
-        options = {};
-      }
-      Entry.__super__.constructor.call(this);
-      this.id = (_ref = options.id) != null ? _ref : Sonic.uniqueId();
-      this._value = value != null ? value : options.value;
-      if (options) {
-        this.list = options.list;
-        this.next = options.next;
-        this.previous = options.previous;
-      }
-    }
-
-    Entry.prototype.root = function() {
-      return this;
-    };
-
-    Entry.prototype.value = function() {
-      var oldValue, value;
-      if (arguments.length > 0) {
-        value = arguments[0];
-        if (this._value === value) {
-          return;
-        }
-        oldValue = this._value;
-        this._value = value;
-        this.trigger('update', this, oldValue);
-      }
-      return this._value;
-    };
-
-    Entry.prototype.getIterator = function() {
-      return this.list.getIterator(this);
-    };
-
-    Entry.prototype.remove = function() {
-      var next, previous;
-      next = this.next;
-      previous = this.previous;
-      if (!(next || previous)) {
-        return true;
-      }
-      if (next) {
-        next.previous = previous;
-      }
-      if (previous) {
-        previous.next = next;
-      }
-      this.next = null;
-      this.previous = null;
-      return true;
-    };
-
-    Entry.prototype.attachNext = function(next) {
-      this.next = next;
-      if (next) {
-        this.next.previous = this;
-      }
-      return true;
-    };
-
-    Entry.prototype.attachPrevious = function(previous) {
-      this.previous = previous;
-      if (previous) {
-        this.previous.next = this;
-      }
-      return true;
-    };
-
-    return Entry;
-
-  })(Signal);
-
-  TailingEntry = (function(_super) {
-    __extends(TailingEntry, _super);
-
+  TailingEntry = (function() {
     function TailingEntry(source, options) {
       if (options == null) {
         options = {};
@@ -545,7 +484,7 @@
 
     return TailingEntry;
 
-  })(Entry);
+  })();
 
   MappedEntry = (function(_super) {
     __extends(MappedEntry, _super);
@@ -846,47 +785,131 @@
 
   })(TailingEntry);
 
-  AbstractList = (function(_super) {
-    __extends(AbstractList, _super);
-
+  AbstractList = (function() {
     AbstractList.prototype.Iterator = Iterator;
 
     function AbstractList() {
-      AbstractList.__super__.constructor.call(this);
+      this._onSignalUpdate = __bind(this._onSignalUpdate, this);
       this._byId = {};
       this._next = {};
       this._previous = {};
-      this._headSignal = this._create(null);
-      this._tailSignal = this._create(null);
+      this._headSignal = {
+        id: Sonic.uniqueId()
+      };
+      this._tailSignal = {
+        id: Sonic.uniqueId()
+      };
+      this._byId[this._headSignal.id] = this._headSignal;
+      this._byId[this._tailSignal.id] = this._tailSignal;
+      this.events = new Signal(null);
     }
 
-    AbstractList.prototype._create = function(value) {
+    AbstractList.prototype._onSignalUpdate = function(value, signal) {
+      if (!this._byId[signal.id]) {
+        return false;
+      }
+      return this.events["yield"]({
+        type: 'update',
+        object: this,
+        key: signal.id,
+        value: signal
+      });
+    };
+
+    AbstractList.prototype._create = function(value, options) {
       var signal;
       signal = new Signal(value);
-      this._add(signal);
+      signal.forEach(this._onSignalUpdate);
+      this._add(signal, options);
       return signal;
     };
 
+    AbstractList.prototype._createBefore = function(value, other, options) {
+      if (other == null) {
+        other = this._tailSignal;
+      }
+      if (options == null) {
+        options = {};
+      }
+      options.before = other;
+      return this._create(value, options);
+    };
+
+    AbstractList.prototype._createAfter = function(value, other, options) {
+      if (other == null) {
+        other = this._headSignal;
+      }
+      if (options == null) {
+        options = {};
+      }
+      options.after = other;
+      return this._create(value, options);
+    };
+
     AbstractList.prototype._add = function(signal, options) {
-      this._byId[signal.id] = signal;
-      this.trigger('add', signal.id);
-      this._move(signal, options);
+      if (!this._byId[signal.id]) {
+        this._byId[signal.id] = signal;
+      }
+      if (!(options != null ? options.silent : void 0)) {
+        this.events["yield"]({
+          type: 'add',
+          object: this,
+          key: signal.id,
+          value: signal
+        });
+      }
+      if (options && (options.before || options.after)) {
+        this._move(signal, options);
+      }
       return true;
     };
 
-    AbstractList.prototype._delete = function(signal) {
+    AbstractList.prototype._addBefore = function(signal, other, options) {
+      if (other == null) {
+        other = this._tailSignal;
+      }
+      if (options == null) {
+        options = {};
+      }
+      options.before = other;
+      return this._add(signal, options);
+    };
+
+    AbstractList.prototype._addAfter = function(signal, other, options) {
+      if (other == null) {
+        other = this._headSignal;
+      }
+      if (options == null) {
+        options = {};
+      }
+      options.after = other;
+      return this._add(signal, options);
+    };
+
+    AbstractList.prototype._delete = function(signal, options) {
       var id;
+      this._remove(signal);
       id = signal.id;
-      this._move(signal);
       delete this._byId[id];
       delete this._next[id];
       delete this._previous[id];
-      this.trigger('delete', id);
+      if (!(options != null ? options.silent : void 0)) {
+        this.events["yield"]({
+          type: 'delete',
+          object: this,
+          key: signal.id,
+          value: signal
+        });
+      }
       return true;
     };
 
     AbstractList.prototype._remove = function(signal) {
-      var id;
+      return this._move(signal);
+    };
+
+    AbstractList.prototype._move = function(signal, options) {
+      var id, next, previous;
       id = signal.id;
       if (this._next[id]) {
         this._previous[this._next[id].id] = this._previous[id];
@@ -894,27 +917,26 @@
       if (this._previous[id]) {
         this._next[this._previous[id].id] = this._next[id];
       }
-      return true;
-    };
-
-    AbstractList.prototype._move = function(signal, options) {
-      var id, next, previous;
-      if (options == null) {
-        options = {};
+      if (options && (options.before || options.after)) {
+        previous = options.after || (options.before ? this._previous[options.before.id] : void 0);
+        next = options.before || (options.after ? this._next[options.after.id] : void 0);
+        this._previous[id] = previous;
+        this._next[id] = next;
+        if (previous) {
+          this._next[previous.id] = signal;
+        }
+        if (next) {
+          this._previous[next.id] = signal;
+        }
       }
-      this._remove(signal);
-      id = signal.id;
-      previous = options.after || (options.before ? this._previous[options.before.id] : void 0);
-      next = options.before || (options.after ? this._next[options.after.id] : void 0);
-      this._previous[id] = previous;
-      this._next[id] = next;
-      if (previous) {
-        this._next[previous.id] = signal;
+      if (!(options != null ? options.silent : void 0)) {
+        this.events["yield"]({
+          type: 'move',
+          object: this,
+          key: signal.id,
+          value: signal
+        });
       }
-      if (next) {
-        this._previous[next.id] = signal;
-      }
-      this.trigger('move', signal, previous, next);
       return true;
     };
 
@@ -930,46 +952,27 @@
       });
     };
 
-    AbstractList.prototype._insert = function(value, options) {
-      var signal;
-      signal = this._create(value);
-      this._move(signal, options);
-      return signal;
-    };
-
-    AbstractList.prototype._insertBefore = function(value, other) {
-      if (other == null) {
-        other = this._tailSignal;
-      }
-      return this._insert(value, {
-        before: other
-      });
-    };
-
-    AbstractList.prototype._insertAfter = function(value, other) {
-      if (other == null) {
-        other = this._headSignal;
-      }
-      return this._insert(value, {
-        after: other
-      });
-    };
-
     AbstractList.prototype.getIterator = function(start) {
       start || (start = this._headSignal);
       return new this.Iterator(this, start);
     };
 
     AbstractList.prototype.before = function(signal) {
-      if (signal !== this._headSignal) {
-        return this._previous[signal != null ? signal.id : void 0];
+      var previous;
+      previous = this._previous[(signal != null ? signal.id : void 0) || this._tailSignal.id];
+      if (previous === this._headSignal) {
+        return null;
       }
+      return previous;
     };
 
     AbstractList.prototype.after = function(signal) {
-      if (signal !== this._tailSignal) {
-        return this._next[signal != null ? signal.id : void 0];
+      var next;
+      next = this._next[(signal != null ? signal.id : void 0) || this._headSignal.id];
+      if (next === this._tailSignal) {
+        return null;
       }
+      return next;
     };
 
     AbstractList.prototype.getSignal = function(id) {
@@ -1015,6 +1018,9 @@
       for (_i = 0, _len = _ref.length; _i < _len; _i++) {
         id = _ref[_i];
         signal = this._byId[id];
+        if (signal === this._headSignal || signal === this._tailSignal) {
+          continue;
+        }
         if ((signal != null ? signal.value() : void 0) === value) {
           return signal;
         }
@@ -1124,22 +1130,24 @@
       return memo;
     };
 
+    AbstractList.prototype.transform = function(options) {
+      return new TransformedList(this, options);
+    };
+
     AbstractList.prototype.map = function(mapFn) {
-      return new MappedList(this, {
+      return this.transform({
         mapFn: mapFn
       });
     };
 
     AbstractList.prototype.filter = function(filterFn) {
-      return new FilteredList(this, {
+      return this.transform({
         filterFn: filterFn
       });
     };
 
     AbstractList.prototype.sort = function(sortFn) {
-      return new SortedList(this, {
-        sortFn: sortFn
-      });
+      return new SortedList(this, sortFn);
     };
 
     AbstractList.prototype.concat = function() {
@@ -1171,9 +1179,7 @@
     };
 
     AbstractList.prototype.take = function(count) {
-      return new TakeList(this, {
-        count: count
-      });
+      return new TakeList(this, count);
     };
 
     AbstractList.prototype.first = function(count) {
@@ -1231,22 +1237,26 @@
 
     return AbstractList;
 
-  })(Observable);
+  })();
 
   SimpleList = (function(_super) {
     __extends(SimpleList, _super);
 
     function SimpleList(values) {
-      var signal, value, _i, _len;
+      var previous, signal, value, _i, _len;
       SimpleList.__super__.constructor.apply(this, arguments);
       this._previous[this._tailSignal.id] = this._headSignal;
       this._next[this._headSignal.id] = this._tailSignal;
-      if (values) {
-        for (_i = 0, _len = values.length; _i < _len; _i++) {
-          value = values[_i];
-          signal = this._insertAfter(value, signal);
-        }
+      previous = this._headSignal;
+      for (_i = 0, _len = values.length; _i < _len; _i++) {
+        value = values[_i];
+        signal = new Signal(value);
+        this._previous[signal.id] = previous;
+        this._next[previous.id] = signal;
+        previous = signal;
       }
+      this._previous[this._tailSignal.id] = previous;
+      this._next[previous.id] = this._tailSignal;
     }
 
     SimpleList.prototype.set = function(id, value, options) {
@@ -1258,7 +1268,7 @@
       if (!signal) {
         return false;
       }
-      signal.value(value);
+      signal["yield"](value);
       return true;
     };
 
@@ -1266,14 +1276,14 @@
       if (options == null) {
         options = {};
       }
-      return this._insertBefore(value).id;
+      return this._createBefore(value).id;
     };
 
     SimpleList.prototype.unshift = function(value, options) {
       if (options == null) {
         options = {};
       }
-      return this._insertAfter(value).id;
+      return this._createAfter(value).id;
     };
 
     SimpleList.prototype.pop = function(options) {
@@ -1313,23 +1323,7 @@
   TailingList = (function(_super) {
     __extends(TailingList, _super);
 
-    TailingList.prototype.Entry = TailingEntry;
-
     TailingList.prototype.Iterator = TailingIterator;
-
-    TailingList.prototype.HeadEntry = function() {
-      return new this.Entry(null, {
-        list: this,
-        source: this.source.headEntry
-      });
-    };
-
-    TailingList.prototype.TailEntry = function() {
-      return new this.Entry(null, {
-        list: this,
-        source: this.source.tailEntry
-      });
-    };
 
     function TailingList(source, options) {
       if (options == null) {
@@ -1343,80 +1337,6 @@
       TailingList.__super__.constructor.call(this, options);
     }
 
-    TailingList.prototype.getBySource = function(sourceEntry) {
-      var entry;
-      if (sourceEntry === this.headEntry.source) {
-        return this.headEntry;
-      }
-      if (sourceEntry === this.tailEntry.source) {
-        return this.tailEntry;
-      }
-      entry = this._bySourceId[sourceEntry.id] || this._create(sourceEntry, {
-        silent: true
-      });
-      return entry;
-    };
-
-    TailingList.prototype._create = function(sourceEntry, options) {
-      var entry;
-      if (options == null) {
-        options = {};
-      }
-      entry = TailingList.__super__._create.call(this, sourceEntry, options);
-      this._bySourceId[sourceEntry.id] = entry;
-      return entry;
-    };
-
-    TailingList.prototype._delete = function(entry, options) {
-      if (options == null) {
-        options = {};
-      }
-      if (TailingList.__super__._delete.call(this, entry, options)) {
-        delete this._bySourceId[entry.source.id];
-        return true;
-      }
-      return false;
-    };
-
-    TailingList.prototype._move = function(entry, options) {
-      var iterator;
-      if (options == null) {
-        options = {};
-      }
-      this._remove(entry, {
-        silent: true
-      });
-      iterator = this.getIterator(entry);
-      iterator.attachNext();
-      iterator.attachPrevious();
-      if (!options.silent) {
-        this.trigger('move', entry.id);
-      }
-      return true;
-    };
-
-    TailingList.prototype._onSourceCreate = function(sourceId) {
-      var sourceEntry;
-      sourceEntry = this.source.getEntry(sourceId);
-      return this._create(sourceEntry);
-    };
-
-    TailingList.prototype._onSourceDelete = function(sourceId) {
-      var entry;
-      entry = this._bySourceId[sourceId];
-      if (entry) {
-        return this._delete(entry);
-      }
-    };
-
-    TailingList.prototype._onSourceMove = function(sourceId) {
-      var entry;
-      entry = this._bySourceId[sourceId];
-      if (entry) {
-        return this._move(entry);
-      }
-    };
-
     return TailingList;
 
   })(AbstractList);
@@ -1424,41 +1344,127 @@
   MappedList = (function(_super) {
     __extends(MappedList, _super);
 
-    MappedList.prototype.Entry = MappedEntry;
-
-    function MappedList(source, options) {
-      if (options == null) {
-        options = {};
-      }
-      this.mapFn = options.mapFn;
-      MappedList.__super__.constructor.call(this, source, options);
+    function MappedList(source, mapFn) {
+      this._source = source;
+      this._byRootId = {};
+      this._mapFn = mapFn;
+      MappedList.__super__.constructor.call(this);
     }
+
+    MappedList.prototype._create = function(other, options) {
+      var signal;
+      signal = new MappedSignal(other, this._mapFn);
+      this._byRootId[signal.id] = other;
+      this._add(signal, options);
+      return signal;
+    };
+
+    MappedList.prototype.before = function(signal) {
+      var before, beforeRoot, root;
+      before = MappedList.__super__.before.call(this, signal);
+      if (before !== void 0) {
+        return before;
+      }
+      root = signal != null ? typeof signal.root === "function" ? signal.root() : void 0 : void 0;
+      beforeRoot = this._source.before(root);
+      if (!beforeRoot) {
+        return beforeRoot;
+      }
+      before = this._byRootId[beforeRoot.id];
+      if (before) {
+        return before;
+      }
+      before = this._createBefore(beforeRoot, signal, {
+        silent: true
+      });
+      return before;
+    };
+
+    MappedList.prototype.after = function(signal) {
+      var after, afterRoot, root;
+      after = MappedList.__super__.after.call(this, signal);
+      if (after !== void 0) {
+        return after;
+      }
+      root = signal != null ? typeof signal.root === "function" ? signal.root() : void 0 : void 0;
+      afterRoot = this._source.after(root);
+      if (!afterRoot) {
+        return afterRoot;
+      }
+      after = this._byRootId[afterRoot.id];
+      if (after) {
+        return after;
+      }
+      after = this._createAfter(afterRoot, signal, {
+        silent: true
+      });
+      return after;
+    };
 
     return MappedList;
 
-  })(TailingList);
+  })(AbstractList);
 
   FilteredList = (function(_super) {
     __extends(FilteredList, _super);
 
-    function FilteredList(source, options) {
-      if (options == null) {
-        options = {};
-      }
-      this.filterFn = options.filterFn;
-      FilteredList.__super__.constructor.call(this, source, options);
+    function FilteredList(source, filterFn) {
+      this._source = source;
+      this._byRootId = {};
+      this._filterFn = filterFn;
+      FilteredList.__super__.constructor.call(this);
     }
 
-    FilteredList.prototype._create = function(sourceEntry, options) {
-      if (!this.filterFn(sourceEntry.value())) {
-        return null;
+    FilteredList.prototype._add = function(signal, options) {
+      if (!this._filterFn(signal.value())) {
+        return false;
       }
-      return FilteredList.__super__._create.call(this, sourceEntry, options);
+      return FilteredList.__super__._add.call(this, signal, options);
+    };
+
+    FilteredList.prototype.before = function(signal) {
+      var before, beforeRoot, root;
+      before = FilteredList.__super__.before.call(this, signal);
+      if (before !== void 0) {
+        return before;
+      }
+      root = typeof signal.root === "function" ? signal.root() : void 0;
+      beforeRoot = this._source.before(root);
+      if (!beforeRoot) {
+        return beforeRoot;
+      }
+      while (!this._add(beforeRoot.value())) {
+        beforeRoot = this._source.before(beforeRoot);
+        if (!beforeRoot) {
+          return beforeRoot;
+        }
+      }
+      return beforeRoot;
+    };
+
+    FilteredList.prototype.after = function(signal) {
+      var after, afterRoot, root;
+      after = FilteredList.__super__.after.call(this, signal);
+      if (after !== void 0) {
+        return after;
+      }
+      root = typeof signal.root === "function" ? signal.root() : void 0;
+      afterRoot = this._source.after(root);
+      if (!afterRoot) {
+        return afterRoot;
+      }
+      while (!this._add(afterRoot.value())) {
+        afterRoot = this._source.after(afterRoot);
+        if (!afterRoot) {
+          return afterRoot;
+        }
+      }
+      return afterRoot;
     };
 
     return FilteredList;
 
-  })(TailingList);
+  })(AbstractList);
 
   ConcatenatedList = (function(_super) {
     __extends(ConcatenatedList, _super);
@@ -1646,25 +1652,9 @@
       return ReversedList.__super__.constructor.apply(this, arguments);
     }
 
-    ReversedList.prototype.Iterator = ReversedIterator;
-
-    ReversedList.prototype.HeadEntry = function() {
-      return new this.Entry(null, {
-        list: this,
-        source: this.source.tailEntry
-      });
-    };
-
-    ReversedList.prototype.TailEntry = function() {
-      return new this.Entry(null, {
-        list: this,
-        source: this.source.headEntry
-      });
-    };
-
     return ReversedList;
 
-  })(TailingList);
+  })(FilteredList);
 
   TakeList = (function(_super) {
     __extends(TakeList, _super);
@@ -1728,20 +1718,180 @@
 
   })(TailingList);
 
+  TransformedList = (function(_super) {
+    __extends(TransformedList, _super);
+
+    function TransformedList(source, options) {
+      if (options == null) {
+        options = {};
+      }
+      this._onSourceEvent = __bind(this._onSourceEvent, this);
+      this._source = source;
+      this._source.events.forEach(this._onSourceEvent);
+      this._bySourceId = {};
+      this._sourceById = {};
+      this._mapFn = options.mapFn || function(value) {
+        return value;
+      };
+      this._filterFn = options.filterFn || function(value) {
+        return true;
+      };
+      TransformedList.__super__.constructor.apply(this, arguments);
+    }
+
+    TransformedList.prototype._transformer = function(sourceSignal, signal) {
+      var value;
+      if (this._filterFn(sourceSignal.value())) {
+        value = this._mapFn(sourceSignal.value());
+        if (signal) {
+          signal["yield"](value);
+        } else {
+          signal = new Signal(value);
+        }
+        return signal;
+      } else {
+        return null;
+      }
+    };
+
+    TransformedList.prototype._create = function(sourceSignal, options) {
+      var signal;
+      signal = this._transformer(sourceSignal);
+      if (!signal) {
+        return signal;
+      }
+      this._add(signal, sourceSignal, options);
+      return signal;
+    };
+
+    TransformedList.prototype._add = function(signal, sourceSignal, options) {
+      this._bySourceId[sourceSignal.id] = signal;
+      this._sourceById[signal.id] = sourceSignal;
+      return TransformedList.__super__._add.call(this, signal, options);
+    };
+
+    TransformedList.prototype._move = function(signal) {
+      TransformedList.__super__._move.call(this, signal, {
+        silent: true
+      });
+      this.before(signal);
+      this.after(signal);
+      this.events["yield"]({
+        type: 'move',
+        object: this,
+        key: signal.id,
+        value: signal
+      });
+      return true;
+    };
+
+    TransformedList.prototype._delete = function(signal, options) {
+      var id, source;
+      id = signal.id;
+      source = this._bySourceId[id];
+      delete this._bySourceId[source.id];
+      delete this._sourceById[id];
+      return TransformedList.__super__._delete.call(this, signal, options);
+    };
+
+    TransformedList.prototype._onSourceEvent = function(event) {
+      var oldSignal, signal, sourceSignal;
+      sourceSignal = event.value;
+      switch (event.type) {
+        case 'add':
+          signal = this._create(sourceSignal);
+          break;
+        case 'delete':
+          signal = this._bySourceId[sourceSignal.id];
+          if (signal) {
+            this._delete(signal);
+          }
+          break;
+        case 'update':
+          oldSignal = this._bySourceId[sourceSignal.id];
+          signal = this._transformer(sourceSignal);
+          if (oldSignal === signal) {
+            this.events["yield"]({
+              type: 'update',
+              object: this,
+              key: signal.id,
+              value: signal
+            });
+          } else {
+            if (oldSignal) {
+              this._delete(oldSignal);
+            }
+            if (signal) {
+              this._add(signal, sourceSignal);
+            }
+          }
+      }
+      return true;
+    };
+
+    TransformedList.prototype.before = function(signal) {
+      var before, beforeSource, other, source;
+      if (!signal) {
+        return this.before(this._tailSignal);
+      }
+      before = TransformedList.__super__.before.call(this, signal);
+      if (before !== void 0) {
+        return before;
+      }
+      source = this._sourceById[signal.id];
+      beforeSource = this._source.before(source);
+      if (!beforeSource) {
+        return beforeSource;
+      }
+      while (!(other = this._createBefore(beforeSource, signal))) {
+        beforeSource = this._source.before(beforeSource);
+        if (!beforeSource) {
+          return beforeSource;
+        }
+      }
+      return other;
+    };
+
+    TransformedList.prototype.after = function(signal) {
+      var after, afterSource, other, source;
+      if (!signal) {
+        return this.after(this._headSignal);
+      }
+      after = TransformedList.__super__.after.call(this, signal);
+      if (after !== void 0) {
+        return after;
+      }
+      source = this._sourceById[signal.id];
+      afterSource = this._source.after(source);
+      if (!afterSource) {
+        return afterSource;
+      }
+      while (!(other = this._createAfter(afterSource, signal))) {
+        afterSource = this._source.after(afterSource);
+        if (!afterSource) {
+          return afterSource;
+        }
+      }
+      return other;
+    };
+
+    return TransformedList;
+
+  })(AbstractList);
+
   Sonic.factory = function(exports) {
     exports._ = Sonic;
     exports.create = Sonic.create;
     exports.Observable = Observable;
+    exports.Signal = Signal;
+    exports.MappedSignal = MappedSignal;
+    exports.Transformer = Transformer;
     exports.Iterator = Iterator;
     exports.TailingIterator = TailingIterator;
     exports.SortedIterator = SortedIterator;
     exports.ReversedIterator = ReversedIterator;
     exports.ConcatenatedIterator = ConcatenatedIterator;
     exports.Generator = Generator;
-    exports.Entry = Entry;
-    exports.TailingEntry = TailingEntry;
-    exports.MappedEntry = MappedEntry;
-    exports.SortedEntry = SortedEntry;
     exports.AbstractList = AbstractList;
     exports.SimpleList = SimpleList;
     exports.TailingList = TailingList;
@@ -1753,8 +1903,7 @@
     exports.ReversedList = ReversedList;
     exports.TakeList = TakeList;
     exports.GeneratedList = GeneratedList;
-    exports.Signal = Signal;
-    return exports.Transformer = Transformer;
+    return exports.TransformedList = TransformedList;
   };
 
   if (typeof exports === 'object') {

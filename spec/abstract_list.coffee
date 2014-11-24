@@ -2,7 +2,7 @@ describe "List", ->
 
   beforeEach ->
     @list = new Sonic.AbstractList()
-    @list._insertAfter(i) for i in [9..0]
+    @list._createAfter(i) for i in [9..0]
 
   describe "#_create", ->
 
@@ -33,8 +33,8 @@ describe "List", ->
       item3 = "banana"
 
       signal1 = @list._create(item1)
-      signal2 = @list._insert(item2, after: signal1)
-      signal3 = @list._insert(item3, after: signal2)
+      signal2 = @list._create(item2, after: signal1)
+      signal3 = @list._create(item3, after: signal2)
 
       @list._delete(signal2)
 
@@ -53,8 +53,8 @@ describe "List", ->
       @item3 = "banana"
 
       @signal1 = @list._create(@item1)
-      @signal2 = @list._insert(@item2, after: @signal1)
-      @signal3 = @list._insert(@item3, after: @signal2)
+      @signal2 = @list._create(@item2, after: @signal1)
+      @signal3 = @list._create(@item3, after: @signal2)
 
     it "should remove the item from its current position", ->
       expect(@list.after(@signal1)).toBe(@signal2)
@@ -83,8 +83,8 @@ describe "List", ->
       @signal1 = @list._create(@item1)
 
     it "should insert the item at the given position", ->
-      @signal2 = @list._insert(@item2, after: @signal1)
-      @signal3 = @list._insert(@item3, before: @signal2)
+      @signal2 = @list._create(@item2, after: @signal1)
+      @signal3 = @list._create(@item3, before: @signal2)
 
       expect( @list.after @signal1).toBe(@signal3)
       expect( @list.before @signal2 ).toBe(@signal3)
@@ -100,8 +100,8 @@ describe "List", ->
       @signal1 = @list._create(@item1)
 
     it "should insert the item at the given position", ->
-      @signal2 = @list._insertBefore(@item2, @signal1)
-      @signal3 = @list._insertBefore(@item3, @signal2)
+      @signal2 = @list._createBefore(@item2, @signal1)
+      @signal3 = @list._createBefore(@item3, @signal2)
 
       expect( @list.before @signal1).toBe(@signal2)
       expect( @list.before @signal2 ).toBe(@signal3)
@@ -116,8 +116,8 @@ describe "List", ->
       @signal1 = @list._create(@item1)
 
     it "should insert the item at the given position", ->
-      @signal2 = @list._insertAfter(@item2, @signal1)
-      @signal3 = @list._insertAfter(@item3, @signal2)
+      @signal2 = @list._createAfter(@item2, @signal1)
+      @signal3 = @list._createAfter(@item3, @signal2)
 
       expect( @list.after @signal1).toBe(@signal2)
       expect( @list.after @signal2 ).toBe(@signal3)

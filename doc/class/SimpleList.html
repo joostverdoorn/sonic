@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html>
+  <head>
+  <meta charset='UTF-8'>
+  <title>Documentation</title>
+  <script src='../javascript/application.js'></script>
+  <script src='../javascript/search.js'></script>
+  <link rel='stylesheet' href='../stylesheets/application.css' type='text/css'>
+</head>
+  <body>
+    <div id='base' data-path='../'></div>
+<div id='header'>
+  <div id='menu'>
+    <a href='../extra/undefined.html' title='Codo'>
+      Codo
+    </a>
+    &raquo;
+    <a href='../alphabetical_index.html' title='Index'>
+      Index
+    </a>
+    &raquo;
+    <span class='title'>SimpleList</span>
+  </div>
+</div>
+    <div id='content'>
+      <h1>
+        Class:
+        SimpleList
+      </h1>
+      <table class='box'>
+        <tr>
+          <td>Defined in:</td>
+          <td>src&#47;simple_list.coffee</td>
+        </tr>
+        <tr>
+          <td>Inherits:</td>
+          <td>
+            <a href='../class/AbstractList.html'>AbstractList</a>
+          </td>
+        </tr>
+      </table>
+      <h2>Variables Summary</h2>
+      
+      <h3 class='inherited'>
+        Variable inherited from
+        <a href='../class/AbstractList.html'>AbstractList</a>
+      </h3>
+      <p class='inherited'>
+        <a href='../class/AbstractList.html#Iterator-variable'>Iterator</a>
+      </p>
+      <h2>Instance Method Summary</h2>
+      <ul class='summary'>
+  <li>
+    <span class='signature'>
+      <a href='#set-dynamic'>
+        #
+(void)
+<b>set</b><span>(id, value, options = {})</span>
+      </a>
+    </span>
+    <span class='desc'>
+    </span>
+  </li>
+  <li>
+    <span class='signature'>
+      <a href='#push-dynamic'>
+        #
+(void)
+<b>push</b><span>(value, options = {})</span>
+      </a>
+    </span>
+    <span class='desc'>
+    </span>
+  </li>
+  <li>
+    <span class='signature'>
+      <a href='#unshift-dynamic'>
+        #
+(void)
+<b>unshift</b><span>(value, options = {})</span>
+      </a>
+    </span>
+    <span class='desc'>
+    </span>
+  </li>
+  <li>
+    <span class='signature'>
+      <a href='#pop-dynamic'>
+        #
+(void)
+<b>pop</b><span>(options)</span>
+      </a>
+    </span>
+    <span class='desc'>
+    </span>
+  </li>
+  <li>
+    <span class='signature'>
+      <a href='#shift-dynamic'>
+        #
+(void)
+<b>shift</b><span>(options)</span>
+      </a>
+    </span>
+    <span class='desc'>
+    </span>
+  </li>
+  <li>
+    <span class='signature'>
+      <a href='#add-dynamic'>
+        #
+(void)
+<b>add</b><span>(value, options)</span>
+      </a>
+    </span>
+    <span class='desc'>
+    </span>
+  </li>
+  <li>
+    <span class='signature'>
+      <a href='#remove-dynamic'>
+        #
+(void)
+<b>remove</b><span>(value, options)</span>
+      </a>
+    </span>
+    <span class='desc'>
+    </span>
+  </li>
+  <li>
+    <span class='signature'>
+      <a href='#delete-dynamic'>
+        #
+(void)
+<b>delete</b><span>(id, options)</span>
+      </a>
+    </span>
+    <span class='desc'>
+    </span>
+  </li>
+</ul>
+      <h2>
+        <small>Inherited Method Summary</small>
+        <h3 class='inherited'>
+          Methods inherited from
+          <a href='../class/AbstractList.html'>AbstractList</a>
+        </h3>
+        <p class='inherited'>
+          <a href='../class/AbstractList.html#_create-dynamic'>#_create</a>
+          <a href='../class/AbstractList.html#_add-dynamic'>#_add</a>
+          <a href='../class/AbstractList.html#_delete-dynamic'>#_delete</a>
+          <a href='../class/AbstractList.html#_remove-dynamic'>#_remove</a>
+          <a href='../class/AbstractList.html#_move-dynamic'>#_move</a>
+          <a href='../class/AbstractList.html#_moveBefore-dynamic'>#_moveBefore</a>
+          <a href='../class/AbstractList.html#_moveAfter-dynamic'>#_moveAfter</a>
+          <a href='../class/AbstractList.html#_insert-dynamic'>#_insert</a>
+          <a href='../class/AbstractList.html#_insertBefore-dynamic'>#_insertBefore</a>
+          <a href='../class/AbstractList.html#_insertAfter-dynamic'>#_insertAfter</a>
+          <a href='../class/AbstractList.html#getIterator-dynamic'>#getIterator</a>
+          <a href='../class/AbstractList.html#before-dynamic'>#before</a>
+          <a href='../class/AbstractList.html#after-dynamic'>#after</a>
+          <a href='../class/AbstractList.html#getSignal-dynamic'>#getSignal</a>
+          <a href='../class/AbstractList.html#get-dynamic'>#get</a>
+          <a href='../class/AbstractList.html#signalAt-dynamic'>#signalAt</a>
+          <a href='../class/AbstractList.html#idAt-dynamic'>#idAt</a>
+          <a href='../class/AbstractList.html#at-dynamic'>#at</a>
+          <a href='../class/AbstractList.html#signalOf-dynamic'>#signalOf</a>
+          <a href='../class/AbstractList.html#idOf-dynamic'>#idOf</a>
+          <a href='../class/AbstractList.html#indexOfSignal-dynamic'>#indexOfSignal</a>
+          <a href='../class/AbstractList.html#indexOf-dynamic'>#indexOf</a>
+          <a href='../class/AbstractList.html#contains-dynamic'>#contains</a>
+          <a href='../class/AbstractList.html#forEach-dynamic'>#forEach</a>
+          <a href='../class/AbstractList.html#each-dynamic'>#each</a>
+          <a href='../class/AbstractList.html#eachSignal-dynamic'>#eachSignal</a>
+          <a href='../class/AbstractList.html#any-dynamic'>#any</a>
+          <a href='../class/AbstractList.html#some-dynamic'>#some</a>
+          <a href='../class/AbstractList.html#find-dynamic'>#find</a>
+          <a href='../class/AbstractList.html#findSignal-dynamic'>#findSignal</a>
+          <a href='../class/AbstractList.html#reduce-dynamic'>#reduce</a>
+          <a href='../class/AbstractList.html#map-dynamic'>#map</a>
+          <a href='../class/AbstractList.html#filter-dynamic'>#filter</a>
+          <a href='../class/AbstractList.html#sort-dynamic'>#sort</a>
+          <a href='../class/AbstractList.html#concat-dynamic'>#concat</a>
+          <a href='../class/AbstractList.html#flatten-dynamic'>#flatten</a>
+          <a href='../class/AbstractList.html#reverse-dynamic'>#reverse</a>
+          <a href='../class/AbstractList.html#unique-dynamic'>#unique</a>
+          <a href='../class/AbstractList.html#uniq-dynamic'>#uniq</a>
+          <a href='../class/AbstractList.html#union-dynamic'>#union</a>
+          <a href='../class/AbstractList.html#take-dynamic'>#take</a>
+          <a href='../class/AbstractList.html#first-dynamic'>#first</a>
+          <a href='../class/AbstractList.html#skip-dynamic'>#skip</a>
+          <a href='../class/AbstractList.html#tail-dynamic'>#tail</a>
+          <a href='../class/AbstractList.html#drop-dynamic'>#drop</a>
+          <a href='../class/AbstractList.html#rest-dynamic'>#rest</a>
+          <a href='../class/AbstractList.html#initial-dynamic'>#initial</a>
+          <a href='../class/AbstractList.html#last-dynamic'>#last</a>
+          <a href='../class/AbstractList.html#pluck-dynamic'>#pluck</a>
+          <a href='../class/AbstractList.html#invoke-dynamic'>#invoke</a>
+          <a href='../class/AbstractList.html#toArray-dynamic'>#toArray</a>
+          <a href='../class/Observable.html#on-dynamic'>#on</a>
+          <a href='../class/Observable.html#off-dynamic'>#off</a>
+          <a href='../class/Observable.html#once-dynamic'>#once</a>
+          <a href='../class/Observable.html#trigger-dynamic'>#trigger</a>
+        </p>
+      </h2>
+      <h2>Constructor Details</h2>
+      <div class='methods'>
+  <div class='method_details'>
+    <p class='signature' id='constructor-dynamic'>
+      #
+(void)
+<b>constructor</b><span>(values)</span>
+      <br>
+    </p>
+    
+  </div>
+</div>
+      <h2>Instance Method Details</h2>
+      <div class='methods'>
+  <div class='method_details'>
+    <p class='signature' id='set-dynamic'>
+      #
+(void)
+<b>set</b><span>(id, value, options = {})</span>
+      <br>
+    </p>
+    
+  </div>
+  <div class='method_details'>
+    <p class='signature' id='push-dynamic'>
+      #
+(void)
+<b>push</b><span>(value, options = {})</span>
+      <br>
+    </p>
+    
+  </div>
+  <div class='method_details'>
+    <p class='signature' id='unshift-dynamic'>
+      #
+(void)
+<b>unshift</b><span>(value, options = {})</span>
+      <br>
+    </p>
+    
+  </div>
+  <div class='method_details'>
+    <p class='signature' id='pop-dynamic'>
+      #
+(void)
+<b>pop</b><span>(options)</span>
+      <br>
+    </p>
+    
+  </div>
+  <div class='method_details'>
+    <p class='signature' id='shift-dynamic'>
+      #
+(void)
+<b>shift</b><span>(options)</span>
+      <br>
+    </p>
+    
+  </div>
+  <div class='method_details'>
+    <p class='signature' id='add-dynamic'>
+      #
+(void)
+<b>add</b><span>(value, options)</span>
+      <br>
+    </p>
+    
+  </div>
+  <div class='method_details'>
+    <p class='signature' id='remove-dynamic'>
+      #
+(void)
+<b>remove</b><span>(value, options)</span>
+      <br>
+    </p>
+    
+  </div>
+  <div class='method_details'>
+    <p class='signature' id='delete-dynamic'>
+      #
+(void)
+<b>delete</b><span>(id, options)</span>
+      <br>
+    </p>
+    
+  </div>
+</div>
+    </div>
+    <div id='footer'>
+  November 22, 14 17:07:04 by
+  <a href='https://github.com/coffeedoc/codo' title='CoffeeScript API documentation generator'>
+    Codo
+  </a>
+  2.0.9
+  &#10034;
+  Press H to see the keyboard shortcuts
+  &#10034;
+  <a href='http://twitter.com/netzpirat' target='_parent'>@netzpirat</a>
+  &#10034;
+  <a href='http://twitter.com/_inossidabile' target='_parent'>@_inossidabile</a>
+</div>
+<iframe id='search_frame'></iframe>
+<div id='fuzzySearch'>
+  <input type='text'>
+  <ol></ol>
+</div>
+<div id='help'>
+  <p>
+    Quickly fuzzy find classes, mixins, methods, file:
+  </p>
+  <ul>
+    <li>
+      <span>T</span>
+      Open fuzzy finder dialog
+    </li>
+  </ul>
+  <p>
+    Control the navigation frame:
+  </p>
+  <ul>
+    <li>
+      <span>L</span>
+      Toggle list view
+    </li>
+    <li>
+      <span>C</span>
+      Show class list
+    </li>
+    <li>
+      <span>I</span>
+      Show mixin list
+    </li>
+    <li>
+      <span>F</span>
+      Show file list
+    </li>
+    <li>
+      <span>M</span>
+      Show method list
+    </li>
+    <li>
+      <span>E</span>
+      Show extras list
+    </li>
+  </ul>
+  <p>
+    You can focus and blur the search input:
+  </p>
+  <ul>
+    <li>
+      <span>S</span>
+      Focus search input
+    </li>
+    <li>
+      <span>Esc</span>
+      Blur search input
+    </li>
+  </ul>
+</div>
+  </body>
+</html>

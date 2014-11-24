@@ -3,6 +3,9 @@ Sonic.factory = ( exports ) ->
     exports.create                = Sonic.create
 
     exports.Observable            = Observable
+    exports.Signal                = Signal
+    exports.MappedSignal          = MappedSignal
+    exports.Transformer           = Transformer
 
     exports.Iterator              = Iterator
     exports.TailingIterator       = TailingIterator
@@ -11,10 +14,10 @@ Sonic.factory = ( exports ) ->
     exports.ConcatenatedIterator  = ConcatenatedIterator
     exports.Generator             = Generator
 
-    exports.Entry                 = Entry
-    exports.TailingEntry          = TailingEntry
-    exports.MappedEntry           = MappedEntry
-    exports.SortedEntry           = SortedEntry
+    # exports.Entry                 = Entry
+    # exports.TailingEntry          = TailingEntry
+    # exports.MappedEntry           = MappedEntry
+    # exports.SortedEntry           = SortedEntry
 
     exports.AbstractList          = AbstractList
     exports.SimpleList            = SimpleList
@@ -27,9 +30,8 @@ Sonic.factory = ( exports ) ->
     exports.ReversedList          = ReversedList
     exports.TakeList              = TakeList
     exports.GeneratedList         = GeneratedList
+    exports.TransformedList       = TransformedList
 
-    exports.Signal                = Signal
-    exports.Transformer           = Transformer
 
 # Exports Sonic for CommonJS, AMD and the browser.
 if typeof exports == 'object'

@@ -2,7 +2,7 @@
   "name": "sonic",
   "description": "",
   "version": "0.0.1",
-  "author" : "Joost Verdoorn",
+  "author": "Joost Verdoorn",
   "contributors": [
     "Joost Verdoorn",
     "Steffan Sluis"
@@ -29,7 +29,8 @@
     "grunt-contrib-watch": "~0.6.1",
     "grunt-template-jasmine-istanbul": "~0.3.0",
     "grunt-plato": "~1.3.0",
-    "grunt-contrib-qunit": "^0.5.2"
+    "grunt-contrib-qunit": "^0.5.2",
+    "grunt-codo": "^0.2.0"
   },
   "scripts": {
     "test": "grunt spec"

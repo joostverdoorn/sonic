@@ -3,6 +3,7 @@ module.exports = ( grunt ) ->
     'src/sonic.coffee'
     'src/observable.coffee'
     'src/signal.coffee'
+    'src/mapped_signal.coffee'
     'src/transformer.coffee'
 
     'src/iterator.coffee'
@@ -29,6 +30,7 @@ module.exports = ( grunt ) ->
     'src/reversed_list.coffee'
     'src/take_list.coffee'
     'src/generated_list.coffee'
+    'src/transformed_list.coffee'
 
 
 
@@ -120,10 +122,14 @@ module.exports = ( grunt ) ->
         files: ['src/**/*.coffee']
         tasks: ['coffee:build']
 
+    codo:
+      files: ['src/**/*.coffee']
+
   grunt.loadNpmTasks 'grunt-contrib-coffee'
   grunt.loadNpmTasks 'grunt-contrib-watch'
   grunt.loadNpmTasks 'grunt-contrib-clean'
   grunt.loadNpmTasks 'grunt-contrib-jasmine'
+  grunt.loadNpmTasks 'grunt-codo'
 
   grunt.registerTask 'default', ['watch']
   grunt.registerTask 'build',   ['coffee:build']

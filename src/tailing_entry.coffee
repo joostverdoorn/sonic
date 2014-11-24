@@ -1,4 +1,4 @@
-class TailingEntry extends Entry
+class TailingEntry
 
   constructor: ( source, options = {} ) ->
     @source = source or options.source

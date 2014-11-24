@@ -1,6 +1,10 @@
-class ReversedList extends TailingList
+class ReversedList extends FilteredList
 
-  Iterator: ReversedIterator
+  # Iterator: ReversedIterator
 
-  HeadEntry: -> new @Entry(null, list: @, source: @source.tailEntry)
-  TailEntry: -> new @Entry(null, list: @, source: @source.headEntry)
+  # HeadEntry: -> new @Entry(null, list: @, source: @source.tailEntry)
+  # TailEntry: -> new @Entry(null, list: @, source: @source.headEntry)
+
+
+  # before: FilteredList::after
+  # after:  FilteredList::before

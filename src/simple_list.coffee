@@ -6,20 +6,28 @@ class SimpleList extends AbstractList
     @_previous[@_tailSignal.id] = @_headSignal
     @_next[@_headSignal.id] = @_tailSignal
 
-    signal = @_insertAfter(value, signal) for value in values if values
+    previous = @_headSignal
+    for value in values
+      signal = new Signal(value)
+      @_previous[signal.id] = previous
+      @_next[previous.id] = signal
+      previous = signal
+
+    @_previous[@_tailSignal.id] = previous
+    @_next[previous.id] = @_tailSignal
 
   set: ( id, value, options = {} ) ->
     signal = @getSignal(id)
     return false unless signal
 
-    signal.value(value)
+    signal.yield(value)
     return true
 
   push: ( value, options = {} ) ->
-    return @_insertBefore(value).id
+    return @_createBefore(value).id
 
   unshift: ( value, options = {}) ->
-    return @_insertAfter(value).id
+    return @_createAfter(value).id
 
   pop: ( options ) ->
     signal = @before(@_tailSignal)
