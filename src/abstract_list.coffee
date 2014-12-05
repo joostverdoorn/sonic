@@ -1,29 +1,47 @@
+# Abstract list implements the basic list Sonic uses. As the name implies
+# it serves mainly as a base class for other lists and is not very useful
+# on its own.
+#
+# Abstract list implements a linked list backed by an index object for
+# direct access. Values are stored in signals, which serve as a way to
+# track values over time.
+#
 class AbstractList
 
-  Iterator: Iterator
+  _sentinel:
+    id: Sonic.uniqueId()
 
   constructor: ( ) ->
     @_byId = {}
     @_next = {}
-    @_previous = {}
+    @_prev = {}
 
-    @_headSignal = { id: Sonic.uniqueId() }
-    @_tailSignal = { id: Sonic.uniqueId() }
+    @events = new Signal
 
-    @_byId[@_headSignal.id] = @_headSignal
-    @_byId[@_tailSignal.id] = @_tailSignal
+  # Adds a signal.
+  #
+  # @param [Signal] signal The signal to add
+  # @param [Object] options The options
+  # @option options [Boolean] silent Whether or not to trigger an event
+  # @option options [Signal] before The signal after which to place it
+  # @option options [Signal] after The signal before which to place it
+  #
+  _add: ( signal, options ) ->
+    @_byId[signal.id] = signal
 
-    @events = new Signal null
+    @events.yield(
+      type: 'add'
+      id: signal.id
+      signal: signal
+      list: @
+    ) unless options?.silent
 
-  _onSignalUpdate: ( value, signal ) =>
-    return false unless @_byId[signal.id]
-    @events.yield
-      type: 'update'
-      object: @
-      key: signal.id
-      value: signal
+    if options and (options.before or options.after)
+      @_move(signal, options)
 
-  # Constructs and adds a new signal.
+    return true
+
+  # Constructs and adds a new signal with the given value as value.
   #
   # @param [Object] value Any value
   # @param [Object] options The options
@@ -38,83 +56,20 @@ class AbstractList
     @_add(signal, options)
     return signal
 
-  # Constructs and adds a new signal before the given signal.
-  # If no signal is given, the new signal is appended to the list.
+  # Sets the value of a signal
   #
-  # @param [Object] value Any value
-  # @param [Signal] other The signal before which to place it
-  # @param [Object] options The options
-  # @option options [Boolean] silent Wether or not to trigger an event
+  # @param [Signal] signal the singal to set the value of
+  # @param [Any] value The value to set
   #
-  _createBefore: ( value, other = @_tailSignal, options = {} ) ->
-    options.before = other
-    return @_create(value, options)
-
-  # Constructs and adds a new signal after the given signal.
-  # If no signal is given, the new signal is prepended to the list.
-  #
-  # @param [Object] value Any value
-  # @param [Signal] other The signal before which to place it
-  # @param [Object] options The options
-  # @option options [Boolean] silent Wether or not to trigger an event
-  #
-  _createAfter: ( value, other = @_headSignal, options = {} ) ->
-    options.after = other
-    return @_create(value, options)
-
-  # Adds a signal
-  #
-  # @param [Signal] signal The signal to add
-  # @param [Object] options The options
-  # @option options [Boolean] silent Whether or not to trigger an event
-  # @option options [Signal] before The signal after which to place it
-  # @option options [Signal] after The signal before which to place it
-  #
-  _add: ( signal, options ) ->
-    unless @_byId[signal.id]
-      @_byId[signal.id] = signal
-
-    unless options?.silent
-      @events.yield
-        type: 'add'
-        object: @
-        key: signal.id
-        value: signal
-
-    if options and (options.before or options.after)
-      @_move(signal, options)
-
+  _set: ( signal, value ) ->
+    signal.yield(value)
     return true
 
-  # Adds a signal before the given signal.
-  # If no signal is given, the new signal is appended to the list.
-  #
-  # @param [Signal] signal The signal to add
-  # @param [Signal] other The signal before which to place it
-  # @param [Object] options The options
-  # @option options [Boolean] silent Wether or not to trigger an event
-  #
-  _addBefore: ( signal, other = @_tailSignal, options = {} ) ->
-    options.before = other
-    return @_add(signal, options)
-
-  # Adds a signal after the given signal.
-  # If no signal is given, the new signal is prepended to the list.
-  #
-  # @param [Signal] signal The signal to add
-  # @param [Signal] other The signal after which to place it
-  # @param [Object] options The options
-  # @option options [Boolean] silent Wether or not to trigger an event
-  #
-  _addAfter: ( signal, other = @_headSignal, options = {} ) ->
-    options.after = other
-    return @_add(signal, options)
-
-  # Deletes a Signal
+  # Deletes a signal.
   #
   # @param [Signal] signal The signal to delete
   # @param [Object] options The options
-  # @option options [Boolean] silent Whether or not to trigger an event
+  # @option options [Boolean] silent Whether or not to trigger a `delete` event
   #
   _delete: ( signal, options ) ->
     @_remove(signal)
@@ -122,91 +77,84 @@ class AbstractList
     id = signal.id
     delete @_byId[id]
     delete @_next[id]
-    delete @_previous[id]
+    delete @_prev[id]
 
     @events.yield(
       type: 'delete'
-      object: @
-      key: signal.id
-      value: signal
+      id: signal.id
+      signal: signal
+      list: @
     ) unless options?.silent
 
     return true
 
-  _remove: ( signal ) ->
-    return @_move(signal)
+  # Removes a signal from the linked list. This does not delete it
+  # from the index. This is simply a convenience method that calls
+  # move without a position, which will then remove the signal.
+  #
+  # @param [Signal] signal The signal to remove
+  # @param [Object] options The options
+  # @option options [Boolean] silent Wether or not to trigger a `remove` event
+  #
+  _remove: ( signal, options ) ->
+    return @_move(signal, options)
 
+  # Moves the signal before or after the signal passed in the options.
+  # When no position is given, the signal is removed from the list. When
+  # either one is passed, this signal is moved between the given signal
+  # and its sibling.
+  #
+  # @param [Signal] signal The signal to move
+  # @param [Object] options The options
+  # @option options [Signal] before The signal to move before
+  # @option options [Signal] after The signal to move after
+  #
   _move: ( signal, options ) ->
     id = signal.id
-
-    @_previous[@_next[id].id] = @_previous[id] if @_next[id]
-    @_next[@_previous[id].id] = @_next[id] if @_previous[id]
+    @_prev[@_next[id].id] = @_prev[id] if @_next[id]
+    @_next[@_prev[id].id] = @_next[id] if @_prev[id]
 
     if options and (options.before or options.after)
-      previous = options.after or (@_previous[options.before.id] if options.before)
-      next = options.before or (@_next[options.after.id] if options.after)
+      prev = options.after  or (@_prev[options.before.id] if options.before)
+      next = options.before or (@_next[options.after.id]  if options.after)
 
-      @_previous[id] = previous
-      @_next[id]     = next
+      @_prev[id] = prev
+      @_next[id] = next
 
-      @_next[previous.id] = signal if previous
-      @_previous[next.id] = signal if next
+      @_next[prev.id] = signal if prev
+      @_prev[next.id] = signal if next
 
     @events.yield(
       type: 'move'
-      object: @
-      key: signal.id
-      value: signal
+      id: signal.id
+      signal: signal
+      list: @
     ) unless options?.silent
 
     return true
 
-  _moveBefore: ( signal, other ) ->
-    return @_move(signal, before: other)
+  # Returns a new iterator. When no start is given, the iterator start
+  # add the start (and simultanously the end) of the list.
+  getIterator: ( start  ) ->
+    return new Iterator(@, start)
 
-  _moveAfter: ( signal, other ) ->
-    return @_move(signal, after: other)
-
-
-
-
-  # _set: ( signal, value ) ->
-
-  # _insert: ( signal, options ) ->
-  #   signal = @_add(signal, options)
-  #   move
-  #   return signal
-
-  # _insertBefore: ( value, other = @_tailSignal ) ->
-  #   @_insert value, before: other
-
-  # _insertAfter: ( value, other = @_headSignal) ->
-  #   @_insert value, after: other
-
-  # Iterator methods.
-  getIterator: ( start ) ->
-    start ||= @_headSignal
-    return new @Iterator(@, start)
-
-  before: ( signal ) ->
-    previous = @_previous[signal?.id or @_tailSignal.id]
-    if previous is @_headSignal
+  before: ( signal = @_sentinel ) ->
+    prev = @_prev[signal.id]
+    if prev is @_sentinel
       return null
-    return previous
+    return prev
 
-  after: ( signal ) ->
-    next = @_next[signal?.id or @_headSignal.id]
-    if next is @_tailSignal
+  after: ( signal = @_sentinel ) ->
+    next = @_next[signal.id]
+    if next is @_sentinel
       return null
     return next
 
-  # Public access methods.
-  getSignal: ( id ) ->
-    return @_byId[id]
-
   get: ( id ) ->
-    return @getSignal(id)?.value()
+    return @_byId[id]?.value()
 
+
+  #####
   signalAt: ( index ) ->
     i = -1
     iterator = @getIterator()
@@ -226,10 +174,10 @@ class AbstractList
     return undefined
 
   signalOf: ( value ) ->
-    for id in Object.keys(@_byId)
-      signal = @_byId[id]
-      continue if signal is @_headSignal or signal is @_tailSignal
-      return signal if signal?.value() is value
+    iterator = @getIterator()
+
+    while iterator.moveNext()
+      return iterator.signal if iterator.signal.value() is value
     return undefined
 
   idOf: ( value ) ->
@@ -245,27 +193,24 @@ class AbstractList
     return -1
 
   indexOf: ( value, limit = Infinity ) ->
-    i = -1
+    index = -1
     iterator = @getIterator()
 
-    while iterator.moveNext() and ++i < limit
-      return i if iterator.current() is value
+    while iterator.moveNext() and ++index < limit
+      return index if iterator.current() is value
 
     return -1
 
-  contains: ( value ) ->
-    return @idOf(value)?
+  contains: ( value, limit = Infinity ) ->
+    return @indexOf(value, limit) isnt -1
 
   forEach: ( fn ) ->
     return @each(fn)
 
-  each:    ( fn ) ->
-    @eachSignal ( signal ) -> fn(signal.value())
-
-  eachSignal: ( fn ) ->
+  each: ( fn ) ->
     iterator = @getIterator()
     while iterator.moveNext()
-      return false if fn(iterator.signal) is false
+      return false if fn(iterator.current()) is false
     return true
 
   any:  ( predicate ) ->
@@ -277,14 +222,11 @@ class AbstractList
     return false
 
   find: ( fn ) ->
-    @findSignal ( signal ) -> fn(signal.value())
-
-  findSignal: ( fn ) ->
     result = undefined
 
-    @eachSignal ( signal ) ->
-      if fn(signal)
-        result = signal
+    @each ( value ) ->
+      if fn(value)
+        result = value
         return false
 
     return result
@@ -304,7 +246,7 @@ class AbstractList
     return @transform(filterFn: filterFn)
 
   sort: ( sortFn ) ->
-    return new SortedList(@, sortFn)
+    return new SortedList(@, sortFn: sortFn)
 
   concat: ( others... ) ->
     return new ConcatenatedList([@].concat(others))
@@ -321,8 +263,23 @@ class AbstractList
   uniq:   ( ) ->
     return new UniqueList(@)
 
+  duplicates: () ->
+    iterated = []
+    duplicates = []
+    iterator = @getIterator()
+    while iterator.moveNext()
+      value = iterator.current()
+      if value in iterated
+        duplicates.push(value)
+      else iterated.push(value)
+
+    return Sonic.create duplicates
+
   union: ( others... ) ->
     return @concat(others...).uniq()
+
+  intersection: ( other ) ->
+    return @filter(other.contains)
 
   take: ( count ) ->
     return new TakeList(@, count)
@@ -330,7 +287,7 @@ class AbstractList
   first: ( count ) ->
     if count
       return @take(count)
-    else return @getIterator(@headSignal).next().value
+    else return @getIterator(@_sentinel).next().value
 
   skip: ( count ) -> @rest(count)
   tail: ( count ) -> @rest(count)
@@ -339,10 +296,8 @@ class AbstractList
 
   initial: ( count ) ->
 
-
-
   last: ( count ) ->
-    return @before(@_tailSignal).value() unless count
+    return @before(@_sentinel).value() unless count
 
   pluck: ( key ) ->
     return @map ( value ) -> value[key]
@@ -355,3 +310,9 @@ class AbstractList
     @each ( value ) -> values.push(value)
     return values
 
+  _onSignalUpdate: ( value, signal ) =>
+    @events.yield
+      type: 'update'
+      id: signal.id
+      signal: signal
+      list: @

@@ -1,23 +1,12 @@
-class SortedEntry extends TailingEntry
+class Node
 
-  constructor: ( source, options = {} ) ->
-    super(source, options)
-
-    @_sortValue = options.sortValue
+  constructor: ( signal, options = {} ) ->
+    @signal = signal
+    @value = options.value
 
     @left = null
     @right = null
     @parent = null
-
-    leftSize = undefined
-    rightSize = undefined
-
-  setValue: ( value ) ->
-    @_sortValue = undefined
-    super(value)
-
-  sortValue: ( ) ->
-    @_sortValue ?= @list.sortFn(@value())
 
   size: ( ) ->
     @leftSize ?= @left?.size() or 0
@@ -86,7 +75,7 @@ class SortedEntry extends TailingEntry
   attach: ( node ) ->
     return false unless node
 
-    if node.sortValue() < @sortValue()
+    if node.value < @value
       return @attachLeft(node)
     else return @attachRight(node)
 
@@ -138,8 +127,8 @@ class SortedEntry extends TailingEntry
     return true
 
   insert: ( node ) ->
-    value = @sortValue()
-    otherValue = node.sortValue()
+    value = @value
+    otherValue = node.value
 
     left = @left
     right = @right
@@ -190,7 +179,7 @@ class SortedEntry extends TailingEntry
 
   rotateLeft: ( ) ->
     pivot = @right
-    return false if pivot.sortValue() <= @sortValue()
+    return false if pivot.value <= @value
 
     pivot.rotateRight() if pivot.balance() is -1
     pivot = @right
@@ -203,7 +192,7 @@ class SortedEntry extends TailingEntry
 
   rotateRight: ( ) ->
     pivot = @left
-    return false if pivot.sortValue() > @sortValue()
+    return false if pivot.value > @value
 
     pivot.rotateLeft() if pivot.balance() is 1
     pivot = @left

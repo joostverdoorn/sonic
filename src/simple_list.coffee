@@ -3,48 +3,51 @@ class SimpleList extends AbstractList
   constructor: ( values ) ->
     super
 
-    @_previous[@_tailSignal.id] = @_headSignal
-    @_next[@_headSignal.id] = @_tailSignal
+    @_prev[@_sentinel.id] = @_sentinel
+    @_next[@_sentinel.id] = @_sentinel
 
-    previous = @_headSignal
+    prev = @_sentinel
     for value in values
       signal = new Signal(value)
-      @_previous[signal.id] = previous
-      @_next[previous.id] = signal
-      previous = signal
+      @_prev[signal.id] = prev
+      @_next[prev.id] = signal
+      prev = signal
 
-    @_previous[@_tailSignal.id] = previous
-    @_next[previous.id] = @_tailSignal
+    @_prev[@_sentinel.id] = prev
+    @_next[prev.id] = @_sentinel
 
   set: ( id, value, options = {} ) ->
-    signal = @getSignal(id)
+    signal = @_byId[id]
     return false unless signal
 
     signal.yield(value)
     return true
 
   push: ( value, options = {} ) ->
-    return @_createBefore(value).id
+    signal = @_create(value, before: @_sentinel)
+    return signal.id
 
   unshift: ( value, options = {}) ->
-    return @_createAfter(value).id
+    signal = @_create(value, after: @_sentinel)
+    return signal.id
 
   pop: ( options ) ->
-    signal = @before(@_tailSignal)
+    signal = @before(@_sentinel)
     @_delete(signal, options)
     return signal.value()
 
   shift: ( options ) ->
-    signal = @after(@_headSignal)
+    signal = @after(@_sentinel)
     @_delete(signal, options)
     return signal.value()
 
-  add:  ( value, options ) ->
-    return @push(value, options)
+  add: ( value, options ) ->
+    signal = @push(value, options)
+    return signal
 
   remove: ( value, options ) ->
     signal = @signalOf(value)
-    return @_delete(signal, options)
+    return @_delete(signal, options) if signal?
 
   delete: ( id, options ) ->
     signal = @getSignal(id)

@@ -19,23 +19,23 @@
       Index
     </a>
     &raquo;
-    <span class='title'>UniqueList</span>
+    <span class='title'>TransformedList</span>
   </div>
 </div>
     <div id='content'>
       <h1>
         Class:
-        UniqueList
+        TransformedList
       </h1>
       <table class='box'>
         <tr>
           <td>Defined in:</td>
-          <td>src&#47;unique_list.coffee</td>
+          <td>src&#47;transformed_list.coffee</td>
         </tr>
         <tr>
           <td>Inherits:</td>
           <td>
-            <a href='../class/TailingList.html'>TailingList</a>
+            <a href='../class/AbstractList.html'>AbstractList</a>
           </td>
         </tr>
       </table>
@@ -43,20 +43,63 @@
       
       <h3 class='inherited'>
         Variable inherited from
-        <a href='../class/TailingList.html'>TailingList</a>
+        <a href='../class/AbstractList.html'>AbstractList</a>
       </h3>
       <p class='inherited'>
-        <a href='../class/TailingList.html#Iterator-variable'>Iterator</a>
         <a href='../class/AbstractList.html#sentinel-variable'>sentinel</a>
       </p>
       <h2>Instance Method Summary</h2>
       <ul class='summary'>
   <li>
     <span class='signature'>
+      <a href='#_transformer-dynamic'>
+        #
+(void)
+<b>_transformer</b><span>(source, signal)</span>
+      </a>
+    </span>
+    <span class='desc'>
+    </span>
+  </li>
+  <li>
+    <span class='signature'>
       <a href='#_create-dynamic'>
         #
 (void)
-<b>_create</b><span>(sourceEntry, options)</span>
+<b>_create</b><span>(source, options)</span>
+      </a>
+    </span>
+    <span class='desc'>
+    </span>
+  </li>
+  <li>
+    <span class='signature'>
+      <a href='#_add-dynamic'>
+        #
+(void)
+<b>_add</b><span>(signal, source, options)</span>
+      </a>
+    </span>
+    <span class='desc'>
+    </span>
+  </li>
+  <li>
+    <span class='signature'>
+      <a href='#_set-dynamic'>
+        #
+(void)
+<b>_set</b><span>(signal, source)</span>
+      </a>
+    </span>
+    <span class='desc'>
+    </span>
+  </li>
+  <li>
+    <span class='signature'>
+      <a href='#_align-dynamic'>
+        #
+(void)
+<b>_align</b><span>(signal)</span>
       </a>
     </span>
     <span class='desc'>
@@ -67,7 +110,7 @@
       <a href='#_delete-dynamic'>
         #
 (void)
-<b>_delete</b><span>(entry, options)</span>
+<b>_delete</b><span>(signal, options)</span>
       </a>
     </span>
     <span class='desc'>
@@ -75,10 +118,10 @@
   </li>
   <li>
     <span class='signature'>
-      <a href='#entryOf-dynamic'>
+      <a href='#before-dynamic'>
         #
 (void)
-<b>entryOf</b><span>(value)</span>
+<b>before</b><span>(signal = @sentinel)</span>
       </a>
     </span>
     <span class='desc'>
@@ -86,12 +129,24 @@
   </li>
   <li>
     <span class='signature'>
-      <a href='#_onUpdate-dynamic'>
+      <a href='#after-dynamic'>
         #
 (void)
-<b>_onUpdate</b><span>(entry)</span>
+<b>after</b><span>(signal = @sentinel)</span>
       </a>
     </span>
+    <span class='desc'>
+    </span>
+  </li>
+  <li>
+    <span class='signature'>
+      <a href='#_onSourceEvent-dynamic'>
+        #
+(void)
+<b>_onSourceEvent</b><span>(event)</span>
+      </a>
+    </span>
+    <span class='bound note title'>Bound</span>
     <span class='desc'>
     </span>
   </li>
@@ -100,7 +155,7 @@
         <small>Inherited Method Summary</small>
         <h3 class='inherited'>
           Methods inherited from
-          <a href='../class/TailingList.html'>TailingList</a>
+          <a href='../class/AbstractList.html'>AbstractList</a>
         </h3>
         <p class='inherited'>
           <a href='../class/AbstractList.html#_create-dynamic'>#_create</a>
@@ -166,10 +221,46 @@
       <h2>Instance Method Details</h2>
       <div class='methods'>
   <div class='method_details'>
+    <p class='signature' id='_transformer-dynamic'>
+      #
+(void)
+<b>_transformer</b><span>(source, signal)</span>
+      <br>
+    </p>
+    
+  </div>
+  <div class='method_details'>
     <p class='signature' id='_create-dynamic'>
       #
 (void)
-<b>_create</b><span>(sourceEntry, options)</span>
+<b>_create</b><span>(source, options)</span>
+      <br>
+    </p>
+    
+  </div>
+  <div class='method_details'>
+    <p class='signature' id='_add-dynamic'>
+      #
+(void)
+<b>_add</b><span>(signal, source, options)</span>
+      <br>
+    </p>
+    
+  </div>
+  <div class='method_details'>
+    <p class='signature' id='_set-dynamic'>
+      #
+(void)
+<b>_set</b><span>(signal, source)</span>
+      <br>
+    </p>
+    
+  </div>
+  <div class='method_details'>
+    <p class='signature' id='_align-dynamic'>
+      #
+(void)
+<b>_align</b><span>(signal)</span>
       <br>
     </p>
     
@@ -178,25 +269,35 @@
     <p class='signature' id='_delete-dynamic'>
       #
 (void)
-<b>_delete</b><span>(entry, options)</span>
+<b>_delete</b><span>(signal, options)</span>
       <br>
     </p>
     
   </div>
   <div class='method_details'>
-    <p class='signature' id='entryOf-dynamic'>
+    <p class='signature' id='before-dynamic'>
       #
 (void)
-<b>entryOf</b><span>(value)</span>
+<b>before</b><span>(signal = @sentinel)</span>
       <br>
     </p>
     
   </div>
   <div class='method_details'>
-    <p class='signature' id='_onUpdate-dynamic'>
+    <p class='signature' id='after-dynamic'>
       #
 (void)
-<b>_onUpdate</b><span>(entry)</span>
+<b>after</b><span>(signal = @sentinel)</span>
+      <br>
+    </p>
+    
+  </div>
+  <div class='method_details'>
+    <p class='signature' id='_onSourceEvent-dynamic'>
+      #
+(void)
+<b>_onSourceEvent</b><span>(event)</span>
+      <span class='bound note'>Bound</span>
       <br>
     </p>
     

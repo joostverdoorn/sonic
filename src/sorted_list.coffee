@@ -1,41 +1,104 @@
-class SortedList extends TailingList
+class SortedList extends TransformedList
 
-  Entry:    SortedEntry
-  Iterator: SortedIterator
+  constructor: ( source, options ) ->
 
-  HeadEntry: -> new @Entry(null, list: @, source: @source.headEntry, sortValue: -Infinity)
-  TailEntry: -> new @Entry(null, list: @, source: @source.tailEntry, sortValue:  Infinity)
+    super source
+    @_sortFn = options.sortFn
+    @_nodeBySignalId = {}
 
-  constructor: ( source, options = {} ) ->
-    @sortFn = options.sortFn
-    @_evaluated = false
+    @_root = new Node(@_sentinel, value: -Infinity)
+    # @_root.left = @_root
 
-    super(source, options)
+    @_nodeBySignalId[@_sentinel.id] = @_root
 
-    @headEntry.insert(@tailEntry)
-    @evaluate()
+    iterator = @_source.getIterator()
+    @_create(iterator.signal, silent: true) while iterator.moveNext()
 
-  evaluate: ( ) ->
-    return false if @_evaluated
+  _transformer : ( source, signal ) =>
+    # if @_sortFn?
+    value = @_sortFn(source.value())
 
-    iterator = @source.getIterator()
+    if not @_nodeBySignalId[source.id]?
+      node = new Node(source, value: value)
+      @_nodeBySignalId[source.id] = node
+      @_root.insert(node)
 
-    while iterator.moveNext()
-      sourceEntry = iterator.entry
+    else if @_nodeBySignalId[source.id].value isnt value
+      @_root.remove(@_nodeBySignalId[source.id])
 
-      unless @_bySourceId[sourceEntry.id]
-        @_insert(sourceEntry, silent: true)
+      node = new Node(source, value: value)
+      @_nodeBySignalId[source.id] = node
 
-    return @_evaluated = true
+      @_root.insert(node)
 
-  _move: ( entry, options = {} ) ->
-    entry.remove()
-    @headEntry.insert(entry)
+    return source
 
-    @trigger('move', entry.id) unless options.silent
-    return true
+  before: ( signal = @_sentinel ) ->
+    node = @_nodeBySignalId[signal.id]
 
-  _onEntryEvent: ( event, entry ) ->
-    @_move(entry) if event is 'update'
-    super
+    if node is @_root
+      before = @_root.rightMost()
+
+    else if left = node.left
+      before = left.rightMost()
+
+    else if parentNode = node.parent
+      if parentNode.isRight()
+        before = parentNode
+
+      else
+        value = before.value
+        while parentNode and parentNode.value > value
+          parentNode = parentNode.parent
+        before = parentNode
+
+    return before.signal if before?
+
+
+  after: ( signal = @_sentinel ) ->
+    node = @_nodeBySignalId[signal.id]
+    if right = node.right
+      after = right.leftMost()
+
+    else if parentNode = node.parent
+      if parentNode.isLeft()
+        after = parentNode
+
+      else
+        value = node.value
+        while parentNode and parentNode.value <= value
+          parentNode = parentNode.parent
+        after = parentNode
+
+    return after.signal if after?
+
+  # before: ( signal = @_sentinel ) ->
+  #   before = super(signal)
+  #   if before isnt undefined
+  #     return before
+
+  #   source = @_sourceById[signal.id]
+  #   until before or not source = @_source.before(source)
+  #     before = @_transformer(source)
+
+  #   unless before and source
+  #     return null
+
+  #   @_add(before, source, before: signal, silent: true)
+  #   return before
+
+  # after: ( signal = @_sentinel ) ->
+  #   after = super(signal)
+  #   if after isnt undefined
+  #     return after
+
+  #   source = @_sourceById[signal.id]
+  #   until after or not source = @_source.after(source)
+  #     after = @_transformer(source)
+
+  #   unless after and source
+  #     return null
+
+  #   @_add(after, source, after: signal, silent: true)
+  #   return after
 

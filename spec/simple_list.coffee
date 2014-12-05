@@ -52,7 +52,7 @@ describe "SimpleList", ->
 
     it "should remove the item", ->
       item = "orange"
-      @list._create(item)
+      @list.push(item)
       expect(@list.contains(item)).toBe(true)
 
       @list.remove(item)

@@ -3,36 +3,38 @@ module.exports = ( grunt ) ->
     'src/sonic.coffee'
     'src/observable.coffee'
     'src/signal.coffee'
-    'src/mapped_signal.coffee'
-    'src/transformer.coffee'
+    'src/node.coffee'
+
+
+    # 'src/mapped_signal.coffee'
+    # 'src/transformer.coffee'
 
     'src/iterator.coffee'
-    'src/tailing_iterator.coffee'
-    'src/sorted_iterator.coffee'
-    'src/reversed_iterator.coffee'
-    'src/concatenated_iterator.coffee'
-    'src/generator.coffee'
+    # 'src/tailing_iterator.coffee'
+    # 'src/sorted_iterator.coffee'
+    # 'src/reversed_iterator.coffee'
+    # 'src/concatenated_iterator.coffee'
+    # 'src/generator.coffee'
+    # 'src/entry.coffee'
 
-
-    'src/entry.coffee'
-    'src/tailing_entry.coffee'
-    'src/mapped_entry.coffee'
-    'src/sorted_entry.coffee'
 
     'src/abstract_list.coffee'
     'src/simple_list.coffee'
-    'src/tailing_list.coffee'
-    'src/mapped_list.coffee'
-    'src/filtered_list.coffee'
+    'src/proxy_list.coffee'
+    'src/transformed_list.coffee'
+    # 'src/tailing_entry.coffee'
+    # 'src/mapped_entry.coffee'
+    # 'src/sorted_entry.coffee'
+
+    # 'src/tailing_list.coffee'
+    # 'src/mapped_list.coffee'
+    # 'src/filtered_list.coffee'
     'src/concatenated_list.coffee'
     'src/unique_list.coffee'
     'src/sorted_list.coffee'
     'src/reversed_list.coffee'
     'src/take_list.coffee'
-    'src/generated_list.coffee'
-    'src/transformed_list.coffee'
-
-
+    # 'src/generated_list.coffee'
 
     'src/export.coffee'
   ]
@@ -40,22 +42,20 @@ module.exports = ( grunt ) ->
   specs = [
     # '.grunt/sonic/spec_compiled/sonic.js'
     '.grunt/sonic/spec_compiled/iterator.js'
-    '.grunt/sonic/spec_compiled/tailing_iterator.js'
-    '.grunt/sonic/spec_compiled/generator.js'
+    # '.grunt/sonic/spec_compiled/generator.js'
 
     '.grunt/sonic/spec_compiled/sorted_entry.js'
 
     '.grunt/sonic/spec_compiled/abstract_list.js'
     '.grunt/sonic/spec_compiled/simple_list.js'
-    '.grunt/sonic/spec_compiled/tailing_list.js'
-    '.grunt/sonic/spec_compiled/mapped_list.js'
-    '.grunt/sonic/spec_compiled/filtered_list.js'
+    '.grunt/sonic/spec_compiled/transformed_list.js'
+
     '.grunt/sonic/spec_compiled/concatenated_list.js'
     '.grunt/sonic/spec_compiled/unique_list.js'
     '.grunt/sonic/spec_compiled/sorted_list.js'
     '.grunt/sonic/spec_compiled/reversed_list.js'
     '.grunt/sonic/spec_compiled/take_list.js'
-    '.grunt/sonic/spec_compiled/generated_list.js'
+    # '.grunt/sonic/spec_compiled/generated_list.js'
 
     # '.grunt/sonic/spec_compiled/export.js'
   ]

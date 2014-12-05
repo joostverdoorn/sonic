@@ -46,7 +46,7 @@
         <a href='../class/AbstractList.html'>AbstractList</a>
       </h3>
       <p class='inherited'>
-        <a href='../class/AbstractList.html#Iterator-variable'>Iterator</a>
+        <a href='../class/AbstractList.html#sentinel-variable'>sentinel</a>
       </p>
       <h2>Instance Method Summary</h2>
       <ul class='summary'>
@@ -55,7 +55,7 @@
       <a href='#_create-dynamic'>
         #
 (void)
-<b>_create</b><span>(other)</span>
+<b>_create</b><span>(other, options)</span>
       </a>
     </span>
     <span class='desc'>
@@ -93,18 +93,13 @@
         <p class='inherited'>
           <a href='../class/AbstractList.html#_create-dynamic'>#_create</a>
           <a href='../class/AbstractList.html#_add-dynamic'>#_add</a>
+          <a href='../class/AbstractList.html#_set-dynamic'>#_set</a>
           <a href='../class/AbstractList.html#_delete-dynamic'>#_delete</a>
           <a href='../class/AbstractList.html#_remove-dynamic'>#_remove</a>
           <a href='../class/AbstractList.html#_move-dynamic'>#_move</a>
-          <a href='../class/AbstractList.html#_moveBefore-dynamic'>#_moveBefore</a>
-          <a href='../class/AbstractList.html#_moveAfter-dynamic'>#_moveAfter</a>
-          <a href='../class/AbstractList.html#_insert-dynamic'>#_insert</a>
-          <a href='../class/AbstractList.html#_insertBefore-dynamic'>#_insertBefore</a>
-          <a href='../class/AbstractList.html#_insertAfter-dynamic'>#_insertAfter</a>
           <a href='../class/AbstractList.html#getIterator-dynamic'>#getIterator</a>
           <a href='../class/AbstractList.html#before-dynamic'>#before</a>
           <a href='../class/AbstractList.html#after-dynamic'>#after</a>
-          <a href='../class/AbstractList.html#getSignal-dynamic'>#getSignal</a>
           <a href='../class/AbstractList.html#get-dynamic'>#get</a>
           <a href='../class/AbstractList.html#signalAt-dynamic'>#signalAt</a>
           <a href='../class/AbstractList.html#idAt-dynamic'>#idAt</a>
@@ -116,12 +111,11 @@
           <a href='../class/AbstractList.html#contains-dynamic'>#contains</a>
           <a href='../class/AbstractList.html#forEach-dynamic'>#forEach</a>
           <a href='../class/AbstractList.html#each-dynamic'>#each</a>
-          <a href='../class/AbstractList.html#eachSignal-dynamic'>#eachSignal</a>
           <a href='../class/AbstractList.html#any-dynamic'>#any</a>
           <a href='../class/AbstractList.html#some-dynamic'>#some</a>
           <a href='../class/AbstractList.html#find-dynamic'>#find</a>
-          <a href='../class/AbstractList.html#findSignal-dynamic'>#findSignal</a>
           <a href='../class/AbstractList.html#reduce-dynamic'>#reduce</a>
+          <a href='../class/AbstractList.html#transform-dynamic'>#transform</a>
           <a href='../class/AbstractList.html#map-dynamic'>#map</a>
           <a href='../class/AbstractList.html#filter-dynamic'>#filter</a>
           <a href='../class/AbstractList.html#sort-dynamic'>#sort</a>
@@ -142,10 +136,7 @@
           <a href='../class/AbstractList.html#pluck-dynamic'>#pluck</a>
           <a href='../class/AbstractList.html#invoke-dynamic'>#invoke</a>
           <a href='../class/AbstractList.html#toArray-dynamic'>#toArray</a>
-          <a href='../class/Observable.html#on-dynamic'>#on</a>
-          <a href='../class/Observable.html#off-dynamic'>#off</a>
-          <a href='../class/Observable.html#once-dynamic'>#once</a>
-          <a href='../class/Observable.html#trigger-dynamic'>#trigger</a>
+          <a href='../class/AbstractList.html#_onSignalUpdate-dynamic'>#_onSignalUpdate</a>
         </p>
       </h2>
       <h2>Constructor Details</h2>
@@ -166,7 +157,7 @@
     <p class='signature' id='_create-dynamic'>
       #
 (void)
-<b>_create</b><span>(other)</span>
+<b>_create</b><span>(other, options)</span>
       <br>
     </p>
     
@@ -192,7 +183,7 @@
 </div>
     </div>
     <div id='footer'>
-  November 22, 14 17:07:04 by
+  November 27, 14 00:28:47 by
   <a href='https://github.com/coffeedoc/codo' title='CoffeeScript API documentation generator'>
     Codo
   </a>

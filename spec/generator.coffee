@@ -1,4 +1,4 @@
-describe "Generator", ->
+# describe "Generator", ->
 
-  it "should work", ->
+#   it "should work", ->
 

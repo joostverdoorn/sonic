@@ -1,150 +1,103 @@
 class TransformedList extends AbstractList
 
   constructor: ( source, options = {} ) ->
-
     @_source = source
     @_source.events.forEach @_onSourceEvent
 
     @_bySourceId = {}
     @_sourceById = {}
+    @_bySourceId[@_sentinel.id] = @_sentinel
+    @_sourceById[@_sentinel.id] = @_sentinel
 
     @_mapFn    = options.mapFn    or ( value ) -> value
     @_filterFn = options.filterFn or ( value ) -> true
 
-    super
+    super()
 
-  _transformer : ( sourceSignal, signal ) ->
-    # debugger
-    if @_filterFn(sourceSignal.value())
-      value = @_mapFn(sourceSignal.value())
+  _transformer : ( source, signal ) ->
+    return undefined unless @_filterFn(source.value())
 
-      if signal
-        signal.yield(value)
-      else signal = new Signal(value)
-
-      return signal
-    else return null
-
-
-  _create: ( sourceSignal, options ) ->
-    signal = @_transformer(sourceSignal)
-    return signal unless signal
-
-    @_add(signal, sourceSignal, options)
-
+    value = @_mapFn(source.value())
+    signal ||= new Signal
+    signal.yield(value)
 
     return signal
 
-  _add: ( signal, sourceSignal, options ) ->
-    # debugger if sourceSignal.value() is 13
-    @_bySourceId[sourceSignal.id] = signal
-    @_sourceById[signal.id] = sourceSignal
+  _create: ( source, options ) ->
+    signal = @_transformer(source, signal)
+    return undefined unless signal
 
-    # Find the next and previous
-    # of this signal
+    @_add(signal, source, options)
+    return signal
 
+  _add: ( signal, source, options ) ->
+    @_bySourceId[source.id] = signal
+    @_sourceById[signal.id] = source
     super(signal, options)
 
+  _set: ( signal, source ) ->
+    transformed = @_transformer(source, signal)
 
-  _move: ( signal ) ->
-    # source = @_sourceById[signal.id]
-    # after = null
-    # before = null
-
-    super signal, silent: true
-
-    @before signal
-    @after signal
-
-    @events.yield
-      type: 'move'
-      object: @
-      key: signal.id
-      value: signal
-
+    unless transformed is signal
+      @_delete(signal)
+      @_add(transformed, source) if transformed
     return true
 
-    # iterator = @_source.getIterator source
-    # iterator.moveNext() until after = @_bySourceId[iterator.signal.id]
-    # iterator.reset()
-    # iterator.movePrevious() until before = @_bySourceId[iterator.signal.id]
+  _align: ( signal ) ->
+    source   = @_sourceById[signal.id]
+    iterator = @_source.getIterator(source)
 
+    while iterator.movePrevious() and not before
+      before = @_bySourceId[iterator.signal.id]
+    return @_move(signal, before: before) if before
 
-
-    # while afterSource and not after
-    #   after = @_bySourceId[afterSource.id]
-    #   afterSource = @_source.after(afterSource)
-
-    # while beforeSource and not before
-    #   before = @_bySourceId[beforeSource.id]
-    #   beforeSource = @_source.before(beforeSource)
-
-    # super signal, { before, after }
-
+    iterator.reset()
+    while iterator.moveNext() and not after
+      after = @_bySourceId[iterator.signal.id]
+    return @_move(signal, after: after)
 
   _delete: ( signal, options ) ->
-    id = signal.id
-    source = @_bySourceId[id]
-
+    source = @_sourceById[signal.id]
+    delete @_sourceById[signal.id]
     delete @_bySourceId[source.id]
-    delete @_sourceById[id]
-
     super(signal, options)
 
-  _onSourceEvent: ( event ) =>
-    sourceSignal = event.value
-    switch event.type
-      when 'add'
-        signal = @_create(sourceSignal)
-
-      when 'delete'
-        signal = @_bySourceId[sourceSignal.id]
-        @_delete(signal) if signal
-
-      when 'update'
-        oldSignal = @_bySourceId[sourceSignal.id]
-        signal = @_transformer(sourceSignal)
-
-        if oldSignal is signal
-          @events.yield
-            type: 'update'
-            object: @
-            key: signal.id
-            value: signal
-        else
-          @_delete oldSignal if oldSignal
-          @_add signal, sourceSignal if signal
-
-    return true
-
-  before: ( signal ) ->
-    return @before(@_tailSignal) unless signal
-
+  before: ( signal = @_sentinel ) ->
     before = super(signal)
-    return before unless before is undefined
+    if before isnt undefined
+      return before
 
     source = @_sourceById[signal.id]
-    beforeSource = @_source.before(source)
-    return beforeSource unless beforeSource
+    until before or not source = @_source.before(source)
+      before = @_transformer(source)
 
-    until other = @_createBefore(beforeSource, signal)
-      beforeSource = @_source.before(beforeSource)
-      return beforeSource unless beforeSource
+    unless before and source
+      return null
 
-    return other
+    @_add(before, source, before: signal, silent: true)
+    return before
 
-  after: ( signal ) ->
-    return @after(@_headSignal) unless signal
-
+  after: ( signal = @_sentinel ) ->
     after = super(signal)
-    return after unless after is undefined
+    if after isnt undefined
+      return after
 
     source = @_sourceById[signal.id]
-    afterSource = @_source.after(source)
-    return afterSource unless afterSource
+    until after or not source = @_source.after(source)
+      after = @_transformer(source)
 
-    until other = @_createAfter(afterSource, signal)
-      afterSource = @_source.after(afterSource)
-      return afterSource unless afterSource
+    unless after and source
+      return null
 
-    return other
+    @_add(after, source, after: signal, silent: true)
+    return after
+
+  _onSourceEvent: ( event ) =>
+    source = event.signal
+    signal = @_bySourceId[source.id]
+
+    switch event.type
+      when 'add'    then @_create(source)
+      when 'update' then signal and @_set(signal, source)
+      when 'move'   then signal and @_align(signal)
+      when 'delete' then signal and @_delete(signal)
