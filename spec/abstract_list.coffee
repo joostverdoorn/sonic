@@ -59,6 +59,17 @@ describe "List", ->
 
     it "should emit an event"
 
+  describe "#_splice", ->
+
+    it "should remove the range from the list", ->
+
+      after  = @list.signalOf(3)
+      before = @list.signalOf(7)
+
+
+
+      @list._splice(after, before)
+      expect(@list.toArray()).toEqual([0,1,2,3,7,8,9])
 
 
   describe "#_move", ->
@@ -325,6 +336,21 @@ describe "List", ->
       expect(pluckedList.toArray()).toEqual(['purple','green','red','yellow','orange'])
 
 
+  describe "#findSignal", ->
+
+    it "should find the signal", ->
+      signal = @list.findSignal ( ( signal ) => console.log(signal.id); signal.value() is 5)
+      expect(signal.value()).toBe(5)
+
+    it "should start at the given signal", ->
+      start = @list.signalOf(3)
+      signal = @list.findSignal ( => true), start
+      expect(signal.value()).toBe(4)
+
+    it "should work in reverse", ->
+      start = @list.signalOf(3)
+      signal = @list.findSignal ( => true), start, true
+      expect(signal.value()).toBe(2)
 
   describe "#toArray", ->
 

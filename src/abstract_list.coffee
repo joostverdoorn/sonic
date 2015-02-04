@@ -29,12 +29,12 @@ class AbstractList
   _add: ( signal, options ) ->
     @_byId[signal.id] = signal
 
-    @events.yield(
-      type: 'add'
-      id: signal.id
-      signal: signal
-      list: @
-    ) unless options?.silent
+    # @events.yield(
+    #   type: 'add'
+    #   id: signal.id
+    #   signal: signal
+    #   list: @
+    # ) unless options?.silent
 
     if options and (options.before or options.after)
       @_move(signal, options)
@@ -72,21 +72,49 @@ class AbstractList
   # @option options [Boolean] silent Whether or not to trigger a `delete` event
   #
   _delete: ( signal, options ) ->
+    id = signal?.id
+    return false unless id or @_byId[id]
+
     @_remove(signal)
 
-    id = signal.id
     delete @_byId[id]
     delete @_next[id]
     delete @_prev[id]
 
-    @events.yield(
-      type: 'delete'
-      id: signal.id
-      signal: signal
-      list: @
-    ) unless options?.silent
+    # @events.yield(
+    #   type: 'invalidate'
+    #   from: prev
+    #   to:   next
+    #   list: @
+    # ) unless options?.silent
 
     return true
+
+  _splice: ( after, before ) ->
+    if signal = @after(after)
+      while signal and signal isnt before
+        next = @after(signal, 0)
+        @_delete(signal, silent: true)
+        signal = next
+
+    if signal = @before(before)
+      while signal and signal isnt after
+        prev = @before(signal, 0)
+        @_delete(signal, silent: true)
+        signal = prev
+
+
+
+    # if signal = before
+    #   while signal = @before(signal, 0) and signal isnt after
+    #     @_delete(signal, silent: true)
+
+    @events.yield(
+      type: 'invalidate'
+      after:  after
+      before: before
+      list: @
+    ) unless options?.silent
 
   # Removes a signal from the linked list. This does not delete it
   # from the index. This is simply a convenience method that calls
@@ -97,6 +125,9 @@ class AbstractList
   # @option options [Boolean] silent Wether or not to trigger a `remove` event
   #
   _remove: ( signal, options ) ->
+    id = signal?.id
+    return false unless id or @_byId[id]
+
     return @_move(signal, options)
 
   # Moves the signal before or after the signal passed in the options.
@@ -111,8 +142,12 @@ class AbstractList
   #
   _move: ( signal, options ) ->
     id = signal.id
-    @_prev[@_next[id].id] = @_prev[id] if @_next[id]
-    @_next[@_prev[id].id] = @_next[id] if @_prev[id]
+
+    prev = @_prev[id]
+    next = @_next[id]
+
+    @_prev[next.id] = prev if next
+    @_next[prev.id] = next if prev
 
     if options and (options.before or options.after)
       prev = options.after  or (@_prev[options.before.id] if options.before)
@@ -125,9 +160,9 @@ class AbstractList
       @_prev[next.id] = signal if next
 
     @events.yield(
-      type: 'move'
-      id: signal.id
-      signal: signal
+      type: 'invalidate'
+      from: signal
+      to:   signal
       list: @
     ) unless options?.silent
 
@@ -230,6 +265,13 @@ class AbstractList
         return false
 
     return result
+
+  findSignal: ( fn, start = @after(@_sentinel), reverse = false ) ->
+    result = undefined
+
+    iterator = @getIterator(start)
+    move = if reverse then iterator.movePrevious else iterator.moveNext
+    return (iterator.signal while move.call(iterator) and not fn(iterator.signal))
 
   reduce: ( reduceFn, memo = 0 ) ->
     @each ( value ) ->
