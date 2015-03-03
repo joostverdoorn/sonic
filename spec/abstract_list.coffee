@@ -2,75 +2,52 @@ describe "List", ->
 
   beforeEach ->
     @list = new Sonic.AbstractList()
-    @list._move(@list._sentinel, after: @list._sentinel)
-    @list._create(i, before: @list._sentinel) for i in [0...10]
-
-
-  describe "#_create", ->
-
-    beforeEach ->
-      @item = "apple"
-
-    it "should create a new signal and return it", ->
-      signal = @list._create(@item)
-      expect(signal instanceof Sonic.Signal).toBe true
-
-    it "should set the value of the signal to the given value", ->
-      signal = @list._create(@item)
-      expect(signal.value()).toBe @item
-
-    it "should create a new signal and add it to the index", ->
-      signal = @list._create(@item)
-      expect(@list._byId[signal.id]).toBe signal
+    @list._move(0, prev: 0)
+    @list._add(i, next: 0) for i in [0...10]
 
   describe "#_add", ->
 
-    beforeEach ->
-      @item = 3.5
-      @signal = new Sonic.Signal(@item)
-      @list._add @signal
-
     it "should add the given signal to the index", ->
-      expect(@list._byId[@signal.id]).toBe(@signal)
+      item = "apple"
+      id = @list._add item
+      expect(@list.get id).toBe item
+
+  describe "#_set", ->
+
+    it "should change the value of the given id", ->
+      item = "apple"
+      replacement = "pear"
+      id = @list._add item
+      @list._set(id, replacement)
+      expect(@list.get id).toBe replacement
 
   describe "#_delete", ->
 
     it "should delete the item", ->
       item = "mango"
-      signal = @list._create(item)
-      expect(@list.get(signal.id)).toBe(item)
+      id = @list._add(item)
+      expect(@list.get id).toBe(item)
 
-      @list._delete(signal)
-      expect(@list.get(signal.id)).not.toBeDefined()
+      @list._delete(id)
+      expect(@list.get id).not.toBeDefined()
 
     it "should move the item out of the linked list structure", ->
       item1 = "apple"
       item2 = "pear"
       item3 = "banana"
 
-      signal1 = @list._create(item1)
-      signal2 = @list._create(item2, after: signal1)
-      signal3 = @list._create(item3, after: signal2)
+      id1 = @list._add(item1)
+      id2 = @list._add(item2, prev: id1)
+      id3 = @list._add(item3, prev: id2)
 
-      @list._delete(signal2)
+      @list._delete(id2)
 
-      expect(@list.after signal1).toBe(signal3)
-      expect(@list.before signal3).toBe(signal1)
+      console.log JSON.stringify @list._prev[id3]
+
+      expect(@list.next id1).toBe id3
+      expect(@list.prev id3).toBe id1
 
     it "should emit an event"
-
-  describe "#_splice", ->
-
-    it "should remove the range from the list", ->
-
-      after  = @list.signalOf(3)
-      before = @list.signalOf(7)
-
-
-
-      @list._splice(after, before)
-      expect(@list.toArray()).toEqual([0,1,2,3,7,8,9])
-
 
   describe "#_move", ->
 
@@ -79,78 +56,24 @@ describe "List", ->
       @item2 = "pear"
       @item3 = "banana"
 
-      @signal1 = @list._create(@item1)
-      @signal2 = @list._create(@item2, after: @signal1)
-      @signal3 = @list._create(@item3, after: @signal2)
+      @id1 = @list._add(@item1)
+      @id2 = @list._add(@item2, prev: @id1)
+      @id3 = @list._add(@item3, prev: @id2)
 
     it "should remove the item from its current position", ->
-      expect(@list.after(@signal1)).toBe(@signal2)
-      expect(@list.before(@signal3)).toBe(@signal2)
+      expect(@list.next(@id1)).toBe(@id2)
+      expect(@list.prev(@id3)).toBe(@id2)
 
-      @list._move(@signal2, after: @signal3)
+      @list._move(@id2, prev: @id3)
 
-      expect(@list.after @signal1).toBe(@signal3)
-      expect(@list.before @signal3).toBe(@signal1)
+      expect(@list.next @id1).toBe(@id3)
+      expect(@list.prev @id3).toBe(@id1)
 
     it "should move the item into its new position", ->
-      @list._move(@signal2, after: @signal3)
+      @list._move(@id2, prev: @id3)
 
-      expect(@list.after @signal3).toBe(@signal2)
-      expect(@list.before @signal2).toBe(@signal3)
-
-
-
-  # describe "#_insert", ->
-
-  #   beforeEach ->
-  #     @item1 = "apple"
-  #     @item2 = "pear"
-  #     @item3 = "banana"
-
-  #     @signal1 = @list._create(@item1)
-
-  #   it "should insert the item at the given position", ->
-  #     @signal2 = @list._create(@item2, after: @signal1)
-  #     @signal3 = @list._create(@item3, before: @signal2)
-
-  #     expect( @list.after @signal1).toBe(@signal3)
-  #     expect( @list.before @signal2 ).toBe(@signal3)
-
-
-  # describe "#_insertBefore", ->
-
-  #   beforeEach ->
-  #     @item1 = "apple"
-  #     @item2 = "pear"
-  #     @item3 = "banana"
-
-  #     @signal1 = @list._create(@item1)
-
-  #   it "should insert the item at the given position", ->
-  #     @signal2 = @list._create(@item2, before: @signal1)
-  #     @signal3 = @list._create(@item3, before: @signal2)
-
-  #     expect( @list.before @signal1).toBe(@signal2)
-  #     expect( @list.before @signal2 ).toBe(@signal3)
-
-  # describe "#_insertAfter", ->
-
-  #   beforeEach ->
-  #     @item1 = "apple"
-  #     @item2 = "pear"
-  #     @item3 = "banana"
-
-  #     @signal1 = @list._create(@item1)
-
-  #   it "should insert the item at the given position", ->
-  #     @signal2 = @list._create(@item2, after: @signal1)
-  #     @signal3 = @list._create(@item3, after: @signal2)
-
-  #     expect( @list.after @signal1).toBe(@signal2)
-  #     expect( @list.after @signal2 ).toBe(@signal3)
-
-
-
+      expect(@list.next @id3).toBe(@id2)
+      expect(@list.prev @id2).toBe(@id3)
 
   describe "#getIterator", ->
 
@@ -161,69 +84,33 @@ describe "List", ->
 
   describe "#before", ->
 
-    it "should return the signal before the given signal", ->
-      signal = @list.signalOf(5)
-      previous = @list.before signal
-      expect(previous.value()).toBe(4)
+    it "should return the id before the given id", ->
+      id = @list.idOf 5
+      prevId = @list.prev id
+      expect(@list.get prevId).toBe 4
 
-    it "should return the last signal if no signal if given", ->
-      @list._create 42, before: @list._sentinel
-      last = @list.before null
-      expect(last.value()).toBe(42)
+    it "should return the last id if no id is given", ->
+      @list._add 42, next: 0
+      lastId = @list.prev null
+      expect(@list.get lastId).toBe 42
 
   describe "#after", ->
 
-    it "should return the signal after the given signal", ->
-      signal = @list.signalOf(5)
-      next = @list.after signal
-      expect(next.value()).toBe(6)
+    it "should return the id after the given id", ->
+      id = @list.idOf 5
+      nextId = @list.next id
+      expect(@list.get nextId).toBe 6
 
-    it "should return the first signal if no signal if given", ->
-      @list._create 42, after: @list._sentinel
-      first = @list.after null
-      expect(first.value()).toBe(42)
-
-  describe "#signalAt", ->
-
-    it "should return the signal of the item at the given index", ->
-      signal = @list.signalOf(5)
-      expect(@list.signalAt(5)).toBe(signal)
-
-
+    it "should return the first id if no id is given", ->
+      @list._add 42, prev: 0
+      firstId = @list.next null
+      expect(@list.get firstId).toBe 42
 
   describe "#idAt", ->
 
     it "should return the id of the item at the given index", ->
       id = @list.idOf(5)
       expect(@list.idAt(5)).toBe(id)
-
-
-
-
-  describe "#signalOf", ->
-
-    it "should return the first occurence of the value", ->
-      item = "banana"
-      signal = @list._create(item, after: @list._sentinel)
-
-      expect(@list.signalOf(item)).toBe(signal)
-
-
-  describe "#indexOfsignal", ->
-
-    it "should return the index of the given item when it exists", ->
-      signal = @list.signalOf(5)
-      expect(@list.indexOfSignal(signal)).toBe(5)
-
-    it "should return -1 when the isn't found within the limit", ->
-      signal = @list.signalOf(5)
-      expect(@list.indexOf(signal, 5)).toBe(-1)
-
-    it "should return -1 if the item isn't found", ->
-      signal = new Sonic.Signal(10)
-      expect(@list.indexOf(signal)).toBe(-1)
-
-
 
   describe "#indexOf", ->
 
@@ -236,13 +123,11 @@ describe "List", ->
     it "should return -1 if the item isn't found", ->
       expect(@list.indexOf(10)).toBe(-1)
 
-
-
   describe "#idOf", ->
 
     it "should return the id of the given item", ->
       item = "strawberry"
-      id = @list._create(item, after: @list._sentinel).id
+      id = @list._add(item, prev: 0)
       expect(@list.idOf(item)).toBe(id)
 
     it "should return undefined if the item isn't found", ->
@@ -253,16 +138,14 @@ describe "List", ->
 
     it "should return the item with the specified id", ->
       item = "pear"
-      signal = @list._create(item)
-      expect(@list.get(signal.id)).toBe(item)
-
-
+      id = @list._add(item)
+      expect(@list.get(id)).toBe(item)
 
   describe "#contains", ->
 
     it "should return true if the list contains the given item", ->
       item = "pineapple"
-      @list._create(item, after: @list._sentinel)
+      @list._add(item, prev: 0)
       expect(@list.contains(item)).toBe(true)
 
     it "should return false if the list doesn't contain the given item", ->
@@ -299,8 +182,8 @@ describe "List", ->
 
   describe "#map", ->
 
-    it "should return a new TransformedList", ->
-      expect(@list.map(->) instanceof Sonic.TransformedList).toBe(true)
+    # it "should return a new TransformedList", ->
+    #   expect(@list.map(->) instanceof Sonic.TransformedList).toBe(true)
 
   describe "#reverse", ->
 
@@ -334,23 +217,6 @@ describe "List", ->
       list = Sonic.create(items)
       pluckedList = list.pluck('color')
       expect(pluckedList.toArray()).toEqual(['purple','green','red','yellow','orange'])
-
-
-  describe "#findSignal", ->
-
-    it "should find the signal", ->
-      signal = @list.findSignal ( ( signal ) => console.log(signal.id); signal.value() is 5)
-      expect(signal.value()).toBe(5)
-
-    it "should start at the given signal", ->
-      start = @list.signalOf(3)
-      signal = @list.findSignal ( => true), start
-      expect(signal.value()).toBe(4)
-
-    it "should work in reverse", ->
-      start = @list.signalOf(3)
-      signal = @list.findSignal ( => true), start, true
-      expect(signal.value()).toBe(2)
 
   describe "#toArray", ->
 

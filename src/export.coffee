@@ -1,10 +1,12 @@
 Sonic.factory = ( exports ) ->
     exports._                     = Sonic
     exports.create                = Sonic.create
+    exports.unit                  = Sonic.unit
+    exports.empty                 = Sonic.empty
 
     # exports.Observable            = Observable
     exports.Signal                = Signal
-    exports.Node                  = Node
+    # exports.Node                  = Node
     # exports.MappedSignal          = MappedSignal
     # exports.Transformer           = Transformer
 
@@ -21,19 +23,21 @@ Sonic.factory = ( exports ) ->
     # exports.SortedEntry           = SortedEntry
 
     exports.AbstractList          = AbstractList
-    exports.SimpleList            = SimpleList
-    exports.ProxyList             = ProxyList
-    exports.TransformedList       = TransformedList
+    exports.List                  = List
+    exports.Unit                  = Unit
+    # exports.ProxyList             = ProxyList
+    # exports.TransformedList       = TransformedList
+    exports.FlatMapList           = FlatMapList
 
     # exports.TailingList           = TailingList
     # exports.FilteredList          = FilteredList
     # exports.MappedList            = MappedList
 
-    exports.ConcatenatedList      = ConcatenatedList
-    exports.UniqueList            = UniqueList
-    exports.SortedList            = SortedList
-    exports.ReversedList          = ReversedList
-    exports.TakeList              = TakeList
+    # exports.ConcatenatedList      = ConcatenatedList
+    # exports.UniqueList            = UniqueList
+    # exports.SortedList            = SortedList
+    # exports.ReversedList          = ReversedList
+    # exports.TakeList              = TakeList
 
     # exports.GeneratedList         = GeneratedList
 

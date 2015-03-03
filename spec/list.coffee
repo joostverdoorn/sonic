@@ -1,7 +1,7 @@
-describe "SimpleList", ->
+describe "List", ->
 
   beforeEach ->
-    @list = new Sonic.SimpleList([1,5,4,3,6])
+    @list = new Sonic.List([1,5,4,3,6])
 
   describe "#push", ->
 

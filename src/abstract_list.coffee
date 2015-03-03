@@ -8,224 +8,142 @@
 #
 class AbstractList
 
-  _sentinel:
-    id: Sonic.uniqueId()
-
   constructor: ( ) ->
     @_byId = {}
-    @_next = {}
     @_prev = {}
+    @_next = {}
 
     @events = new Signal
 
-  # Adds a signal.
+  # Adds a value.
   #
-  # @param [Signal] signal The signal to add
+  # @param [any] value The value to add
   # @param [Object] options The options
-  # @option options [Boolean] silent Whether or not to trigger an event
-  # @option options [Signal] before The signal after which to place it
-  # @option options [Signal] after The signal before which to place it
+  # @option options [number] prev The id of the entry after which to insert the value
+  # @option options [number] next The id of the entry before which to insert the value
   #
-  _add: ( signal, options ) ->
-    @_byId[signal.id] = signal
+  _add: ( value, options ) ->
+    if options? and options.id?
+      id = options.id
+    else id = Sonic.uniqueId()
 
-    # @events.yield(
-    #   type: 'add'
-    #   id: signal.id
-    #   signal: signal
-    #   list: @
-    # ) unless options?.silent
+    @_byId[id] = value
 
-    if options and (options.before or options.after)
-      @_move(signal, options)
+    if options and (options.prev? or options.next?)
+      @_move(id, options)
+
+    return id
+
+  # Sets the value of an entry.
+  #
+  # @param [number] id The id of the entry to set the value of
+  # @param [any] value The value to set
+  #
+  _set: ( id, value ) ->
+    return false unless id isnt 0 and @has(id)
+
+    @_byId[id] = value
+    @_invalidate(@_prev[id], @_next[id])
 
     return true
 
-  # Constructs and adds a new signal with the given value as value.
+  # Deletes an entry.
   #
-  # @param [Object] value Any value
-  # @param [Object] options The options
-  # @option options [Boolean] silent Whether or not to trigger an event
-  # @option options [Signal] before The signal after which to place it
-  # @option options [Signal] after The signal before which to place it
+  # @param [number] id The id of the entry to delete
   #
-  _create: ( value, options ) ->
-    signal = new Signal(value)
-    signal.forEach(@_onSignalUpdate)
-
-    @_add(signal, options)
-    return signal
-
-  # Sets the value of a signal
-  #
-  # @param [Signal] signal the singal to set the value of
-  # @param [Any] value The value to set
-  #
-  _set: ( signal, value ) ->
-    signal.yield(value)
-    return true
-
-  # Deletes a signal.
-  #
-  # @param [Signal] signal The signal to delete
-  # @param [Object] options The options
-  # @option options [Boolean] silent Whether or not to trigger a `delete` event
-  #
-  _delete: ( signal, options ) ->
-    id = signal?.id
-    return false unless id or @_byId[id]
-
-    @_remove(signal)
+  _delete: ( id ) ->
+    return false unless id isnt 0 and @_remove(id)
 
     delete @_byId[id]
     delete @_next[id]
     delete @_prev[id]
 
-    # @events.yield(
-    #   type: 'invalidate'
-    #   from: prev
-    #   to:   next
-    #   list: @
-    # ) unless options?.silent
-
     return true
 
-  _splice: ( after, before ) ->
-    if signal = @after(after)
-      while signal and signal isnt before
-        next = @after(signal, 0)
-        @_delete(signal, silent: true)
-        signal = next
-
-    if signal = @before(before)
-      while signal and signal isnt after
-        prev = @before(signal, 0)
-        @_delete(signal, silent: true)
-        signal = prev
-
-
-
-    # if signal = before
-    #   while signal = @before(signal, 0) and signal isnt after
-    #     @_delete(signal, silent: true)
-
-    @events.yield(
-      type: 'invalidate'
-      after:  after
-      before: before
-      list: @
-    ) unless options?.silent
-
-  # Removes a signal from the linked list. This does not delete it
-  # from the index. This is simply a convenience method that calls
-  # move without a position, which will then remove the signal.
+  # Removes an entry from the linked list. This does not delete it
+  # from the index.
   #
-  # @param [Signal] signal The signal to remove
-  # @param [Object] options The options
-  # @option options [Boolean] silent Wether or not to trigger a `remove` event
+  # @param [number] id The id of the entry to remove
   #
-  _remove: ( signal, options ) ->
-    id = signal?.id
-    return false unless id or @_byId[id]
-
-    return @_move(signal, options)
-
-  # Moves the signal before or after the signal passed in the options.
-  # When no position is given, the signal is removed from the list. When
-  # either one is passed, this signal is moved between the given signal
-  # and its sibling.
-  #
-  # @param [Signal] signal The signal to move
-  # @param [Object] options The options
-  # @option options [Signal] before The signal to move before
-  # @option options [Signal] after The signal to move after
-  #
-  _move: ( signal, options ) ->
-    id = signal.id
+  _remove: ( id ) ->
+    return false unless @has(id)
 
     prev = @_prev[id]
     next = @_next[id]
 
-    @_prev[next.id] = prev if next
-    @_next[prev.id] = next if prev
+    @_prev[next] = prev if prev?
+    @_next[prev] = next if next?
+    @_invalidate(prev, next) if next? or prev?
 
-    if options and (options.before or options.after)
-      prev = options.after  or (@_prev[options.before.id] if options.before)
-      next = options.before or (@_next[options.after.id]  if options.after)
+    return true
 
+  # Moves the signal before or after the entry passed in the options.
+  #
+  # @param [number] id The id of the entry to move
+  # @param [Object] options The options
+  # @option options [Signal] before The id of the entry to move before
+  # @option options [Signal] after The id of the entry to move after
+  #
+  _move: ( id, options ) ->
+    return false unless @has(id)
+
+    @_remove(id)
+
+    prev = options.prev
+    next = options.next
+
+    prev = @_prev[next] if next? and not prev?
+    next = @_next[prev] if prev? and not next?
+
+    if prev?
       @_prev[id] = prev
+      @_next[prev] = id
+
+    if next?
       @_next[id] = next
+      @_prev[next] = id
 
-      @_next[prev.id] = signal if prev
-      @_prev[next.id] = signal if next
-
-    @events.yield(
-      type: 'invalidate'
-      from: signal
-      to:   signal
-      list: @
-    ) unless options?.silent
+    @_invalidate(prev, next)
 
     return true
 
   # Returns a new iterator. When no start is given, the iterator start
   # add the start (and simultanously the end) of the list.
-  getIterator: ( start  ) ->
+  getIterator: ( start ) ->
     return new Iterator(@, start)
 
-  before: ( signal = @_sentinel ) ->
-    prev = @_prev[signal.id]
-    if prev is @_sentinel
-      return null
-    return prev
+  prev: ( id = 0 ) ->
+    return @_prev[id] or null
 
-  after: ( signal = @_sentinel ) ->
-    next = @_next[signal.id]
-    if next is @_sentinel
-      return null
-    return next
-
-  get: ( id ) ->
-    return @_byId[id]?.value()
-
+  next: ( id = 0 ) ->
+    return @_next[id] or null
 
   #####
-  signalAt: ( index ) ->
+  get: ( id ) ->
+    return @_byId[id]
+
+  has: ( id ) ->
+    return id of @_byId or id is 0
+
+  idAt: ( index ) ->
     i = -1
     iterator = @getIterator()
 
     while iterator.moveNext()
-      return iterator.signal if ++i is index
-    return undefined
-
-  idAt: ( index ) ->
-    if signal = @signalAt(index)
-      return signal.id
+      return iterator.currentId if ++i is index
     return undefined
 
   at: ( index ) ->
-    if signal = @signalAt(index)
-      return signal.value()
-    return undefined
-
-  signalOf: ( value ) ->
-    iterator = @getIterator()
-
-    while iterator.moveNext()
-      return iterator.signal if iterator.signal.value() is value
+    if id = @idAt(index)
+      return @get(id)
     return undefined
 
   idOf: ( value ) ->
-    return @signalOf(value)?.id
-
-  indexOfSignal: ( signal, limit = Infinity ) ->
-    i = -1
     iterator = @getIterator()
 
-    while iterator.moveNext() and ++i < limit
-      return i if iterator.signal is signal
-
-    return -1
+    while iterator.moveNext()
+      return iterator.currentId if iterator.current() is value
+    return undefined
 
   indexOf: ( value, limit = Infinity ) ->
     index = -1
@@ -233,7 +151,6 @@ class AbstractList
 
     while iterator.moveNext() and ++index < limit
       return index if iterator.current() is value
-
     return -1
 
   contains: ( value, limit = Infinity ) ->
@@ -266,35 +183,28 @@ class AbstractList
 
     return result
 
-  findSignal: ( fn, start = @after(@_sentinel), reverse = false ) ->
-    result = undefined
-
-    iterator = @getIterator(start)
-    move = if reverse then iterator.movePrevious else iterator.moveNext
-    return (iterator.signal while move.call(iterator) and not fn(iterator.signal))
-
   reduce: ( reduceFn, memo = 0 ) ->
     @each ( value ) ->
       memo = reduceFn(value, memo)
     return memo
 
-  transform: ( options ) ->
-    return new TransformedList(@, options)
+  flatMap: ( flatMapFn ) ->
+    return new FlatMapList(@, flatMapFn)
 
   map: ( mapFn ) ->
-    return @transform(mapFn: mapFn)
+    return @flatMap( ( value ) -> Sonic.unit(mapFn(value)))
 
   filter: ( filterFn ) ->
-    return @transform(filterFn: filterFn)
+    return @flatMap( ( value ) -> if filterFn(value) then Sonic.unit(value) else Sonic.empty())
 
   sort: ( sortFn ) ->
     return new SortedList(@, sortFn: sortFn)
 
   concat: ( others... ) ->
-    return new ConcatenatedList([@].concat(others))
+    return new FlatMapList([@].concat(others), ( list ) -> list)
 
   flatten: ( ) ->
-    return new ConcatenatedList(@)
+    return @flatMap( ( list ) -> list )
 
   reverse: ( ) ->
     return new ReversedList(@)
@@ -326,10 +236,8 @@ class AbstractList
   take: ( count ) ->
     return new TakeList(@, count)
 
-  first: ( count ) ->
-    if count
-      return @take(count)
-    else return @getIterator(@_sentinel).next().value
+  first: ( ) ->
+    return @get(@next())
 
   skip: ( count ) -> @rest(count)
   tail: ( count ) -> @rest(count)
@@ -339,7 +247,7 @@ class AbstractList
   initial: ( count ) ->
 
   last: ( count ) ->
-    return @before(@_sentinel).value() unless count
+    return @get(@prev())
 
   pluck: ( key ) ->
     return @map ( value ) -> value[key]
@@ -352,9 +260,10 @@ class AbstractList
     @each ( value ) -> values.push(value)
     return values
 
-  _onSignalUpdate: ( value, signal ) =>
-    @events.yield
-      type: 'update'
-      id: signal.id
-      signal: signal
-      list: @
+  # Yields an invalidate event
+  #
+  _invalidate: ( prev, next ) ->
+    event = { type: 'invalidate', list: @ }
+    event.prev = prev if prev?
+    event.next = next if next?
+    @events.yield(event)

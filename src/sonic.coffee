@@ -1,12 +1,18 @@
 Sonic =
 
-  _uniqueCounter: 0
+  _uniqueCounter: 1
 
   create: ( items = [] ) ->
     if items instanceof AbstractList
       return items
-    return new SimpleList(items)
+    return new List(items)
+
+  unit: ( item ) ->
+    return new Unit(item)
+
+  empty: ( ) ->
+    return new Unit()
 
   uniqueId: ( ) ->
-    uniqueId = Sonic._uniqueCounter++
-    return uniqueId
+    return Sonic._uniqueCounter++
+
