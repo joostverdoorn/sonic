@@ -1,21 +1,29 @@
+`import AbstractList from './abstract_list'`
+
 class Unit extends AbstractList
 
   constructor: ( value ) ->
     super
 
     @_id = Sonic.uniqueId()
-
-    if arguments.length
-      @_add(value, id: @_id, next: 0, prev: 0)
+    @_value = value if arguments.length
 
   set: ( value ) ->
-    return @_set(@_id, value)
+    @_value = value
 
   delete: ( ) ->
-    return @_delete(@_id)
+    delete @_value
 
   get: ( ) ->
-    return super(@_id)
+    return @_value
 
   has: ( ) ->
-    return super(@_id)
+    return '_value' of @
+
+  next: ( id = 0 ) ->
+    return @_id if id is 0 and @has()
+
+  prev: ( id = 0 ) ->
+    return @_id if id is 0 and @has()
+
+`export default Unit`

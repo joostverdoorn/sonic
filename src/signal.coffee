@@ -32,3 +32,7 @@ class Signal
 
   root: ( ) ->
     return @
+
+`
+export default Signal
+`

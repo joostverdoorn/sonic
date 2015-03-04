@@ -1,3 +1,5 @@
+# `import Sonic from 'sonic';`
+
 describe "Sonic", ->
 
   describe "#create", ->

@@ -30,3 +30,7 @@ class Iterator
     if @movePrevious()
       return { value: @current(), done: false, id: @currentId }
     else return { done: true, id: @currentId }
+
+`
+export default Iterator
+`

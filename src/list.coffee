@@ -1,3 +1,5 @@
+`import AbstractList from "./abstract_list"`
+
 class List extends AbstractList
 
   constructor: ( values ) ->
@@ -35,3 +37,4 @@ class List extends AbstractList
   delete: ( id ) ->
     return @_delete(id)
 
+`export default List`

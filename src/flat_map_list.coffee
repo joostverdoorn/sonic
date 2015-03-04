@@ -1,82 +1,84 @@
+`
+import AbstractList from './abstract_list'
+import Unit         from './unit'
+`
+
+console.log "AbstractList:", AbstractList
+
 class FlatMapList extends AbstractList
 
-  constructor: ( origin, flatMapFn ) ->
-    @_sourceIdById     = {}
-    @_sourceBySourceId = {}
-
+  constructor: ( source, flatMapFn ) ->
     super()
 
-    @_origin = Sonic.create(origin)
-    @_origin.events.forEach @_onOriginEvent
-    @_flatMapFn = flatMapFn or ( value ) -> Sonic.unit(value)
+    @_source = Sonic.create(source)
+    @_source.events.forEach @_onSourceEvent
 
-  _getSourceBySourceId: ( sourceId ) ->
-    return unless @_origin.has(sourceId)
-    unless source = @_sourceBySourceId[sourceId]
-      value = @_origin.get(sourceId)
-      source = @_flatMapFn(value)
-      source.events.forEach ( event ) -> @_onSourceEvent(event, sourceId)
-      @_sourceBySourceId[sourceId] = source
-    return source
+    @_sourceIdById   = {}
+    @_listBySourceId = {}
+    @_flatMapFn      = flatMapFn or Sonic.unit
 
-  get: ( id ) ->
-    if source = @_getSourceBySourceId(@_sourceIdById[id])
-      return source.get(id)
+  _getListById: ( id ) ->
+    if sourceId = @_sourceIdById[id]
+      return @_getListBySourceId(sourceId)
 
-  has: ( id ) ->
-    return id of @_sourceIdById
+  _getListBySourceId: ( sourceId ) ->
+    return list if list = @_listBySourceId[sourceId]
+    return unless @_source.has(sourceId)
+
+    list = @_flatMapFn(@_source.get(sourceId))
+    list.events.forEach ( event ) => @_onListEvent(event, sourceId)
+    @_listBySourceId[sourceId] = list
+
+    return list
 
   prev: ( id = 0 ) ->
-    sourceId = if id isnt 0
-      @_sourceIdById[id]
-    else @_origin.prev()
+    unless id then sourceId = @_source.prev()
+    else sourceId = @_sourceIdById[id]
+    return unless sourceId
 
-    return null unless sourceId
+    list = @_getListBySourceId(sourceId)
+    prev = list.prev(id)
 
-    source = @_getSourceBySourceId(sourceId)
-    prevId = source.prev(id)
+    until prev
+      return unless sourceId = @_source.prev(sourceId)
+      list = @_getListBySourceId(sourceId)
+      prev = list.prev()
 
-    until prevId
-      return null unless sourceId = @_origin.prev(sourceId)
-      source = @_getSourceBySourceId(sourceId)
-      prevId = source.prev()
-
-    @_sourceIdById[prevId] = sourceId
-    return prevId
+    @_sourceIdById[prev] = sourceId
+    return prev
 
   next: ( id = 0 ) ->
-    sourceId = if id isnt 0
-      @_sourceIdById[id]
-    else @_origin.next()
+    unless id then sourceId = @_source.next()
+    else sourceId = @_sourceIdById[id]
+    return unless sourceId
 
-    return null unless sourceId
+    list = @_getListBySourceId(sourceId)
+    next = list.next(id)
 
-    source = @_getSourceBySourceId(sourceId)
-    nextId = source.next(id)
+    until next
+      return unless sourceId = @_source.next(sourceId)
+      list = @_getListBySourceId(sourceId)
+      next = list.next()
 
-    until nextId
-      return null unless sourceId = @_origin.next(sourceId)
-      source = @_getSourceBySourceId(sourceId)
-      nextId = source.next()
+    @_sourceIdById[next] = sourceId
+    return next
 
-    @_sourceIdById[nextId] = sourceId
-    return nextId
+  get: ( id ) ->
+    return list.get(id) if list = @_getListById(id)
 
-  _onOriginEvent: ( event ) =>
+  has: ( id ) ->
+    return id of @_sourceIdById or id is 0
 
-    iterator = @_origin.getIterator(event.prev)
-
-    while iterator.moveNext() and iterator.currentId isnt event.next
-      delete @_sourceBySourceId[iterator.currentId]
-
-
-    prev = @_getSourceBySourceId(event.prev)?.prev()
-    next = @_getSourceBySourceId(event.next)?.next()
-
+  _onSourceEvent: ( event ) =>
+    prev = @_getListBySourceId(event.prev)?.prev(0, lazy: true)
+    next = @_getListBySourceId(event.next)?.next(0, lazy: true)
     @_invalidate(prev, next)
 
-  _onSourceEvent: ( event, sourceId ) =>
-    prev = @_getSourceBySourceId(@_origin.prev(sourceId)).prev() unless prev = event.prev
-    next = @_getSourceBySourceId(@_origin.next(sourceId)).next() unless next = event.next
+  _onListEvent: ( event, sourceId ) =>
+    prev = @_getListBySourceId(@_origin.prev(sourceId)).prev() unless prev = event.prev
+    next = @_getListBySourceId(@_origin.next(sourceId)).next() unless next = event.next
     @_invalidate(prev, next)
 
+`
+export default FlatMapList
+`

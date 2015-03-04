@@ -1,3 +1,8 @@
+`
+import Signal      from './signal'
+import Iterator    from './iterator'
+`
+
 # Abstract list implements the basic list Sonic uses. As the name implies
 # it serves mainly as a base class for other lists and is not very useful
 # on its own.
@@ -39,11 +44,11 @@ class AbstractList
   # @param [number] id The id of the entry to set the value of
   # @param [any] value The value to set
   #
-  _set: ( id, value ) ->
+  _set: ( id, value, options ) ->
     return false unless id isnt 0 and @has(id)
 
     @_byId[id] = value
-    @_invalidate(@_prev[id], @_next[id])
+    @_invalidate(@_prev[id], @_next[id]) unless options?.silent
 
     return true
 
@@ -51,8 +56,8 @@ class AbstractList
   #
   # @param [number] id The id of the entry to delete
   #
-  _delete: ( id ) ->
-    return false unless id isnt 0 and @_remove(id)
+  _delete: ( id, options ) ->
+    return false unless id isnt 0 and @_remove(id, options)
 
     delete @_byId[id]
     delete @_next[id]
@@ -65,7 +70,7 @@ class AbstractList
   #
   # @param [number] id The id of the entry to remove
   #
-  _remove: ( id ) ->
+  _remove: ( id, options ) ->
     return false unless @has(id)
 
     prev = @_prev[id]
@@ -73,7 +78,7 @@ class AbstractList
 
     @_prev[next] = prev if prev?
     @_next[prev] = next if next?
-    @_invalidate(prev, next) if next? or prev?
+    @_invalidate(prev, next) if next? or prev? and not options?.silent
 
     return true
 
@@ -89,8 +94,8 @@ class AbstractList
 
     @_remove(id)
 
-    prev = options.prev
-    next = options.next
+    prev = options?.prev
+    next = options?.next
 
     prev = @_prev[next] if next? and not prev?
     next = @_next[prev] if prev? and not next?
@@ -103,9 +108,14 @@ class AbstractList
       @_next[id] = next
       @_prev[next] = id
 
-    @_invalidate(prev, next)
+    @_invalidate(prev, next) unless options?.silent
 
     return true
+
+  _slice: ( prev, next ) ->
+    @_delete(id, silent: true) while (id = @_next[id or prev]) and id isnt next if prev?
+    @_delete(id, silent: true) while (id = @_prev[id or next]) and id isnt prev if next?
+    @_invalidate(prev, next)
 
   # Returns a new iterator. When no start is given, the iterator start
   # add the start (and simultanously the end) of the list.
@@ -188,54 +198,6 @@ class AbstractList
       memo = reduceFn(value, memo)
     return memo
 
-  flatMap: ( flatMapFn ) ->
-    return new FlatMapList(@, flatMapFn)
-
-  map: ( mapFn ) ->
-    return @flatMap( ( value ) -> Sonic.unit(mapFn(value)))
-
-  filter: ( filterFn ) ->
-    return @flatMap( ( value ) -> if filterFn(value) then Sonic.unit(value) else Sonic.empty())
-
-  sort: ( sortFn ) ->
-    return new SortedList(@, sortFn: sortFn)
-
-  concat: ( others... ) ->
-    return new FlatMapList([@].concat(others), ( list ) -> list)
-
-  flatten: ( ) ->
-    return @flatMap( ( list ) -> list )
-
-  reverse: ( ) ->
-    return new ReversedList(@)
-
-  unique: ( ) ->
-    return @uniq()
-
-  uniq:   ( ) ->
-    return new UniqueList(@)
-
-  duplicates: () ->
-    iterated = []
-    duplicates = []
-    iterator = @getIterator()
-    while iterator.moveNext()
-      value = iterator.current()
-      if value in iterated
-        duplicates.push(value)
-      else iterated.push(value)
-
-    return Sonic.create duplicates
-
-  union: ( others... ) ->
-    return @concat(others...).uniq()
-
-  intersection: ( other ) ->
-    return @filter(other.contains)
-
-  take: ( count ) ->
-    return new TakeList(@, count)
-
   first: ( ) ->
     return @get(@next())
 
@@ -264,6 +226,10 @@ class AbstractList
   #
   _invalidate: ( prev, next ) ->
     event = { type: 'invalidate', list: @ }
-    event.prev = prev if prev?
-    event.next = next if next?
+    event.prev = prev if prev
+    event.next = next if next
     @events.yield(event)
+
+`
+export default AbstractList
+`
