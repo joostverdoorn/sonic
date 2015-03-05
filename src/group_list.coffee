@@ -14,17 +14,11 @@ class GroupList extends FlatMapList
       groupValue = @_groupFn(value)
       return new Unit() if @_byValue.has(groupValue)
 
-      list = @_source.filter ( value ) -> @_groupFn(value) is groupValue
+      list = @_source.filter ( value ) => @_groupFn(value) is groupValue
       @_byValue.set(groupValue, list)
       return new Unit(list)
 
     super(source, flatMapFn)
-
-  # get: ( value ) ->
-  #   return @_byValue.get(value)
-
-  # has: ( value ) ->
-  #   return @_byValue.has(value)
 
 `
 export default GroupList

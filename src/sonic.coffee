@@ -1,16 +1,20 @@
 `
-import Signal from './signal'
-import Iterator from './iterator'
+import Signal       from './signal'
+import Iterator     from './iterator'
 import AbstractList from './abstract_list'
-import List from './list'
-import Unit from './unit'
-import FlatMapList from './flat_map_list'
-import GroupList from './group_list'
+import List         from './list'
+import Unit         from './unit'
+import FlatMapList  from './flat_map_list'
+import GroupList    from './group_list'
+import TakeList     from './take_list'
 `
 
 Sonic =
 
   _uniqueCounter: 1
+
+  uniqueId: ( ) ->
+    return Sonic._uniqueCounter++
 
   create: ( items = [] ) ->
     if items instanceof AbstractList
@@ -23,17 +27,9 @@ Sonic =
   empty: ( ) ->
     return new Unit()
 
-  uniqueId: ( ) ->
-    return Sonic._uniqueCounter++
-
+  # List functions
   flatMap: ( list, flatMapFn ) ->
     return new FlatMapList(list, flatMapFn)
-
-  map: ( list, mapFn ) ->
-    return list.flatMap( ( value ) -> new Unit(mapFn(value)))
-
-  filter: ( list, filterFn ) ->
-    return list.flatMap( ( value ) -> if filterFn(value) then new Unit(value) else new Unit())
 
   group: ( list, groupFn ) ->
     return new GroupList(list, groupFn)
@@ -41,29 +37,50 @@ Sonic =
   sort: ( list, sortFn ) ->
     return new SortedList(list, sortFn: sortFn)
 
-  concat: ( list, others... ) ->
-    return new FlatMapList([list].concat(others), ( list ) -> list)
-
-  flatten: ( list ) ->
-    return list.flatMap( ( list ) -> list )
-
-  reverse: ( list ) ->
-    return new ReversedList(list)
-
-  unique: ( list ) ->
-    return list.uniq()
-
-  uniq:   ( list, groupFn = ( x ) -> x ) ->
-    return list.group(groupFn).flatMap(( list ) -> new Unit(list.first()))
-
-  union: ( list, others... ) ->
-    return list.concat(others...).uniq()
-
-  intersection: ( list, other ) ->
-    return list.filter(other.contains)
-
   take: ( list, count ) ->
     return new TakeList(list, count)
+
+  map: ( list, mapFn ) ->
+    return Sonic.flatMap(list, ( value ) -> new Unit(mapFn(value)))
+
+  pluck: ( list, key ) ->
+    return Sonic.map(list, ( value ) -> value[key])
+
+  invoke: ( list, key, args... ) ->
+    return Sonic.map(list, ( value ) -> value[key](args...))
+
+  filter: ( list, filterFn ) ->
+    return Sonic.flatMap(list, ( value ) -> if filterFn(value) then new Unit(value) else new Unit())
+
+  concat: ( lists... ) ->
+    return Sonic.flatMap(lists, ( list ) -> list)
+
+  flatten: ( list ) ->
+    return Sonic.flatMap(list, ( list ) -> list)
+
+  uniq: ( list, groupFn = ( x ) -> x ) ->
+    return Sonic.flatMap(Sonic.group(list, groupFn), ( list ) -> list.take(1))
+
+  union: ( lists... ) ->
+    return Sonic.concat(lists...).uniq()
+
+  intersection: ( list, other ) ->
+    return Sonic.filter(list, other.contains)
+
+  proxy: ( list, fns = { 'get', 'has', 'prev', 'next', 'onInvalidate' } ) ->
+    proxy = new AbstractList
+    proxy[key] = list[fn].bind(list) for key, fn of fns
+    return proxy
+
+  reverse: ( list ) ->
+    fns = { 'get', 'has', 'prev': 'next', 'next': 'prev' }
+    proxy = Sonic.proxy(list, fns)
+
+    proxy.onInvalidate = ( callback ) ->
+      list.onInvalidate ( event ) ->
+        callback(prev: event.next, next: event.prev)
+
+    return proxy
 
   Signal:       Signal
   Iterator:     Iterator
@@ -72,10 +89,14 @@ Sonic =
   List:         List
   FlatMapList:  FlatMapList
   GroupList:    GroupList
+  TakeList:     TakeList
 
 exports = [
-  'flatMap', 'map', 'filter', 'group', 'sort', 'concat', 'flatten', 'reverse', 'unique',
-  'uniq', 'union', 'intersection', 'take'
+  'flatMap', 'group', 'sort',
+  'take', 'map', 'pluck'
+  'invoke', 'filter', 'concat',
+  'flatten', 'uniq', 'union',
+  'intersection', 'proxy', 'reverse'
 ]
 
 exports.forEach ( fn ) -> AbstractList::[fn] = -> Sonic[fn](@, arguments...)

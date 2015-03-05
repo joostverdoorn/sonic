@@ -5,36 +5,17 @@ import AbstractList from "./abstract_list"
 class TakeList extends AbstractList
 
   constructor: ( source, count ) ->
-    @_orderById = {}
+    @_orderById = { 0: 0 }
+    @_source = source
+    @_count = count
 
     super()
 
-    @_source.events.forEach ( event ) ->
+    @_source.onInvalidate ( event ) =>
       @_invalidate(event.prev)
 
-
-
-  _invalidate: ( prev ) ->
-    delete @_orderById[id] while id = @_source.next(id or prev)
-    super(prev)
-
-
-  prev: ( id ) ->
-
-
-
-  next: ( id ) ->
-    i = @_orderById[id]
-
-    unless @_orderById(id)
-      until next is id
-        next = @_source.next(next or id)
-        i = @_orderById[next]
-
-
-    @_source.next(id)
-
-
+    @onInvalidate ( event ) ->
+      delete @_orderById[id] while id = @_source.next(id or event.prev)
 
   get: ( id ) ->
     return @_source.get(id)
@@ -42,7 +23,24 @@ class TakeList extends AbstractList
   has: ( id ) ->
     return @_source.has(id)
 
+  prev: ( id ) ->
+    throw Error("Not implemented yet.")
+
+  next: ( id = 0 ) ->
+    unless (i = @_orderById[id])?
+      while prev = @_source.prev(prev or id)
+        break if i = @_orderById[id]
+
+      while next = @_source.next(next or prev)
+        @_orderById[next] = i++
+        break if next is id
+
+    return if i >= @_count
+
+    next = @_source.next(next or id)
+    @_orderById[next] = ++i
+    return next
 
 `
-export default Takelist
+export default TakeList
 `

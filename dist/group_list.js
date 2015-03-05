@@ -31,9 +31,11 @@ GroupList = (function (_super) {
       if (this._byValue.has(groupValue)) {
         return new Unit();
       }
-      list = this._source.filter(function (value) {
-        return this._groupFn(value) === groupValue;
-      });
+      list = this._source.filter((function (_this) {
+        return function (value) {
+          return _this._groupFn(value) === groupValue;
+        };
+      })(this));
       this._byValue.set(groupValue, list);
       return new Unit(list);
     };

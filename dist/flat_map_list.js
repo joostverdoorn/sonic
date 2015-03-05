@@ -21,45 +21,29 @@ var FlatMapList,
   }ctor.prototype = parent.prototype;child.prototype = new ctor();child.__super__ = parent.prototype;return child;
 };
 
-console.log("AbstractList:", AbstractList);
-
 FlatMapList = (function (_super) {
   __extends(FlatMapList, _super);
 
   function FlatMapList(source, flatMapFn) {
-    this._onListEvent = __bind(this._onListEvent, this);
-    this._onSourceEvent = __bind(this._onSourceEvent, this);
+    this._onListInvalidate = __bind(this._onListInvalidate, this);
+    this._onSourceInvalidate = __bind(this._onSourceInvalidate, this);
     FlatMapList.__super__.constructor.call(this);
     this._source = Sonic.create(source);
-    this._source.events.forEach(this._onSourceEvent);
+    this._source.onInvalidate(this._onSourceInvalidate);
     this._sourceIdById = {};
     this._listBySourceId = {};
     this._flatMapFn = flatMapFn || Sonic.unit;
   }
 
-  FlatMapList.prototype._getListById = function (id) {
-    var sourceId;
-    if (sourceId = this._sourceIdById[id]) {
-      return this._getListBySourceId(sourceId);
+  FlatMapList.prototype.get = function (id) {
+    var list;
+    if (list = this._getListById(id)) {
+      return list.get(id);
     }
   };
 
-  FlatMapList.prototype._getListBySourceId = function (sourceId) {
-    var list;
-    if (list = this._listBySourceId[sourceId]) {
-      return list;
-    }
-    if (!this._source.has(sourceId)) {
-      return;
-    }
-    list = this._flatMapFn(this._source.get(sourceId));
-    list.events.forEach((function (_this) {
-      return function (event) {
-        return _this._onListEvent(event, sourceId);
-      };
-    })(this));
-    this._listBySourceId[sourceId] = list;
-    return list;
+  FlatMapList.prototype.has = function (id) {
+    return id in this._sourceIdById || id === 0;
   };
 
   FlatMapList.prototype.prev = function (id) {
@@ -114,18 +98,32 @@ FlatMapList = (function (_super) {
     return next;
   };
 
-  FlatMapList.prototype.get = function (id) {
-    var list;
-    if (list = this._getListById(id)) {
-      return list.get(id);
+  FlatMapList.prototype._getListById = function (id) {
+    var sourceId;
+    if (sourceId = this._sourceIdById[id]) {
+      return this._getListBySourceId(sourceId);
     }
   };
 
-  FlatMapList.prototype.has = function (id) {
-    return id in this._sourceIdById || id === 0;
+  FlatMapList.prototype._getListBySourceId = function (sourceId) {
+    var list;
+    if (list = this._listBySourceId[sourceId]) {
+      return list;
+    }
+    if (!this._source.has(sourceId)) {
+      return;
+    }
+    list = this._flatMapFn(this._source.get(sourceId));
+    list.onInvalidate((function (_this) {
+      return function (event) {
+        return _this._onListInvalidate(event, sourceId);
+      };
+    })(this));
+    this._listBySourceId[sourceId] = list;
+    return list;
   };
 
-  FlatMapList.prototype._onSourceEvent = function (event) {
+  FlatMapList.prototype._onSourceInvalidate = function (event) {
     var next, prev, _ref, _ref1;
     prev = (_ref = this._getListBySourceId(event.prev)) != null ? _ref.prev(0, {
       lazy: true
@@ -136,13 +134,13 @@ FlatMapList = (function (_super) {
     return this._invalidate(prev, next);
   };
 
-  FlatMapList.prototype._onListEvent = function (event, sourceId) {
+  FlatMapList.prototype._onListInvalidate = function (event, sourceId) {
     var next, prev;
     if (!(prev = event.prev)) {
-      prev = this._getListBySourceId(this._origin.prev(sourceId)).prev();
+      prev = this._getListBySourceId(this._source.prev(sourceId)).prev();
     }
     if (!(next = event.next)) {
-      next = this._getListBySourceId(this._origin.next(sourceId)).next();
+      next = this._getListBySourceId(this._source.next(sourceId)).next();
     }
     return this._invalidate(prev, next);
   };

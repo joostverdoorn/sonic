@@ -14,7 +14,7 @@ AbstractList = (function () {
     this._byId = {};
     this._prev = {};
     this._next = {};
-    this.events = new Signal();
+    this._events = new Signal();
   }
 
   AbstractList.prototype._add = function (value, options) {
@@ -118,8 +118,12 @@ AbstractList = (function () {
     return this._invalidate(prev, next);
   };
 
-  AbstractList.prototype.getIterator = function (start) {
-    return new Iterator(this, start);
+  AbstractList.prototype.get = function (id) {
+    return this._byId[id];
+  };
+
+  AbstractList.prototype.has = function (id) {
+    return id in this._byId || id === 0;
   };
 
   AbstractList.prototype.prev = function (id) {
@@ -136,12 +140,8 @@ AbstractList = (function () {
     return this._next[id] || null;
   };
 
-  AbstractList.prototype.get = function (id) {
-    return this._byId[id];
-  };
-
-  AbstractList.prototype.has = function (id) {
-    return id in this._byId || id === 0;
+  AbstractList.prototype.getIterator = function (start) {
+    return new Iterator(this, start);
   };
 
   AbstractList.prototype.idAt = function (index) {
@@ -298,16 +298,14 @@ AbstractList = (function () {
   AbstractList.prototype._invalidate = function (prev, next) {
     var event;
     event = {
-      type: "invalidate",
-      list: this
+      prev: prev,
+      next: next
     };
-    if (prev) {
-      event.prev = prev;
-    }
-    if (next) {
-      event.next = next;
-    }
-    return this.events["yield"](event);
+    return this._events["yield"](event);
+  };
+
+  AbstractList.prototype.onInvalidate = function (callback) {
+    return this._events.forEach(callback);
   };
 
   return AbstractList;

@@ -18,7 +18,7 @@ class AbstractList
     @_prev = {}
     @_next = {}
 
-    @events = new Signal
+    @_events = new Signal
 
   # Adds a value.
   #
@@ -117,10 +117,13 @@ class AbstractList
     @_delete(id, silent: true) while (id = @_prev[id or next]) and id isnt prev if next?
     @_invalidate(prev, next)
 
-  # Returns a new iterator. When no start is given, the iterator start
-  # add the start (and simultanously the end) of the list.
-  getIterator: ( start ) ->
-    return new Iterator(@, start)
+  #
+  #
+  get: ( id ) ->
+    return @_byId[id]
+
+  has: ( id ) ->
+    return id of @_byId or id is 0
 
   prev: ( id = 0 ) ->
     return @_prev[id] or null
@@ -128,12 +131,27 @@ class AbstractList
   next: ( id = 0 ) ->
     return @_next[id] or null
 
-  #####
-  get: ( id ) ->
-    return @_byId[id]
+  onInvalidate: ( callback ) ->
+    @_events.forEach(callback)
 
-  has: ( id ) ->
-    return id of @_byId or id is 0
+  #
+  #
+  getIterator: ( start ) ->
+    return new Iterator(@, start)
+
+  each: ( fn ) ->
+    return @forEach(fn)
+
+  forEach: ( fn ) ->
+    iterator = @getIterator()
+    while iterator.moveNext()
+      return false if fn(iterator.current()) is false
+    return true
+
+  at: ( index ) ->
+    if id = @idAt(index)
+      return @get(id)
+    return undefined
 
   idAt: ( index ) ->
     i = -1
@@ -141,11 +159,6 @@ class AbstractList
 
     while iterator.moveNext()
       return iterator.currentId if ++i is index
-    return undefined
-
-  at: ( index ) ->
-    if id = @idAt(index)
-      return @get(id)
     return undefined
 
   idOf: ( value ) ->
@@ -165,15 +178,6 @@ class AbstractList
 
   contains: ( value, limit = Infinity ) ->
     return @indexOf(value, limit) isnt -1
-
-  forEach: ( fn ) ->
-    return @each(fn)
-
-  each: ( fn ) ->
-    iterator = @getIterator()
-    while iterator.moveNext()
-      return false if fn(iterator.current()) is false
-    return true
 
   any:  ( predicate ) ->
     return @some(predicate)
@@ -201,21 +205,8 @@ class AbstractList
   first: ( ) ->
     return @get(@next())
 
-  skip: ( count ) -> @rest(count)
-  tail: ( count ) -> @rest(count)
-  drop: ( count ) -> @rest(count)
-  rest: ( count ) ->
-
-  initial: ( count ) ->
-
   last: ( count ) ->
     return @get(@prev())
-
-  pluck: ( key ) ->
-    return @map ( value ) -> value[key]
-
-  invoke: ( key, args... ) ->
-    return @map ( value ) -> value[key](args...)
 
   toArray: ( ) ->
     values = []
@@ -225,10 +216,9 @@ class AbstractList
   # Yields an invalidate event
   #
   _invalidate: ( prev, next ) ->
-    event = { type: 'invalidate', list: @ }
-    event.prev = prev if prev
-    event.next = next if next
-    @events.yield(event)
+    event = { prev, next }
+    @_events.yield(event)
+
 
 `
 export default AbstractList

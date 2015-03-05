@@ -16,12 +16,17 @@ var FlatMapList = _interopRequire(require("./flat_map_list"));
 
 var GroupList = _interopRequire(require("./group_list"));
 
+var TakeList = _interopRequire(require("./take_list"));
+
 var Sonic,
     exports,
     __slice = [].slice;
 
 Sonic = {
   _uniqueCounter: 1,
+  uniqueId: function uniqueId() {
+    return Sonic._uniqueCounter++;
+  },
   create: function create(items) {
     if (items == null) {
       items = [];
@@ -37,25 +42,8 @@ Sonic = {
   empty: function empty() {
     return new Unit();
   },
-  uniqueId: function uniqueId() {
-    return Sonic._uniqueCounter++;
-  },
   flatMap: function flatMap(list, flatMapFn) {
     return new FlatMapList(list, flatMapFn);
-  },
-  map: function map(list, mapFn) {
-    return list.flatMap(function (value) {
-      return new Unit(mapFn(value));
-    });
-  },
-  filter: function filter(list, filterFn) {
-    return list.flatMap(function (value) {
-      if (filterFn(value)) {
-        return new Unit(value);
-      } else {
-        return new Unit();
-      }
-    });
   },
   group: function group(list, groupFn) {
     return new GroupList(list, groupFn);
@@ -65,23 +53,34 @@ Sonic = {
       sortFn: sortFn
     });
   },
+  take: function take(list, count) {
+    return new TakeList(list, count);
+  },
+  map: function map(list, mapFn) {
+    return Sonic.flatMap(list, function (value) {
+      return new Unit(mapFn(value));
+    });
+  },
+  filter: function filter(list, filterFn) {
+    return Sonic.flatMap(list, function (value) {
+      if (filterFn(value)) {
+        return new Unit(value);
+      } else {
+        return new Unit();
+      }
+    });
+  },
   concat: function concat() {
-    var list, others;
-    list = arguments[0], others = 2 <= arguments.length ? __slice.call(arguments, 1) : [];
-    return new FlatMapList([list].concat(others), function (list) {
+    var lists;
+    lists = 1 <= arguments.length ? __slice.call(arguments, 0) : [];
+    return Sonic.flatMap(lists, function (list) {
       return list;
     });
   },
   flatten: function flatten(list) {
-    return list.flatMap(function (list) {
+    return Sonic.flatMap(list, function (list) {
       return list;
     });
-  },
-  reverse: function reverse(list) {
-    return new ReversedList(list);
-  },
-  unique: function unique(list) {
-    return list.uniq();
   },
   uniq: function uniq(list, groupFn) {
     if (groupFn == null) {
@@ -89,20 +88,64 @@ Sonic = {
         return x;
       };
     }
-    return list.group(groupFn).flatMap(function (list) {
-      return new Unit(list.first());
+    return Sonic.flatMap(Sonic.group(list, groupFn), function (list) {
+      return list.take(1);
     });
   },
   union: function union() {
-    var list, others;
-    list = arguments[0], others = 2 <= arguments.length ? __slice.call(arguments, 1) : [];
-    return list.concat.apply(list, others).uniq();
+    var lists;
+    lists = 1 <= arguments.length ? __slice.call(arguments, 0) : [];
+    return Sonic.concat.apply(Sonic, lists).uniq();
   },
   intersection: function intersection(list, other) {
-    return list.filter(other.contains);
+    return Sonic.filter(list, other.contains);
   },
-  take: function take(list, count) {
-    return new TakeList(list, count);
+  proxy: (function (_proxy) {
+    var _proxyWrapper = function proxy(_x, _x2) {
+      return _proxy.apply(this, arguments);
+    };
+
+    _proxyWrapper.toString = function () {
+      return _proxy.toString();
+    };
+
+    return _proxyWrapper;
+  })(function (list, fns) {
+    var fn, key, proxy;
+    if (fns == null) {
+      fns = {
+        get: "get",
+        has: "has",
+        prev: "prev",
+        next: "next",
+        onInvalidate: "onInvalidate"
+      };
+    }
+    proxy = new AbstractList();
+    for (key in fns) {
+      fn = fns[key];
+      proxy[key] = list[fn].bind(list);
+    }
+    return proxy;
+  }),
+  reverse: function reverse(list) {
+    var fns, proxy;
+    fns = {
+      get: "get",
+      has: "has",
+      prev: "next",
+      next: "prev"
+    };
+    proxy = Sonic.proxy(list, fns);
+    proxy.onInvalidate = function (callback) {
+      return list.onInvalidate(function (event) {
+        return callback({
+          prev: event.next,
+          next: event.prev
+        });
+      });
+    };
+    return proxy;
   },
   Signal: Signal,
   Iterator: Iterator,
@@ -110,10 +153,11 @@ Sonic = {
   Unit: Unit,
   List: List,
   FlatMapList: FlatMapList,
-  GroupList: GroupList
+  GroupList: GroupList,
+  TakeList: TakeList
 };
 
-exports = ["flatMap", "map", "filter", "group", "sort", "concat", "flatten", "reverse", "unique", "uniq", "union", "intersection", "take"];
+exports = ["flatMap", "group", "sort", "take", "map", "filter", "concat", "flatten", "uniq", "union", "intersection", "proxy", "reverse"];
 
 exports.forEach(function (fn) {
   return AbstractList.prototype[fn] = function () {
