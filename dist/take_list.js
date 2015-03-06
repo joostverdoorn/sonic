@@ -18,7 +18,7 @@ TakeList = (function (_super) {
   __extends(TakeList, _super);
 
   function TakeList(source, count) {
-    this._orderById = {
+    this._indexById = {
       0: 0
     };
     this._source = source;
@@ -29,31 +29,41 @@ TakeList = (function (_super) {
         return _this._invalidate(event.prev);
       };
     })(this));
+    this.onInvalidate(function (event) {
+      var id, _results;
+      _results = [];
+      while (id = this._source.next(id || event.prev)) {
+        _results.push(delete this._indexById[id]);
+      }
+      return _results;
+    });
   }
 
-  TakeList.prototype._invalidate = function (prev) {
-    var id;
-    while (id = this._source.next(id || prev)) {
-      delete this._orderById[id];
-    }
-    return TakeList.__super__._invalidate.call(this, prev);
+  TakeList.prototype.get = function (id) {
+    return this._source.get(id);
   };
 
-  TakeList.prototype.prev = function (id) {};
+  TakeList.prototype.has = function (id) {
+    return this._source.has(id);
+  };
+
+  TakeList.prototype.prev = function (id) {
+    return this.next(this._source.prev(this._source.prev(id)));
+  };
 
   TakeList.prototype.next = function (id) {
     var i, next, prev;
     if (id == null) {
       id = 0;
     }
-    if ((i = this._orderById[id]) == null) {
+    if ((i = this._indexById[id]) == null) {
       while (prev = this._source.prev(prev || id)) {
-        if (i = this._orderById[id]) {
+        if (i = this._indexById[id]) {
           break;
         }
       }
       while (next = this._source.next(next || prev)) {
-        this._orderById[next] = i++;
+        this._indexById[next] = i++;
         if (next === id) {
           break;
         }
@@ -63,16 +73,8 @@ TakeList = (function (_super) {
       return;
     }
     next = this._source.next(next || id);
-    this._orderById[next] = ++i;
+    this._indexById[next] = ++i;
     return next;
-  };
-
-  TakeList.prototype.get = function (id) {
-    return this._source.get(id);
-  };
-
-  TakeList.prototype.has = function (id) {
-    return this._source.has(id);
   };
 
   return TakeList;

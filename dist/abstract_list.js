@@ -6,8 +6,7 @@ var Signal = _interopRequire(require("./signal"));
 
 var Iterator = _interopRequire(require("./iterator"));
 
-var AbstractList,
-    __slice = [].slice;
+var AbstractList;
 
 AbstractList = (function () {
   function AbstractList() {
@@ -140,159 +139,8 @@ AbstractList = (function () {
     return this._next[id] || null;
   };
 
-  AbstractList.prototype.getIterator = function (start) {
-    return new Iterator(this, start);
-  };
-
-  AbstractList.prototype.idAt = function (index) {
-    var i, iterator;
-    i = -1;
-    iterator = this.getIterator();
-    while (iterator.moveNext()) {
-      if (++i === index) {
-        return iterator.currentId;
-      }
-    }
-    return void 0;
-  };
-
-  AbstractList.prototype.at = function (index) {
-    var id;
-    if (id = this.idAt(index)) {
-      return this.get(id);
-    }
-    return void 0;
-  };
-
-  AbstractList.prototype.idOf = function (value) {
-    var iterator;
-    iterator = this.getIterator();
-    while (iterator.moveNext()) {
-      if (iterator.current() === value) {
-        return iterator.currentId;
-      }
-    }
-    return void 0;
-  };
-
-  AbstractList.prototype.indexOf = function (value, limit) {
-    var index, iterator;
-    if (limit == null) {
-      limit = Infinity;
-    }
-    index = -1;
-    iterator = this.getIterator();
-    while (iterator.moveNext() && ++index < limit) {
-      if (iterator.current() === value) {
-        return index;
-      }
-    }
-    return -1;
-  };
-
-  AbstractList.prototype.contains = function (value, limit) {
-    if (limit == null) {
-      limit = Infinity;
-    }
-    return this.indexOf(value, limit) !== -1;
-  };
-
-  AbstractList.prototype.forEach = function (fn) {
-    return this.each(fn);
-  };
-
-  AbstractList.prototype.each = function (fn) {
-    var iterator;
-    iterator = this.getIterator();
-    while (iterator.moveNext()) {
-      if (fn(iterator.current()) === false) {
-        return false;
-      }
-    }
-    return true;
-  };
-
-  AbstractList.prototype.any = function (predicate) {
-    return this.some(predicate);
-  };
-
-  AbstractList.prototype.some = function (predicate) {
-    var index, _i, _ref;
-    for (index = _i = 0, _ref = this.length(); 0 <= _ref ? _i < _ref : _i > _ref; index = 0 <= _ref ? ++_i : --_i) {
-      if (predicate(this.at(index))) {
-        return true;
-      }
-    }
-    return false;
-  };
-
-  AbstractList.prototype.find = function (fn) {
-    var result;
-    result = void 0;
-    this.each(function (value) {
-      if (fn(value)) {
-        result = value;
-        return false;
-      }
-    });
-    return result;
-  };
-
-  AbstractList.prototype.reduce = function (reduceFn, memo) {
-    if (memo == null) {
-      memo = 0;
-    }
-    this.each(function (value) {
-      return memo = reduceFn(value, memo);
-    });
-    return memo;
-  };
-
-  AbstractList.prototype.first = function () {
-    return this.get(this.next());
-  };
-
-  AbstractList.prototype.skip = function (count) {
-    return this.rest(count);
-  };
-
-  AbstractList.prototype.tail = function (count) {
-    return this.rest(count);
-  };
-
-  AbstractList.prototype.drop = function (count) {
-    return this.rest(count);
-  };
-
-  AbstractList.prototype.rest = function (count) {};
-
-  AbstractList.prototype.initial = function (count) {};
-
-  AbstractList.prototype.last = function (count) {
-    return this.get(this.prev());
-  };
-
-  AbstractList.prototype.pluck = function (key) {
-    return this.map(function (value) {
-      return value[key];
-    });
-  };
-
-  AbstractList.prototype.invoke = function () {
-    var args, key;
-    key = arguments[0], args = 2 <= arguments.length ? __slice.call(arguments, 1) : [];
-    return this.map(function (value) {
-      return value[key].apply(value, args);
-    });
-  };
-
-  AbstractList.prototype.toArray = function () {
-    var values;
-    values = [];
-    this.each(function (value) {
-      return values.push(value);
-    });
-    return values;
+  AbstractList.prototype.onInvalidate = function (callback) {
+    return this._events.forEach(callback);
   };
 
   AbstractList.prototype._invalidate = function (prev, next) {
@@ -302,10 +150,6 @@ AbstractList = (function () {
       next: next
     };
     return this._events["yield"](event);
-  };
-
-  AbstractList.prototype.onInvalidate = function (callback) {
-    return this._events.forEach(callback);
   };
 
   return AbstractList;

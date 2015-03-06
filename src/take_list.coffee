@@ -5,7 +5,7 @@ import AbstractList from "./abstract_list"
 class TakeList extends AbstractList
 
   constructor: ( source, count ) ->
-    @_orderById = { 0: 0 }
+    @_indexById = { 0: 0 }
     @_source = source
     @_count = count
 
@@ -15,7 +15,7 @@ class TakeList extends AbstractList
       @_invalidate(event.prev)
 
     @onInvalidate ( event ) ->
-      delete @_orderById[id] while id = @_source.next(id or event.prev)
+      delete @_indexById[id] while id = @_source.next(id or event.prev)
 
   get: ( id ) ->
     return @_source.get(id)
@@ -24,21 +24,21 @@ class TakeList extends AbstractList
     return @_source.has(id)
 
   prev: ( id ) ->
-    throw Error("Not implemented yet.")
+    @next(@_source.prev(@_source.prev(id)))
 
   next: ( id = 0 ) ->
-    unless (i = @_orderById[id])?
+    unless (i = @_indexById[id])?
       while prev = @_source.prev(prev or id)
-        break if i = @_orderById[id]
+        break if i = @_indexById[id]
 
       while next = @_source.next(next or prev)
-        @_orderById[next] = i++
+        @_indexById[next] = i++
         break if next is id
 
     return if i >= @_count
 
     next = @_source.next(next or id)
-    @_orderById[next] = ++i
+    @_indexById[next] = ++i
     return next
 
 `

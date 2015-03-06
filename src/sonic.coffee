@@ -27,7 +27,68 @@ Sonic =
   empty: ( ) ->
     return new Unit()
 
-  # List functions
+  #
+  getIterator: ( list, start ) ->
+    return new Iterator(list, start)
+
+  each: ( list, fn ) ->
+    return Sonic.forEach(list, fn)
+
+  forEach: ( list, fn ) ->
+    iterator = Sonic.getIterator(list)
+
+    while iterator.moveNext()
+      return false if fn(iterator.current(), iterator.currentId) is false
+    return true
+
+  findId: ( list, fn ) ->
+    result = undefined
+
+    Sonic.each list, ( value, id ) ->
+      if fn(value)
+        result = id
+        return false
+
+    return result
+
+  find: ( list, fn ) ->
+    return list.get(Sonic.findId(list, fn))
+
+  idAt: ( list, index ) ->
+    i = 0
+    return Sonic.findId(list, -> if i++ is index then true)
+
+  idOf: ( list, value ) ->
+    return Sonic.findId(list, ( v ) -> v is value )
+
+  at: ( list, index ) ->
+    return list.get(Sonic.idAt(list, index))
+
+  indexOf: ( list, value ) ->
+    i = -1
+    if Sonic.some(list, ( v ) -> i++; v is value )
+      return i
+    else return -1
+
+  some: ( list, predicate ) ->
+    return not Sonic.each(list, -> not predicate(arguments...) )
+
+  any: ( list, predicate ) ->
+    return Sonic.some(list, predicate)
+
+  contains: ( list, value ) ->
+    return Sonic.some(list, ( v ) -> v is value)
+
+  first: ( list ) ->
+    return list.get(list.next())
+
+  last: ( list ) ->
+    return list.get(list.prev())
+
+  reduce: ( list, reduceFn, memo ) ->
+    Sonic.each(list, ( value, id ) -> reduceFn(memo, value, id))
+    return memo
+
   flatMap: ( list, flatMapFn ) ->
     return new FlatMapList(list, flatMapFn)
 
@@ -82,6 +143,9 @@ Sonic =
 
     return proxy
 
+  toArray: ( list ) ->
+    Sonic.reduce(list, (( memo, value ) -> memo.push(value)), [])
+
   Signal:       Signal
   Iterator:     Iterator
   AbstractList: AbstractList
@@ -92,6 +156,11 @@ Sonic =
   TakeList:     TakeList
 
 exports = [
+  'getIterator', 'each', 'forEach',
+  'at', 'idAt', 'idOf',
+  'indexOf', 'contains', 'any',
+  'some', 'find', 'reduce',
+  'first', 'last', 'toArray',
   'flatMap', 'group', 'sort',
   'take', 'map', 'pluck'
   'invoke', 'filter', 'concat',
@@ -100,8 +169,6 @@ exports = [
 ]
 
 exports.forEach ( fn ) -> AbstractList::[fn] = -> Sonic[fn](@, arguments...)
-
-
 
 `
 export default Sonic

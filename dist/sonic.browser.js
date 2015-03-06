@@ -7,8 +7,7 @@ var Signal = _interopRequire(require("./signal"));
 
 var Iterator = _interopRequire(require("./iterator"));
 
-var AbstractList,
-    __slice = [].slice;
+var AbstractList;
 
 AbstractList = (function () {
   function AbstractList() {
@@ -141,159 +140,8 @@ AbstractList = (function () {
     return this._next[id] || null;
   };
 
-  AbstractList.prototype.getIterator = function (start) {
-    return new Iterator(this, start);
-  };
-
-  AbstractList.prototype.idAt = function (index) {
-    var i, iterator;
-    i = -1;
-    iterator = this.getIterator();
-    while (iterator.moveNext()) {
-      if (++i === index) {
-        return iterator.currentId;
-      }
-    }
-    return void 0;
-  };
-
-  AbstractList.prototype.at = function (index) {
-    var id;
-    if (id = this.idAt(index)) {
-      return this.get(id);
-    }
-    return void 0;
-  };
-
-  AbstractList.prototype.idOf = function (value) {
-    var iterator;
-    iterator = this.getIterator();
-    while (iterator.moveNext()) {
-      if (iterator.current() === value) {
-        return iterator.currentId;
-      }
-    }
-    return void 0;
-  };
-
-  AbstractList.prototype.indexOf = function (value, limit) {
-    var index, iterator;
-    if (limit == null) {
-      limit = Infinity;
-    }
-    index = -1;
-    iterator = this.getIterator();
-    while (iterator.moveNext() && ++index < limit) {
-      if (iterator.current() === value) {
-        return index;
-      }
-    }
-    return -1;
-  };
-
-  AbstractList.prototype.contains = function (value, limit) {
-    if (limit == null) {
-      limit = Infinity;
-    }
-    return this.indexOf(value, limit) !== -1;
-  };
-
-  AbstractList.prototype.forEach = function (fn) {
-    return this.each(fn);
-  };
-
-  AbstractList.prototype.each = function (fn) {
-    var iterator;
-    iterator = this.getIterator();
-    while (iterator.moveNext()) {
-      if (fn(iterator.current()) === false) {
-        return false;
-      }
-    }
-    return true;
-  };
-
-  AbstractList.prototype.any = function (predicate) {
-    return this.some(predicate);
-  };
-
-  AbstractList.prototype.some = function (predicate) {
-    var index, _i, _ref;
-    for (index = _i = 0, _ref = this.length(); 0 <= _ref ? _i < _ref : _i > _ref; index = 0 <= _ref ? ++_i : --_i) {
-      if (predicate(this.at(index))) {
-        return true;
-      }
-    }
-    return false;
-  };
-
-  AbstractList.prototype.find = function (fn) {
-    var result;
-    result = void 0;
-    this.each(function (value) {
-      if (fn(value)) {
-        result = value;
-        return false;
-      }
-    });
-    return result;
-  };
-
-  AbstractList.prototype.reduce = function (reduceFn, memo) {
-    if (memo == null) {
-      memo = 0;
-    }
-    this.each(function (value) {
-      return memo = reduceFn(value, memo);
-    });
-    return memo;
-  };
-
-  AbstractList.prototype.first = function () {
-    return this.get(this.next());
-  };
-
-  AbstractList.prototype.skip = function (count) {
-    return this.rest(count);
-  };
-
-  AbstractList.prototype.tail = function (count) {
-    return this.rest(count);
-  };
-
-  AbstractList.prototype.drop = function (count) {
-    return this.rest(count);
-  };
-
-  AbstractList.prototype.rest = function (count) {};
-
-  AbstractList.prototype.initial = function (count) {};
-
-  AbstractList.prototype.last = function (count) {
-    return this.get(this.prev());
-  };
-
-  AbstractList.prototype.pluck = function (key) {
-    return this.map(function (value) {
-      return value[key];
-    });
-  };
-
-  AbstractList.prototype.invoke = function () {
-    var args, key;
-    key = arguments[0], args = 2 <= arguments.length ? __slice.call(arguments, 1) : [];
-    return this.map(function (value) {
-      return value[key].apply(value, args);
-    });
-  };
-
-  AbstractList.prototype.toArray = function () {
-    var values;
-    values = [];
-    this.each(function (value) {
-      return values.push(value);
-    });
-    return values;
+  AbstractList.prototype.onInvalidate = function (callback) {
+    return this._events.forEach(callback);
   };
 
   AbstractList.prototype._invalidate = function (prev, next) {
@@ -303,10 +151,6 @@ AbstractList = (function () {
       next: next
     };
     return this._events["yield"](event);
-  };
-
-  AbstractList.prototype.onInvalidate = function (callback) {
-    return this._events.forEach(callback);
   };
 
   return AbstractList;
@@ -777,6 +621,90 @@ Sonic = {
   empty: function empty() {
     return new Unit();
   },
+  getIterator: function getIterator(list, start) {
+    return new Iterator(list, start);
+  },
+  each: function each(list, fn) {
+    return Sonic.forEach(list, fn);
+  },
+  forEach: function forEach(list, fn) {
+    var iterator;
+    iterator = Sonic.getIterator(list);
+    while (iterator.moveNext()) {
+      if (fn(iterator.current(), iterator.currentId) === false) {
+        return false;
+      }
+    }
+    return true;
+  },
+  findId: function findId(list, fn) {
+    var result;
+    result = void 0;
+    Sonic.each(list, function (value, id) {
+      if (fn(value)) {
+        result = id;
+        return false;
+      }
+    });
+    return result;
+  },
+  find: function find(list, fn) {
+    return list.get(Sonic.findId(list, fn));
+  },
+  idAt: function idAt(list, index) {
+    var i;
+    i = 0;
+    return Sonic.findId(list, function () {
+      if (i++ === index) {
+        return true;
+      }
+    });
+  },
+  idOf: function idOf(list, value) {
+    return Sonic.findId(list, function (v) {
+      return v === value;
+    });
+  },
+  at: function at(list, index) {
+    return list.get(Sonic.idAt(list, index));
+  },
+  indexOf: function indexOf(list, value) {
+    var i;
+    i = -1;
+    if (Sonic.some(list, function (v) {
+      i++;
+      return v === value;
+    })) {
+      return i;
+    } else {
+      return -1;
+    }
+  },
+  some: function some(list, predicate) {
+    return !Sonic.each(list, function () {
+      return !predicate.apply(null, arguments);
+    });
+  },
+  any: function any(list, predicate) {
+    return Sonic.some(list, predicate);
+  },
+  contains: function contains(list, value) {
+    return Sonic.some(list, function (v) {
+      return v === value;
+    });
+  },
+  first: function first(list) {
+    return list.get(list.next());
+  },
+  last: function last(list) {
+    return list.get(list.prev());
+  },
+  reduce: function reduce(list, reduceFn, memo) {
+    Sonic.each(list, function (value, id) {
+      return reduceFn(memo, value, id);
+    });
+    return memo;
+  },
   flatMap: function flatMap(list, flatMapFn) {
     return new FlatMapList(list, flatMapFn);
   },
@@ -794,6 +722,18 @@ Sonic = {
   map: function map(list, mapFn) {
     return Sonic.flatMap(list, function (value) {
       return new Unit(mapFn(value));
+    });
+  },
+  pluck: function pluck(list, key) {
+    return Sonic.map(list, function (value) {
+      return value[key];
+    });
+  },
+  invoke: function invoke() {
+    var args, key, list;
+    list = arguments[0], key = arguments[1], args = 3 <= arguments.length ? __slice.call(arguments, 2) : [];
+    return Sonic.map(list, function (value) {
+      return value[key].apply(value, args);
     });
   },
   filter: function filter(list, filterFn) {
@@ -882,6 +822,11 @@ Sonic = {
     };
     return proxy;
   },
+  toArray: function toArray(list) {
+    return Sonic.reduce(list, function (memo, value) {
+      return memo.push(value);
+    }, []);
+  },
   Signal: Signal,
   Iterator: Iterator,
   AbstractList: AbstractList,
@@ -892,7 +837,7 @@ Sonic = {
   TakeList: TakeList
 };
 
-exports = ["flatMap", "group", "sort", "take", "map", "filter", "concat", "flatten", "uniq", "union", "intersection", "proxy", "reverse"];
+exports = ["getIterator", "each", "forEach", "at", "idAt", "idOf", "indexOf", "contains", "any", "some", "find", "reduce", "first", "last", "toArray", "flatMap", "group", "sort", "take", "map", "pluck", "invoke", "filter", "concat", "flatten", "uniq", "union", "intersection", "proxy", "reverse"];
 
 exports.forEach(function (fn) {
   return AbstractList.prototype[fn] = function () {
@@ -924,7 +869,7 @@ TakeList = (function (_super) {
   __extends(TakeList, _super);
 
   function TakeList(source, count) {
-    this._orderById = {
+    this._indexById = {
       0: 0
     };
     this._source = source;
@@ -935,31 +880,41 @@ TakeList = (function (_super) {
         return _this._invalidate(event.prev);
       };
     })(this));
+    this.onInvalidate(function (event) {
+      var id, _results;
+      _results = [];
+      while (id = this._source.next(id || event.prev)) {
+        _results.push(delete this._indexById[id]);
+      }
+      return _results;
+    });
   }
 
-  TakeList.prototype._invalidate = function (prev) {
-    var id;
-    while (id = this._source.next(id || prev)) {
-      delete this._orderById[id];
-    }
-    return TakeList.__super__._invalidate.call(this, prev);
+  TakeList.prototype.get = function (id) {
+    return this._source.get(id);
   };
 
-  TakeList.prototype.prev = function (id) {};
+  TakeList.prototype.has = function (id) {
+    return this._source.has(id);
+  };
+
+  TakeList.prototype.prev = function (id) {
+    return this.next(this._source.prev(this._source.prev(id)));
+  };
 
   TakeList.prototype.next = function (id) {
     var i, next, prev;
     if (id == null) {
       id = 0;
     }
-    if ((i = this._orderById[id]) == null) {
+    if ((i = this._indexById[id]) == null) {
       while (prev = this._source.prev(prev || id)) {
-        if (i = this._orderById[id]) {
+        if (i = this._indexById[id]) {
           break;
         }
       }
       while (next = this._source.next(next || prev)) {
-        this._orderById[next] = i++;
+        this._indexById[next] = i++;
         if (next === id) {
           break;
         }
@@ -969,16 +924,8 @@ TakeList = (function (_super) {
       return;
     }
     next = this._source.next(next || id);
-    this._orderById[next] = ++i;
+    this._indexById[next] = ++i;
     return next;
-  };
-
-  TakeList.prototype.get = function (id) {
-    return this._source.get(id);
-  };
-
-  TakeList.prototype.has = function (id) {
-    return this._source.has(id);
   };
 
   return TakeList;

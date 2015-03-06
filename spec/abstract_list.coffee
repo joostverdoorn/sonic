@@ -82,7 +82,7 @@ describe "List", ->
       expect(iterator).toEqual(jasmine.any(Sonic.Iterator))
       expect(iterator.list).toBe(@list)
 
-  describe "#before", ->
+  describe "#prev", ->
 
     it "should return the id before the given id", ->
       id = @list.idOf 5
@@ -94,7 +94,7 @@ describe "List", ->
       lastId = @list.prev null
       expect(@list.get lastId).toBe 42
 
-  describe "#after", ->
+  describe "#next", ->
 
     it "should return the id after the given id", ->
       id = @list.idOf 5
@@ -117,8 +117,8 @@ describe "List", ->
     it "should return the index of the given item when it exists", ->
       expect(@list.indexOf(5)).toBe(5)
 
-    it "should return -1 when the isn't found within the limit", ->
-      expect(@list.indexOf(5, 5)).toBe(-1)
+    # it "should return -1 when the isn't found within the limit", ->
+    #   expect(@list.indexOf(5, 5)).toBe(-1)
 
     it "should return -1 if the item isn't found", ->
       expect(@list.indexOf(10)).toBe(-1)
@@ -153,42 +153,31 @@ describe "List", ->
       expect(@list.contains(item)).toBe(false)
 
 
-
   describe "#forEach", ->
-
-    it "should call #each and forward the arguments", ->
-      spyOn @list, 'each'
-      fn = ->
-      @list.forEach(fn)
-      expect(@list.each).toHaveBeenCalledWith(fn)
-
-
-
-  describe "#each", ->
 
     it "should call the given function for each item", ->
       items = []
       fn = ( item ) -> items.push(item)
-      @list.each fn
+      @list.forEach fn
 
       expect(items).toEqual([0...10])
 
 
-  describe "#filter", ->
+  # describe "#filter", ->
 
-    it "should return a new TransformedList", ->
-      expect(@list.filter(->) instanceof Sonic.TransformedList).toBe(true)
+  #   it "should return a new TransformedList", ->
+  #     expect(@list.filter(->) instanceof Sonic.TransformedList).toBe(true)
 
 
-  describe "#map", ->
+  # describe "#map", ->
 
     # it "should return a new TransformedList", ->
     #   expect(@list.map(->) instanceof Sonic.TransformedList).toBe(true)
 
-  describe "#reverse", ->
+  # describe "#reverse", ->
 
-    it "should return a new ReversedList", ->
-      expect(@list.reverse() instanceof Sonic.ReversedList).toBe(true)
+  #   it "should return a new ReversedList", ->
+  #     expect(@list.reverse() instanceof Sonic.ReversedList).toBe(true)
 
 
 
