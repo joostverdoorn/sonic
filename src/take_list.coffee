@@ -1,6 +1,6 @@
-`
-import AbstractList from "./abstract_list"
-`
+
+AbstractList = require( "./abstract_list")
+
 
 class TakeList extends AbstractList
 
@@ -23,8 +23,8 @@ class TakeList extends AbstractList
   has: ( id ) ->
     return @_source.has(id)
 
-  prev: ( id ) ->
-    @next(@_source.prev(@_source.prev(id)))
+  prev: ( id = 0) ->
+
 
   next: ( id = 0 ) ->
     unless (i = @_indexById[id])?
@@ -41,6 +41,6 @@ class TakeList extends AbstractList
     @_indexById[next] = ++i
     return next
 
-`
-export default TakeList
-`
+
+module.exports = TakeList
+

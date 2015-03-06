@@ -4,7 +4,7 @@ describe "Iterator", ->
     n = 10
     values = [0...n]
 
-    list = Sonic.create(values)
+    list = Sonic(values)
     iterator = list.getIterator()
 
 

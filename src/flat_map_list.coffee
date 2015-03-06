@@ -1,14 +1,13 @@
-`
-import AbstractList from './abstract_list'
-import Unit         from './unit'
-`
+AbstractList = require( './abstract_list')
+Unit         = require( './unit')
+
 
 class FlatMapList extends AbstractList
 
   constructor: ( source, flatMapFn ) ->
     super()
 
-    @_source = Sonic.create(source)
+    @_source = source
     @_source.onInvalidate @_onSourceInvalidate
 
     @_sourceIdById   = {}
@@ -77,6 +76,6 @@ class FlatMapList extends AbstractList
     next = @_getListBySourceId(@_source.next(sourceId)).next() unless next = event.next
     @_invalidate(prev, next)
 
-`
-export default FlatMapList
-`
+
+module.exports = FlatMapList
+

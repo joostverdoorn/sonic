@@ -1,12 +1,13 @@
-`
-import FlatMapList from './flat_map_list'
-import Unit        from './unit'
-`
+require('es6-collections')
+
+FlatMapList = require('./flat_map_list')
+Unit        = require('./unit')
 
 class GroupList extends FlatMapList
 
   constructor: ( source, groupFn ) ->
 
+    console.log JSON.stringify Object.keys(Map)
     @_byValue = new Map
     @_groupFn = groupFn or ( x ) -> x
 
@@ -20,6 +21,6 @@ class GroupList extends FlatMapList
 
     super(source, flatMapFn)
 
-`
-export default GroupList
-`
+
+module.exports = GroupList
+

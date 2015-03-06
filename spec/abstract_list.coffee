@@ -1,4 +1,4 @@
-describe "List", ->
+describe "AbstractList", ->
 
   beforeEach ->
     @list = new Sonic.AbstractList()
@@ -184,8 +184,8 @@ describe "List", ->
   describe "#union", ->
 
     it "should create a union of this list with the given lists", ->
-      list1 = Sonic.create([1,2,3])
-      list2 = Sonic.create([3,4,5])
+      list1 = Sonic([1,2,3])
+      list2 = Sonic([3,4,5])
 
       union = list1.union(list2)
       expect(union.toArray()).toEqual([1,2,3,4,5])
@@ -203,7 +203,7 @@ describe "List", ->
         { color: 'orange' }
       ]
 
-      list = Sonic.create(items)
+      list = Sonic(items)
       pluckedList = list.pluck('color')
       expect(pluckedList.toArray()).toEqual(['purple','green','red','yellow','orange'])
 

@@ -1,4 +1,4 @@
-`import AbstractList from './abstract_list'`
+AbstractList = require('./abstract_list')
 
 class Unit extends AbstractList
 
@@ -26,4 +26,4 @@ class Unit extends AbstractList
   prev: ( id = 0 ) ->
     return @_id if id is 0 and @has()
 
-`export default Unit`
+module.exports = Unit

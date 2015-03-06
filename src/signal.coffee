@@ -33,6 +33,5 @@ class Signal
   root: ( ) ->
     return @
 
-`
-export default Signal
-`
+module.exports = Signal
+

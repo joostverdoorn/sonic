@@ -1,4 +1,4 @@
-`import AbstractList from "./abstract_list"`
+AbstractList = require('./abstract_list')
 
 class List extends AbstractList
 
@@ -37,4 +37,4 @@ class List extends AbstractList
   delete: ( id ) ->
     return @_delete(id)
 
-`export default List`
+module.exports = List

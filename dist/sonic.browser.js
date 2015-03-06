@@ -1,612 +1,594 @@
 (function(f){if(typeof exports==="object"&&typeof module!=="undefined"){module.exports=f()}else if(typeof define==="function"&&define.amd){define([],f)}else{var g;if(typeof window!=="undefined"){g=window}else if(typeof global!=="undefined"){g=global}else if(typeof self!=="undefined"){g=self}else{g=this}g.Sonic = f()}})(function(){var define,module,exports;return (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
-"use strict";
+(function() {
+  var AbstractList, Iterator, Signal;
 
-var _interopRequire = function (obj) { return obj && obj.__esModule ? obj["default"] : obj; };
+  Signal = require('./signal');
 
-var Signal = _interopRequire(require("./signal"));
+  Iterator = require('./iterator');
 
-var Iterator = _interopRequire(require("./iterator"));
+  AbstractList = (function() {
+    function AbstractList() {
+      this._byId = {};
+      this._prev = {};
+      this._next = {};
+      this._events = new Signal;
+    }
 
-var AbstractList;
-
-AbstractList = (function () {
-  function AbstractList() {
-    this._byId = {};
-    this._prev = {};
-    this._next = {};
-    this._events = new Signal();
-  }
-
-  AbstractList.prototype._add = function (value, options) {
-    var id;
-    if (options != null && options.id != null) {
-      id = options.id;
-    } else {
-      id = Sonic.uniqueId();
-    }
-    this._byId[id] = value;
-    if (options && (options.prev != null || options.next != null)) {
-      this._move(id, options);
-    }
-    return id;
-  };
-
-  AbstractList.prototype._set = function (id, value, options) {
-    if (!(id !== 0 && this.has(id))) {
-      return false;
-    }
-    this._byId[id] = value;
-    if (!(options != null ? options.silent : void 0)) {
-      this._invalidate(this._prev[id], this._next[id]);
-    }
-    return true;
-  };
-
-  AbstractList.prototype._delete = function (id, options) {
-    if (!(id !== 0 && this._remove(id, options))) {
-      return false;
-    }
-    delete this._byId[id];
-    delete this._next[id];
-    delete this._prev[id];
-    return true;
-  };
-
-  AbstractList.prototype._remove = function (id, options) {
-    var next, prev;
-    if (!this.has(id)) {
-      return false;
-    }
-    prev = this._prev[id];
-    next = this._next[id];
-    if (prev != null) {
-      this._prev[next] = prev;
-    }
-    if (next != null) {
-      this._next[prev] = next;
-    }
-    if (next != null || prev != null && !(options != null ? options.silent : void 0)) {
-      this._invalidate(prev, next);
-    }
-    return true;
-  };
-
-  AbstractList.prototype._move = function (id, options) {
-    var next, prev;
-    if (!this.has(id)) {
-      return false;
-    }
-    this._remove(id);
-    prev = options != null ? options.prev : void 0;
-    next = options != null ? options.next : void 0;
-    if (next != null && prev == null) {
-      prev = this._prev[next];
-    }
-    if (prev != null && next == null) {
-      next = this._next[prev];
-    }
-    if (prev != null) {
-      this._prev[id] = prev;
-      this._next[prev] = id;
-    }
-    if (next != null) {
-      this._next[id] = next;
-      this._prev[next] = id;
-    }
-    if (!(options != null ? options.silent : void 0)) {
-      this._invalidate(prev, next);
-    }
-    return true;
-  };
-
-  AbstractList.prototype._slice = function (prev, next) {
-    var id;
-    if (prev != null) {
-      while ((id = this._next[id || prev]) && id !== next) {
-        this._delete(id, {
-          silent: true
-        });
+    AbstractList.prototype._add = function(value, options) {
+      var id;
+      if ((options != null) && (options.id != null)) {
+        id = options.id;
+      } else {
+        id = Sonic.uniqueId();
       }
-    }
-    if (next != null) {
-      while ((id = this._prev[id || next]) && id !== prev) {
-        this._delete(id, {
-          silent: true
-        });
+      this._byId[id] = value;
+      if (options && ((options.prev != null) || (options.next != null))) {
+        this._move(id, options);
       }
-    }
-    return this._invalidate(prev, next);
-  };
-
-  AbstractList.prototype.get = function (id) {
-    return this._byId[id];
-  };
-
-  AbstractList.prototype.has = function (id) {
-    return id in this._byId || id === 0;
-  };
-
-  AbstractList.prototype.prev = function (id) {
-    if (id == null) {
-      id = 0;
-    }
-    return this._prev[id] || null;
-  };
-
-  AbstractList.prototype.next = function (id) {
-    if (id == null) {
-      id = 0;
-    }
-    return this._next[id] || null;
-  };
-
-  AbstractList.prototype.onInvalidate = function (callback) {
-    return this._events.forEach(callback);
-  };
-
-  AbstractList.prototype._invalidate = function (prev, next) {
-    var event;
-    event = {
-      prev: prev,
-      next: next
+      return id;
     };
-    return this._events["yield"](event);
-  };
 
-  return AbstractList;
-})();
+    AbstractList.prototype._set = function(id, value, options) {
+      if (!(id !== 0 && this.has(id))) {
+        return false;
+      }
+      this._byId[id] = value;
+      if (!(options != null ? options.silent : void 0)) {
+        this._invalidate(this._prev[id], this._next[id]);
+      }
+      return true;
+    };
 
-module.exports = AbstractList;
+    AbstractList.prototype._delete = function(id, options) {
+      if (!(id !== 0 && this._remove(id, options))) {
+        return false;
+      }
+      delete this._byId[id];
+      delete this._next[id];
+      delete this._prev[id];
+      return true;
+    };
+
+    AbstractList.prototype._remove = function(id, options) {
+      var next, prev;
+      if (!this.has(id)) {
+        return false;
+      }
+      prev = this._prev[id];
+      next = this._next[id];
+      if (prev != null) {
+        this._prev[next] = prev;
+      }
+      if (next != null) {
+        this._next[prev] = next;
+      }
+      if ((next != null) || (prev != null) && !(options != null ? options.silent : void 0)) {
+        this._invalidate(prev, next);
+      }
+      return true;
+    };
+
+    AbstractList.prototype._move = function(id, options) {
+      var next, prev;
+      if (!this.has(id)) {
+        return false;
+      }
+      this._remove(id);
+      prev = options != null ? options.prev : void 0;
+      next = options != null ? options.next : void 0;
+      if ((next != null) && (prev == null)) {
+        prev = this._prev[next];
+      }
+      if ((prev != null) && (next == null)) {
+        next = this._next[prev];
+      }
+      if (prev != null) {
+        this._prev[id] = prev;
+        this._next[prev] = id;
+      }
+      if (next != null) {
+        this._next[id] = next;
+        this._prev[next] = id;
+      }
+      if (!(options != null ? options.silent : void 0)) {
+        this._invalidate(prev, next);
+      }
+      return true;
+    };
+
+    AbstractList.prototype._slice = function(prev, next) {
+      var id;
+      if (prev != null) {
+        while ((id = this._next[id || prev]) && id !== next) {
+          this._delete(id, {
+            silent: true
+          });
+        }
+      }
+      if (next != null) {
+        while ((id = this._prev[id || next]) && id !== prev) {
+          this._delete(id, {
+            silent: true
+          });
+        }
+      }
+      return this._invalidate(prev, next);
+    };
+
+    AbstractList.prototype.get = function(id) {
+      return this._byId[id];
+    };
+
+    AbstractList.prototype.has = function(id) {
+      return id in this._byId || id === 0;
+    };
+
+    AbstractList.prototype.prev = function(id) {
+      if (id == null) {
+        id = 0;
+      }
+      return this._prev[id] || null;
+    };
+
+    AbstractList.prototype.next = function(id) {
+      if (id == null) {
+        id = 0;
+      }
+      return this._next[id] || null;
+    };
+
+    AbstractList.prototype.onInvalidate = function(callback) {
+      return this._events.forEach(callback);
+    };
+
+    AbstractList.prototype._invalidate = function(prev, next) {
+      var event;
+      event = {
+        prev: prev,
+        next: next
+      };
+      return this._events["yield"](event);
+    };
+
+    return AbstractList;
+
+  })();
+
+  module.exports = AbstractList;
+
+}).call(this);
 
 //# sourceMappingURL=abstract_list.js.map
+
 },{"./iterator":4,"./signal":6}],2:[function(require,module,exports){
-"use strict";
+(function() {
+  var AbstractList, FlatMapList, Unit,
+    __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
+    __hasProp = {}.hasOwnProperty,
+    __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
-var _interopRequire = function (obj) { return obj && obj.__esModule ? obj["default"] : obj; };
+  AbstractList = require('./abstract_list');
 
-var AbstractList = _interopRequire(require("./abstract_list"));
+  Unit = require('./unit');
 
-var Unit = _interopRequire(require("./unit"));
+  FlatMapList = (function(_super) {
+    __extends(FlatMapList, _super);
 
-var FlatMapList,
-    __bind = function __bind(fn, me) {
-  return function () {
-    return fn.apply(me, arguments);
-  };
-},
-    __hasProp = ({}).hasOwnProperty,
-    __extends = function __extends(child, parent) {
-  for (var key in parent) {
-    if (__hasProp.call(parent, key)) child[key] = parent[key];
-  }function ctor() {
-    this.constructor = child;
-  }ctor.prototype = parent.prototype;child.prototype = new ctor();child.__super__ = parent.prototype;return child;
-};
-
-FlatMapList = (function (_super) {
-  __extends(FlatMapList, _super);
-
-  function FlatMapList(source, flatMapFn) {
-    this._onListInvalidate = __bind(this._onListInvalidate, this);
-    this._onSourceInvalidate = __bind(this._onSourceInvalidate, this);
-    FlatMapList.__super__.constructor.call(this);
-    this._source = Sonic.create(source);
-    this._source.onInvalidate(this._onSourceInvalidate);
-    this._sourceIdById = {};
-    this._listBySourceId = {};
-    this._flatMapFn = flatMapFn || Sonic.unit;
-  }
-
-  FlatMapList.prototype.get = function (id) {
-    var list;
-    if (list = this._getListById(id)) {
-      return list.get(id);
+    function FlatMapList(source, flatMapFn) {
+      this._onListInvalidate = __bind(this._onListInvalidate, this);
+      this._onSourceInvalidate = __bind(this._onSourceInvalidate, this);
+      FlatMapList.__super__.constructor.call(this);
+      this._source = source;
+      this._source.onInvalidate(this._onSourceInvalidate);
+      this._sourceIdById = {};
+      this._listBySourceId = {};
+      this._flatMapFn = flatMapFn || Sonic.unit;
     }
-  };
 
-  FlatMapList.prototype.has = function (id) {
-    return id in this._sourceIdById || id === 0;
-  };
-
-  FlatMapList.prototype.prev = function (id) {
-    var list, prev, sourceId;
-    if (id == null) {
-      id = 0;
-    }
-    if (!id) {
-      sourceId = this._source.prev();
-    } else {
-      sourceId = this._sourceIdById[id];
-    }
-    if (!sourceId) {
-      return;
-    }
-    list = this._getListBySourceId(sourceId);
-    prev = list.prev(id);
-    while (!prev) {
-      if (!(sourceId = this._source.prev(sourceId))) {
-        return;
+    FlatMapList.prototype.get = function(id) {
+      var list;
+      if (list = this._getListById(id)) {
+        return list.get(id);
       }
-      list = this._getListBySourceId(sourceId);
-      prev = list.prev();
-    }
-    this._sourceIdById[prev] = sourceId;
-    return prev;
-  };
-
-  FlatMapList.prototype.next = function (id) {
-    var list, next, sourceId;
-    if (id == null) {
-      id = 0;
-    }
-    if (!id) {
-      sourceId = this._source.next();
-    } else {
-      sourceId = this._sourceIdById[id];
-    }
-    if (!sourceId) {
-      return;
-    }
-    list = this._getListBySourceId(sourceId);
-    next = list.next(id);
-    while (!next) {
-      if (!(sourceId = this._source.next(sourceId))) {
-        return;
-      }
-      list = this._getListBySourceId(sourceId);
-      next = list.next();
-    }
-    this._sourceIdById[next] = sourceId;
-    return next;
-  };
-
-  FlatMapList.prototype._getListById = function (id) {
-    var sourceId;
-    if (sourceId = this._sourceIdById[id]) {
-      return this._getListBySourceId(sourceId);
-    }
-  };
-
-  FlatMapList.prototype._getListBySourceId = function (sourceId) {
-    var list;
-    if (list = this._listBySourceId[sourceId]) {
-      return list;
-    }
-    if (!this._source.has(sourceId)) {
-      return;
-    }
-    list = this._flatMapFn(this._source.get(sourceId));
-    list.onInvalidate((function (_this) {
-      return function (event) {
-        return _this._onListInvalidate(event, sourceId);
-      };
-    })(this));
-    this._listBySourceId[sourceId] = list;
-    return list;
-  };
-
-  FlatMapList.prototype._onSourceInvalidate = function (event) {
-    var next, prev, _ref, _ref1;
-    prev = (_ref = this._getListBySourceId(event.prev)) != null ? _ref.prev(0, {
-      lazy: true
-    }) : void 0;
-    next = (_ref1 = this._getListBySourceId(event.next)) != null ? _ref1.next(0, {
-      lazy: true
-    }) : void 0;
-    return this._invalidate(prev, next);
-  };
-
-  FlatMapList.prototype._onListInvalidate = function (event, sourceId) {
-    var next, prev;
-    if (!(prev = event.prev)) {
-      prev = this._getListBySourceId(this._source.prev(sourceId)).prev();
-    }
-    if (!(next = event.next)) {
-      next = this._getListBySourceId(this._source.next(sourceId)).next();
-    }
-    return this._invalidate(prev, next);
-  };
-
-  return FlatMapList;
-})(AbstractList);
-
-module.exports = FlatMapList;
-
-//# sourceMappingURL=flat_map_list.js.map
-},{"./abstract_list":1,"./unit":9}],3:[function(require,module,exports){
-"use strict";
-
-var _interopRequire = function (obj) { return obj && obj.__esModule ? obj["default"] : obj; };
-
-var FlatMapList = _interopRequire(require("./flat_map_list"));
-
-var Unit = _interopRequire(require("./unit"));
-
-var GroupList,
-    __hasProp = ({}).hasOwnProperty,
-    __extends = function __extends(child, parent) {
-  for (var key in parent) {
-    if (__hasProp.call(parent, key)) child[key] = parent[key];
-  }function ctor() {
-    this.constructor = child;
-  }ctor.prototype = parent.prototype;child.prototype = new ctor();child.__super__ = parent.prototype;return child;
-};
-
-GroupList = (function (_super) {
-  __extends(GroupList, _super);
-
-  function GroupList(source, groupFn) {
-    var flatMapFn;
-    this._byValue = new Map();
-    this._groupFn = groupFn || function (x) {
-      return x;
     };
-    flatMapFn = function (value) {
-      var groupValue, list;
-      groupValue = this._groupFn(value);
-      if (this._byValue.has(groupValue)) {
-        return new Unit();
+
+    FlatMapList.prototype.has = function(id) {
+      return id in this._sourceIdById || id === 0;
+    };
+
+    FlatMapList.prototype.prev = function(id) {
+      var list, prev, sourceId;
+      if (id == null) {
+        id = 0;
       }
-      list = this._source.filter((function (_this) {
-        return function (value) {
-          return _this._groupFn(value) === groupValue;
+      if (!id) {
+        sourceId = this._source.prev();
+      } else {
+        sourceId = this._sourceIdById[id];
+      }
+      if (!sourceId) {
+        return;
+      }
+      list = this._getListBySourceId(sourceId);
+      prev = list.prev(id);
+      while (!prev) {
+        if (!(sourceId = this._source.prev(sourceId))) {
+          return;
+        }
+        list = this._getListBySourceId(sourceId);
+        prev = list.prev();
+      }
+      this._sourceIdById[prev] = sourceId;
+      return prev;
+    };
+
+    FlatMapList.prototype.next = function(id) {
+      var list, next, sourceId;
+      if (id == null) {
+        id = 0;
+      }
+      if (!id) {
+        sourceId = this._source.next();
+      } else {
+        sourceId = this._sourceIdById[id];
+      }
+      if (!sourceId) {
+        return;
+      }
+      list = this._getListBySourceId(sourceId);
+      next = list.next(id);
+      while (!next) {
+        if (!(sourceId = this._source.next(sourceId))) {
+          return;
+        }
+        list = this._getListBySourceId(sourceId);
+        next = list.next();
+      }
+      this._sourceIdById[next] = sourceId;
+      return next;
+    };
+
+    FlatMapList.prototype._getListById = function(id) {
+      var sourceId;
+      if (sourceId = this._sourceIdById[id]) {
+        return this._getListBySourceId(sourceId);
+      }
+    };
+
+    FlatMapList.prototype._getListBySourceId = function(sourceId) {
+      var list;
+      if (list = this._listBySourceId[sourceId]) {
+        return list;
+      }
+      if (!this._source.has(sourceId)) {
+        return;
+      }
+      list = this._flatMapFn(this._source.get(sourceId));
+      list.onInvalidate((function(_this) {
+        return function(event) {
+          return _this._onListInvalidate(event, sourceId);
         };
       })(this));
-      this._byValue.set(groupValue, list);
-      return new Unit(list);
+      this._listBySourceId[sourceId] = list;
+      return list;
     };
-    GroupList.__super__.constructor.call(this, source, flatMapFn);
-  }
 
-  return GroupList;
-})(FlatMapList);
+    FlatMapList.prototype._onSourceInvalidate = function(event) {
+      var next, prev, _ref, _ref1;
+      prev = (_ref = this._getListBySourceId(event.prev)) != null ? _ref.prev(0, {
+        lazy: true
+      }) : void 0;
+      next = (_ref1 = this._getListBySourceId(event.next)) != null ? _ref1.next(0, {
+        lazy: true
+      }) : void 0;
+      return this._invalidate(prev, next);
+    };
 
-module.exports = GroupList;
+    FlatMapList.prototype._onListInvalidate = function(event, sourceId) {
+      var next, prev;
+      if (!(prev = event.prev)) {
+        prev = this._getListBySourceId(this._source.prev(sourceId)).prev();
+      }
+      if (!(next = event.next)) {
+        next = this._getListBySourceId(this._source.next(sourceId)).next();
+      }
+      return this._invalidate(prev, next);
+    };
+
+    return FlatMapList;
+
+  })(AbstractList);
+
+  module.exports = FlatMapList;
+
+}).call(this);
+
+//# sourceMappingURL=flat_map_list.js.map
+
+},{"./abstract_list":1,"./unit":9}],3:[function(require,module,exports){
+(function() {
+  var FlatMapList, GroupList, Unit,
+    __hasProp = {}.hasOwnProperty,
+    __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
+
+  require('es6-collections');
+
+  FlatMapList = require('./flat_map_list');
+
+  Unit = require('./unit');
+
+  GroupList = (function(_super) {
+    __extends(GroupList, _super);
+
+    function GroupList(source, groupFn) {
+      var flatMapFn;
+      console.log(JSON.stringify(Object.keys(Map)));
+      this._byValue = new Map;
+      this._groupFn = groupFn || function(x) {
+        return x;
+      };
+      flatMapFn = function(value) {
+        var groupValue, list;
+        groupValue = this._groupFn(value);
+        if (this._byValue.has(groupValue)) {
+          return new Unit();
+        }
+        list = this._source.filter((function(_this) {
+          return function(value) {
+            return _this._groupFn(value) === groupValue;
+          };
+        })(this));
+        this._byValue.set(groupValue, list);
+        return new Unit(list);
+      };
+      GroupList.__super__.constructor.call(this, source, flatMapFn);
+    }
+
+    return GroupList;
+
+  })(FlatMapList);
+
+  module.exports = GroupList;
+
+}).call(this);
 
 //# sourceMappingURL=group_list.js.map
-},{"./flat_map_list":2,"./unit":9}],4:[function(require,module,exports){
-"use strict";
 
-var Iterator;
+},{"./flat_map_list":2,"./unit":9,"es6-collections":10}],4:[function(require,module,exports){
+(function() {
+  var Iterator;
 
-Iterator = (function () {
-  function Iterator(list, startId) {
-    this.list = list;
-    this.currentId = this.startId = startId;
-  }
-
-  Iterator.prototype.current = function () {
-    return this.list.get(this.currentId);
-  };
-
-  Iterator.prototype.reset = function () {
-    this.currentId = this.startId;
-    return this;
-  };
-
-  Iterator.prototype.moveNext = function () {
-    this.currentId = this.list.next(this.currentId);
-    return this.currentId != null;
-  };
-
-  Iterator.prototype.movePrevious = function () {
-    this.currentId = this.list.prev(this.currentId);
-    return this.currentId != null;
-  };
-
-  Iterator.prototype.next = function () {
-    if (this.moveNext()) {
-      return {
-        value: this.current(),
-        done: false,
-        id: this.currentId
-      };
-    } else {
-      return {
-        done: true,
-        id: this.currentId
-      };
+  Iterator = (function() {
+    function Iterator(list, startId) {
+      this.list = list;
+      this.currentId = this.startId = startId;
     }
-  };
 
-  Iterator.prototype.previous = function () {
-    if (this.movePrevious()) {
-      return {
-        value: this.current(),
-        done: false,
-        id: this.currentId
-      };
-    } else {
-      return {
-        done: true,
-        id: this.currentId
-      };
-    }
-  };
+    Iterator.prototype.current = function() {
+      return this.list.get(this.currentId);
+    };
 
-  return Iterator;
-})();
+    Iterator.prototype.reset = function() {
+      this.currentId = this.startId;
+      return this;
+    };
 
-module.exports = Iterator;
+    Iterator.prototype.moveNext = function() {
+      this.currentId = this.list.next(this.currentId);
+      return this.currentId != null;
+    };
+
+    Iterator.prototype.movePrevious = function() {
+      this.currentId = this.list.prev(this.currentId);
+      return this.currentId != null;
+    };
+
+    Iterator.prototype.next = function() {
+      if (this.moveNext()) {
+        return {
+          value: this.current(),
+          done: false,
+          id: this.currentId
+        };
+      } else {
+        return {
+          done: true,
+          id: this.currentId
+        };
+      }
+    };
+
+    Iterator.prototype.previous = function() {
+      if (this.movePrevious()) {
+        return {
+          value: this.current(),
+          done: false,
+          id: this.currentId
+        };
+      } else {
+        return {
+          done: true,
+          id: this.currentId
+        };
+      }
+    };
+
+    return Iterator;
+
+  })();
+
+  module.exports = Iterator;
+
+}).call(this);
 
 //# sourceMappingURL=iterator.js.map
+
 },{}],5:[function(require,module,exports){
-"use strict";
+(function() {
+  var AbstractList, List,
+    __hasProp = {}.hasOwnProperty,
+    __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
-var _interopRequire = function (obj) { return obj && obj.__esModule ? obj["default"] : obj; };
+  AbstractList = require('./abstract_list');
 
-var AbstractList = _interopRequire(require("./abstract_list"));
+  List = (function(_super) {
+    __extends(List, _super);
 
-var List,
-    __hasProp = ({}).hasOwnProperty,
-    __extends = function __extends(child, parent) {
-  for (var key in parent) {
-    if (__hasProp.call(parent, key)) child[key] = parent[key];
-  }function ctor() {
-    this.constructor = child;
-  }ctor.prototype = parent.prototype;child.prototype = new ctor();child.__super__ = parent.prototype;return child;
-};
-
-List = (function (_super) {
-  __extends(List, _super);
-
-  function List(values) {
-    var value, _i, _len;
-    List.__super__.constructor.call(this);
-    this._move(0, {
-      next: 0
-    });
-    if (values != null) {
-      for (_i = 0, _len = values.length; _i < _len; _i++) {
-        value = values[_i];
-        this._add(value, {
-          next: 0
-        });
+    function List(values) {
+      var value, _i, _len;
+      List.__super__.constructor.call(this);
+      this._move(0, {
+        next: 0
+      });
+      if (values != null) {
+        for (_i = 0, _len = values.length; _i < _len; _i++) {
+          value = values[_i];
+          this._add(value, {
+            next: 0
+          });
+        }
       }
     }
-  }
 
-  List.prototype.set = function (id, value) {
-    return this._set(id, value);
-  };
+    List.prototype.set = function(id, value) {
+      return this._set(id, value);
+    };
 
-  List.prototype.push = function (value) {
-    return this._add(value, {
-      next: 0
-    });
-  };
+    List.prototype.push = function(value) {
+      return this._add(value, {
+        next: 0
+      });
+    };
 
-  List.prototype.unshift = function (value) {
-    return this._add(value, {
-      prev: 0
-    });
-  };
+    List.prototype.unshift = function(value) {
+      return this._add(value, {
+        prev: 0
+      });
+    };
 
-  List.prototype.pop = function () {
-    var id, value;
-    id = this.prev();
-    value = this.get(id);
-    if (this._delete(id)) {
-      return value;
-    }
-  };
+    List.prototype.pop = function() {
+      var id, value;
+      id = this.prev();
+      value = this.get(id);
+      if (this._delete(id)) {
+        return value;
+      }
+    };
 
-  List.prototype.shift = function () {
-    var id, value;
-    id = this.next();
-    value = this.get(id);
-    if (this._delete(id)) {
-      return value;
-    }
-  };
+    List.prototype.shift = function() {
+      var id, value;
+      id = this.next();
+      value = this.get(id);
+      if (this._delete(id)) {
+        return value;
+      }
+    };
 
-  List.prototype.add = function (value) {
-    return this.push(value);
-  };
+    List.prototype.add = function(value) {
+      return this.push(value);
+    };
 
-  List.prototype.remove = function (value) {
-    var id;
-    id = this.idOf(value);
-    return this._delete(id);
-  };
+    List.prototype.remove = function(value) {
+      var id;
+      id = this.idOf(value);
+      return this._delete(id);
+    };
 
-  List.prototype["delete"] = function (id) {
-    return this._delete(id);
-  };
+    List.prototype["delete"] = function(id) {
+      return this._delete(id);
+    };
 
-  return List;
-})(AbstractList);
+    return List;
 
-module.exports = List;
+  })(AbstractList);
+
+  module.exports = List;
+
+}).call(this);
 
 //# sourceMappingURL=list.js.map
+
 },{"./abstract_list":1}],6:[function(require,module,exports){
-"use strict";
+(function() {
+  var Signal;
 
-var Signal;
-
-Signal = (function () {
-  function Signal(value) {
-    this.id = Sonic.uniqueId();
-    this._handlers = [];
-    this._value = value;
-  }
-
-  Signal.prototype.value = function () {
-    return this._value;
-  };
-
-  Signal.prototype["yield"] = function (value) {
-    var index, item, toRemove, _i, _len;
-    this._value = value;
-    toRemove = [];
-    this._handlers.forEach((function (_this) {
-      return function (handler) {
-        var res;
-        res = handler(value, _this);
-        if (!res) {
-          toRemove.push(res);
-        }
-        return res;
-      };
-    })(this));
-    for (_i = 0, _len = toRemove.length; _i < _len; _i++) {
-      item = toRemove[_i];
-      index = this._handlers.indexOf(item);
-      this._handlers.splice(index, 1);
+  Signal = (function() {
+    function Signal(value) {
+      this.id = Sonic.uniqueId();
+      this._handlers = [];
+      this._value = value;
     }
-    return true;
-  };
 
-  Signal.prototype.each = function (handler) {
-    return this.forEach(handler);
-  };
+    Signal.prototype.value = function() {
+      return this._value;
+    };
 
-  Signal.prototype.forEach = function (handler) {
-    return this._handlers.push(handler);
-  };
+    Signal.prototype["yield"] = function(value) {
+      var index, item, toRemove, _i, _len;
+      this._value = value;
+      toRemove = [];
+      this._handlers.forEach((function(_this) {
+        return function(handler) {
+          var res;
+          res = handler(value, _this);
+          if (!res) {
+            toRemove.push(res);
+          }
+          return res;
+        };
+      })(this));
+      for (_i = 0, _len = toRemove.length; _i < _len; _i++) {
+        item = toRemove[_i];
+        index = this._handlers.indexOf(item);
+        this._handlers.splice(index, 1);
+      }
+      return true;
+    };
 
-  Signal.prototype.root = function () {
-    return this;
-  };
+    Signal.prototype.each = function(handler) {
+      return this.forEach(handler);
+    };
 
-  return Signal;
-})();
+    Signal.prototype.forEach = function(handler) {
+      return this._handlers.push(handler);
+    };
 
-module.exports = Signal;
+    Signal.prototype.root = function() {
+      return this;
+    };
+
+    return Signal;
+
+  })();
+
+  module.exports = Signal;
+
+}).call(this);
 
 //# sourceMappingURL=signal.js.map
+
 },{}],7:[function(require,module,exports){
-"use strict";
-
-var _interopRequire = function (obj) { return obj && obj.__esModule ? obj["default"] : obj; };
-
-var Signal = _interopRequire(require("./signal"));
-
-var Iterator = _interopRequire(require("./iterator"));
-
-var AbstractList = _interopRequire(require("./abstract_list"));
-
-var List = _interopRequire(require("./list"));
-
-var Unit = _interopRequire(require("./unit"));
-
-var FlatMapList = _interopRequire(require("./flat_map_list"));
-
-var GroupList = _interopRequire(require("./group_list"));
-
-var TakeList = _interopRequire(require("./take_list"));
-
-var Sonic,
-    exports,
+(function() {
+  var AbstractList, FlatMapList, GroupList, Iterator, List, Signal, Sonic, TakeList, Unit, fns,
     __slice = [].slice;
 
-Sonic = {
-  _uniqueCounter: 1,
-  uniqueId: function uniqueId() {
-    return Sonic._uniqueCounter++;
-  },
-  create: function create(items) {
+  Signal = require('./signal');
+
+  Iterator = require('./iterator');
+
+  AbstractList = require('./abstract_list');
+
+  List = require('./list');
+
+  Unit = require('./unit');
+
+  FlatMapList = require('./flat_map_list');
+
+  GroupList = require('./group_list');
+
+  TakeList = require('./take_list');
+
+  Sonic = function(items) {
     if (items == null) {
       items = [];
     }
@@ -614,21 +596,35 @@ Sonic = {
       return items;
     }
     return new List(items);
-  },
-  unit: function unit(item) {
+  };
+
+  Sonic._uniqueCounter = 1;
+
+  Sonic.uniqueId = function() {
+    return Sonic._uniqueCounter++;
+  };
+
+  Sonic.unit = function(item) {
     return new Unit(item);
-  },
-  empty: function empty() {
+  };
+
+  Sonic.empty = function() {
     return new Unit();
-  },
-  getIterator: function getIterator(list, start) {
+  };
+
+  Sonic.getIterator = function(list, start) {
+    list = Sonic(list);
     return new Iterator(list, start);
-  },
-  each: function each(list, fn) {
+  };
+
+  Sonic.each = function(list, fn) {
+    list = Sonic(list);
     return Sonic.forEach(list, fn);
-  },
-  forEach: function forEach(list, fn) {
+  };
+
+  Sonic.forEach = function(list, fn) {
     var iterator;
+    list = Sonic(list);
     iterator = Sonic.getIterator(list);
     while (iterator.moveNext()) {
       if (fn(iterator.current(), iterator.currentId) === false) {
@@ -636,42 +632,54 @@ Sonic = {
       }
     }
     return true;
-  },
-  findId: function findId(list, fn) {
+  };
+
+  Sonic.findId = function(list, fn) {
     var result;
+    list = Sonic(list);
     result = void 0;
-    Sonic.each(list, function (value, id) {
+    Sonic.each(list, function(value, id) {
       if (fn(value)) {
         result = id;
         return false;
       }
     });
     return result;
-  },
-  find: function find(list, fn) {
+  };
+
+  Sonic.find = function(list, fn) {
+    list = Sonic(list);
     return list.get(Sonic.findId(list, fn));
-  },
-  idAt: function idAt(list, index) {
+  };
+
+  Sonic.idAt = function(list, index) {
     var i;
+    list = Sonic(list);
     i = 0;
-    return Sonic.findId(list, function () {
+    return Sonic.findId(list, function() {
       if (i++ === index) {
         return true;
       }
     });
-  },
-  idOf: function idOf(list, value) {
-    return Sonic.findId(list, function (v) {
+  };
+
+  Sonic.idOf = function(list, value) {
+    list = Sonic(list);
+    return Sonic.findId(list, function(v) {
       return v === value;
     });
-  },
-  at: function at(list, index) {
+  };
+
+  Sonic.at = function(list, index) {
+    list = Sonic(list);
     return list.get(Sonic.idAt(list, index));
-  },
-  indexOf: function indexOf(list, value) {
+  };
+
+  Sonic.indexOf = function(list, value) {
     var i;
+    list = Sonic(list);
     i = -1;
-    if (Sonic.some(list, function (v) {
+    if (Sonic.some(list, function(v) {
       i++;
       return v === value;
     })) {
@@ -679,141 +687,173 @@ Sonic = {
     } else {
       return -1;
     }
-  },
-  some: function some(list, predicate) {
-    return !Sonic.each(list, function () {
+  };
+
+  Sonic.some = function(list, predicate) {
+    list = Sonic(list);
+    return !Sonic.each(list, function() {
       return !predicate.apply(null, arguments);
     });
-  },
-  any: function any(list, predicate) {
+  };
+
+  Sonic.any = function(list, predicate) {
+    list = Sonic(list);
     return Sonic.some(list, predicate);
-  },
-  contains: function contains(list, value) {
-    return Sonic.some(list, function (v) {
+  };
+
+  Sonic.contains = function(list, value) {
+    list = Sonic(list);
+    return Sonic.some(list, function(v) {
       return v === value;
     });
-  },
-  first: function first(list) {
+  };
+
+  Sonic.first = function(list) {
+    list = Sonic(list);
     return list.get(list.next());
-  },
-  last: function last(list) {
+  };
+
+  Sonic.last = function(list) {
+    list = Sonic(list);
     return list.get(list.prev());
-  },
-  reduce: function reduce(list, reduceFn, memo) {
-    Sonic.each(list, function (value, id) {
+  };
+
+  Sonic.reduce = function(list, reduceFn, memo) {
+    list = Sonic(list);
+    Sonic.each(list, function(value, id) {
       return reduceFn(memo, value, id);
     });
     return memo;
-  },
-  flatMap: function flatMap(list, flatMapFn) {
+  };
+
+  Sonic.flatMap = function(list, flatMapFn) {
+    list = Sonic(list);
     return new FlatMapList(list, flatMapFn);
-  },
-  group: function group(list, groupFn) {
+  };
+
+  Sonic.group = function(list, groupFn) {
+    list = Sonic(list);
     return new GroupList(list, groupFn);
-  },
-  sort: function sort(list, sortFn) {
+  };
+
+  Sonic.sort = function(list, sortFn) {
+    list = Sonic(list);
     return new SortedList(list, {
       sortFn: sortFn
     });
-  },
-  take: function take(list, count) {
+  };
+
+  Sonic.take = function(list, count) {
+    list = Sonic(list);
     return new TakeList(list, count);
-  },
-  map: function map(list, mapFn) {
-    return Sonic.flatMap(list, function (value) {
+  };
+
+  Sonic.map = function(list, mapFn) {
+    list = Sonic(list);
+    return Sonic.flatMap(list, function(value) {
       return new Unit(mapFn(value));
     });
-  },
-  pluck: function pluck(list, key) {
-    return Sonic.map(list, function (value) {
+  };
+
+  Sonic.pluck = function(list, key) {
+    list = Sonic(list);
+    return Sonic.map(list, function(value) {
       return value[key];
     });
-  },
-  invoke: function invoke() {
+  };
+
+  Sonic.invoke = function() {
     var args, key, list;
     list = arguments[0], key = arguments[1], args = 3 <= arguments.length ? __slice.call(arguments, 2) : [];
-    return Sonic.map(list, function (value) {
+    list = Sonic(list);
+    return Sonic.map(list, function(value) {
       return value[key].apply(value, args);
     });
-  },
-  filter: function filter(list, filterFn) {
-    return Sonic.flatMap(list, function (value) {
+  };
+
+  Sonic.filter = function(list, filterFn) {
+    list = Sonic(list);
+    return Sonic.flatMap(list, function(value) {
       if (filterFn(value)) {
         return new Unit(value);
       } else {
         return new Unit();
       }
     });
-  },
-  concat: function concat() {
-    var lists;
+  };
+
+  Sonic.concat = function() {
+    var list, lists;
     lists = 1 <= arguments.length ? __slice.call(arguments, 0) : [];
-    return Sonic.flatMap(lists, function (list) {
+    list = Sonic(list);
+    return Sonic.flatMap(lists, function(list) {
       return list;
     });
-  },
-  flatten: function flatten(list) {
-    return Sonic.flatMap(list, function (list) {
+  };
+
+  Sonic.flatten = function(list) {
+    list = Sonic(list);
+    return Sonic.flatMap(list, function(list) {
       return list;
     });
-  },
-  uniq: function uniq(list, groupFn) {
+  };
+
+  Sonic.uniq = function(list, groupFn) {
     if (groupFn == null) {
-      groupFn = function (x) {
+      groupFn = function(x) {
         return x;
       };
     }
-    return Sonic.flatMap(Sonic.group(list, groupFn), function (list) {
+    list = Sonic(list);
+    return Sonic.flatMap(Sonic.group(list, groupFn), function(list) {
       return list.take(1);
     });
-  },
-  union: function union() {
-    var lists;
+  };
+
+  Sonic.union = function() {
+    var list, lists;
     lists = 1 <= arguments.length ? __slice.call(arguments, 0) : [];
+    list = Sonic(list);
     return Sonic.concat.apply(Sonic, lists).uniq();
-  },
-  intersection: function intersection(list, other) {
+  };
+
+  Sonic.intersection = function(list, other) {
+    list = Sonic(list);
     return Sonic.filter(list, other.contains);
-  },
-  proxy: (function (_proxy) {
-    var _proxyWrapper = function proxy(_x, _x2) {
-      return _proxy.apply(this, arguments);
-    };
+  };
 
-    _proxyWrapper.toString = function () {
-      return _proxy.toString();
-    };
-
-    return _proxyWrapper;
-  })(function (list, fns) {
+  Sonic.proxy = function(list, fns) {
     var fn, key, proxy;
     if (fns == null) {
       fns = {
-        get: "get",
-        has: "has",
-        prev: "prev",
-        next: "next",
-        onInvalidate: "onInvalidate"
+        'get': 'get',
+        'has': 'has',
+        'prev': 'prev',
+        'next': 'next',
+        'onInvalidate': 'onInvalidate'
       };
     }
-    proxy = new AbstractList();
+    list = Sonic(list);
+    proxy = new AbstractList;
     for (key in fns) {
       fn = fns[key];
       proxy[key] = list[fn].bind(list);
     }
     return proxy;
-  }),
-  reverse: function reverse(list) {
+  };
+
+  Sonic.reverse = function(list) {
     var fns, proxy;
+    list = Sonic(list);
     fns = {
-      get: "get",
-      has: "has",
-      prev: "next",
-      next: "prev"
+      'get': 'get',
+      'has': 'has',
+      'prev': 'next',
+      'next': 'prev'
     };
     proxy = Sonic.proxy(list, fns);
-    proxy.onInvalidate = function (callback) {
-      return list.onInvalidate(function (event) {
+    proxy.onInvalidate = function(callback) {
+      return list.onInvalidate(function(event) {
         return callback({
           prev: event.next,
           next: event.prev
@@ -821,186 +861,422 @@ Sonic = {
       });
     };
     return proxy;
-  },
-  toArray: function toArray(list) {
-    return Sonic.reduce(list, function (memo, value) {
-      return memo.push(value);
-    }, []);
-  },
-  Signal: Signal,
-  Iterator: Iterator,
-  AbstractList: AbstractList,
-  Unit: Unit,
-  List: List,
-  FlatMapList: FlatMapList,
-  GroupList: GroupList,
-  TakeList: TakeList
-};
-
-exports = ["getIterator", "each", "forEach", "at", "idAt", "idOf", "indexOf", "contains", "any", "some", "find", "reduce", "first", "last", "toArray", "flatMap", "group", "sort", "take", "map", "pluck", "invoke", "filter", "concat", "flatten", "uniq", "union", "intersection", "proxy", "reverse"];
-
-exports.forEach(function (fn) {
-  return AbstractList.prototype[fn] = function () {
-    return Sonic[fn].apply(Sonic, [this].concat(__slice.call(arguments)));
   };
-});
 
-module.exports = Sonic;
+  Sonic.toArray = function(list) {
+    list = Sonic(list);
+    return Sonic.reduce(list, (function(memo, value) {
+      return memo.push(value);
+    }), []);
+  };
+
+  Sonic.Signal = Signal;
+
+  Sonic.Iterator = Iterator;
+
+  Sonic.AbstractList = AbstractList;
+
+  Sonic.Unit = Unit;
+
+  Sonic.List = List;
+
+  Sonic.FlatMapList = FlatMapList;
+
+  Sonic.GroupList = GroupList;
+
+  Sonic.TakeList = TakeList;
+
+  fns = ['getIterator', 'each', 'forEach', 'at', 'idAt', 'idOf', 'indexOf', 'contains', 'any', 'some', 'find', 'reduce', 'first', 'last', 'toArray', 'flatMap', 'group', 'sort', 'take', 'map', 'pluck', 'invoke', 'filter', 'concat', 'flatten', 'uniq', 'union', 'intersection', 'proxy', 'reverse'];
+
+  fns.forEach(function(fn) {
+    return AbstractList.prototype[fn] = function() {
+      return Sonic[fn].apply(Sonic, [this].concat(__slice.call(arguments)));
+    };
+  });
+
+  module.exports = Sonic;
+
+}).call(this);
 
 //# sourceMappingURL=sonic.js.map
+
 },{"./abstract_list":1,"./flat_map_list":2,"./group_list":3,"./iterator":4,"./list":5,"./signal":6,"./take_list":8,"./unit":9}],8:[function(require,module,exports){
-"use strict";
+(function() {
+  var AbstractList, TakeList,
+    __hasProp = {}.hasOwnProperty,
+    __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
-var _interopRequire = function (obj) { return obj && obj.__esModule ? obj["default"] : obj; };
+  AbstractList = require("./abstract_list");
 
-var AbstractList = _interopRequire(require("./abstract_list"));
+  TakeList = (function(_super) {
+    __extends(TakeList, _super);
 
-var TakeList,
-    __hasProp = ({}).hasOwnProperty,
-    __extends = function __extends(child, parent) {
-  for (var key in parent) {
-    if (__hasProp.call(parent, key)) child[key] = parent[key];
-  }function ctor() {
-    this.constructor = child;
-  }ctor.prototype = parent.prototype;child.prototype = new ctor();child.__super__ = parent.prototype;return child;
-};
-
-TakeList = (function (_super) {
-  __extends(TakeList, _super);
-
-  function TakeList(source, count) {
-    this._indexById = {
-      0: 0
-    };
-    this._source = source;
-    this._count = count;
-    TakeList.__super__.constructor.call(this);
-    this._source.onInvalidate((function (_this) {
-      return function (event) {
-        return _this._invalidate(event.prev);
+    function TakeList(source, count) {
+      this._indexById = {
+        0: 0
       };
-    })(this));
-    this.onInvalidate(function (event) {
-      var id, _results;
-      _results = [];
-      while (id = this._source.next(id || event.prev)) {
-        _results.push(delete this._indexById[id]);
+      this._source = source;
+      this._count = count;
+      TakeList.__super__.constructor.call(this);
+      this._source.onInvalidate((function(_this) {
+        return function(event) {
+          return _this._invalidate(event.prev);
+        };
+      })(this));
+      this.onInvalidate(function(event) {
+        var id, _results;
+        _results = [];
+        while (id = this._source.next(id || event.prev)) {
+          _results.push(delete this._indexById[id]);
+        }
+        return _results;
+      });
+    }
+
+    TakeList.prototype.get = function(id) {
+      return this._source.get(id);
+    };
+
+    TakeList.prototype.has = function(id) {
+      return this._source.has(id);
+    };
+
+    TakeList.prototype.prev = function(id) {
+      if (id == null) {
+        id = 0;
       }
-      return _results;
+    };
+
+    TakeList.prototype.next = function(id) {
+      var i, next, prev;
+      if (id == null) {
+        id = 0;
+      }
+      if ((i = this._indexById[id]) == null) {
+        while (prev = this._source.prev(prev || id)) {
+          if (i = this._indexById[id]) {
+            break;
+          }
+        }
+        while (next = this._source.next(next || prev)) {
+          this._indexById[next] = i++;
+          if (next === id) {
+            break;
+          }
+        }
+      }
+      if (i >= this._count) {
+        return;
+      }
+      next = this._source.next(next || id);
+      this._indexById[next] = ++i;
+      return next;
+    };
+
+    return TakeList;
+
+  })(AbstractList);
+
+  module.exports = TakeList;
+
+}).call(this);
+
+//# sourceMappingURL=take_list.js.map
+
+},{"./abstract_list":1}],9:[function(require,module,exports){
+(function() {
+  var AbstractList, Unit,
+    __hasProp = {}.hasOwnProperty,
+    __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
+
+  AbstractList = require('./abstract_list');
+
+  Unit = (function(_super) {
+    __extends(Unit, _super);
+
+    function Unit(value) {
+      Unit.__super__.constructor.apply(this, arguments);
+      this._id = Sonic.uniqueId();
+      if (arguments.length) {
+        this._value = value;
+      }
+    }
+
+    Unit.prototype.set = function(value) {
+      return this._value = value;
+    };
+
+    Unit.prototype["delete"] = function() {
+      return delete this._value;
+    };
+
+    Unit.prototype.get = function() {
+      return this._value;
+    };
+
+    Unit.prototype.has = function() {
+      return '_value' in this;
+    };
+
+    Unit.prototype.next = function(id) {
+      if (id == null) {
+        id = 0;
+      }
+      if (id === 0 && this.has()) {
+        return this._id;
+      }
+    };
+
+    Unit.prototype.prev = function(id) {
+      if (id == null) {
+        id = 0;
+      }
+      if (id === 0 && this.has()) {
+        return this._id;
+      }
+    };
+
+    return Unit;
+
+  })(AbstractList);
+
+  module.exports = Unit;
+
+}).call(this);
+
+//# sourceMappingURL=unit.js.map
+
+},{"./abstract_list":1}],10:[function(require,module,exports){
+(function (global){
+(function (exports) {'use strict';
+  //shared pointer
+  var i;
+  //shortcuts
+  var defineProperty = Object.defineProperty, is = function(a,b) { return isNaN(a)? isNaN(b): a === b; };
+
+
+  //Polyfill global objects
+  if (typeof WeakMap == 'undefined') {
+    exports.WeakMap = createCollection({
+      // WeakMap#delete(key:void*):boolean
+      'delete': sharedDelete,
+      // WeakMap#clear():
+      clear: sharedClear,
+      // WeakMap#get(key:void*):void*
+      get: sharedGet,
+      // WeakMap#has(key:void*):boolean
+      has: mapHas,
+      // WeakMap#set(key:void*, value:void*):void
+      set: sharedSet
+    }, true);
+  }
+
+  if (typeof Map == 'undefined') {
+    exports.Map = createCollection({
+      // WeakMap#delete(key:void*):boolean
+      'delete': sharedDelete,
+      //:was Map#get(key:void*[, d3fault:void*]):void*
+      // Map#has(key:void*):boolean
+      has: mapHas,
+      // Map#get(key:void*):boolean
+      get: sharedGet,
+      // Map#set(key:void*, value:void*):void
+      set: sharedSet,
+      // Map#keys(void):Iterator
+      keys: sharedKeys,
+      // Map#values(void):Iterator
+      values: sharedValues,
+      // Map#entries(void):Iterator
+      entries: mapEntries,
+      // Map#forEach(callback:Function, context:void*):void ==> callback.call(context, key, value, mapObject) === not in specs`
+      forEach: sharedForEach,
+      // Map#clear():
+      clear: sharedClear
     });
   }
 
-  TakeList.prototype.get = function (id) {
-    return this._source.get(id);
-  };
-
-  TakeList.prototype.has = function (id) {
-    return this._source.has(id);
-  };
-
-  TakeList.prototype.prev = function (id) {
-    return this.next(this._source.prev(this._source.prev(id)));
-  };
-
-  TakeList.prototype.next = function (id) {
-    var i, next, prev;
-    if (id == null) {
-      id = 0;
-    }
-    if ((i = this._indexById[id]) == null) {
-      while (prev = this._source.prev(prev || id)) {
-        if (i = this._indexById[id]) {
-          break;
-        }
-      }
-      while (next = this._source.next(next || prev)) {
-        this._indexById[next] = i++;
-        if (next === id) {
-          break;
-        }
-      }
-    }
-    if (i >= this._count) {
-      return;
-    }
-    next = this._source.next(next || id);
-    this._indexById[next] = ++i;
-    return next;
-  };
-
-  return TakeList;
-})(AbstractList);
-
-module.exports = TakeList;
-
-//# sourceMappingURL=take_list.js.map
-},{"./abstract_list":1}],9:[function(require,module,exports){
-"use strict";
-
-var _interopRequire = function (obj) { return obj && obj.__esModule ? obj["default"] : obj; };
-
-var AbstractList = _interopRequire(require("./abstract_list"));
-
-var Unit,
-    __hasProp = ({}).hasOwnProperty,
-    __extends = function __extends(child, parent) {
-  for (var key in parent) {
-    if (__hasProp.call(parent, key)) child[key] = parent[key];
-  }function ctor() {
-    this.constructor = child;
-  }ctor.prototype = parent.prototype;child.prototype = new ctor();child.__super__ = parent.prototype;return child;
-};
-
-Unit = (function (_super) {
-  __extends(Unit, _super);
-
-  function Unit(value) {
-    Unit.__super__.constructor.apply(this, arguments);
-    this._id = Sonic.uniqueId();
-    if (arguments.length) {
-      this._value = value;
-    }
+  if (typeof Set == 'undefined') {
+    exports.Set = createCollection({
+      // Set#has(value:void*):boolean
+      has: setHas,
+      // Set#add(value:void*):boolean
+      add: sharedAdd,
+      // Set#delete(key:void*):boolean
+      'delete': sharedDelete,
+      // Set#clear():
+      clear: sharedClear,
+      // Set#keys(void):Iterator
+      keys: sharedValues, // specs actually say "the same function object as the initial value of the values property"
+      // Set#values(void):Iterator
+      values: sharedValues,
+      // Set#entries(void):Iterator
+      entries: setEntries,
+      // Set#forEach(callback:Function, context:void*):void ==> callback.call(context, value, index) === not in specs
+      forEach: sharedSetIterate
+    });
   }
 
-  Unit.prototype.set = function (value) {
-    return this._value = value;
-  };
+  if (typeof WeakSet == 'undefined') {
+    exports.WeakSet = createCollection({
+      // WeakSet#delete(key:void*):boolean
+      'delete': sharedDelete,
+      // WeakSet#add(value:void*):boolean
+      add: sharedAdd,
+      // WeakSet#clear():
+      clear: sharedClear,
+      // WeakSet#has(value:void*):boolean
+      has: setHas
+    }, true);
+  }
 
-  Unit.prototype["delete"] = function () {
-    return delete this._value;
-  };
 
-  Unit.prototype.get = function () {
-    return this._value;
-  };
+  /**
+   * ES6 collection constructor
+   * @return {Function} a collection class
+   */
+  function createCollection(proto, objectOnly){
+    function Collection(a){
+      if (!this || this.constructor !== Collection) return new Collection(a);
+      this._keys = [];
+      this._values = [];
+      this.objectOnly = objectOnly;
 
-  Unit.prototype.has = function () {
-    return "_value" in this;
-  };
-
-  Unit.prototype.next = function (id) {
-    if (id == null) {
-      id = 0;
+      //parse initial iterable argument passed
+      if (a) init.call(this, a);
     }
-    if (id === 0 && this.has()) {
-      return this._id;
+
+    //define size for non object-only collections
+    if (!objectOnly) {
+      defineProperty(proto, 'size', {
+        get: sharedSize
+      });
     }
+
+    //set prototype
+    proto.constructor = Collection;
+    Collection.prototype = proto;
+
+    return Collection;
+  }
+
+
+  /** parse initial iterable argument passed */
+  function init(a){
+    var i;
+    //init Set argument, like `[1,2,3,{}]`
+    if (this.add)
+      a.forEach(this.add, this);
+    //init Map argument like `[[1,2], [{}, 4]]`
+    else
+      a.forEach(function(a){this.set(a[0],a[1])}, this);
+  }
+
+
+  /** delete */
+  function sharedDelete(key) {
+    if (this.has(key)) {
+      this._keys.splice(i, 1);
+      this._values.splice(i, 1);
+    }
+    // Aurora here does it while Canary doesn't
+    return -1 < i;
   };
 
-  Unit.prototype.prev = function (id) {
-    if (id == null) {
-      id = 0;
-    }
-    if (id === 0 && this.has()) {
-      return this._id;
-    }
-  };
+  function sharedGet(key) {
+    return this.has(key) ? this._values[i] : undefined;
+  }
 
-  return Unit;
-})(AbstractList);
+  function has(list, key) {
+    if (this.objectOnly && key !== Object(key))
+      throw new TypeError("Invalid value used as weak collection key");
+    //NaN or 0 passed
+    if (key != key || key === 0) for (i = list.length; i-- && !is(list[i], key);){}
+    else i = list.indexOf(key);
+    return -1 < i;
+  }
 
-module.exports = Unit;
+  function setHas(value) {
+    return has.call(this, this._values, value);
+  }
 
-//# sourceMappingURL=unit.js.map
-},{"./abstract_list":1}]},{},[7])(7)
+  function mapHas(value) {
+    return has.call(this, this._keys, value);
+  }
+
+  /** @chainable */
+  function sharedSet(key, value) {
+    this.has(key) ?
+      this._values[i] = value
+      :
+      this._values[this._keys.push(key) - 1] = value
+    ;
+    return this;
+  }
+
+  /** @chainable */
+  function sharedAdd(value) {
+    if (!this.has(value)) this._values.push(value);
+    return this;
+  }
+
+  function sharedClear() {
+    this._values.length = 0;
+  }
+
+  /** keys, values, and iterate related methods */
+  function sharedKeys() {
+    return sharedIterator(this._keys);
+  }
+
+  function sharedValues() {
+    return sharedIterator(this._values);
+  }
+
+  function mapEntries() {
+    return sharedIterator(this._keys, this._values);
+  }
+
+  function setEntries() {
+    return sharedIterator(this._values, this._values);
+  }
+
+  function sharedIterator(array, array2) {
+    var j = 0, done = false;
+    return {
+      next: function() {
+        var v;
+        if (!done && j < array.length) {
+          v = array2 ? [array[j], array2[j]]: array[j];
+          j += 1;
+        } else {
+          done = true;
+        }
+        return { done: done, value: v };
+      }
+    };
+  }
+
+  function sharedSize() {
+    return this._values.length;
+  }
+
+  function sharedForEach(callback, context) {
+    var self = this;
+    var values = self._values.slice();
+    self._keys.slice().forEach(function(key, n){
+      callback.call(context, values[n], key, self);
+    });
+  }
+
+  function sharedSetIterate(callback, context) {
+    var self = this;
+    self._values.slice().forEach(function(value){
+      callback.call(context, value, value, self);
+    });
+  }
+
+})(typeof exports != 'undefined' && typeof global != 'undefined' ? global : window );
+
+}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
+},{}]},{},[7])(7)
 });

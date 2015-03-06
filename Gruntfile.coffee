@@ -11,7 +11,6 @@ module.exports = ( grunt ) ->
     'take_list'
   ]
 
-
   grunt.initConfig
     pkg: grunt.file.readJSON('package.json')
 
@@ -19,44 +18,22 @@ module.exports = ( grunt ) ->
       default:
         options:
           sourceMap: true
-          bare: true
         files: [
           expand: true
           cwd: 'src'
           src: srcs.map ( src ) -> src + '.coffee'
-          dest: 'build/src'
+          dest: 'dist'
           ext: '.js'
         ]
 
       spec:
         options:
           sourceMap: true
-          bare: true
         files: [
           expand: true
           cwd: 'spec'
           src: ['**/*.coffee']
           dest: 'build/spec'
-          ext: '.js'
-        ]
-
-    babel:
-      default:
-        options:
-          sourceMap: false
-        files: [
-          expand: true
-          cwd: 'build/src'
-          src: ['**/*.js']
-          dest: 'dist'
-          ext: '.js'
-        ]
-      spec:
-        files: [
-          expand: true
-          cwd: 'build/spec'
-          src: ['**/*.js']
-          dest: 'build/spec-babel'
           ext: '.js'
         ]
 
@@ -68,13 +45,12 @@ module.exports = ( grunt ) ->
           browserifyOptions:
             standalone: 'Sonic'
 
-
     jasmine:
       build:
         src: ['dist/sonic.browser.js']
         options:
           keepRunner: true
-          specs: 'build/spec-babel/**/*.js'
+          specs: 'build/spec/**/*.js'
 
     clean:
       build: ['build']
@@ -94,7 +70,7 @@ module.exports = ( grunt ) ->
     codo:
       files: ['src/**/*.coffee']
 
-  grunt.loadNpmTasks 'grunt-babel'
+  # grunt.loadNpmTasks 'grunt-babel'
   grunt.loadNpmTasks 'grunt-browserify'
   grunt.loadNpmTasks 'grunt-contrib-coffee'
   grunt.loadNpmTasks 'grunt-contrib-watch'
@@ -103,7 +79,7 @@ module.exports = ( grunt ) ->
   grunt.loadNpmTasks 'grunt-codo'
 
   grunt.registerTask 'default', ['watch']
-  grunt.registerTask 'dist',    ['coffee', 'babel', 'browserify']
-  grunt.registerTask 'spec',    ['clean', 'dist', 'coffee:spec', 'babel:spec' ,'jasmine']
+  grunt.registerTask 'dist',    ['coffee', 'browserify']
+  grunt.registerTask 'spec',    ['clean', 'dist', 'coffee:spec' ,'jasmine']
 
 

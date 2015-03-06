@@ -1,33 +1,24 @@
-"use strict";
-
-var _interopRequire = function (obj) { return obj && obj.__esModule ? obj["default"] : obj; };
-
-var Signal = _interopRequire(require("./signal"));
-
-var Iterator = _interopRequire(require("./iterator"));
-
-var AbstractList = _interopRequire(require("./abstract_list"));
-
-var List = _interopRequire(require("./list"));
-
-var Unit = _interopRequire(require("./unit"));
-
-var FlatMapList = _interopRequire(require("./flat_map_list"));
-
-var GroupList = _interopRequire(require("./group_list"));
-
-var TakeList = _interopRequire(require("./take_list"));
-
-var Sonic,
-    exports,
+(function() {
+  var AbstractList, FlatMapList, GroupList, Iterator, List, Signal, Sonic, TakeList, Unit, fns,
     __slice = [].slice;
 
-Sonic = {
-  _uniqueCounter: 1,
-  uniqueId: function uniqueId() {
-    return Sonic._uniqueCounter++;
-  },
-  create: function create(items) {
+  Signal = require('./signal');
+
+  Iterator = require('./iterator');
+
+  AbstractList = require('./abstract_list');
+
+  List = require('./list');
+
+  Unit = require('./unit');
+
+  FlatMapList = require('./flat_map_list');
+
+  GroupList = require('./group_list');
+
+  TakeList = require('./take_list');
+
+  Sonic = function(items) {
     if (items == null) {
       items = [];
     }
@@ -35,21 +26,35 @@ Sonic = {
       return items;
     }
     return new List(items);
-  },
-  unit: function unit(item) {
+  };
+
+  Sonic._uniqueCounter = 1;
+
+  Sonic.uniqueId = function() {
+    return Sonic._uniqueCounter++;
+  };
+
+  Sonic.unit = function(item) {
     return new Unit(item);
-  },
-  empty: function empty() {
+  };
+
+  Sonic.empty = function() {
     return new Unit();
-  },
-  getIterator: function getIterator(list, start) {
+  };
+
+  Sonic.getIterator = function(list, start) {
+    list = Sonic(list);
     return new Iterator(list, start);
-  },
-  each: function each(list, fn) {
+  };
+
+  Sonic.each = function(list, fn) {
+    list = Sonic(list);
     return Sonic.forEach(list, fn);
-  },
-  forEach: function forEach(list, fn) {
+  };
+
+  Sonic.forEach = function(list, fn) {
     var iterator;
+    list = Sonic(list);
     iterator = Sonic.getIterator(list);
     while (iterator.moveNext()) {
       if (fn(iterator.current(), iterator.currentId) === false) {
@@ -57,42 +62,54 @@ Sonic = {
       }
     }
     return true;
-  },
-  findId: function findId(list, fn) {
+  };
+
+  Sonic.findId = function(list, fn) {
     var result;
+    list = Sonic(list);
     result = void 0;
-    Sonic.each(list, function (value, id) {
+    Sonic.each(list, function(value, id) {
       if (fn(value)) {
         result = id;
         return false;
       }
     });
     return result;
-  },
-  find: function find(list, fn) {
+  };
+
+  Sonic.find = function(list, fn) {
+    list = Sonic(list);
     return list.get(Sonic.findId(list, fn));
-  },
-  idAt: function idAt(list, index) {
+  };
+
+  Sonic.idAt = function(list, index) {
     var i;
+    list = Sonic(list);
     i = 0;
-    return Sonic.findId(list, function () {
+    return Sonic.findId(list, function() {
       if (i++ === index) {
         return true;
       }
     });
-  },
-  idOf: function idOf(list, value) {
-    return Sonic.findId(list, function (v) {
+  };
+
+  Sonic.idOf = function(list, value) {
+    list = Sonic(list);
+    return Sonic.findId(list, function(v) {
       return v === value;
     });
-  },
-  at: function at(list, index) {
+  };
+
+  Sonic.at = function(list, index) {
+    list = Sonic(list);
     return list.get(Sonic.idAt(list, index));
-  },
-  indexOf: function indexOf(list, value) {
+  };
+
+  Sonic.indexOf = function(list, value) {
     var i;
+    list = Sonic(list);
     i = -1;
-    if (Sonic.some(list, function (v) {
+    if (Sonic.some(list, function(v) {
       i++;
       return v === value;
     })) {
@@ -100,141 +117,173 @@ Sonic = {
     } else {
       return -1;
     }
-  },
-  some: function some(list, predicate) {
-    return !Sonic.each(list, function () {
+  };
+
+  Sonic.some = function(list, predicate) {
+    list = Sonic(list);
+    return !Sonic.each(list, function() {
       return !predicate.apply(null, arguments);
     });
-  },
-  any: function any(list, predicate) {
+  };
+
+  Sonic.any = function(list, predicate) {
+    list = Sonic(list);
     return Sonic.some(list, predicate);
-  },
-  contains: function contains(list, value) {
-    return Sonic.some(list, function (v) {
+  };
+
+  Sonic.contains = function(list, value) {
+    list = Sonic(list);
+    return Sonic.some(list, function(v) {
       return v === value;
     });
-  },
-  first: function first(list) {
+  };
+
+  Sonic.first = function(list) {
+    list = Sonic(list);
     return list.get(list.next());
-  },
-  last: function last(list) {
+  };
+
+  Sonic.last = function(list) {
+    list = Sonic(list);
     return list.get(list.prev());
-  },
-  reduce: function reduce(list, reduceFn, memo) {
-    Sonic.each(list, function (value, id) {
+  };
+
+  Sonic.reduce = function(list, reduceFn, memo) {
+    list = Sonic(list);
+    Sonic.each(list, function(value, id) {
       return reduceFn(memo, value, id);
     });
     return memo;
-  },
-  flatMap: function flatMap(list, flatMapFn) {
+  };
+
+  Sonic.flatMap = function(list, flatMapFn) {
+    list = Sonic(list);
     return new FlatMapList(list, flatMapFn);
-  },
-  group: function group(list, groupFn) {
+  };
+
+  Sonic.group = function(list, groupFn) {
+    list = Sonic(list);
     return new GroupList(list, groupFn);
-  },
-  sort: function sort(list, sortFn) {
+  };
+
+  Sonic.sort = function(list, sortFn) {
+    list = Sonic(list);
     return new SortedList(list, {
       sortFn: sortFn
     });
-  },
-  take: function take(list, count) {
+  };
+
+  Sonic.take = function(list, count) {
+    list = Sonic(list);
     return new TakeList(list, count);
-  },
-  map: function map(list, mapFn) {
-    return Sonic.flatMap(list, function (value) {
+  };
+
+  Sonic.map = function(list, mapFn) {
+    list = Sonic(list);
+    return Sonic.flatMap(list, function(value) {
       return new Unit(mapFn(value));
     });
-  },
-  pluck: function pluck(list, key) {
-    return Sonic.map(list, function (value) {
+  };
+
+  Sonic.pluck = function(list, key) {
+    list = Sonic(list);
+    return Sonic.map(list, function(value) {
       return value[key];
     });
-  },
-  invoke: function invoke() {
+  };
+
+  Sonic.invoke = function() {
     var args, key, list;
     list = arguments[0], key = arguments[1], args = 3 <= arguments.length ? __slice.call(arguments, 2) : [];
-    return Sonic.map(list, function (value) {
+    list = Sonic(list);
+    return Sonic.map(list, function(value) {
       return value[key].apply(value, args);
     });
-  },
-  filter: function filter(list, filterFn) {
-    return Sonic.flatMap(list, function (value) {
+  };
+
+  Sonic.filter = function(list, filterFn) {
+    list = Sonic(list);
+    return Sonic.flatMap(list, function(value) {
       if (filterFn(value)) {
         return new Unit(value);
       } else {
         return new Unit();
       }
     });
-  },
-  concat: function concat() {
-    var lists;
+  };
+
+  Sonic.concat = function() {
+    var list, lists;
     lists = 1 <= arguments.length ? __slice.call(arguments, 0) : [];
-    return Sonic.flatMap(lists, function (list) {
+    list = Sonic(list);
+    return Sonic.flatMap(lists, function(list) {
       return list;
     });
-  },
-  flatten: function flatten(list) {
-    return Sonic.flatMap(list, function (list) {
+  };
+
+  Sonic.flatten = function(list) {
+    list = Sonic(list);
+    return Sonic.flatMap(list, function(list) {
       return list;
     });
-  },
-  uniq: function uniq(list, groupFn) {
+  };
+
+  Sonic.uniq = function(list, groupFn) {
     if (groupFn == null) {
-      groupFn = function (x) {
+      groupFn = function(x) {
         return x;
       };
     }
-    return Sonic.flatMap(Sonic.group(list, groupFn), function (list) {
+    list = Sonic(list);
+    return Sonic.flatMap(Sonic.group(list, groupFn), function(list) {
       return list.take(1);
     });
-  },
-  union: function union() {
-    var lists;
+  };
+
+  Sonic.union = function() {
+    var list, lists;
     lists = 1 <= arguments.length ? __slice.call(arguments, 0) : [];
+    list = Sonic(list);
     return Sonic.concat.apply(Sonic, lists).uniq();
-  },
-  intersection: function intersection(list, other) {
+  };
+
+  Sonic.intersection = function(list, other) {
+    list = Sonic(list);
     return Sonic.filter(list, other.contains);
-  },
-  proxy: (function (_proxy) {
-    var _proxyWrapper = function proxy(_x, _x2) {
-      return _proxy.apply(this, arguments);
-    };
+  };
 
-    _proxyWrapper.toString = function () {
-      return _proxy.toString();
-    };
-
-    return _proxyWrapper;
-  })(function (list, fns) {
+  Sonic.proxy = function(list, fns) {
     var fn, key, proxy;
     if (fns == null) {
       fns = {
-        get: "get",
-        has: "has",
-        prev: "prev",
-        next: "next",
-        onInvalidate: "onInvalidate"
+        'get': 'get',
+        'has': 'has',
+        'prev': 'prev',
+        'next': 'next',
+        'onInvalidate': 'onInvalidate'
       };
     }
-    proxy = new AbstractList();
+    list = Sonic(list);
+    proxy = new AbstractList;
     for (key in fns) {
       fn = fns[key];
       proxy[key] = list[fn].bind(list);
     }
     return proxy;
-  }),
-  reverse: function reverse(list) {
+  };
+
+  Sonic.reverse = function(list) {
     var fns, proxy;
+    list = Sonic(list);
     fns = {
-      get: "get",
-      has: "has",
-      prev: "next",
-      next: "prev"
+      'get': 'get',
+      'has': 'has',
+      'prev': 'next',
+      'next': 'prev'
     };
     proxy = Sonic.proxy(list, fns);
-    proxy.onInvalidate = function (callback) {
-      return list.onInvalidate(function (event) {
+    proxy.onInvalidate = function(callback) {
+      return list.onInvalidate(function(event) {
         return callback({
           prev: event.next,
           next: event.prev
@@ -242,30 +291,41 @@ Sonic = {
       });
     };
     return proxy;
-  },
-  toArray: function toArray(list) {
-    return Sonic.reduce(list, function (memo, value) {
-      return memo.push(value);
-    }, []);
-  },
-  Signal: Signal,
-  Iterator: Iterator,
-  AbstractList: AbstractList,
-  Unit: Unit,
-  List: List,
-  FlatMapList: FlatMapList,
-  GroupList: GroupList,
-  TakeList: TakeList
-};
-
-exports = ["getIterator", "each", "forEach", "at", "idAt", "idOf", "indexOf", "contains", "any", "some", "find", "reduce", "first", "last", "toArray", "flatMap", "group", "sort", "take", "map", "pluck", "invoke", "filter", "concat", "flatten", "uniq", "union", "intersection", "proxy", "reverse"];
-
-exports.forEach(function (fn) {
-  return AbstractList.prototype[fn] = function () {
-    return Sonic[fn].apply(Sonic, [this].concat(__slice.call(arguments)));
   };
-});
 
-module.exports = Sonic;
+  Sonic.toArray = function(list) {
+    list = Sonic(list);
+    return Sonic.reduce(list, (function(memo, value) {
+      return memo.push(value);
+    }), []);
+  };
+
+  Sonic.Signal = Signal;
+
+  Sonic.Iterator = Iterator;
+
+  Sonic.AbstractList = AbstractList;
+
+  Sonic.Unit = Unit;
+
+  Sonic.List = List;
+
+  Sonic.FlatMapList = FlatMapList;
+
+  Sonic.GroupList = GroupList;
+
+  Sonic.TakeList = TakeList;
+
+  fns = ['getIterator', 'each', 'forEach', 'at', 'idAt', 'idOf', 'indexOf', 'contains', 'any', 'some', 'find', 'reduce', 'first', 'last', 'toArray', 'flatMap', 'group', 'sort', 'take', 'map', 'pluck', 'invoke', 'filter', 'concat', 'flatten', 'uniq', 'union', 'intersection', 'proxy', 'reverse'];
+
+  fns.forEach(function(fn) {
+    return AbstractList.prototype[fn] = function() {
+      return Sonic[fn].apply(Sonic, [this].concat(__slice.call(arguments)));
+    };
+  });
+
+  module.exports = Sonic;
+
+}).call(this);
 
 //# sourceMappingURL=sonic.js.map

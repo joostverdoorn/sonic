@@ -1,7 +1,6 @@
-`
-import Signal      from './signal'
-import Iterator    from './iterator'
-`
+Signal      = require( './signal')
+Iterator    = require( './iterator')
+
 
 # Abstract list implements the basic list Sonic uses. As the name implies
 # it serves mainly as a base class for other lists and is not very useful
@@ -142,6 +141,6 @@ class AbstractList
     @_events.yield(event)
 
 
-`
-export default AbstractList
-`
+
+module.exports = AbstractList
+

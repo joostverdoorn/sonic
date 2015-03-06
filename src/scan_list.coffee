@@ -1,7 +1,4 @@
-`
-import AbstractList from "./abstract_list"
-`
-
+AbstractList = require("./abstract_list")
 
 class ScanList extends AbtractList
 
@@ -30,6 +27,6 @@ class ScanList extends AbtractList
   next: ( ) ->
     return @_source.next(arguments...)
 
-`
-export default ScanList
-`
+
+module.exports = ScanList
+
