@@ -11,6 +11,31 @@ module.exports = ( grunt ) ->
     'take_list'
   ]
 
+  # Coverage thresholds
+  thresholds =
+    lines: 60
+    statements: 60
+    branches: 60
+    functions: 60
+
+
+  # This functions makes the config shorter and clearer later on.
+  # It just returns the type specific coverage config
+  coverage = ( type, optionsRef ) ->
+    optionsRef.template = require('grunt-template-jasmine-istanbul')
+    optionsRef.templateOptions =
+      coverage: 'statistics/coverage/coverage.json'
+      thresholds: thresholds
+      report:
+        type: type
+        options:
+          dir: "statistics/coverage/#{type}"
+
+    return optionsRef
+
+
+  # Configure all the tasks!
+
   grunt.initConfig
     pkg: grunt.file.readJSON('package.json')
 
@@ -46,11 +71,22 @@ module.exports = ( grunt ) ->
             standalone: 'Sonic'
 
     jasmine:
-      build:
-        src: ['dist/sonic.browser.js']
+      default:
+        src:  ['dist/sonic.browser.js']
         options:
           keepRunner: true
           specs: 'build/spec/**/*.js'
+      lcovonly:
+        src:  ['dist/sonic.browser.js']
+        options: (coverage 'lcovonly',
+          keepRunner: true
+          specs: 'build/spec/**/*.js'
+        )
+      html:
+        src: ['dist/sonic.browser.js']
+        options: (coverage 'html',
+          specs: 'build/spec/**/*.js'
+        )
 
     clean:
       build: ['build']
@@ -80,6 +116,7 @@ module.exports = ( grunt ) ->
 
   grunt.registerTask 'default', ['watch']
   grunt.registerTask 'dist',    ['coffee', 'browserify']
-  grunt.registerTask 'spec',    ['clean', 'dist', 'coffee:spec' ,'jasmine']
+  grunt.registerTask 'spec',    ['clean', 'dist', 'coffee:spec' ,'jasmine:default']
+  grunt.registerTask 'test',    ['spec' ,'jasmine:lcovonly']
 
 
