@@ -1,6 +1,14 @@
+# Source maps
+*.js.map
+
+# External libraries
 node_modules
-.grunt/
-build/*
-bower_components/*
+bower_components
+
+# Build folders
+.grunt
+build
+
+# Generated files
 _SpecRunner.html
-statistics/*
+statistics
