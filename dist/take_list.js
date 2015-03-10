@@ -20,14 +20,16 @@
           return _this._invalidate(event.prev);
         };
       })(this));
-      this.onInvalidate(function(event) {
-        var id, _results;
-        _results = [];
-        while (id = this._source.next(id || event.prev)) {
-          _results.push(delete this._indexById[id]);
-        }
-        return _results;
-      });
+      this.onInvalidate((function(_this) {
+        return function(event) {
+          var id, _results;
+          _results = [];
+          while (id = _this._source.next(id || event.prev)) {
+            _results.push(delete _this._indexById[id]);
+          }
+          return _results;
+        };
+      })(this));
     }
 
     TakeList.prototype.get = function(id) {

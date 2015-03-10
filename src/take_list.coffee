@@ -14,7 +14,7 @@ class TakeList extends AbstractList
     @_source.onInvalidate ( event ) =>
       @_invalidate(event.prev)
 
-    @onInvalidate ( event ) ->
+    @onInvalidate ( event ) =>
       delete @_indexById[id] while id = @_source.next(id or event.prev)
 
   get: ( id ) ->

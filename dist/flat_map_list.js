@@ -92,9 +92,12 @@
       }
     };
 
-    FlatMapList.prototype._getListBySourceId = function(sourceId) {
+    FlatMapList.prototype._getListBySourceId = function(sourceId, lazy) {
       var list;
-      if (list = this._listBySourceId[sourceId]) {
+      if (lazy == null) {
+        lazy = false;
+      }
+      if ((list = this._listBySourceId[sourceId]) || lazy) {
         return list;
       }
       if (!this._source.has(sourceId)) {
@@ -111,13 +114,31 @@
     };
 
     FlatMapList.prototype._onSourceInvalidate = function(event) {
-      var next, prev, _ref, _ref1;
-      prev = (_ref = this._getListBySourceId(event.prev)) != null ? _ref.prev(0, {
+      var iterator, next, prev;
+      prev = this._getListBySourceId(event.prev, {
         lazy: true
-      }) : void 0;
-      next = (_ref1 = this._getListBySourceId(event.next)) != null ? _ref1.next(0, {
+      });
+      if (prev != null) {
+        prev = prev.prev(0, {
+          lazy: true
+        });
+      } else {
+        event.prev;
+      }
+      next = this._getListBySourceId(event.next, {
         lazy: true
-      }) : void 0;
+      });
+      if (next != null) {
+        next = next.next(0, {
+          lazy: true
+        });
+      } else {
+        event.next;
+      }
+      iterator = this._source.getIterator(prev);
+      while (iterator.moveNext() && iterator.current() !== next) {
+        delete this._sourceIdById[iterator.currentId];
+      }
       return this._invalidate(prev, next);
     };
 

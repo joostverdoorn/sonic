@@ -56,8 +56,9 @@ class FlatMapList extends AbstractList
     if sourceId = @_sourceIdById[id]
       return @_getListBySourceId(sourceId)
 
-  _getListBySourceId: ( sourceId ) ->
-    return list if list = @_listBySourceId[sourceId]
+  _getListBySourceId: ( sourceId, lazy = false ) ->
+    if (list = @_listBySourceId[sourceId]) or lazy
+      return list
     return unless @_source.has(sourceId)
 
     list = @_flatMapFn(@_source.get(sourceId))
@@ -67,8 +68,19 @@ class FlatMapList extends AbstractList
     return list
 
   _onSourceInvalidate: ( event ) =>
-    prev = @_getListBySourceId(event.prev)?.prev(0, lazy: true)
-    next = @_getListBySourceId(event.next)?.next(0, lazy: true)
+    prev = @_getListBySourceId(event.prev, lazy: true)
+    if prev?
+      prev = prev.prev(0, lazy: true)
+    else event.prev
+    next = @_getListBySourceId(event.next, lazy: true)
+    if next?
+      next = next.next(0, lazy: true)
+    else event.next
+
+    iterator = @_source.getIterator(prev)
+    while iterator.moveNext() and iterator.current() isnt next
+      delete @_sourceIdById[iterator.currentId]
+
     @_invalidate(prev, next)
 
   _onListInvalidate: ( event, sourceId ) =>
