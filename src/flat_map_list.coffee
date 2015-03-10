@@ -68,14 +68,25 @@ class FlatMapList extends AbstractList
     return list
 
   _onSourceInvalidate: ( event ) =>
-    prev = @_getListBySourceId(event.prev, lazy: true)
-    if prev?
-      prev = prev.prev(0, lazy: true)
-    else event.prev
-    next = @_getListBySourceId(event.next, lazy: true)
-    if next?
-      next = next.next(0, lazy: true)
-    else event.next
+
+    # Find the list that contains the prev of our invalidated region
+    prev = event.prev
+    unless prevList = @_getListBySourceId(prev, lazy: true)
+      prev = @_source.prev(prev) until prevList = @_getListBySourceId(prev, lazy: true)
+    prev = prevList.prev(0)
+
+    # Find the list that contains the next of our invalidated region
+    next = event.next
+    unless nextList = @_getListBySourceId(next, lazy: true)
+      next = @_source.next(next) until nextList = @_getListBySourceId(next, lazy: true)
+    next = nextList.next(0)
+
+
+    # # Find the list that contains the next of our invalidated region
+    # nextList = @_getListBySourceId(event.next, lazy: true)
+    # if nextList?
+    #   next = nextList.next(0, lazy: true)
+    # else next = event.next
 
     iterator = @_source.getIterator(prev)
     while iterator.moveNext() and iterator.current() isnt next
