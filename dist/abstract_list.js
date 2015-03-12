@@ -1,9 +1,7 @@
 (function() {
-  var AbstractList, Iterator, Signal;
+  var AbstractList, Signal;
 
   Signal = require('./signal');
-
-  Iterator = require('./iterator');
 
   AbstractList = (function() {
     function AbstractList() {
@@ -13,105 +11,84 @@
       this._events = new Signal;
     }
 
-    AbstractList.prototype._add = function(value, options) {
-      var id;
-      if ((options != null) && (options.id != null)) {
-        id = options.id;
-      } else {
-        id = Sonic.uniqueId();
+    AbstractList.prototype._splice = function(prev, next, first, last) {
+      var id, oldNext, oldPrev, _next, _prev;
+      if (last == null) {
+        last = first;
       }
+      if (!(((prev === 0 || this.has(prev)) || (next === 0 || this.has(next))) && (!first || this.has(first)) && (!last || first === last || this.has(last)))) {
+        return false;
+      }
+      _next = this._next[prev];
+      while ((id = _next) && id !== next) {
+        _next = this._next[id];
+        delete this._byId[id];
+        delete this._prev[id];
+        delete this._next[id];
+      }
+      _prev = this._prev[next];
+      while ((id = _prev) && id !== prev) {
+        _prev = this._prev[id];
+        delete this._byId[id];
+        delete this._prev[id];
+        delete this._next[id];
+      }
+      if (first != null) {
+        oldPrev = this._prev[first];
+        this._prev[first] = prev;
+      }
+      if (last != null) {
+        oldNext = this._next[last];
+        this._next[last] = next;
+      }
+      if (oldPrev === 0 || this.has(oldPrev)) {
+        this._next[oldPrev] = oldNext;
+      }
+      if (oldNext === 0 || this.has(oldNext)) {
+        this._prev[oldNext] = oldPrev;
+      }
+      if (next != null) {
+        this._prev[next] = last;
+      }
+      if (prev != null) {
+        this._next[prev] = first;
+      }
+      this._invalidate(prev, next);
+      return true;
+    };
+
+    AbstractList.prototype._add = function(value, prev, next) {
+      var id;
+      id = Sonic.uniqueId();
       this._byId[id] = value;
-      if (options && ((options.prev != null) || (options.next != null))) {
-        this._move(id, options);
+      if (!this._move(id, prev, next)) {
+        delete this._byId[id];
+        return null;
       }
       return id;
     };
 
-    AbstractList.prototype._set = function(id, value, options) {
-      if (!(id !== 0 && this.has(id))) {
+    AbstractList.prototype._set = function(id, value) {
+      if (!this.has(id)) {
         return false;
       }
       this._byId[id] = value;
-      if (!(options != null ? options.silent : void 0)) {
-        this._invalidate(this._prev[id], this._next[id]);
-      }
+      this._invalidate(this._prev[id], this._next[id]);
       return true;
     };
 
-    AbstractList.prototype._delete = function(id, options) {
-      if (!(id !== 0 && this._remove(id, options))) {
-        return false;
-      }
-      delete this._byId[id];
-      delete this._next[id];
-      delete this._prev[id];
-      return true;
+    AbstractList.prototype._delete = function(id) {
+      return id !== 0 && this._splice(this._prev[id], this._next[id], this._next[id], this._prev[id]);
     };
 
-    AbstractList.prototype._remove = function(id, options) {
-      var next, prev;
-      if (!this.has(id)) {
-        return false;
-      }
-      prev = this._prev[id];
-      next = this._next[id];
-      if (prev != null) {
-        this._prev[next] = prev;
-      }
-      if (next != null) {
-        this._next[prev] = next;
-      }
-      if ((next != null) || (prev != null) && !(options != null ? options.silent : void 0)) {
-        this._invalidate(prev, next);
-      }
-      return true;
-    };
-
-    AbstractList.prototype._move = function(id, options) {
-      var next, prev;
-      if (!this.has(id)) {
-        return false;
-      }
-      this._remove(id);
-      prev = options != null ? options.prev : void 0;
-      next = options != null ? options.next : void 0;
+    AbstractList.prototype._move = function(id, prev, next) {
       if ((next != null) && (prev == null)) {
         prev = this._prev[next];
       }
       if ((prev != null) && (next == null)) {
         next = this._next[prev];
       }
-      if (prev != null) {
-        this._prev[id] = prev;
-        this._next[prev] = id;
-      }
-      if (next != null) {
-        this._next[id] = next;
-        this._prev[next] = id;
-      }
-      if (!(options != null ? options.silent : void 0)) {
-        this._invalidate(prev, next);
-      }
-      return true;
-    };
-
-    AbstractList.prototype._slice = function(prev, next) {
-      var id;
-      if (prev != null) {
-        while ((id = this._next[id || prev]) && id !== next) {
-          this._delete(id, {
-            silent: true
-          });
-        }
-      }
-      if (next != null) {
-        while ((id = this._prev[id || next]) && id !== prev) {
-          this._delete(id, {
-            silent: true
-          });
-        }
-      }
-      return this._invalidate(prev, next);
+      return this._splice(prev, next, id);
     };
 
     AbstractList.prototype.get = function(id) {
@@ -119,7 +96,7 @@
     };
 
     AbstractList.prototype.has = function(id) {
-      return id in this._byId || id === 0;
+      return id in this._byId;
     };
 
     AbstractList.prototype.prev = function(id) {

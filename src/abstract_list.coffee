@@ -1,6 +1,4 @@
-Signal      = require( './signal')
-Iterator    = require( './iterator')
-
+Signal = require('./signal')
 
 # Abstract list implements the basic list Sonic uses. As the name implies
 # it serves mainly as a base class for other lists and is not very useful
@@ -19,102 +17,98 @@ class AbstractList
 
     @_events = new Signal
 
+  _splice: ( prev, next, first, last = first ) ->
+    return false unless ((prev is 0 or @has(prev)) or (next is 0 or @has(next))) and
+                        (not first or @has(first)) and (not last or first is last or @has(last))
+
+    _next = @_next[prev]
+    while (id = _next) and id isnt next
+      _next = @_next[id]
+      delete @_byId[id]
+      delete @_prev[id]
+      delete @_next[id]
+
+    _prev = @_prev[next]
+    while (id = _prev) and id isnt prev
+      _prev = @_prev[id]
+      delete @_byId[id]
+      delete @_prev[id]
+      delete @_next[id]
+
+    if first?
+      oldPrev = @_prev[first]
+      @_prev[first] = prev
+
+    if last?
+      oldNext = @_next[last]
+      @_next[last] = next
+
+    @_next[oldPrev] = oldNext if oldPrev is 0 or @has(oldPrev)
+    @_prev[oldNext] = oldPrev if oldNext is 0 or @has(oldNext)
+
+    @_prev[next] = last if next?
+    @_next[prev] = first if prev?
+
+    @_invalidate(prev, next)
+    return true
+
   # Adds a value.
   #
   # @param [any] value The value to add
-  # @param [Object] options The options
-  # @option options [number] prev The id of the entry after which to insert the value
-  # @option options [number] next The id of the entry before which to insert the value
+  # @param [number] prev The id of the previous entry
+  # @param [number] next The id of the next entry
+  # @return [number] the id of the added value
   #
-  _add: ( value, options ) ->
-    if options? and options.id?
-      id = options.id
-    else id = Sonic.uniqueId()
-
+  _add: ( value, prev, next ) ->
+    id = Sonic.uniqueId()
     @_byId[id] = value
 
-    if options and (options.prev? or options.next?)
-      @_move(id, options)
+    unless @_move(id, prev, next)
+      delete @_byId[id]
+      return null
 
     return id
+
 
   # Sets the value of an entry.
   #
   # @param [number] id The id of the entry to set the value of
   # @param [any] value The value to set
+  # @param [object] options The options
+  # @option options [boolean] silent Whether or not to throw an invalidate
+  # @return [boolean] Wether or not the entry could be set
   #
-  _set: ( id, value, options ) ->
-    return false unless id isnt 0 and @has(id)
+  _set: ( id, value ) ->
+    return false unless @has(id)
 
     @_byId[id] = value
-    @_invalidate(@_prev[id], @_next[id]) unless options?.silent
+    @_invalidate(@_prev[id], @_next[id])
 
     return true
 
   # Deletes an entry.
   #
   # @param [number] id The id of the entry to delete
+  # @param [object] options The options
+  # @option options [boolean] silent Whether or not to throw an invalidate
+  # @return [boolean] Whether or not the entry was deleted
   #
-  _delete: ( id, options ) ->
-    return false unless id isnt 0 and @_remove(id, options)
+  _delete: ( id ) ->
+    return id isnt 0 and @_splice(@_prev[id], @_next[id], @_next[id], @_prev[id])
 
-    delete @_byId[id]
-    delete @_next[id]
-    delete @_prev[id]
-
-    return true
-
-  # Removes an entry from the linked list. This does not delete it
-  # from the index.
-  #
-  # @param [number] id The id of the entry to remove
-  #
-  _remove: ( id, options ) ->
-    return false unless @has(id)
-
-    prev = @_prev[id]
-    next = @_next[id]
-
-    @_prev[next] = prev if prev?
-    @_next[prev] = next if next?
-    @_invalidate(prev, next) if next? or prev? and not options?.silent
-
-    return true
-
-  # Moves the signal before or after the entry passed in the options.
+  # Removes the entry and moves it between the given entries.
   #
   # @param [number] id The id of the entry to move
-  # @param [Object] options The options
-  # @option options [Signal] before The id of the entry to move before
-  # @option options [Signal] after The id of the entry to move after
+  # @param [object] options The options
+  # @option options [number] prev The id of the entry after which to insert the value
+  # @option options [number] next The id of the entry before which to insert the value
+  # @option options [boolean] silent Whether or not to throw an invalidate
+  # @return [boolean] Whether or not the entry was moved
   #
-  _move: ( id, options ) ->
-    return false unless @has(id)
-
-    @_remove(id)
-
-    prev = options?.prev
-    next = options?.next
-
+  _move: ( id, prev, next ) ->
     prev = @_prev[next] if next? and not prev?
     next = @_next[prev] if prev? and not next?
-
-    if prev?
-      @_prev[id] = prev
-      @_next[prev] = id
-
-    if next?
-      @_next[id] = next
-      @_prev[next] = id
-
-    @_invalidate(prev, next) unless options?.silent
-
-    return true
-
-  _slice: ( prev, next ) ->
-    @_delete(id, silent: true) while (id = @_next[id or prev]) and id isnt next if prev?
-    @_delete(id, silent: true) while (id = @_prev[id or next]) and id isnt prev if next?
-    @_invalidate(prev, next)
+    return @_splice(prev, next, id)
 
   #
   #
@@ -122,7 +116,7 @@ class AbstractList
     return @_byId[id]
 
   has: ( id ) ->
-    return id of @_byId or id is 0
+    return id of @_byId
 
   prev: ( id = 0 ) ->
     return @_prev[id] or null
@@ -133,14 +127,11 @@ class AbstractList
   onInvalidate: ( callback ) ->
     @_events.forEach(callback)
 
-
   # Yields an invalidate event
   #
   _invalidate: ( prev, next ) ->
     event = { prev, next }
     @_events.yield(event)
-
-
 
 module.exports = AbstractList
 

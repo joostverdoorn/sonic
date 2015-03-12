@@ -114,27 +114,29 @@
     };
 
     FlatMapList.prototype._onSourceInvalidate = function(event) {
-      var iterator, next, prev;
-      prev = this._getListBySourceId(event.prev, {
+      var iterator, next, nextList, prev, prevList;
+      prev = event.prev;
+      if (!(prevList = this._getListBySourceId(prev, {
         lazy: true
-      });
-      if (prev != null) {
-        prev = prev.prev(0, {
-          lazy: true
-        });
-      } else {
-        event.prev;
+      }))) {
+        while (!(prevList = this._getListBySourceId(prev, {
+            lazy: true
+          }))) {
+          prev = this._source.prev(prev);
+        }
       }
-      next = this._getListBySourceId(event.next, {
+      prev = prevList.prev(0);
+      next = event.next;
+      if (!(nextList = this._getListBySourceId(next, {
         lazy: true
-      });
-      if (next != null) {
-        next = next.next(0, {
-          lazy: true
-        });
-      } else {
-        event.next;
+      }))) {
+        while (!(nextList = this._getListBySourceId(next, {
+            lazy: true
+          }))) {
+          next = this._source.next(next);
+        }
       }
+      next = nextList.next(0);
       iterator = this._source.getIterator(prev);
       while (iterator.moveNext() && iterator.current() !== next) {
         delete this._sourceIdById[iterator.currentId];

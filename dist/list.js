@@ -11,15 +11,11 @@
     function List(values) {
       var value, _i, _len;
       List.__super__.constructor.call(this);
-      this._move(0, {
-        next: 0
-      });
+      this._move(0, 0);
       if (values != null) {
         for (_i = 0, _len = values.length; _i < _len; _i++) {
           value = values[_i];
-          this._add(value, {
-            next: 0
-          });
+          this._add(value, null, 0);
         }
       }
     }
@@ -29,15 +25,11 @@
     };
 
     List.prototype.push = function(value) {
-      return this._add(value, {
-        next: 0
-      });
+      return this._add(value, null, 0);
     };
 
     List.prototype.unshift = function(value) {
-      return this._add(value, {
-        prev: 0
-      });
+      return this._add(value, 0);
     };
 
     List.prototype.pop = function() {

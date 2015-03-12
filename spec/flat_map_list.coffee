@@ -10,7 +10,7 @@ describe "FlatMapList", ->
     @flatMapList = new Sonic.FlatMapList(@list1)
 
   it "should work", ->
-    console.log JSON.stringify(@flatMapList.toArray())
+    # console.log JSON.stringify(@flatMapList.toArray())
   # it "should have all items of its sources concatenated", ->
   #   list1 = Sonic([1,2,3])
   #   list2 = Sonic([4,5,6])

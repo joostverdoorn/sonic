@@ -15,7 +15,7 @@ module.exports = ( grunt ) ->
   thresholds =
     lines: 60
     statements: 60
-    branches: 60
+    branches: 50
     functions: 60
 
 
@@ -93,15 +93,9 @@ module.exports = ( grunt ) ->
 
     watch:
 
-      dist:
-        files: ['src/**/*.coffee']
-        tasks: ['coffee:dist']
-      spec:
-        files: ['**/*.coffee']
+      default:
+        files: ['src/**/*.coffee', 'spec/**/*.coffee']
         tasks: ['spec']
-      build:
-        files: ['src/**/*.coffee']
-        tasks: ['coffee:build']
 
     codo:
       files: ['src/**/*.coffee']
