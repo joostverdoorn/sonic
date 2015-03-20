@@ -109,7 +109,10 @@ class AbstractList
   #
   _add: ( value, prev, next ) ->
     id = uniqueId()
-    return null unless @_move(id, prev, next)
+
+    prev = @_prev[next] if next? and not prev?
+    next = @_next[prev] if prev? and not next?
+    return null unless @_splice(prev, next, id)
 
     @_byId[id] = value
     return id

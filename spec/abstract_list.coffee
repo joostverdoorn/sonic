@@ -135,19 +135,19 @@ describe "AbstractList", ->
       item = "apple"
       expect(@list._add item).toBe(null)
 
-    it "should call _move if a prev is given", ->
-      spyOn(@list, '_move').and.callThrough()
+    it "should call _splice if a prev is given", ->
+      spyOn(@list, '_splice').and.callThrough()
 
       item = "apple"
       id = @list._add item, 0
-      expect(@list._move).toHaveBeenCalledWith id, 0, undefined
+      expect(@list._splice).toHaveBeenCalledWith 0, jasmine.any(Number), id
 
-    it "should call _move if a next is given", ->
-      spyOn(@list, '_move').and.callThrough()
+    it "should call _splice if a next is given", ->
+      spyOn(@list, '_splice').and.callThrough()
 
       item = "apple"
       id = @list._add item, null, 0
-      expect(@list._move).toHaveBeenCalledWith id, null, 0
+      expect(@list._splice).toHaveBeenCalledWith jasmine.any(Number), 0, id
 
   describe "#_set", ->
 
