@@ -14,9 +14,9 @@ module.exports = ( grunt ) ->
   # Coverage thresholds
   thresholds =
     lines: 60
-    statements: 60
-    branches: 50
-    functions: 60
+    statements: 50
+    branches: 40
+    functions: 50
 
 
   # This functions makes the config shorter and clearer later on.
