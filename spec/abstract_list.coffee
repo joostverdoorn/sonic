@@ -5,6 +5,41 @@ describe "AbstractList", ->
     @list._move(0, 0)
     @ids = (@list._add(i, null, 0) for i in [0...10])
 
+  describe "#get", ->
+
+    it "should return the item with the specified id", ->
+      item = "pear"
+      id = @list._add(item, 0)
+      expect(@list.get(id)).toBe(item)
+
+  describe "#has", ->
+
+
+  describe "#prev", ->
+
+    it "should return the id before the given id", ->
+      id = @list.idOf 5
+      prevId = @list.prev id
+      expect(@list.get prevId).toBe 4
+
+    it "should return the last id if no id is given", ->
+      @list._add 42, null, 0
+      lastId = @list.prev null
+      expect(@list.get lastId).toBe 42
+
+  describe "#next", ->
+
+    it "should return the id after the given id", ->
+      id = @list.idOf 5
+      nextId = @list.next id
+      expect(@list.get nextId).toBe 6
+
+    it "should return the first id if no id is given", ->
+      @list._add 42, 0
+      firstId = @list.next null
+      expect(@list.get firstId).toBe 42
+
+
   describe "#_splice", ->
     it "should return false when no next and no prev are given", ->
       expect(@list._splice()).toBe false
@@ -24,18 +59,12 @@ describe "AbstractList", ->
     it "should not delete the prev when a prev is given", ->
       prev = @list._next[0]
       expect(@list._splice(prev)).toBe true
-
       expect(@list._byId[prev]).toBeDefined()
-      expect(@list._prev[prev]).toBeDefined()
-      expect(@list._next[prev]).not.toBeDefined()
 
     it "should not delete the next when a next is given", ->
       next = @list._prev[0]
       expect(@list._splice(null, next)).toBe true
-
       expect(@list._byId[next]).toBeDefined()
-      expect(@list._prev[next]).not.toBeDefined()
-      expect(@list._next[next]).toBeDefined()
 
     it "should not delete the prev or the next when a prev and a next are given", ->
       prev = @list._next[0]
@@ -43,12 +72,7 @@ describe "AbstractList", ->
       expect(@list._splice(prev, next)).toBe true
 
       expect(@list._byId[prev]).toBeDefined()
-      expect(@list._prev[prev]).toBeDefined()
-      expect(@list._next[prev]).not.toBeDefined()
-
       expect(@list._byId[next]).toBeDefined()
-      expect(@list._prev[next]).not.toBeDefined()
-      expect(@list._next[next]).toBeDefined()
 
     it "should delete all items next of prev", ->
       prev = @list._next[0]
@@ -56,8 +80,6 @@ describe "AbstractList", ->
 
       for id in @ids when id isnt prev
         expect(@list._byId[id]).not.toBeDefined()
-        expect(@list._prev[id]).not.toBeDefined()
-        expect(@list._next[id]).not.toBeDefined()
 
     it "should delete all items prev of next", ->
       next = @list._prev[0]
@@ -96,17 +118,6 @@ describe "AbstractList", ->
       expect(@list._splice(prev, next, null, last)).toBe true
       expect(@list._prev[next]).toBe last
       expect(@list._next[last]).toBe next
-
-    it "should remove the first from it's old position when a first is passed", ->
-      prev = @list._next[0]
-      next = @list._next[prev]
-      first = @list._prev[0]
-      oldPrev = @list._prev[first]
-      oldNext = @list._next[first]
-
-      expect(@list._splice(prev, next, first)).toBe true
-      expect(@list._next[oldPrev]).toBe oldNext
-      expect(@list._prev[oldNext]).toBe oldPrev
 
   describe "#_add", ->
 
@@ -232,7 +243,7 @@ describe "AbstractList", ->
       expect(@list.next @id1).toBe @id2
       expect(@list.prev @id3).toBe @id2
 
-      @list._move @id2, @id3
+      @list._move @id2
 
       expect(@list._next[@id1]).toBe @id3
       expect(@list._prev[@id3]).toBe @id1
@@ -244,36 +255,4 @@ describe "AbstractList", ->
       expect(@list.prev @id2).toBe @id3
 
 
-  describe "#get", ->
 
-    it "should return the item with the specified id", ->
-      item = "pear"
-      id = @list._add(item, 0)
-      expect(@list.get(id)).toBe(item)
-
-  describe "#has", ->
-
-
-  describe "#prev", ->
-
-    it "should return the id before the given id", ->
-      id = @list.idOf 5
-      prevId = @list.prev id
-      expect(@list.get prevId).toBe 4
-
-    it "should return the last id if no id is given", ->
-      @list._add 42, null, 0
-      lastId = @list.prev null
-      expect(@list.get lastId).toBe 42
-
-  describe "#next", ->
-
-    it "should return the id after the given id", ->
-      id = @list.idOf 5
-      nextId = @list.next id
-      expect(@list.get nextId).toBe 6
-
-    it "should return the first id if no id is given", ->
-      @list._add 42, 0
-      firstId = @list.next null
-      expect(@list.get firstId).toBe 42
