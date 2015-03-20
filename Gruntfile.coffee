@@ -1,7 +1,7 @@
 module.exports = ( grunt ) ->
   srcs = [
     'sonic'
-    'signal'
+    'unique_id'
     'iterator'
     'abstract_list'
     'list'

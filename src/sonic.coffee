@@ -1,11 +1,12 @@
-Signal       = require( './signal')
-Iterator     = require( './iterator')
-AbstractList = require( './abstract_list')
-List         = require( './list')
-Unit         = require( './unit')
-FlatMapList  = require( './flat_map_list')
-GroupList    = require( './group_list')
-TakeList     = require( './take_list')
+uniqueId     = require('./unique_id')
+Signal       = require('./signal')
+Iterator     = require('./iterator')
+AbstractList = require('./abstract_list')
+List         = require('./list')
+Unit         = require('./unit')
+FlatMapList  = require('./flat_map_list')
+GroupList    = require('./group_list')
+TakeList     = require('./take_list')
 
 # Creates a list from an array
 #
@@ -16,15 +17,6 @@ Sonic = ( items = [] ) ->
   if items instanceof AbstractList
     return items
   return new List(items)
-
-Sonic._uniqueCounter = 1
-
-# Returns a unique id
-#
-# @return [Number] A unique integer id
-#
-Sonic.uniqueId = ( ) ->
-  return Sonic._uniqueCounter++
 
 # Creates a new Unit containing the given item
 #
@@ -262,6 +254,7 @@ Sonic.toArray = ( list ) ->
   list = Sonic(list)
   Sonic.reduce(list, (( memo, value ) -> memo.push(value)), [])
 
+Sonic.uniqueId      = uniqueId
 Sonic.Signal        = Signal
 Sonic.Iterator      = Iterator
 Sonic.AbstractList  = AbstractList

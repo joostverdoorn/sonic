@@ -1,4 +1,4 @@
-Signal = require('./signal')
+uniqueId = require('./unique_id')
 
 # AbstractList implements the basic list Sonic uses. As the name implies
 # it serves mainly as a base class for other lists and is not very useful
@@ -13,8 +13,7 @@ class AbstractList
     @_byId = {}
     @_prev = {}
     @_next = {}
-
-    @_events = new Signal
+    @_handlers = {}
 
   # Returns the value at the specified id.
   #
@@ -50,10 +49,10 @@ class AbstractList
 
   # Adds a callback function that's called when the list invalidates.
   #
-  # @param [Function] callback The callback to call when the list invalidates
+  # @param [Function] handler The callback to call when the list invalidates
   #
-  onInvalidate: ( callback ) ->
-    @_events.forEach(callback)
+  onInvalidate: ( handler ) ->
+    @_handlers[uniqueId()] = handler
 
   # Splices the list between the given prev and next, removing
   # all entries between them. When a first and or last are
@@ -109,7 +108,7 @@ class AbstractList
   # @return [number] the id of the added value
   #
   _add: ( value, prev, next ) ->
-    id = Sonic.uniqueId()
+    id = uniqueId()
     return null unless @_move(id, prev, next)
 
     @_byId[id] = value
@@ -161,7 +160,7 @@ class AbstractList
   # @param [number] next The id of the right end of the range to invalidate
   #
   _invalidate: ( prev, next ) ->
-    event = { prev, next }
-    @_events.yield(event)
+    for id, handler of @_handlers
+      delete @_handlers[id] if handler(prev, next) is false
 
 module.exports = AbstractList

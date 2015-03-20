@@ -1,14 +1,14 @@
 (function() {
-  var AbstractList, Signal;
+  var AbstractList, uniqueId;
 
-  Signal = require('./signal');
+  uniqueId = require('./unique_id');
 
   AbstractList = (function() {
     function AbstractList() {
       this._byId = {};
       this._prev = {};
       this._next = {};
-      this._events = new Signal;
+      this._handlers = {};
     }
 
     AbstractList.prototype.get = function(id) {
@@ -33,8 +33,8 @@
       return this._next[id] || null;
     };
 
-    AbstractList.prototype.onInvalidate = function(callback) {
-      return this._events.forEach(callback);
+    AbstractList.prototype.onInvalidate = function(handler) {
+      return this._handlers[uniqueId()] = handler;
     };
 
     AbstractList.prototype._splice = function(prev, next, first, last) {
@@ -75,7 +75,7 @@
 
     AbstractList.prototype._add = function(value, prev, next) {
       var id;
-      id = Sonic.uniqueId();
+      id = uniqueId();
       if (!this._move(id, prev, next)) {
         return null;
       }
@@ -115,12 +115,18 @@
     };
 
     AbstractList.prototype._invalidate = function(prev, next) {
-      var event;
-      event = {
-        prev: prev,
-        next: next
-      };
-      return this._events["yield"](event);
+      var handler, id, _ref, _results;
+      _ref = this._handlers;
+      _results = [];
+      for (id in _ref) {
+        handler = _ref[id];
+        if (handler(prev, next) === false) {
+          _results.push(delete this._handlers[id]);
+        } else {
+          _results.push(void 0);
+        }
+      }
+      return _results;
     };
 
     return AbstractList;

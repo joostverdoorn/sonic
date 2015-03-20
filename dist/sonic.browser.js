@@ -1,15 +1,15 @@
 (function(f){if(typeof exports==="object"&&typeof module!=="undefined"){module.exports=f()}else if(typeof define==="function"&&define.amd){define([],f)}else{var g;if(typeof window!=="undefined"){g=window}else if(typeof global!=="undefined"){g=global}else if(typeof self!=="undefined"){g=self}else{g=this}g.Sonic = f()}})(function(){var define,module,exports;return (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
 (function() {
-  var AbstractList, Signal;
+  var AbstractList, uniqueId;
 
-  Signal = require('./signal');
+  uniqueId = require('./unique_id');
 
   AbstractList = (function() {
     function AbstractList() {
       this._byId = {};
       this._prev = {};
       this._next = {};
-      this._events = new Signal;
+      this._handlers = {};
     }
 
     AbstractList.prototype.get = function(id) {
@@ -34,8 +34,8 @@
       return this._next[id] || null;
     };
 
-    AbstractList.prototype.onInvalidate = function(callback) {
-      return this._events.forEach(callback);
+    AbstractList.prototype.onInvalidate = function(handler) {
+      return this._handlers[uniqueId()] = handler;
     };
 
     AbstractList.prototype._splice = function(prev, next, first, last) {
@@ -76,7 +76,7 @@
 
     AbstractList.prototype._add = function(value, prev, next) {
       var id;
-      id = Sonic.uniqueId();
+      id = uniqueId();
       if (!this._move(id, prev, next)) {
         return null;
       }
@@ -116,12 +116,18 @@
     };
 
     AbstractList.prototype._invalidate = function(prev, next) {
-      var event;
-      event = {
-        prev: prev,
-        next: next
-      };
-      return this._events["yield"](event);
+      var handler, id, _ref, _results;
+      _ref = this._handlers;
+      _results = [];
+      for (id in _ref) {
+        handler = _ref[id];
+        if (handler(prev, next) === false) {
+          _results.push(delete this._handlers[id]);
+        } else {
+          _results.push(void 0);
+        }
+      }
+      return _results;
     };
 
     return AbstractList;
@@ -134,7 +140,7 @@
 
 //# sourceMappingURL=abstract_list.js.map
 
-},{"./signal":6}],2:[function(require,module,exports){
+},{"./unique_id":9}],2:[function(require,module,exports){
 (function() {
   var AbstractList, FlatMapList, Unit,
     __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
@@ -302,7 +308,7 @@
 
 //# sourceMappingURL=flat_map_list.js.map
 
-},{"./abstract_list":1,"./unit":9}],3:[function(require,module,exports){
+},{"./abstract_list":1,"./unit":10}],3:[function(require,module,exports){
 (function() {
   var FlatMapList, GroupList, Unit,
     __hasProp = {}.hasOwnProperty,
@@ -351,7 +357,7 @@
 
 //# sourceMappingURL=group_list.js.map
 
-},{"./flat_map_list":2,"./unit":9,"es6-collections":10}],4:[function(require,module,exports){
+},{"./flat_map_list":2,"./unit":10,"es6-collections":11}],4:[function(require,module,exports){
 (function() {
   var Iterator;
 
@@ -558,8 +564,10 @@
 
 },{}],7:[function(require,module,exports){
 (function() {
-  var AbstractList, FlatMapList, GroupList, Iterator, List, Signal, Sonic, TakeList, Unit, fns,
+  var AbstractList, FlatMapList, GroupList, Iterator, List, Signal, Sonic, TakeList, Unit, fns, uniqueId,
     __slice = [].slice;
+
+  uniqueId = require('./unique_id');
 
   Signal = require('./signal');
 
@@ -585,12 +593,6 @@
       return items;
     }
     return new List(items);
-  };
-
-  Sonic._uniqueCounter = 1;
-
-  Sonic.uniqueId = function() {
-    return Sonic._uniqueCounter++;
   };
 
   Sonic.unit = function(item) {
@@ -859,6 +861,8 @@
     }), []);
   };
 
+  Sonic.uniqueId = uniqueId;
+
   Sonic.Signal = Signal;
 
   Sonic.Iterator = Iterator;
@@ -889,7 +893,7 @@
 
 //# sourceMappingURL=sonic.js.map
 
-},{"./abstract_list":1,"./flat_map_list":2,"./group_list":3,"./iterator":4,"./list":5,"./signal":6,"./take_list":8,"./unit":9}],8:[function(require,module,exports){
+},{"./abstract_list":1,"./flat_map_list":2,"./group_list":3,"./iterator":4,"./list":5,"./signal":6,"./take_list":8,"./unique_id":9,"./unit":10}],8:[function(require,module,exports){
 (function() {
   var AbstractList, TakeList,
     __hasProp = {}.hasOwnProperty,
@@ -976,6 +980,20 @@
 
 },{"./abstract_list":1}],9:[function(require,module,exports){
 (function() {
+  var counter;
+
+  counter = 1;
+
+  module.exports = function() {
+    return counter++;
+  };
+
+}).call(this);
+
+//# sourceMappingURL=unique_id.js.map
+
+},{}],10:[function(require,module,exports){
+(function() {
   var AbstractList, Unit,
     __hasProp = {}.hasOwnProperty,
     __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
@@ -1037,7 +1055,7 @@
 
 //# sourceMappingURL=unit.js.map
 
-},{"./abstract_list":1}],10:[function(require,module,exports){
+},{"./abstract_list":1}],11:[function(require,module,exports){
 (function (global){
 (function (exports) {'use strict';
   //shared pointer

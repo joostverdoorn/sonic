@@ -1,6 +1,8 @@
 (function() {
-  var AbstractList, FlatMapList, GroupList, Iterator, List, Signal, Sonic, TakeList, Unit, fns,
+  var AbstractList, FlatMapList, GroupList, Iterator, List, Signal, Sonic, TakeList, Unit, fns, uniqueId,
     __slice = [].slice;
+
+  uniqueId = require('./unique_id');
 
   Signal = require('./signal');
 
@@ -26,12 +28,6 @@
       return items;
     }
     return new List(items);
-  };
-
-  Sonic._uniqueCounter = 1;
-
-  Sonic.uniqueId = function() {
-    return Sonic._uniqueCounter++;
   };
 
   Sonic.unit = function(item) {
@@ -299,6 +295,8 @@
       return memo.push(value);
     }), []);
   };
+
+  Sonic.uniqueId = uniqueId;
 
   Sonic.Signal = Signal;
 
