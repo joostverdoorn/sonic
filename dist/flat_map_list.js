@@ -19,7 +19,9 @@
       this._source.onInvalidate(this._onSourceInvalidate);
       this._sourceIdById = {};
       this._listBySourceId = {};
-      this._flatMapFn = flatMapFn || Sonic.unit;
+      this._flatMapFn = flatMapFn || function(value) {
+        return new Unit(value);
+      };
     }
 
     FlatMapList.prototype.get = function(id) {

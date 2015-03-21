@@ -1,6 +1,5 @@
-AbstractList = require( './abstract_list')
-Unit         = require( './unit')
-
+AbstractList = require('./abstract_list')
+Unit         = require('./unit')
 
 class FlatMapList extends AbstractList
 
@@ -12,7 +11,7 @@ class FlatMapList extends AbstractList
 
     @_sourceIdById   = {}
     @_listBySourceId = {}
-    @_flatMapFn      = flatMapFn or Sonic.unit
+    @_flatMapFn      = flatMapFn or ( value ) -> new Unit(value)
 
   get: ( id ) ->
     return list.get(id) if list = @_getListById(id)
