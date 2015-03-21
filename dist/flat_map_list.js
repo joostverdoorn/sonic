@@ -30,7 +30,7 @@
     };
 
     FlatMapList.prototype.has = function(id) {
-      return id in this._sourceIdById || id === 0;
+      return !!id && id in this._sourceIdById;
     };
 
     FlatMapList.prototype.prev = function(id) {

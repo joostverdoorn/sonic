@@ -18,7 +18,7 @@ class FlatMapList extends AbstractList
     return list.get(id) if list = @_getListById(id)
 
   has: ( id ) ->
-    return id of @_sourceIdById or id is 0
+    return !!id and id of @_sourceIdById
 
   prev: ( id = 0 ) ->
     unless id then sourceId = @_source.prev()
