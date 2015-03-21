@@ -1,29 +1,23 @@
-AbstractList = require('./abstract_list')
+List = require('./list')
 
-class Unit extends AbstractList
+class Unit extends List
 
   constructor: ( value ) ->
-    super
+    values = if arguments.length then [value] else []
+    super(values)
 
-    @_id = Sonic.uniqueId()
-    @_value = value if arguments.length
+  push: ( value ) ->
+    return @_add(value, 0, 0)
 
-  set: ( value ) ->
-    @_value = value
+  unshift: ( value ) ->
+    return @push(value)
 
-  delete: ( ) ->
-    delete @_value
+  pop: ( ) ->
+    value = @last()
+    @_splice(0, 0)
+    return value
 
-  get: ( ) ->
-    return @_value
-
-  has: ( ) ->
-    return '_value' of @
-
-  next: ( id = 0 ) ->
-    return @_id if id is 0 and @has()
-
-  prev: ( id = 0 ) ->
-    return @_id if id is 0 and @has()
+  shift: ( ) ->
+    return @pop()
 
 module.exports = Unit

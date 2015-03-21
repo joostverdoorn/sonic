@@ -1,58 +1,41 @@
 (function() {
-  var AbstractList, Unit,
+  var List, Unit,
     __hasProp = {}.hasOwnProperty,
     __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
-  AbstractList = require('./abstract_list');
+  List = require('./list');
 
   Unit = (function(_super) {
     __extends(Unit, _super);
 
     function Unit(value) {
-      Unit.__super__.constructor.apply(this, arguments);
-      this._id = Sonic.uniqueId();
-      if (arguments.length) {
-        this._value = value;
-      }
+      var values;
+      values = arguments.length ? [value] : [];
+      Unit.__super__.constructor.call(this, values);
     }
 
-    Unit.prototype.set = function(value) {
-      return this._value = value;
+    Unit.prototype.push = function(value) {
+      return this._add(value, 0, 0);
     };
 
-    Unit.prototype["delete"] = function() {
-      return delete this._value;
+    Unit.prototype.unshift = function(value) {
+      return this.push(value);
     };
 
-    Unit.prototype.get = function() {
-      return this._value;
+    Unit.prototype.pop = function() {
+      var value;
+      value = this.last();
+      this._splice(0, 0);
+      return value;
     };
 
-    Unit.prototype.has = function() {
-      return '_value' in this;
-    };
-
-    Unit.prototype.next = function(id) {
-      if (id == null) {
-        id = 0;
-      }
-      if (id === 0 && this.has()) {
-        return this._id;
-      }
-    };
-
-    Unit.prototype.prev = function(id) {
-      if (id == null) {
-        id = 0;
-      }
-      if (id === 0 && this.has()) {
-        return this._id;
-      }
+    Unit.prototype.shift = function() {
+      return this.pop();
     };
 
     return Unit;
 
-  })(AbstractList);
+  })(List);
 
   module.exports = Unit;
 
