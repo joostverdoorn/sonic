@@ -67,16 +67,14 @@ class FlatMapList extends AbstractList
 
     return list
 
-  _onSourceInvalidate: ( event ) =>
+  _onSourceInvalidate: ( prev, next ) =>
 
     # Find the list that contains the prev of our invalidated region
-    prev = event.prev
     unless prevList = @_getListBySourceId(prev, lazy: true)
       prev = @_source.prev(prev) until prevList = @_getListBySourceId(prev, lazy: true)
     prev = prevList.prev(0)
 
     # Find the list that contains the next of our invalidated region
-    next = event.next
     unless nextList = @_getListBySourceId(next, lazy: true)
       next = @_source.next(next) until nextList = @_getListBySourceId(next, lazy: true)
     next = nextList.next(0)
@@ -94,9 +92,9 @@ class FlatMapList extends AbstractList
 
     @_invalidate(prev, next)
 
-  _onListInvalidate: ( event, sourceId ) =>
-    prev = @_getListBySourceId(@_source.prev(sourceId)).prev() unless prev = event.prev
-    next = @_getListBySourceId(@_source.next(sourceId)).next() unless next = event.next
+  _onListInvalidate: ( prev, next ) =>
+    prev = @_getListBySourceId(@_source.prev(sourceId)).prev() unless prev?
+    next = @_getListBySourceId(@_source.next(sourceId)).next() unless next?
     @_invalidate(prev, next)
 
 

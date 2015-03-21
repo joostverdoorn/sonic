@@ -262,9 +262,8 @@
       return list;
     };
 
-    FlatMapList.prototype._onSourceInvalidate = function(event) {
-      var iterator, next, nextList, prev, prevList;
-      prev = event.prev;
+    FlatMapList.prototype._onSourceInvalidate = function(prev, next) {
+      var iterator, nextList, prevList;
       if (!(prevList = this._getListBySourceId(prev, {
         lazy: true
       }))) {
@@ -275,7 +274,6 @@
         }
       }
       prev = prevList.prev(0);
-      next = event.next;
       if (!(nextList = this._getListBySourceId(next, {
         lazy: true
       }))) {
@@ -293,12 +291,11 @@
       return this._invalidate(prev, next);
     };
 
-    FlatMapList.prototype._onListInvalidate = function(event, sourceId) {
-      var next, prev;
-      if (!(prev = event.prev)) {
+    FlatMapList.prototype._onListInvalidate = function(prev, next) {
+      if (prev == null) {
         prev = this._getListBySourceId(this._source.prev(sourceId)).prev();
       }
-      if (!(next = event.next)) {
+      if (next == null) {
         next = this._getListBySourceId(this._source.next(sourceId)).next();
       }
       return this._invalidate(prev, next);
