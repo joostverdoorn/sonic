@@ -12,10 +12,14 @@ TakeList     = require('./take_list')
 # @param [Array, AbstractList] items The initial values for the list
 # @return [List] The list containing the given values
 #
-Sonic = ( items = [] ) ->
+Sonic = ( items ) ->
   if items instanceof AbstractList
     return items
-  return new List(items)
+  else if Array.isArray(items)
+    return new List(items)
+  else if arguments.length
+    return new Unit(items)
+  else return new Unit()
 
 # Creates a new Unit containing the given item
 #
