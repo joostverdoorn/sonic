@@ -1,10 +1,8 @@
 (function() {
-  var AbstractList, FlatMapList, GroupList, Iterator, List, Signal, Sonic, TakeList, Unit, fns, uniqueId,
+  var AbstractList, FlatMapList, GroupList, Iterator, List, Sonic, TakeList, Unit, fns, uniqueId,
     __slice = [].slice;
 
   uniqueId = require('./unique_id');
-
-  Signal = require('./signal');
 
   Iterator = require('./iterator');
 
@@ -297,8 +295,6 @@
   };
 
   Sonic.uniqueId = uniqueId;
-
-  Sonic.Signal = Signal;
 
   Sonic.Iterator = Iterator;
 

@@ -1,5 +1,4 @@
 uniqueId     = require('./unique_id')
-Signal       = require('./signal')
 Iterator     = require('./iterator')
 AbstractList = require('./abstract_list')
 List         = require('./list')
@@ -255,7 +254,6 @@ Sonic.toArray = ( list ) ->
   Sonic.reduce(list, (( memo, value ) -> memo.push(value)), [])
 
 Sonic.uniqueId      = uniqueId
-Sonic.Signal        = Signal
 Sonic.Iterator      = Iterator
 Sonic.AbstractList  = AbstractList
 Sonic.Unit          = Unit

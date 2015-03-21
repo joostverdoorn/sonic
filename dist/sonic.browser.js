@@ -146,7 +146,7 @@
 
 //# sourceMappingURL=abstract_list.js.map
 
-},{"./unique_id":9}],2:[function(require,module,exports){
+},{"./unique_id":8}],2:[function(require,module,exports){
 (function() {
   var AbstractList, FlatMapList, Unit,
     __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
@@ -314,7 +314,7 @@
 
 //# sourceMappingURL=flat_map_list.js.map
 
-},{"./abstract_list":1,"./unit":10}],3:[function(require,module,exports){
+},{"./abstract_list":1,"./unit":9}],3:[function(require,module,exports){
 (function() {
   var FlatMapList, GroupList, Unit,
     __hasProp = {}.hasOwnProperty,
@@ -363,7 +363,7 @@
 
 //# sourceMappingURL=group_list.js.map
 
-},{"./flat_map_list":2,"./unit":10,"es6-collections":11}],4:[function(require,module,exports){
+},{"./flat_map_list":2,"./unit":9,"es6-collections":10}],4:[function(require,module,exports){
 (function() {
   var Iterator;
 
@@ -507,71 +507,10 @@
 
 },{"./abstract_list":1}],6:[function(require,module,exports){
 (function() {
-  var Signal;
-
-  Signal = (function() {
-    function Signal(value) {
-      this.id = Sonic.uniqueId();
-      this._handlers = [];
-      this._value = value;
-    }
-
-    Signal.prototype.value = function() {
-      return this._value;
-    };
-
-    Signal.prototype["yield"] = function(value) {
-      var index, item, toRemove, _i, _len;
-      this._value = value;
-      toRemove = [];
-      this._handlers.forEach((function(_this) {
-        return function(handler) {
-          var res;
-          res = handler(value, _this);
-          if (!res) {
-            toRemove.push(res);
-          }
-          return res;
-        };
-      })(this));
-      for (_i = 0, _len = toRemove.length; _i < _len; _i++) {
-        item = toRemove[_i];
-        index = this._handlers.indexOf(item);
-        this._handlers.splice(index, 1);
-      }
-      return true;
-    };
-
-    Signal.prototype.each = function(handler) {
-      return this.forEach(handler);
-    };
-
-    Signal.prototype.forEach = function(handler) {
-      return this._handlers.push(handler);
-    };
-
-    Signal.prototype.root = function() {
-      return this;
-    };
-
-    return Signal;
-
-  })();
-
-  module.exports = Signal;
-
-}).call(this);
-
-//# sourceMappingURL=signal.js.map
-
-},{}],7:[function(require,module,exports){
-(function() {
-  var AbstractList, FlatMapList, GroupList, Iterator, List, Signal, Sonic, TakeList, Unit, fns, uniqueId,
+  var AbstractList, FlatMapList, GroupList, Iterator, List, Sonic, TakeList, Unit, fns, uniqueId,
     __slice = [].slice;
 
   uniqueId = require('./unique_id');
-
-  Signal = require('./signal');
 
   Iterator = require('./iterator');
 
@@ -865,8 +804,6 @@
 
   Sonic.uniqueId = uniqueId;
 
-  Sonic.Signal = Signal;
-
   Sonic.Iterator = Iterator;
 
   Sonic.AbstractList = AbstractList;
@@ -895,7 +832,7 @@
 
 //# sourceMappingURL=sonic.js.map
 
-},{"./abstract_list":1,"./flat_map_list":2,"./group_list":3,"./iterator":4,"./list":5,"./signal":6,"./take_list":8,"./unique_id":9,"./unit":10}],8:[function(require,module,exports){
+},{"./abstract_list":1,"./flat_map_list":2,"./group_list":3,"./iterator":4,"./list":5,"./take_list":7,"./unique_id":8,"./unit":9}],7:[function(require,module,exports){
 (function() {
   var AbstractList, TakeList,
     __hasProp = {}.hasOwnProperty,
@@ -980,7 +917,7 @@
 
 //# sourceMappingURL=take_list.js.map
 
-},{"./abstract_list":1}],9:[function(require,module,exports){
+},{"./abstract_list":1}],8:[function(require,module,exports){
 (function() {
   var counter;
 
@@ -994,7 +931,7 @@
 
 //# sourceMappingURL=unique_id.js.map
 
-},{}],10:[function(require,module,exports){
+},{}],9:[function(require,module,exports){
 (function() {
   var List, Unit,
     __hasProp = {}.hasOwnProperty,
@@ -1040,7 +977,7 @@
 
 //# sourceMappingURL=unit.js.map
 
-},{"./list":5}],11:[function(require,module,exports){
+},{"./list":5}],10:[function(require,module,exports){
 (function (global){
 (function (exports) {'use strict';
   //shared pointer
@@ -1272,5 +1209,5 @@
 })(typeof exports != 'undefined' && typeof global != 'undefined' ? global : window );
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}]},{},[7])(7)
+},{}]},{},[6])(6)
 });
