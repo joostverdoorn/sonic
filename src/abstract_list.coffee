@@ -162,7 +162,7 @@ class AbstractList
   # @param [number] prev The id of the left end of the range to invalidate
   # @param [number] next The id of the right end of the range to invalidate
   #
-  _invalidate: ( prev, next ) ->
+  _invalidate: ( prev = 0, next = 0 ) ->
     for id, handler of @_handlers
       delete @_handlers[id] if handler(prev, next) is false
 

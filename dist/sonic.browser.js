@@ -123,6 +123,12 @@
 
     AbstractList.prototype._invalidate = function(prev, next) {
       var handler, id, _ref, _results;
+      if (prev == null) {
+        prev = 0;
+      }
+      if (next == null) {
+        next = 0;
+      }
       _ref = this._handlers;
       _results = [];
       for (id in _ref) {
