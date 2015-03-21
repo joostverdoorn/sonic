@@ -152,7 +152,35 @@
 
 //# sourceMappingURL=abstract_list.js.map
 
-},{"./unique_id":8}],2:[function(require,module,exports){
+},{"./unique_id":9}],2:[function(require,module,exports){
+(function() {
+  var AbstractList, List, Unit, factory;
+
+  AbstractList = require('./abstract_list');
+
+  List = require('./list');
+
+  Unit = require('./unit');
+
+  factory = function(items) {
+    if (items instanceof AbstractList) {
+      return items;
+    } else if (Array.isArray(items)) {
+      return new List(items);
+    } else if (arguments.length) {
+      return new Unit(items);
+    } else {
+      return new Unit();
+    }
+  };
+
+  module.exports = factory;
+
+}).call(this);
+
+//# sourceMappingURL=factory.js.map
+
+},{"./abstract_list":1,"./list":6,"./unit":10}],3:[function(require,module,exports){
 (function() {
   var AbstractList, FlatMapList, Unit,
     __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
@@ -319,7 +347,7 @@
 
 //# sourceMappingURL=flat_map_list.js.map
 
-},{"./abstract_list":1,"./unit":9}],3:[function(require,module,exports){
+},{"./abstract_list":1,"./unit":10}],4:[function(require,module,exports){
 (function() {
   var FlatMapList, GroupList, Unit,
     __hasProp = {}.hasOwnProperty,
@@ -368,7 +396,7 @@
 
 //# sourceMappingURL=group_list.js.map
 
-},{"./flat_map_list":2,"./unit":9,"es6-collections":10}],4:[function(require,module,exports){
+},{"./flat_map_list":3,"./unit":10,"es6-collections":11}],5:[function(require,module,exports){
 (function() {
   var Iterator;
 
@@ -437,7 +465,7 @@
 
 //# sourceMappingURL=iterator.js.map
 
-},{}],5:[function(require,module,exports){
+},{}],6:[function(require,module,exports){
 (function() {
   var AbstractList, List,
     __hasProp = {}.hasOwnProperty,
@@ -510,10 +538,12 @@
 
 //# sourceMappingURL=list.js.map
 
-},{"./abstract_list":1}],6:[function(require,module,exports){
+},{"./abstract_list":1}],7:[function(require,module,exports){
 (function() {
-  var AbstractList, FlatMapList, GroupList, Iterator, List, Sonic, TakeList, Unit, fns, uniqueId,
+  var AbstractList, FlatMapList, GroupList, Iterator, List, Sonic, TakeList, Unit, factory, fns, uniqueId,
     __slice = [].slice;
+
+  factory = require('./factory');
 
   uniqueId = require('./unique_id');
 
@@ -531,17 +561,7 @@
 
   TakeList = require('./take_list');
 
-  Sonic = function(items) {
-    if (items instanceof AbstractList) {
-      return items;
-    } else if (Array.isArray(items)) {
-      return new List(items);
-    } else if (arguments.length) {
-      return new Unit(items);
-    } else {
-      return new Unit();
-    }
-  };
+  Sonic = factory;
 
   Sonic.unit = function(item) {
     return new Unit(item);
@@ -839,7 +859,7 @@
 
 //# sourceMappingURL=sonic.js.map
 
-},{"./abstract_list":1,"./flat_map_list":2,"./group_list":3,"./iterator":4,"./list":5,"./take_list":7,"./unique_id":8,"./unit":9}],7:[function(require,module,exports){
+},{"./abstract_list":1,"./factory":2,"./flat_map_list":3,"./group_list":4,"./iterator":5,"./list":6,"./take_list":8,"./unique_id":9,"./unit":10}],8:[function(require,module,exports){
 (function() {
   var AbstractList, TakeList,
     __hasProp = {}.hasOwnProperty,
@@ -924,7 +944,7 @@
 
 //# sourceMappingURL=take_list.js.map
 
-},{"./abstract_list":1}],8:[function(require,module,exports){
+},{"./abstract_list":1}],9:[function(require,module,exports){
 (function() {
   var counter;
 
@@ -938,7 +958,7 @@
 
 //# sourceMappingURL=unique_id.js.map
 
-},{}],9:[function(require,module,exports){
+},{}],10:[function(require,module,exports){
 (function() {
   var List, Unit,
     __hasProp = {}.hasOwnProperty,
@@ -984,7 +1004,7 @@
 
 //# sourceMappingURL=unit.js.map
 
-},{"./list":5}],10:[function(require,module,exports){
+},{"./list":6}],11:[function(require,module,exports){
 (function (global){
 (function (exports) {'use strict';
   //shared pointer
@@ -1216,5 +1236,5 @@
 })(typeof exports != 'undefined' && typeof global != 'undefined' ? global : window );
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}]},{},[6])(6)
+},{}]},{},[7])(7)
 });

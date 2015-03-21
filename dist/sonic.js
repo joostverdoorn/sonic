@@ -1,6 +1,8 @@
 (function() {
-  var AbstractList, FlatMapList, GroupList, Iterator, List, Sonic, TakeList, Unit, fns, uniqueId,
+  var AbstractList, FlatMapList, GroupList, Iterator, List, Sonic, TakeList, Unit, factory, fns, uniqueId,
     __slice = [].slice;
+
+  factory = require('./factory');
 
   uniqueId = require('./unique_id');
 
@@ -18,17 +20,7 @@
 
   TakeList = require('./take_list');
 
-  Sonic = function(items) {
-    if (items instanceof AbstractList) {
-      return items;
-    } else if (Array.isArray(items)) {
-      return new List(items);
-    } else if (arguments.length) {
-      return new Unit(items);
-    } else {
-      return new Unit();
-    }
-  };
+  Sonic = factory;
 
   Sonic.unit = function(item) {
     return new Unit(item);

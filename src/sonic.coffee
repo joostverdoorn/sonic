@@ -1,3 +1,4 @@
+factory      = require('./factory')
 uniqueId     = require('./unique_id')
 Iterator     = require('./iterator')
 AbstractList = require('./abstract_list')
@@ -12,14 +13,7 @@ TakeList     = require('./take_list')
 # @param [Array, AbstractList] items The initial values for the list
 # @return [List] The list containing the given values
 #
-Sonic = ( items ) ->
-  if items instanceof AbstractList
-    return items
-  else if Array.isArray(items)
-    return new List(items)
-  else if arguments.length
-    return new Unit(items)
-  else return new Unit()
+Sonic = factory
 
 # Creates a new Unit containing the given item
 #
