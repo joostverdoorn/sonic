@@ -5,7 +5,7 @@ class List extends AbstractList
   constructor: ( values ) ->
     super()
 
-    @_move(0, 0)
+    @_splice(0, 0, 0)
     @_add(value, null, 0) for value in values if values?
 
   set: ( id, value ) ->

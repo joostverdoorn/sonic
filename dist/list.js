@@ -11,7 +11,7 @@
     function List(values) {
       var value, _i, _len;
       List.__super__.constructor.call(this);
-      this._move(0, 0);
+      this._splice(0, 0, 0);
       if (values != null) {
         for (_i = 0, _len = values.length; _i < _len; _i++) {
           value = values[_i];
