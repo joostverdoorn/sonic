@@ -27,9 +27,6 @@ class List extends AbstractList
     value = @get(id)
     return value if @_delete(id)
 
-  add: ( value ) ->
-    return @push(value)
-
   remove: ( value ) ->
     id = @idOf(value)
     return @_delete(id)

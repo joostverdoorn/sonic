@@ -485,10 +485,6 @@
       }
     };
 
-    List.prototype.add = function(value) {
-      return this.push(value);
-    };
-
     List.prototype.remove = function(value) {
       var id;
       id = this.idOf(value);
