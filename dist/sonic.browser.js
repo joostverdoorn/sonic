@@ -35,7 +35,18 @@
     };
 
     AbstractList.prototype.onInvalidate = function(handler) {
-      return this._handlers[uniqueId()] = handler;
+      var handlerId;
+      handlerId = uniqueId();
+      this._handlers[handlerId] = handler;
+      return handlerId;
+    };
+
+    AbstractList.prototype.removeListener = function(handlerId) {
+      if (!this._handlers[handlerId]) {
+        return false;
+      }
+      delete this._handlers[handlerId];
+      return true;
     };
 
     AbstractList.prototype._splice = function(prev, next, first, last) {

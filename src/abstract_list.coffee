@@ -50,9 +50,24 @@ class AbstractList
   # Adds a callback function that's called when the list invalidates.
   #
   # @param [Function] handler The callback to call when the list invalidates
+  # @return [number] The handlerId of the added handler, which can be used to remove the handler
   #
   onInvalidate: ( handler ) ->
-    @_handlers[uniqueId()] = handler
+    handlerId = uniqueId()
+    @_handlers[handlerId] = handler
+    return handlerId
+
+  # Removes a callback function from the handlers so it's no longer
+  # called (and allows the given handler and it's scope to be garbage
+  # collected).
+  #
+  # @param [number] handlerId The id of the callback to be remove
+  # @return [boolean] Whether or not the given handler could be found and removed
+  #
+  removeListener: ( handlerId ) ->
+    return false unless @_handlers[handlerId]
+    delete @_handlers[handlerId]
+    return true
 
   # Splices the list between the given prev and next, removing
   # all entries between them. When a first and or last are
