@@ -1,6 +1,6 @@
 AbstractList = require("./abstract_list")
 
-class ScanList extends AbtractList
+class ScanList extends AbstractList
 
   constructor: ( source, scanFn, initialValue ) ->
     @_source = source

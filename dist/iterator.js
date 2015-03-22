@@ -18,12 +18,12 @@
 
     Iterator.prototype.moveNext = function() {
       this.currentId = this.list.next(this.currentId);
-      return this.currentId != null;
+      return !!this.currentId;
     };
 
     Iterator.prototype.movePrevious = function() {
       this.currentId = this.list.prev(this.currentId);
-      return this.currentId != null;
+      return !!this.currentId;
     };
 
     Iterator.prototype.next = function() {

@@ -1,8 +1,10 @@
 (function() {
-  var AbstractList, FlatMapList, GroupList, Iterator, List, Signal, Sonic, TakeList, Unit, fns,
+  var AbstractList, FlatMapList, GroupList, Iterator, List, Sonic, TakeList, Unit, factory, fns, uniqueId,
     __slice = [].slice;
 
-  Signal = require('./signal');
+  factory = require('./factory');
+
+  uniqueId = require('./unique_id');
 
   Iterator = require('./iterator');
 
@@ -18,21 +20,7 @@
 
   TakeList = require('./take_list');
 
-  Sonic = function(items) {
-    if (items == null) {
-      items = [];
-    }
-    if (items instanceof AbstractList) {
-      return items;
-    }
-    return new List(items);
-  };
-
-  Sonic._uniqueCounter = 1;
-
-  Sonic.uniqueId = function() {
-    return Sonic._uniqueCounter++;
-  };
+  Sonic = factory;
 
   Sonic.unit = function(item) {
     return new Unit(item);
@@ -300,7 +288,7 @@
     }), []);
   };
 
-  Sonic.Signal = Signal;
+  Sonic.uniqueId = uniqueId;
 
   Sonic.Iterator = Iterator;
 

@@ -1,37 +1,61 @@
-Signal       = require( './signal')
-Iterator     = require( './iterator')
-AbstractList = require( './abstract_list')
-List         = require( './list')
-Unit         = require( './unit')
-FlatMapList  = require( './flat_map_list')
-GroupList    = require( './group_list')
-TakeList     = require( './take_list')
+factory      = require('./factory')
+uniqueId     = require('./unique_id')
+Iterator     = require('./iterator')
+AbstractList = require('./abstract_list')
+List         = require('./list')
+Unit         = require('./unit')
+FlatMapList  = require('./flat_map_list')
+GroupList    = require('./group_list')
+TakeList     = require('./take_list')
 
-Sonic = ( items = [] ) ->
-  if items instanceof AbstractList
-    return items
-  return new List(items)
+# Creates a list from an array
+#
+# @param [Array, AbstractList] items The initial values for the list
+# @return [List] The list containing the given values
+#
+Sonic = factory
 
-Sonic._uniqueCounter = 1
-
-Sonic.uniqueId = ( ) ->
-  return Sonic._uniqueCounter++
-
+# Creates a new Unit containing the given item
+#
+# @param [any] item The value for the Unit
+# @return [Unit] The Unit with the given item
+#
 Sonic.unit = ( item ) ->
   return new Unit(item)
 
+# Creates an empty Unit
+#
+# @return [Unit] An empty Unit
+#
 Sonic.empty = ( ) ->
   return new Unit()
 
-  #
+# Creates an iterator over the given array or list
+#
+# @param[Array,AbstractList] list The array or list to iterate
+# @param[Number] start The id of the item to start at. Can be omitted to start at the first item
+# @return [Iterator] A new iterator that iterates the given array or list
+#
 Sonic.getIterator = ( list, start ) ->
   list = Sonic(list)
   return new Iterator(list, start)
 
+# Alias for `forEach`
+#
+# @param [Array, AbstractList] list The array or list to iterate
+# @param [Function] fn The function to execute on each iteration. If the function call returns false explicitly, iteration will be interupted at that point.
+# @return [Boolean] true if all the function executions return true, false otherwise.
+#
 Sonic.each = ( list, fn ) ->
   list = Sonic(list)
   return Sonic.forEach(list, fn)
 
+# Iterates over a array or list and executes a function with the value and id of the item at each position
+#
+# @param [Array, AbstractList] list The array or list to iterate
+# @param [Function] fn The function to execute on each iteration. If the function call returns false explicitly, iteration will be interupted at that point.
+# @return [Boolean] true if all the function executions return true, false otherwise.
+#
 Sonic.forEach = ( list, fn ) ->
   list = Sonic(list)
   iterator = Sonic.getIterator(list)
@@ -40,6 +64,12 @@ Sonic.forEach = ( list, fn ) ->
     return false if fn(iterator.current(), iterator.currentId) is false
   return true
 
+# Executes a function on each item and returns the id of the first item for which the function returns a truthy value
+#
+# @param [Array, AbstractList] list The array or list to search
+# @param [Function] fn The function to execute on each item
+# @return [Number] The id of the first matching item. Returns undefined if no item matches
+#
 Sonic.findId = ( list, fn ) ->
   list = Sonic(list)
   result = undefined
@@ -51,23 +81,53 @@ Sonic.findId = ( list, fn ) ->
 
   return result
 
+# Executes a function on each item and returns the value of the first item for which the function returns a truthy value
+#
+# @param [Array, AbstractList] list The array or list to search
+# @param [Function] fn The function to execute on each item
+# @return [any] The value of the first matching item. Returns undefined if no item matches
+#
 Sonic.find = ( list, fn ) ->
   list = Sonic(list)
   return list.get(Sonic.findId(list, fn))
 
+# Returns the id of the item in the given array or list at the given index
+#
+# @param [Array, AbstractList] list The array or list to search
+# @param [Number] index The index to match
+# @return [Number] The id of the item at the given index. Returns undefined if there is no item at the index
+#
 Sonic.idAt = ( list, index ) ->
   list = Sonic(list)
   i = 0
   return Sonic.findId(list, -> if i++ is index then true)
 
+# Returns the id of the first item in the given array or list that equals the given value
+#
+# @param [Array, AbstractList] list The array or list to search
+# @param [Number] value The value to match
+# @return [Number] The id of the item with the given value. Returns undefined if there is no item that matches the value
+#
 Sonic.idOf = ( list, value ) ->
   list = Sonic(list)
   return Sonic.findId(list, ( v ) -> v is value )
 
+# Returns the value of the item in the given array or list at the given index
+#
+# @param [Array, AbstractList] list The array or list to search
+# @param [Number] index The index to match
+# @return [any] The value of the item at the given index. Returns undefined if there is no item at the index
+#
 Sonic.at = ( list, index ) ->
   list = Sonic(list)
   return list.get(Sonic.idAt(list, index))
 
+# Returns the index of the first item in the given array or list that matches the given value
+#
+# @param [Array, AbstractList] list The array or list to search
+# @param [any] value The value to match
+# @return [Number] The index of the first item that matches the given value. Returns -1 if there is no item that matches the value
+#
 Sonic.indexOf = ( list, value ) ->
   list = Sonic(list)
   i = -1
@@ -75,14 +135,32 @@ Sonic.indexOf = ( list, value ) ->
     return i
   else return -1
 
+# Tests if there is some item in the given array or list for which the given predicate holds
+#
+# @param [Array, AbstractList] list The array or list to search
+# @param [Function] predicate The predicate to test
+# @return [Boolean] True if the predicate holds for any item, false otherwise
+#
 Sonic.some = ( list, predicate ) ->
   list = Sonic(list)
   return not Sonic.each(list, -> not predicate(arguments...) )
 
+# Alias for `some`
+#
+# @param [Array, AbstractList] list The array or list to search
+# @param [Function] predicate The predicate to test
+# @return [Boolean] True if the predicate holds for any item, false otherwise
+#
 Sonic.any = ( list, predicate ) ->
   list = Sonic(list)
   return Sonic.some(list, predicate)
 
+# Tests if there is some item in the given array or list with the given value
+#
+# @param [Array, AbstractList] list The array or list to search
+# @param [Function] predicate The predicate to test
+# @return [Boolean] True if the predicate holds for any item, false otherwise
+#
 Sonic.contains = ( list, value ) ->
   list = Sonic(list)
   return Sonic.some(list, ( v ) -> v is value)
@@ -173,7 +251,7 @@ Sonic.toArray = ( list ) ->
   list = Sonic(list)
   Sonic.reduce(list, (( memo, value ) -> memo.push(value)), [])
 
-Sonic.Signal        = Signal
+Sonic.uniqueId      = uniqueId
 Sonic.Iterator      = Iterator
 Sonic.AbstractList  = AbstractList
 Sonic.Unit          = Unit
