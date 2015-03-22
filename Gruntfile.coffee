@@ -19,7 +19,6 @@ module.exports = ( grunt ) ->
     branches: 40
     functions: 50
 
-
   # This functions makes the config shorter and clearer later on.
   # It just returns the type specific coverage config
   coverage = ( type, optionsRef ) ->
@@ -34,9 +33,7 @@ module.exports = ( grunt ) ->
 
     return optionsRef
 
-
   # Configure all the tasks!
-
   grunt.initConfig
     pkg: grunt.file.readJSON('package.json')
 
@@ -80,6 +77,10 @@ module.exports = ( grunt ) ->
           browserifyOptions:
             standalone: 'Sonic'
 
+    uglify:
+      default:
+        files: 'dist/sonic.browser.min.js': 'dist/sonic.browser.js'
+
     jasmine:
       default:
         src:  ['dist/sonic.browser.js']
@@ -117,6 +118,7 @@ module.exports = ( grunt ) ->
   # grunt.loadNpmTasks 'grunt-babel'
   grunt.loadNpmTasks 'grunt-browserify'
   grunt.loadNpmTasks 'grunt-contrib-coffee'
+  grunt.loadNpmTasks 'grunt-contrib-uglify'
   grunt.loadNpmTasks 'grunt-contrib-watch'
   grunt.loadNpmTasks 'grunt-contrib-clean'
   grunt.loadNpmTasks 'grunt-contrib-jasmine'
