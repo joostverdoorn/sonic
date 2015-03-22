@@ -121,10 +121,16 @@ describe "FlatMapList", ->
 
 
   describe "#_onFlatMapFnInvalidate", ->
-    it "should call _invalidate", ->
+    it "should not call _invalidate when the next isn't 0", ->
       spyOn @flatMapList, '_invalidate'
 
-      @flatMapList._onFlatMapFnInvalidate()
+      @flatMapList._onFlatMapFnInvalidate(3, 42)
+      expect(@flatMapList._invalidate).not.toHaveBeenCalled()
+
+    it "should call _invalidate when the next is 0", ->
+      spyOn @flatMapList, '_invalidate'
+
+      @flatMapList._onFlatMapFnInvalidate(3, 0)
       expect(@flatMapList._invalidate).toHaveBeenCalled()
 
   describe "#_invalidate", ->

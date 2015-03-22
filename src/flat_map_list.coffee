@@ -123,6 +123,16 @@ class FlatMapList extends AbstractList
     @_invalidate(prev, next)
     return true
 
+  # Is called when a list is invalidated. This will
+  # either call invalidate with the given next and
+  # previous when they are present, or invalidate
+  # from the nearest next and previous.
+  #
+  # @param [number] sourceId The sourceId corresponding to the invalidated list
+  # @param [number] prev The id previous of the invalidated range
+  # @param [number] next The id next of the invalidated range
+  # @return [boolean] Whether or not to keep listening
+  #
   _onListInvalidate: ( sourceId, prev, next ) =>
     return false unless list = @_listBySourceId[sourceId]
 
@@ -132,10 +142,25 @@ class FlatMapList extends AbstractList
     @_invalidate(prev, next)
     return true
 
+  # Is called when the flatMapFn is invalidated. When the
+  # invalidated range includes the last item, the entire
+  # list is invalited.
+  #
+  # @param [number] prev The id previous of the invalidated range
+  # @param [number] next The id next of the invalidated range
+  # @return [boolean] Whether or not to keep listening
+  #
   _onFlatMapFnInvalidate: ( prev, next ) =>
-    @_invalidate()
+    @_invalidate() if next is 0
     return true
 
+  # Invalidates a range given by the prev and next. This will
+  # delete all computed lists within that range and notify
+  # all handlers.
+  #
+  # @param [number] prev The id previous of the invalidated range
+  # @param [number] next The id next of the invalidated range
+  #
   _invalidate: ( prev = 0, next = 0 ) ->
     sourcePrev = @_sourceIdById[prev]
     sourceNext = @_sourceIdById[next]

@@ -326,7 +326,9 @@
     };
 
     FlatMapList.prototype._onFlatMapFnInvalidate = function(prev, next) {
-      this._invalidate();
+      if (next === 0) {
+        this._invalidate();
+      }
       return true;
     };
 
