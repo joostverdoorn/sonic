@@ -25,12 +25,12 @@ module.exports = ( grunt ) ->
   coverage = ( type, optionsRef ) ->
     optionsRef.template = require('grunt-template-jasmine-istanbul')
     optionsRef.templateOptions =
-      coverage: 'statistics/coverage/coverage.json'
+      coverage: 'stat/coverage/coverage.json'
       thresholds: thresholds
       report:
         type: type
         options:
-          dir: "statistics/coverage/#{type}"
+          dir: "stat/coverage/#{type}"
 
     return optionsRef
 
@@ -41,7 +41,7 @@ module.exports = ( grunt ) ->
     pkg: grunt.file.readJSON('package.json')
 
     coffee:
-      default:
+      src:
         options:
           sourceMap: true
         files: [
@@ -60,6 +60,15 @@ module.exports = ( grunt ) ->
           cwd: 'spec'
           src: ['**/*.coffee']
           dest: 'build/spec'
+          ext: '.js'
+        ]
+
+      perf:
+        files: [
+          expand: true
+          cwd: 'perf'
+          src: ['**/*.coffee']
+          dest: 'build/perf'
           ext: '.js'
         ]
 
@@ -89,11 +98,15 @@ module.exports = ( grunt ) ->
           specs: 'build/spec/**/*.js'
         )
 
+    benchmark:
+      default:
+        src: ['build/perf/**/*.js']
+        dest: 'stat/perf/result.csv'
+
     clean:
       build: ['build']
 
     watch:
-
       default:
         files: ['src/**/*.coffee', 'spec/**/*.coffee']
         tasks: ['spec']
@@ -107,11 +120,13 @@ module.exports = ( grunt ) ->
   grunt.loadNpmTasks 'grunt-contrib-watch'
   grunt.loadNpmTasks 'grunt-contrib-clean'
   grunt.loadNpmTasks 'grunt-contrib-jasmine'
+  grunt.loadNpmTasks 'grunt-benchmark'
   grunt.loadNpmTasks 'grunt-codo'
 
   grunt.registerTask 'default', ['watch']
-  grunt.registerTask 'dist',    ['coffee', 'browserify']
+  grunt.registerTask 'dist',    ['coffee:src', 'browserify']
   grunt.registerTask 'spec',    ['clean', 'dist', 'coffee:spec' ,'jasmine:default']
+  grunt.registerTask 'perf',    ['clean', 'dist', 'coffee:perf' ,'benchmark:default']
   grunt.registerTask 'test',    ['spec' ,'jasmine:lcovonly']
 
 

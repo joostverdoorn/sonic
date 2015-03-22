@@ -21,8 +21,10 @@
   },
   "devDependencies": {
     "babel-core": "^4.0.0",
+    "coveralls": "~2.11.1",
     "grunt": "~0.4.5",
     "grunt-babel": "^4.0.0",
+    "grunt-benchmark": "^0.3.0",
     "grunt-browserify": "^3.5.0",
     "grunt-codo": "^0.2.0",
     "grunt-contrib-clean": "~0.5.0",
@@ -34,8 +36,7 @@
     "grunt-contrib-watch": "~0.6.1",
     "grunt-plato": "~1.3.0",
     "grunt-requirejs": "~0.4.2",
-    "grunt-template-jasmine-istanbul": "~0.3.0",
-    "coveralls": "~2.11.1"
+    "grunt-template-jasmine-istanbul": "~0.3.0"
   },
   "scripts": {
     "test": "grunt test"
