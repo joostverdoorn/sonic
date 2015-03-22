@@ -151,7 +151,7 @@ class FlatMapList extends AbstractList
   # @return [boolean] Whether or not to keep listening
   #
   _onFlatMapFnInvalidate: ( prev, next ) =>
-    @_invalidate() if next is 0
+    @_invalidate() if !next
     return true
 
   # Invalidates a range given by the prev and next. This will

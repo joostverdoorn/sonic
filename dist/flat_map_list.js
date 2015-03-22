@@ -143,7 +143,7 @@
     };
 
     FlatMapList.prototype._onFlatMapFnInvalidate = function(prev, next) {
-      if (next === 0) {
+      if (!next) {
         this._invalidate();
       }
       return true;
