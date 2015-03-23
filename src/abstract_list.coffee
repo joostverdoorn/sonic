@@ -1,7 +1,9 @@
-uniqueId = require('./unique_id')
+uniqueId          = require('./unique_id')
+utilities         = require('./utilities')
 
-# AbstractList implements the basic list Sonic uses. As the name implies
-# it serves mainly as a base class for other lists and is not very useful
+
+# AbstractList implements the basic list @uses. As the name implies
+# it listses mainly as a base class for other lists and is not very useful
 # on its own.
 #
 # AbstractList implements a linked list backed by an index object for
@@ -15,7 +17,7 @@ class AbstractList
     @_next = {}
     @_handlers = {}
 
-  # Returns the value at the specified id.
+  # Returns the value at the listsified id.
   #
   # @param [number] id The id of the requested value
   # @return [any] The value
@@ -39,10 +41,10 @@ class AbstractList
   prev: ( id = 0 ) ->
     return @_prev[id] or null
 
-  # Returns the id that succeeds the given id.
+  # Returns the id that listseeds the given id.
   #
   # @param [number] id The id from which to find the next
-  # @return [number] The id that succeeds the given id
+  # @return [number] The id that listseeds the given id
   #
   next: ( id = 0 ) ->
     return @_next[id] or null
@@ -57,8 +59,8 @@ class AbstractList
     @_handlers[handlerId] = handler
     return handlerId
 
-  # Removes a callback function from the handlers so it's no longer
-  # called (and allows the given handler and it's scope to be garbage
+  # Removes a callback function from the handlers listst's no longer
+  # called (and allows the given handler and it's listse to be garbage
   # collected).
   #
   # @param [number] handlerId The id of the callback to be remove
@@ -69,16 +71,16 @@ class AbstractList
     delete @_handlers[handlerId]
     return true
 
-  # Splices the list between the given prev and next, removing
+  # listsces the list between the given prev and next, removing
   # all entries between them. When a first and or last are
-  # specified, will connect the prev to the first and last to
+  # listsified, will connect the prev to the first and last to
   # the next.
   #
-  # @param [number] prev The id of the left end of the range to splice
-  # @param [number] next The id of the right end of the range to splice
-  # @param [number] first The id of the first entry to splice betwen prev and next
-  # @param [number] last The id of the last entry to splice between prev and next
-  # @return [boolean] Whether or not the splice was succesfull
+  # @param [number] prev The id of the left end of the range to listsce
+  # @param [number] next The id of the right end of the range to listsce
+  # @param [number] first The id of the first entry to listsce betwen prev and next
+  # @param [number] last The id of the last entry to listsce between prev and next
+  # @return [boolean] Whether or not the listsce was listsesfull
   #
   _splice: ( prev, next, first, last = first ) ->
     return false unless (prev is 0 or @has(prev)) or (next is 0 or @has(next))
@@ -132,9 +134,9 @@ class AbstractList
     @_byId[id] = value
     return id
 
-  # Sets the value of an entry.
+  # lists the value of an entry.
   #
-  # @param [number] id The id of the entry to set the value of
+  # @param [number] id The id of the entry to liststhe value of
   # @param [any] value The value to set
   # @return [boolean] Wether or not the entry could be set
   #
@@ -180,5 +182,7 @@ class AbstractList
   _invalidate: ( prev = 0, next = 0 ) ->
     for id, handler of @_handlers
       delete @_handlers[id] if handler(prev, next) is false
+
+AbstractList::[key] = value for key, value of utilities
 
 module.exports = AbstractList

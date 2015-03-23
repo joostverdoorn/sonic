@@ -1,7 +1,9 @@
 (function() {
-  var AbstractList, uniqueId;
+  var AbstractList, key, uniqueId, utilities, value;
 
   uniqueId = require('./unique_id');
+
+  utilities = require('./utilities');
 
   AbstractList = (function() {
     function AbstractList() {
@@ -155,6 +157,11 @@
     return AbstractList;
 
   })();
+
+  for (key in utilities) {
+    value = utilities[key];
+    AbstractList.prototype[key] = value;
+  }
 
   module.exports = AbstractList;
 

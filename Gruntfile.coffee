@@ -3,6 +3,7 @@ module.exports = ( grunt ) ->
     'sonic'
     'factory'
     'unique_id'
+    'utilities'
     'iterator'
     'abstract_list'
     'list'

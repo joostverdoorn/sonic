@@ -55,17 +55,17 @@ describe "Sonic", ->
 
   describe "each", ->
     it "should work when called with an array instead of a list", ->
-      spy = spyOn(Sonic, 'forEach')
+      spy = spyOn(Sonic.AbstractList::, 'forEach')
 
       items = [1,2,3,4]
       fn = () ->
 
       result = Sonic.each(items, fn)
 
-      expect(spy).toHaveBeenCalledWith(jasmine.any(Sonic.AbstractList), fn)
+      expect(spy).toHaveBeenCalledWith(fn)
 
     it "should proxy forEach", ->
-      spy = spyOn(Sonic, 'forEach')
+      spy = spyOn(Sonic.AbstractList::, 'forEach')
 
       items = [1,2,3,4]
       list = Sonic(items)
@@ -73,18 +73,18 @@ describe "Sonic", ->
 
       Sonic.each(list, fn)
 
-      expect(spy).toHaveBeenCalledWith(list, fn)
+      expect(spy).toHaveBeenCalledWith(fn)
 
   describe "forEach", ->
     it "should work when called with an array instead of a list", ->
-      spy = spyOn(Sonic, 'getIterator').and.callThrough()
+      spy = spyOn(Sonic.AbstractList::, 'next').and.callThrough()
 
       items = [1,2,3,4]
       fn = () ->
 
       result = Sonic.forEach(items, fn)
 
-      expect(spy).toHaveBeenCalledWith(jasmine.any(Sonic.AbstractList))
+      expect(spy.calls.count()).toBe(5)
 
     it "should call fn with the values of the list", ->
       items = [1,2,3,4]
@@ -101,14 +101,14 @@ describe "Sonic", ->
 
   describe "findId", ->
     it "should work when called with an array instead of a list", ->
-      spy = spyOn(Sonic, 'each')
+      spy = spyOn(Sonic.AbstractList::, 'each')
 
       items = [1,2,3,4]
       fn = () ->
 
       result = Sonic.findId(items, fn)
 
-      expect(spy).toHaveBeenCalledWith(jasmine.any(Sonic.AbstractList), jasmine.any(Function))
+      expect(spy).toHaveBeenCalledWith(jasmine.any(Function))
 
     it "should return the id of the first matching item", ->
       items = [2,3,1,4,1]
@@ -132,14 +132,14 @@ describe "Sonic", ->
 
   describe "find", ->
     it "should work when called with an array instead of a list", ->
-      spy = spyOn(Sonic, 'findId')
+      spy = spyOn(Sonic.AbstractList::, 'findId')
 
       items = [1,2,3,4]
       fn = () ->
 
       result = Sonic.find(items, fn)
 
-      expect(spy).toHaveBeenCalledWith(jasmine.any(Sonic.AbstractList), jasmine.any(Function))
+      expect(spy).toHaveBeenCalledWith(jasmine.any(Function))
 
     it "should return the value of the first matching item", ->
       items = [2,3,1,4,1]
@@ -163,14 +163,14 @@ describe "Sonic", ->
 
   describe "idAt", ->
     it "should work when called with an array instead of a list", ->
-      spy = spyOn(Sonic, 'findId')
+      spy = spyOn(Sonic.AbstractList::, 'findId')
 
       items = [1,2,3,4]
       index = 3
 
       result = Sonic.idAt(items, index)
 
-      expect(spy).toHaveBeenCalledWith(jasmine.any(Sonic.AbstractList), jasmine.any(Function))
+      expect(spy).toHaveBeenCalledWith(jasmine.any(Function))
 
     it "should return the id of the item at the index", ->
       items = [2,3,1,4,1]
@@ -193,14 +193,14 @@ describe "Sonic", ->
 
   describe "idOf", ->
     it "should work when called with an array instead of a list", ->
-      spy = spyOn(Sonic, 'findId')
+      spy = spyOn(Sonic.AbstractList::, 'findId')
 
       items = [1,2,3,4]
       index = 3
 
       result = Sonic.idAt(items, index)
 
-      expect(spy).toHaveBeenCalledWith(jasmine.any(Sonic.AbstractList), jasmine.any(Function))
+      expect(spy).toHaveBeenCalledWith(jasmine.any(Function))
 
     it "should return the id of the first item with the given value", ->
       items = [2,3,1,4,1]
@@ -224,14 +224,14 @@ describe "Sonic", ->
 
   describe "at", ->
     it "should work when called with an array instead of a list", ->
-      spy = spyOn(Sonic, 'idAt')
+      spy = spyOn(Sonic.AbstractList::, 'idAt')
 
       items = [1,2,3,4]
       index = 3
 
       result = Sonic.at(items, index)
 
-      expect(spy).toHaveBeenCalledWith(jasmine.any(Sonic.AbstractList), index)
+      expect(spy).toHaveBeenCalledWith(index)
 
     it "should return the id of the item at the index", ->
       items = [2,3,1,4,1]
@@ -254,14 +254,14 @@ describe "Sonic", ->
 
   describe "indexOf", ->
     it "should work when called with an array instead of a list", ->
-      spy = spyOn(Sonic, 'some')
+      spy = spyOn(Sonic.AbstractList::, 'some')
 
       items = [1,2,3,4]
       value = 3
 
       result = Sonic.indexOf(items, value)
 
-      expect(spy).toHaveBeenCalledWith(jasmine.any(Sonic.AbstractList), jasmine.any(Function))
+      expect(spy).toHaveBeenCalledWith(jasmine.any(Function))
 
     it "should return the index of the first item with the given value", ->
       items = [2,3,1,4,1]
@@ -284,14 +284,14 @@ describe "Sonic", ->
 
   describe "some", ->
     it "should work when called with an array instead of a list", ->
-      spy = spyOn(Sonic, 'each')
+      spy = spyOn(Sonic.AbstractList::, 'each')
 
       items = [1,2,3,4]
       fn = ( ) ->
 
       result = Sonic.some(items, fn)
 
-      expect(spy).toHaveBeenCalledWith(jasmine.any(Sonic.AbstractList), jasmine.any(Function))
+      expect(spy).toHaveBeenCalledWith(jasmine.any(Function))
 
     it "should return true if the predicate holds for an item", ->
       items = [2,3,4,5,6]
@@ -311,19 +311,19 @@ describe "Sonic", ->
 
       expect(result).toBe(false)
 
-  describe "some", ->
+  describe "any", ->
     it "should work when called with an array instead of a list", ->
-      spy = spyOn(Sonic, 'some')
+      spy = spyOn(Sonic.AbstractList::, 'some')
 
       items = [1,2,3,4]
       fn = ( ) ->
 
       result = Sonic.any(items, fn)
 
-      expect(spy).toHaveBeenCalledWith(jasmine.any(Sonic.AbstractList), jasmine.any(Function))
+      expect(spy).toHaveBeenCalledWith(jasmine.any(Function))
 
     it "should call some with the given arguments", ->
-      spy = spyOn(Sonic, 'some')
+      spy = spyOn(Sonic.AbstractList::, 'some')
 
       items = [1,2,3,4]
       list = Sonic(items)
@@ -331,18 +331,18 @@ describe "Sonic", ->
 
       result = Sonic.any(list, fn)
 
-      expect(spy).toHaveBeenCalledWith(list, fn)
+      expect(spy).toHaveBeenCalledWith(fn)
 
   describe "contains", ->
     it "should work when called with an array instead of a list", ->
-      spy = spyOn(Sonic, 'some')
+      spy = spyOn(Sonic.AbstractList::, 'some')
 
       items = [1,2,3,4]
       value = 3
 
       result = Sonic.contains(items, value)
 
-      expect(spy).toHaveBeenCalledWith(jasmine.any(Sonic.AbstractList), jasmine.any(Function))
+      expect(spy).toHaveBeenCalledWith(jasmine.any(Function))
 
     it "should return true if the list contains the value", ->
       items = [1,2,3,4]
