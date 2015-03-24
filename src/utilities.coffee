@@ -136,11 +136,8 @@ module.exports =
     RangeList = require('./range_list')
     return new RangeList(@, start, count)
 
-
   take: ( count ) ->
     return @range(0, count)
-  # range: ( start, end ) ->
-  #   return @take(end).reverse().take(end - start).reverse()
 
   map: ( mapFn ) ->
     return @flatMap(( value ) -> new Unit(mapFn(value)))
