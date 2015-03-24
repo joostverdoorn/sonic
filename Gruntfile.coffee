@@ -91,7 +91,7 @@ module.exports = ( grunt ) ->
 
     jasmine:
       default:
-        src:  ['build/spec/sonic.browser.js']
+        src:  ['dist/sonic.browser.js']
         options:
           keepRunner: true
           specs: 'build/spec/**/*.js'
@@ -134,9 +134,9 @@ module.exports = ( grunt ) ->
   grunt.loadNpmTasks 'grunt-codo'
 
   grunt.registerTask 'default', ['watch']
-  grunt.registerTask 'dist',    ['coffee:src', 'browserify']
+  grunt.registerTask 'dist',    ['coffee:src', 'browserify:default']
   grunt.registerTask 'spec',    ['clean', 'dist', 'coffee:spec' ,'jasmine:default']
   grunt.registerTask 'perf',    ['clean', 'dist', 'coffee:perf' ,'benchmark:default']
-  grunt.registerTask 'test',    ['spec' ,'jasmine:lcovonly']
+  grunt.registerTask 'test',    ['spec', 'browserify:istanbul', 'jasmine:lcovonly']
 
 
