@@ -7,7 +7,6 @@ class GroupList extends FlatMapList
 
   constructor: ( source, groupFn ) ->
 
-    console.log JSON.stringify Object.keys(Map)
     @_byValue = new Map
     @_groupFn = groupFn or ( x ) -> x
 
