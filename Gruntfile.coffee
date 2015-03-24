@@ -77,6 +77,13 @@ module.exports = ( grunt ) ->
           sourceMap: false
           browserifyOptions:
             standalone: 'Sonic'
+      istanbul:
+        files: 'build/spec/sonic.browser.js': 'dist/sonic.js'
+        options:
+          sourceMap: true
+          transform: [require('browserify-istanbul')]
+          browserifyOptions:
+            standalone: 'Sonic'
 
     uglify:
       default:
@@ -84,18 +91,18 @@ module.exports = ( grunt ) ->
 
     jasmine:
       default:
-        src:  ['dist/sonic.browser.js']
+        src:  ['build/spec/sonic.browser.js']
         options:
           keepRunner: true
           specs: 'build/spec/**/*.js'
       lcovonly:
-        src:  ['dist/sonic.browser.js']
+        src:  ['build/spec/sonic.browser.js']
         options: (coverage 'lcovonly',
           keepRunner: true
           specs: 'build/spec/**/*.js'
         )
       html:
-        src: ['dist/sonic.browser.js']
+        src: ['build/spec/sonic.browser.js']
         options: (coverage 'html',
           specs: 'build/spec/**/*.js'
         )
