@@ -90,16 +90,14 @@
     AbstractList.prototype._add = function(value, prev, next) {
       var id;
       id = uniqueId();
+      this._byId[id] = value;
       if ((next != null) && (prev == null)) {
         prev = this._prev[next];
       }
       if ((prev != null) && (next == null)) {
         next = this._next[prev];
       }
-      if (!this._splice(prev, next, id)) {
-        return null;
-      }
-      this._byId[id] = value;
+      this._splice(prev, next, id);
       return id;
     };
 

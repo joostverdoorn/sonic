@@ -130,10 +130,9 @@ describe "AbstractList", ->
       id = @list._add item, null, 0
       expect(@list._byId[id]).toBe item
 
-
-    it "should return null if no prev and no next are given", ->
-      item = "apple"
-      expect(@list._add item).toBe(null)
+    # it "should return null if no prev and no next are given", ->
+    #   item = "apple"
+    #   expect(@list._add item).toBe(null)
 
     it "should call _splice if a prev is given", ->
       spyOn(@list, '_splice').and.callThrough()

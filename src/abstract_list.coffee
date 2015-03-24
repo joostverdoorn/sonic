@@ -126,12 +126,12 @@ class AbstractList
   #
   _add: ( value, prev, next ) ->
     id = uniqueId()
+    @_byId[id] = value
 
     prev = @_prev[next] if next? and not prev?
     next = @_next[prev] if prev? and not next?
-    return null unless @_splice(prev, next, id)
+    @_splice(prev, next, id)
 
-    @_byId[id] = value
     return id
 
   # lists the value of an entry.
