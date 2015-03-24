@@ -6,73 +6,92 @@ class RangeList extends AbstractList
   constructor: ( source, start, count ) ->
     super()
 
-    @_indexById = { 0:-1 }
-    @_idByIndex = {'-1': 0 }
+    @_indexById = {}
+    @_idByIndex = {}
 
     @_source = factory(source)
     @_source.onInvalidate @_onSourceInvalidate
 
     @_start = factory(start or 0)
-    @_start.onInvalidate @_onRangeInvalidate
+    @_start.onInvalidate @_onStartInvalidate
 
     @_count = factory(count or 0)
-    @_count.onInvalidate @_onRangeInvalidate
+    @_count.onInvalidate @_onCountInvalidate
+
+    # Set the sentinel as the first index
+    start = @_start.last()
+    @_indexById[0] = -start-1
+    @_idByIndex[-start-1] = 0
 
   get: ( id ) ->
     return @_source.get(id)
 
   has: ( id ) ->
-    return id of @_indexById
+    start = @_start.last()
+    count = @_count.last()
+    return 0 <= @_indexById[id] < count
 
   prev: ( id = 0 ) ->
-    # i = @_indexById[id]
-    # if id and i <= @_count.last()
-    #   return @_source.prev(id)
+    count = @_count.last()
 
-    # j = @_count.last()
-    # while j > 0
-    #   j--
-    #   break if prev = @_idByIndex[j]
+    # If we have no id, but have evaluated
+    # the full list, return the last item.
+    return @_idByIndex[count - 1] or @idAt(count - 1) if id is 0
 
-    # while next = @next(next or prev)
-    #   j++
-    #   return @_source.prev(next) if next is id
-    #   return next if id is 0 and j is @_count.last()
+    # If we have the index of the given id and
+    # the decremented index is within the range,
+    # we return the id corresponding to the
+    # decremented id.
+    if (index = @_indexById[id])?
+      return if 0 <= index - 1 < count
+        @_idByIndex[index - 1]
+      else null
 
-    # return @_idByIndex[j] if j < @_count.last()
-    # return null
-
-
+    # Iterate over the source list until
+    # we find the correct id.
+    while next = @next(next)
+      return @_source.prev(next) if next is id
+    return null
 
   next: ( id = 0 ) ->
-    start = @_start.last()
-    end = start + @_count.last()
+    current = id
+    count = @_count.last()
+    index = @_indexById[id] ? -@_start.last()-1
 
-    if (index = @_indexById[id]) and index < end
-      return next if @_indexById[(index + 1)] = next
+    # Iterate over the source list until
+    # we find the correct id.
+    while ++index < count
+      unless next = @_idByIndex[index]
+        @_idByIndex[index] = next = @_source.next(current)
+        @_indexById[next] = index
 
-    index ||= -1
-
-    until ++index >= end
-      next = @_idByIndex[index] ||= @_source.next(current)
-      return next if (id and current is id) or (not id and index is start)
-      current = @_idByIndex[index]
+      return next if (id and current is id) or (not id and index is 0)
+      current = next
 
     return null
 
   _onSourceInvalidate: ( prev, next ) =>
-    @_invalidate(prev)
+    @_invalidate(prev) if prev of @_indexById
     return true
 
-  _onRangeInvalidate: ( prev, next ) =>
-    if next is 0 and id = @_idByIndex[@_start.last() + @_count.last()]
-      @_invalidate(@_prev[id])
+  _onStartInvalidate: ( prev, next ) =>
+    if next is 0
+      start = @_start.last()
+      @_invalidate()
+      @_indexById[0] = -start-1
+      @_idByIndex[-start-1] = 0
+    return true
+
+  _onCountInvalidate: ( prev, next ) =>
+    if next is 0
+      count = @_count.last()
+      @invalidate(id) if id = @_idByIndex[count]
     return true
 
   _invalidate: ( prev = 0, next = 0 ) ->
-    return unless i = @_indexById[prev]
-    while id = @_idByIndex[++i]
-      delete @_idByIndex[i]
+    return unless index = @_indexById[prev]
+    while id = @_idByIndex[++index]
+      delete @_idByIndex[index]
       delete @_indexById[id]
 
     super(prev, 0)

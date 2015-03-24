@@ -588,21 +588,21 @@
     __extends(RangeList, _super);
 
     function RangeList(source, start, count) {
-      this._onRangeInvalidate = __bind(this._onRangeInvalidate, this);
+      this._onCountInvalidate = __bind(this._onCountInvalidate, this);
+      this._onStartInvalidate = __bind(this._onStartInvalidate, this);
       this._onSourceInvalidate = __bind(this._onSourceInvalidate, this);
       RangeList.__super__.constructor.call(this);
-      this._indexById = {
-        0: -1
-      };
-      this._idByIndex = {
-        '-1': 0
-      };
+      this._indexById = {};
+      this._idByIndex = {};
       this._source = factory(source);
       this._source.onInvalidate(this._onSourceInvalidate);
       this._start = factory(start || 0);
-      this._start.onInvalidate(this._onRangeInvalidate);
+      this._start.onInvalidate(this._onStartInvalidate);
       this._count = factory(count || 0);
-      this._count.onInvalidate(this._onRangeInvalidate);
+      this._count.onInvalidate(this._onCountInvalidate);
+      start = this._start.last();
+      this._indexById[0] = -start - 1;
+      this._idByIndex[-start - 1] = 0;
     }
 
     RangeList.prototype.get = function(id) {
@@ -610,64 +610,99 @@
     };
 
     RangeList.prototype.has = function(id) {
-      return id in this._indexById;
+      var count, start, _ref;
+      start = this._start.last();
+      count = this._count.last();
+      return (0 <= (_ref = this._indexById[id]) && _ref < count);
     };
 
     RangeList.prototype.prev = function(id) {
+      var count, index, next, _ref;
       if (id == null) {
         id = 0;
       }
+      count = this._count.last();
+      if (id === 0) {
+        return this._idByIndex[count - 1] || this.idAt(count - 1);
+      }
+      if ((index = this._indexById[id]) != null) {
+        if ((0 <= (_ref = index - 1) && _ref < count)) {
+          return this._idByIndex[index - 1];
+        } else {
+          return null;
+        }
+      }
+      while (next = this.next(next)) {
+        if (next === id) {
+          return this._source.prev(next);
+        }
+      }
+      return null;
     };
 
     RangeList.prototype.next = function(id) {
-      var current, end, index, next, start, _base;
+      var count, current, index, next, _ref;
       if (id == null) {
         id = 0;
       }
-      start = this._start.last();
-      end = start + this._count.last();
-      if ((index = this._indexById[id]) && index < end) {
-        if (this._indexById[index + 1] = next) {
+      current = id;
+      count = this._count.last();
+      index = (_ref = this._indexById[id]) != null ? _ref : -this._start.last() - 1;
+      while (++index < count) {
+        if (!(next = this._idByIndex[index])) {
+          this._idByIndex[index] = next = this._source.next(current);
+          this._indexById[next] = index;
+        }
+        if ((id && current === id) || (!id && index === 0)) {
           return next;
         }
-      }
-      index || (index = -1);
-      while (!(++index >= end)) {
-        next = (_base = this._idByIndex)[index] || (_base[index] = this._source.next(current));
-        if ((id && current === id) || (!id && index === start)) {
-          return next;
-        }
-        current = this._idByIndex[index];
+        current = next;
       }
       return null;
     };
 
     RangeList.prototype._onSourceInvalidate = function(prev, next) {
-      this._invalidate(prev);
+      if (prev in this._indexById) {
+        this._invalidate(prev);
+      }
       return true;
     };
 
-    RangeList.prototype._onRangeInvalidate = function(prev, next) {
-      var id;
-      if (next === 0 && (id = this._idByIndex[this._start.last() + this._count.last()])) {
-        this._invalidate(this._prev[id]);
+    RangeList.prototype._onStartInvalidate = function(prev, next) {
+      var start;
+      if (next === 0) {
+        start = this._start.last();
+        this._invalidate();
+        this._indexById[0] = -start - 1;
+        this._idByIndex[-start - 1] = 0;
+      }
+      return true;
+    };
+
+    RangeList.prototype._onCountInvalidate = function(prev, next) {
+      var count, id;
+      if (next === 0) {
+        count = this._count.last();
+        if (id = this._idByIndex[count]) {
+          this.invalidate(id);
+        }
       }
       return true;
     };
 
     RangeList.prototype._invalidate = function(prev, next) {
-      var i, id;
+      var id, index;
       if (prev == null) {
         prev = 0;
       }
       if (next == null) {
         next = 0;
       }
-      if (!(i = this._indexById[prev])) {
+      if (!(index = this._indexById[prev])) {
         return;
       }
-      while (id = this._idByIndex[++i]) {
-        delete this._idByIndex[i];
+      while (id = this._idByIndex[++index]) {
+        delete this._idByIndex[index];
         delete this._indexById[id];
       }
       return RangeList.__super__._invalidate.call(this, prev, 0);
