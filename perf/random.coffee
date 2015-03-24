@@ -1,7 +1,6 @@
 Sonic   = require('../../dist/sonic')
-factory = require('../../dist/factory')
 
-list = Sonic([0...100])
+list = Sonic(3)
 
 a = do ( list ) ->
   -> list.get(list.prev())

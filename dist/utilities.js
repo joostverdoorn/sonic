@@ -22,7 +22,7 @@
     findId: function(fn) {
       var result;
       result = void 0;
-      this.each(function(value, id) {
+      this.forEach(function(value, id) {
         if (fn(value)) {
           result = id;
           return false;
@@ -96,10 +96,13 @@
       GroupList = require('./group_list');
       return new GroupList(this, groupFn);
     },
+    range: function(start, count) {
+      var RangeList;
+      RangeList = require('./range_list');
+      return new RangeList(this, start, count);
+    },
     take: function(count) {
-      var TakeList;
-      TakeList = require('./take_list');
-      return new TakeList(this, count);
+      return this.range(0, count);
     },
     map: function(mapFn) {
       return this.flatMap(function(value) {
@@ -184,14 +187,13 @@
         'next': 'prev'
       };
       proxy = this.proxy(fns);
-      proxy.onInvalidate = function(callback) {
-        return this.onInvalidate(function(event) {
-          return callback({
-            prev: event.next,
-            next: event.prev
+      proxy.onInvalidate = (function(_this) {
+        return function(callback) {
+          return _this.onInvalidate(function(prev, next) {
+            return callback(next, prev);
           });
-        });
-      };
+        };
+      })(this);
       return proxy;
     },
     toArray: function() {

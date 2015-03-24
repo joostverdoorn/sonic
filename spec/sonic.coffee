@@ -101,7 +101,7 @@ describe "Sonic", ->
 
   describe "findId", ->
     it "should work when called with an array instead of a list", ->
-      spy = spyOn(Sonic.AbstractList::, 'each')
+      spy = spyOn(Sonic.AbstractList::, 'forEach')
 
       items = [1,2,3,4]
       fn = () ->

@@ -36,7 +36,7 @@ module.exports =
   findId: ( fn ) ->
     result = undefined
 
-    @each ( value, id ) ->
+    @forEach ( value, id ) ->
       if fn(value)
         result = id
         return false
@@ -132,9 +132,15 @@ module.exports =
   #   SortedList = require('./sorted_list')
   #   return new SortedList(@, sortFn: sortFn)
 
+  range: (start, count ) ->
+    RangeList = require('./range_list')
+    return new RangeList(@, start, count)
+
+
   take: ( count ) ->
-    TakeList = require('./take_list')
-    return new TakeList(@, count)
+    return @range(0, count)
+  # range: ( start, end ) ->
+  #   return @take(end).reverse().take(end - start).reverse()
 
   map: ( mapFn ) ->
     return @flatMap(( value ) -> new Unit(mapFn(value)))
@@ -174,9 +180,9 @@ module.exports =
     fns = { 'get', 'has', 'prev': 'next', 'next': 'prev' }
     proxy = @proxy(fns)
 
-    proxy.onInvalidate = ( callback ) ->
-      @onInvalidate ( event ) ->
-        callback(prev: event.next, next: event.prev)
+    proxy.onInvalidate = ( callback ) =>
+      @onInvalidate ( prev, next ) ->
+        callback(next, prev)
 
     return proxy
 

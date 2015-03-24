@@ -10,7 +10,7 @@ module.exports = ( grunt ) ->
     'unit'
     'flat_map_list'
     'group_list'
-    'take_list'
+    'range_list'
   ]
 
   # Coverage thresholds

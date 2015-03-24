@@ -36,6 +36,6 @@ Sonic.List         = require('./list')
 Sonic.Unit         = require('./unit')
 Sonic.FlatMapList  = require('./flat_map_list')
 Sonic.GroupList    = require('./group_list')
-Sonic.TakeList     = require('./take_list')
+Sonic.RangeList    = require('./range_list')
 
 module.exports = Sonic

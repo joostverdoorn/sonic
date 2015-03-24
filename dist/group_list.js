@@ -14,7 +14,6 @@
 
     function GroupList(source, groupFn) {
       var flatMapFn;
-      console.log(JSON.stringify(Object.keys(Map)));
       this._byValue = new Map;
       this._groupFn = groupFn || function(x) {
         return x;
