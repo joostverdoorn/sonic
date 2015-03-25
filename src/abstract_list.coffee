@@ -174,14 +174,18 @@ class AbstractList
     return @_splice(prev, next, id)
 
   # Yields an invalidate event for the given range, calling
-  # all handlers.
+  # all handlers asynchronously.
   #
   # @param [number] prev The id of the left end of the range to invalidate
   # @param [number] next The id of the right end of the range to invalidate
   #
   _invalidate: ( prev = 0, next = 0 ) ->
-    for id, handler of @_handlers
-      delete @_handlers[id] if handler(prev, next) is false
+    handlers = @_handlers
+    for id, handler of handlers
+      do ( id, handler ) ->
+        setTimeout ->
+          delete handlers[id] if handler(prev, next) is false
+        , 0
 
 AbstractList::[key] = value for key, value of utilities
 

@@ -133,22 +133,24 @@
     };
 
     AbstractList.prototype._invalidate = function(prev, next) {
-      var handler, id, _ref, _results;
+      var handler, handlers, id, _results;
       if (prev == null) {
         prev = 0;
       }
       if (next == null) {
         next = 0;
       }
-      _ref = this._handlers;
+      handlers = this._handlers;
       _results = [];
-      for (id in _ref) {
-        handler = _ref[id];
-        if (handler(prev, next) === false) {
-          _results.push(delete this._handlers[id]);
-        } else {
-          _results.push(void 0);
-        }
+      for (id in handlers) {
+        handler = handlers[id];
+        _results.push((function(id, handler) {
+          return setTimeout(function() {
+            if (handler(prev, next) === false) {
+              return delete handlers[id];
+            }
+          }, 0);
+        })(id, handler));
       }
       return _results;
     };

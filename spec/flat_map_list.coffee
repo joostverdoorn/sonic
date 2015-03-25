@@ -4,17 +4,13 @@ describe "FlatMapList", ->
     @source = Sonic [0...10]
     @flatMapList = new Sonic.FlatMapList @source
 
-  it "should invalidate when the source invalidates", ->
-    spyOn @flatMapList, '_invalidate'
-
+  it "should invalidate when the source invalidates", ( done ) ->
+    @flatMapList.onInvalidate done
     @source._invalidate()
-    expect(@flatMapList._invalidate).toHaveBeenCalled()
 
-  it "should invalidate when the flatMapFn invalidates", ->
-    spyOn @flatMapList, '_invalidate'
-
+  it "should invalidate when the flatMapFn invalidates", ( done ) ->
+    @flatMapList.onInvalidate done
     @flatMapList._flatMapFn._invalidate()
-    expect(@flatMapList._invalidate).toHaveBeenCalled()
 
   describe "#get", ->
     it "should return undefined when the id is 0", ->
@@ -97,13 +93,12 @@ describe "FlatMapList", ->
       list = @flatMapList._getListBySourceId sourceId
       expect(@flatMapList._getListBySourceId sourceId).toBe list
 
-    it "should invalidate when the list invalidates", ->
-      spyOn @flatMapList, '_invalidate'
+    it "should invalidate when the list invalidates", ( done )->
       sourceId = @source.idOf 3
       list = @flatMapList._getListBySourceId sourceId
 
+      @flatMapList.onInvalidate done
       list._invalidate()
-      expect(@flatMapList._invalidate).toHaveBeenCalled()
 
   describe "#_getListById", ->
     it "should return undefined when the given id isn't present", ->
