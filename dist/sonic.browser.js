@@ -170,7 +170,7 @@
 
 },{"./unique_id":9,"./utilities":11}],2:[function(require,module,exports){
 (function() {
-  var AbstractList, List, Unit, factory;
+  var AbstractList, List, Unit;
 
   AbstractList = require('./abstract_list');
 
@@ -178,7 +178,7 @@
 
   Unit = require('./unit');
 
-  factory = function(items) {
+  module.exports = function(items) {
     if (items instanceof AbstractList) {
       return items;
     } else if (Array.isArray(items)) {
@@ -189,8 +189,6 @@
       return new Unit();
     }
   };
-
-  module.exports = factory;
 
 }).call(this);
 
@@ -964,6 +962,8 @@
       });
     },
     filter: function(filterFn) {
+      var Unit;
+      Unit = require('./unit');
       return this.flatMap(function(value) {
         if (filterFn(value)) {
           return new Unit(value);
@@ -972,17 +972,20 @@
         }
       });
     },
+    append: function(lists) {
+      var Unit, factory;
+      factory = require('./factory');
+      Unit = require('./unit');
+      return factory([new Unit(this), factory(lists)]).flatten().flatten();
+    },
     concat: function() {
-      var FlatMapList, lists;
+      var lists;
       lists = 1 <= arguments.length ? __slice.call(arguments, 0) : [];
-      FlatMapList = require('./flat_map_list');
-      return new FlatMapList(this, function(list) {
-        return list;
-      });
+      return this.append(lists);
     },
     flatten: function() {
-      return this.flatMap(this, function() {
-        return this;
+      return this.flatMap(function(list) {
+        return list;
       });
     },
     uniq: function(groupFn) {
@@ -1049,7 +1052,7 @@
 
 //# sourceMappingURL=utilities.js.map
 
-},{"./abstract_list":1,"./flat_map_list":3,"./group_list":4,"./iterator":5,"./range_list":7}],12:[function(require,module,exports){
+},{"./abstract_list":1,"./factory":2,"./flat_map_list":3,"./group_list":4,"./iterator":5,"./range_list":7,"./unit":10}],12:[function(require,module,exports){
 (function (global){
 (function (exports) {'use strict';
   //shared pointer

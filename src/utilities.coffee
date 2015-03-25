@@ -149,14 +149,19 @@ module.exports =
     return @map(( value ) -> value[key](args...))
 
   filter: ( filterFn ) ->
+    Unit = require('./unit')
     return @flatMap(( value ) -> if filterFn(value) then new Unit(value) else new Unit())
 
+  append: ( lists ) ->
+    factory = require('./factory')
+    Unit = require('./unit')
+    return factory([new Unit(@), factory(lists)]).flatten().flatten()
+
   concat: ( lists... ) ->
-    FlatMapList = require('./flat_map_list')
-    return new FlatMapList(@, ( list ) -> list)
+    return @append(lists)
 
   flatten: ( ) ->
-    return @flatMap(@, ( ) -> @)
+    return @flatMap(( list ) -> list)
 
   uniq: ( groupFn = ( x ) -> x ) ->
     return @flatMap(@group(groupFn), ( list ) -> list.take(1))

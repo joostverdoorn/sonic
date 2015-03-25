@@ -122,6 +122,8 @@
       });
     },
     filter: function(filterFn) {
+      var Unit;
+      Unit = require('./unit');
       return this.flatMap(function(value) {
         if (filterFn(value)) {
           return new Unit(value);
@@ -130,17 +132,20 @@
         }
       });
     },
+    append: function(lists) {
+      var Unit, factory;
+      factory = require('./factory');
+      Unit = require('./unit');
+      return factory([new Unit(this), factory(lists)]).flatten().flatten();
+    },
     concat: function() {
-      var FlatMapList, lists;
+      var lists;
       lists = 1 <= arguments.length ? __slice.call(arguments, 0) : [];
-      FlatMapList = require('./flat_map_list');
-      return new FlatMapList(this, function(list) {
-        return list;
-      });
+      return this.append(lists);
     },
     flatten: function() {
-      return this.flatMap(this, function() {
-        return this;
+      return this.flatMap(function(list) {
+        return list;
       });
     },
     uniq: function(groupFn) {

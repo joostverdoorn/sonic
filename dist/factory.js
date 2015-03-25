@@ -1,5 +1,5 @@
 (function() {
-  var AbstractList, List, Unit, factory;
+  var AbstractList, List, Unit;
 
   AbstractList = require('./abstract_list');
 
@@ -7,7 +7,7 @@
 
   Unit = require('./unit');
 
-  factory = function(items) {
+  module.exports = function(items) {
     if (items instanceof AbstractList) {
       return items;
     } else if (Array.isArray(items)) {
@@ -18,8 +18,6 @@
       return new Unit();
     }
   };
-
-  module.exports = factory;
 
 }).call(this);
 
