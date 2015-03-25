@@ -140,6 +140,7 @@ module.exports =
     return @range(0, count)
 
   map: ( mapFn ) ->
+    Unit = require('./unit')
     return @flatMap(( value ) -> new Unit(mapFn(value)))
 
   pluck: ( key ) ->

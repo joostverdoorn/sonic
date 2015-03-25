@@ -945,6 +945,8 @@
       return this.range(0, count);
     },
     map: function(mapFn) {
+      var Unit;
+      Unit = require('./unit');
       return this.flatMap(function(value) {
         return new Unit(mapFn(value));
       });
