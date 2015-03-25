@@ -26,7 +26,7 @@ module.exports = ( grunt ) ->
     optionsRef.template = require('grunt-template-jasmine-istanbul')
     optionsRef.templateOptions =
       coverage: 'stat/coverage/coverage.json'
-      thresholds: thresholds
+      # thresholds: thresholds
       report:
         type: type
         options:
@@ -138,5 +138,6 @@ module.exports = ( grunt ) ->
   grunt.registerTask 'spec',    ['clean', 'dist', 'coffee:spec' ,'jasmine:default']
   grunt.registerTask 'perf',    ['clean', 'dist', 'coffee:perf' ,'benchmark:default']
   grunt.registerTask 'test',    ['spec', 'browserify:istanbul', 'jasmine:lcovonly']
+  grunt.registerTask 'cov',     ['spec', 'browserify:istanbul', 'jasmine:html']
 
 

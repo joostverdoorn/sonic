@@ -8,7 +8,9 @@
     "Steffan Sluis"
   ],
   "main": "dist/sonic",
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "licenses": [
     {
       "type": "MIT",
