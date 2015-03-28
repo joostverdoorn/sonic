@@ -1,4 +1,3 @@
-utilities = require('./utilities')
 
 # Creates a list from an array
 #
@@ -22,12 +21,7 @@ Sonic.unit = ( item ) ->
 Sonic.empty = ( ) ->
   return new Sonic.Unit()
 
-for key, value of utilities
-  do (key, value) =>
-    if value instanceof Function
-      Sonic[key] = ( list, args... ) -> value.apply(Sonic.factory(list), args)
-    else Sonic[key] = value
-
+Sonic.utilities    = require('./utilities')
 Sonic.uniqueId     = require('./unique_id')
 Sonic.factory      = require('./factory')
 Sonic.Iterator     = require('./iterator')
@@ -37,5 +31,11 @@ Sonic.Unit         = require('./unit')
 Sonic.FlatMapList  = require('./flat_map_list')
 Sonic.GroupList    = require('./group_list')
 Sonic.RangeList    = require('./range_list')
+
+for key, value of Sonic.utilities
+  do (key, value) =>
+    if value instanceof Function
+      Sonic[key] = ( list, args... ) -> value.apply(Sonic.factory(list), args)
+    else Sonic[key] = value
 
 module.exports = Sonic
