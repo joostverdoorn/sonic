@@ -132,7 +132,7 @@ module.exports =
   #   SortedList = require('./sorted_list')
   #   return new SortedList(@, sortFn: sortFn)
 
-  range: (start, count ) ->
+  range: ( start, count ) ->
     RangeList = require('./range_list')
     return new RangeList(@, start, count)
 
@@ -140,18 +140,25 @@ module.exports =
     return @range(0, count)
 
   map: ( mapFn ) ->
-    Unit = require('./unit')
-    return @flatMap(( value ) -> new Unit(mapFn(value)))
+    factory = require('./factory')
+    flatMapFn = factory(mapFn).map((mapFn) -> ((value) -> mapFn(value)))
+    return @flatMap(flatMpFn)
 
   pluck: ( key ) ->
-    return @map(( value ) -> value[key])
+    factory = require('./factory')
+    mapFn = factory(key).map((key) -> ((value) -> value[key]))
+    return @map(mapFn)
 
   invoke: ( key, args... ) ->
-    return @map(( value ) -> value[key](args...))
+    factory = require('./factory')
+    mapFn = factory(key).map((key) -> ((value) -> value[key](args...)))
+    return @map(mapFn)
 
   filter: ( filterFn ) ->
+    factory = require('./factory')
     Unit = require('./unit')
-    return @flatMap(( value ) -> if filterFn(value) then new Unit(value) else new Unit())
+    flatMapFn = factory(filterFn).map((filterFn) -> ((value) -> filterFn(value) and new Unit(value) or new Unit()))
+    return @flatMap(flatMapFn)
 
   append: ( lists ) ->
     factory = require('./factory')
@@ -162,10 +169,10 @@ module.exports =
     return @append(lists)
 
   flatten: ( ) ->
-    return @flatMap(( list ) -> list)
+    return @flatMap((list) -> list)
 
-  uniq: ( groupFn = ( x ) -> x ) ->
-    return @flatMap(@group(groupFn), ( list ) -> list.take(1))
+  uniq: ( groupFn = (x) -> x ) ->
+    return @group(groupFn).flatMap((list) -> list.take(1))
 
   union: ( lists ) ->
     return @concat(lists).uniq()

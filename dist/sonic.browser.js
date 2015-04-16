@@ -949,34 +949,46 @@
       return this.range(0, count);
     },
     map: function(mapFn) {
-      var Unit;
-      Unit = require('./unit');
-      return this.flatMap(function(value) {
-        return new Unit(mapFn(value));
+      var factory, flatMapFn;
+      factory = require('./factory');
+      flatMapFn = factory(mapFn).map(function(mapFn) {
+        return function(value) {
+          return mapFn(value);
+        };
       });
+      return this.flatMap(flatMpFn);
     },
     pluck: function(key) {
-      return this.map(function(value) {
-        return value[key];
+      var factory, mapFn;
+      factory = require('./factory');
+      mapFn = factory(key).map(function(key) {
+        return function(value) {
+          return value[key];
+        };
       });
+      return this.map(mapFn);
     },
     invoke: function() {
-      var args, key;
+      var args, factory, key, mapFn;
       key = arguments[0], args = 2 <= arguments.length ? __slice.call(arguments, 1) : [];
-      return this.map(function(value) {
-        return value[key].apply(value, args);
+      factory = require('./factory');
+      mapFn = factory(key).map(function(key) {
+        return function(value) {
+          return value[key].apply(value, args);
+        };
       });
+      return this.map(mapFn);
     },
     filter: function(filterFn) {
-      var Unit;
+      var Unit, factory, flatMapFn;
+      factory = require('./factory');
       Unit = require('./unit');
-      return this.flatMap(function(value) {
-        if (filterFn(value)) {
-          return new Unit(value);
-        } else {
-          return new Unit();
-        }
+      flatMapFn = factory(filterFn).map(function(filterFn) {
+        return function(value) {
+          return filterFn(value) && new Unit(value) || new Unit();
+        };
       });
+      return this.flatMap(flatMapFn);
     },
     append: function(lists) {
       var Unit, factory;
@@ -1000,7 +1012,7 @@
           return x;
         };
       }
-      return this.flatMap(this.group(groupFn), function(list) {
+      return this.group(groupFn).flatMap(function(list) {
         return list.take(1);
       });
     },
