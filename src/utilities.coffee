@@ -141,8 +141,9 @@ module.exports =
 
   map: ( mapFn ) ->
     factory = require('./factory')
-    flatMapFn = factory(mapFn).map((mapFn) -> ((value) -> mapFn(value)))
-    return @flatMap(flatMpFn)
+    Unit = require('./unit')
+    flatMapFn = factory(mapFn).flatMap((mapFn) -> new Unit((value) -> new Unit(mapFn(value))))
+    return @flatMap(flatMapFn)
 
   pluck: ( key ) ->
     factory = require('./factory')

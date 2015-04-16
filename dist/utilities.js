@@ -105,14 +105,15 @@
       return this.range(0, count);
     },
     map: function(mapFn) {
-      var factory, flatMapFn;
+      var Unit, factory, flatMapFn;
       factory = require('./factory');
-      flatMapFn = factory(mapFn).map(function(mapFn) {
-        return function(value) {
-          return mapFn(value);
-        };
+      Unit = require('./unit');
+      flatMapFn = factory(mapFn).flatMap(function(mapFn) {
+        return new Unit(function(value) {
+          return new Unit(mapFn(value));
+        });
       });
-      return this.flatMap(flatMpFn);
+      return this.flatMap(flatMapFn);
     },
     pluck: function(key) {
       var factory, mapFn;
