@@ -42,13 +42,13 @@ class FlatMapList extends AbstractList
   prev: ( id = 0 ) ->
     unless id then sourceId = @_source.prev()
     else sourceId = @_sourceIdById[id]
-    return null unless sourceId
+    return null unless sourceId?
 
     list = @_getListBySourceId(sourceId)
     prev = list.prev(id)
 
-    until prev
-      return null unless sourceId = @_source.prev(sourceId)
+    until prev?
+      return null unless (sourceId = @_source.prev(sourceId))?
       list = @_getListBySourceId(sourceId)
       prev = list.prev()
 
@@ -63,13 +63,13 @@ class FlatMapList extends AbstractList
   next: ( id = 0 ) ->
     unless id then sourceId = @_source.next()
     else sourceId = @_sourceIdById[id]
-    return null unless sourceId
+    return null unless sourceId?
 
     list = @_getListBySourceId(sourceId)
     next = list.next(id)
 
-    until next
-      return null unless sourceId = @_source.next(sourceId)
+    until next?
+      return null unless (sourceId = @_source.next(sourceId))?
       list = @_getListBySourceId(sourceId)
       next = list.next()
 

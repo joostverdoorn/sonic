@@ -1,9 +1,9 @@
 (function() {
-  var List, Unit,
+  var MutableList, Unit,
     __hasProp = {}.hasOwnProperty,
     __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
-  List = require('./list');
+  MutableList = require('./mutable_list');
 
   Unit = (function(_super) {
     __extends(Unit, _super);
@@ -35,7 +35,7 @@
 
     return Unit;
 
-  })(List);
+  })(MutableList);
 
   module.exports = Unit;
 

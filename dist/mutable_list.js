@@ -8,56 +8,33 @@
   MutableList = (function(_super) {
     __extends(MutableList, _super);
 
-    function MutableList(values) {
-      var value, _i, _len;
-      MutableList.__super__.constructor.call(this);
-      this._next[0] = 0;
-      this._prev[0] = 0;
-      if (values != null) {
-        for (_i = 0, _len = values.length; _i < _len; _i++) {
-          value = values[_i];
-          this._add(value, null, 0);
-        }
-      }
+    function MutableList() {
+      MutableList.__super__.constructor.apply(this, arguments);
     }
 
-    MutableList.prototype.set = function(id, value) {
-      return this._set(id, value);
+    MutableList.prototype["delete"] = function(id) {
+      return this.splice(this.prev(id), this.next(id));
     };
 
     MutableList.prototype.push = function(value) {
-      return this._add(value, null, 0);
+      return this.splice(this.prev(), null, value);
     };
 
     MutableList.prototype.unshift = function(value) {
-      return this._add(value, 0);
+      return this.splice(null, this.prev, value);
     };
 
     MutableList.prototype.pop = function() {
-      var id, value;
-      id = this.prev();
-      value = this.get(id);
-      if (this._delete(id)) {
-        return value;
-      }
+      return this.splice(this.prev(this.prev()), null);
     };
 
     MutableList.prototype.shift = function() {
-      var id, value;
-      id = this.next();
-      value = this.get(id);
-      if (this._delete(id)) {
-        return value;
-      }
+      return this.splice(null, this.next(this.next()));
     };
 
     MutableList.prototype.remove = function(value) {
       var id;
       id = this.idOf(value);
-      return this._delete(id);
-    };
-
-    MutableList.prototype["delete"] = function(id) {
       return this._delete(id);
     };
 
@@ -69,4 +46,4 @@
 
 }).call(this);
 
-//# sourceMappingURL=list.js.map
+//# sourceMappingURL=mutable_list.js.map

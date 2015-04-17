@@ -49,13 +49,13 @@
       } else {
         sourceId = this._sourceIdById[id];
       }
-      if (!sourceId) {
+      if (sourceId == null) {
         return null;
       }
       list = this._getListBySourceId(sourceId);
       prev = list.prev(id);
-      while (!prev) {
-        if (!(sourceId = this._source.prev(sourceId))) {
+      while (prev == null) {
+        if ((sourceId = this._source.prev(sourceId)) == null) {
           return null;
         }
         list = this._getListBySourceId(sourceId);
@@ -75,13 +75,13 @@
       } else {
         sourceId = this._sourceIdById[id];
       }
-      if (!sourceId) {
+      if (sourceId == null) {
         return null;
       }
       list = this._getListBySourceId(sourceId);
       next = list.next(id);
-      while (!next) {
-        if (!(sourceId = this._source.next(sourceId))) {
+      while (next == null) {
+        if ((sourceId = this._source.next(sourceId)) == null) {
           return null;
         }
         list = this._getListBySourceId(sourceId);

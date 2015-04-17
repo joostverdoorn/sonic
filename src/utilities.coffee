@@ -24,7 +24,7 @@ module.exports =
   # @return [Boolean] true if all the function executions return true, false otherwise.
   #
   forEach: ( fn ) ->
-    while id = @next(id)
+    while (id = @next(id))?
       return false if fn(@get(id), id) is false
     return true
 

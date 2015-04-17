@@ -13,11 +13,11 @@ class Iterator
 
   moveNext: ( ) ->
     @currentId = @list.next(@currentId)
-    return !!@currentId
+    return @currentId?
 
   movePrevious: ( ) ->
     @currentId = @list.prev(@currentId)
-    return !!@currentId
+    return @currentId?
 
   # We also implement the ES6 iterator protocol.
   # https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/The_Iterator_protocol

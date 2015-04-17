@@ -1,6 +1,6 @@
-List = require('./list')
+MutableList = require('./mutable_list')
 
-class Unit extends List
+class Unit extends MutableList
 
   constructor: ( value ) ->
     values = if arguments.length then [value] else []

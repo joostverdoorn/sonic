@@ -24,7 +24,9 @@
 
   Sonic.AbstractList = require('./abstract_list');
 
-  Sonic.List = require('./list');
+  Sonic.MutableList = require('./mutable_list');
+
+  Sonic.ArrayList = require('./array_list');
 
   Sonic.Unit = require('./unit');
 

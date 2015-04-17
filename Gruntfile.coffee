@@ -6,12 +6,14 @@ module.exports = ( grunt ) ->
     'utilities'
     'iterator'
     'abstract_list'
-    'list'
+    'mutable_list'
+    'array_list'
     'unit'
     'flat_map_list'
     'group_list'
     'range_list'
   ]
+  # srcs = ['*']
 
   # Coverage thresholds
   thresholds =

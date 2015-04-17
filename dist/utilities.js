@@ -12,7 +12,7 @@
     },
     forEach: function(fn) {
       var id;
-      while (id = this.next(id)) {
+      while ((id = this.next(id)) != null) {
         if (fn(this.get(id), id) === false) {
           return false;
         }

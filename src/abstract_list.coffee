@@ -17,6 +17,8 @@ class AbstractList
     @_next = {}
     @_handlers = {}
 
+    # @[key] = source.bind(source) for key, fn of source
+
   # Returns the value at the listsified id.
   #
   # @param [number] id The id of the requested value

@@ -170,21 +170,152 @@
 
 //# sourceMappingURL=abstract_list.js.map
 
-},{"./unique_id":9,"./utilities":11}],2:[function(require,module,exports){
+},{"./unique_id":10,"./utilities":12}],2:[function(require,module,exports){
 (function() {
-  var AbstractList, List, Unit;
+  var ArrayList, MutableList,
+    __hasProp = {}.hasOwnProperty,
+    __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
+    __slice = [].slice;
+
+  MutableList = require('./mutable_list');
+
+  ArrayList = (function(_super) {
+    __extends(ArrayList, _super);
+
+    function ArrayList(source) {
+      this._source = source && source.slice(0) || [];
+      ArrayList.__super__.constructor.call(this);
+    }
+
+    ArrayList.prototype.has = function(index) {
+      return (0 <= index && index < this._source.length);
+    };
+
+    ArrayList.prototype.get = function(index) {
+      return this._source[index];
+    };
+
+    ArrayList.prototype.prev = function(index) {
+      if (!this._source.length) {
+        return;
+      }
+      if (index == null) {
+        return this._source.length - 1;
+      }
+      if (this.has(index) && this.has(index - 1)) {
+        return index - 1;
+      }
+    };
+
+    ArrayList.prototype.next = function(index) {
+      if (!this._source.length) {
+        return;
+      }
+      if (index == null) {
+        return 0;
+      }
+      if (this.has(index) && this.has(index + 1)) {
+        return index + 1;
+      }
+    };
+
+    ArrayList.prototype.set = function(index, value) {
+      if (!this.has(id)) {
+        return false;
+      }
+      this._source[index] = value;
+      return true;
+    };
+
+    ArrayList.prototype.splice = function() {
+      var items, next, prev, _ref;
+      prev = arguments[0], next = arguments[1], items = 3 <= arguments.length ? __slice.call(arguments, 2) : [];
+      debugger;
+      if (prev == null) {
+        prev = -1;
+      } else if (!this.has(prev)) {
+        return false;
+      }
+      if (next == null) {
+        next = this._source.length;
+      } else if (!this.has(next)) {
+        return false;
+      }
+      (_ref = this._source).splice.apply(_ref, [prev + 1, next - prev - 1].concat(__slice.call(items)));
+      return true;
+    };
+
+    return ArrayList;
+
+  })(MutableList);
+
+  module.exports = ArrayList;
+
+}).call(this);
+
+//# sourceMappingURL=array_list.js.map
+
+},{"./mutable_list":7}],3:[function(require,module,exports){
+(function() {
+  var AbstractList, ArrayList, Unit, factory, isList, isMutable, isObservable, listFns, mutableFns, observableFns, utilities;
 
   AbstractList = require('./abstract_list');
 
-  List = require('./list');
+  ArrayList = require('./array_list');
 
   Unit = require('./unit');
 
-  module.exports = function(items) {
+  utilities = require('./utilities');
+
+  listFns = ['has', 'get', 'prev', 'next'];
+
+  mutableFns = ['splice'];
+
+  observableFns = ['onInvalidate', 'removeListener'];
+
+  isList = function(obj) {
+    var key, memo, _i, _len;
+    memo = true;
+    for (_i = 0, _len = listFns.length; _i < _len; _i++) {
+      key = listFns[_i];
+      memo = memo && (obj[key] != null);
+    }
+    return memo;
+  };
+
+  isMutable = function(obj) {
+    return obj['splice'] != null;
+  };
+
+  isObservable = function(obj) {
+    return (obj['onInvalidate'] != null) && (obj['removeListener'] != null);
+  };
+
+  factory = function(items) {
+    var key, list, _i, _j, _k, _len, _len1, _len2;
     if (items instanceof AbstractList) {
       return items;
+    } else if (isList(items)) {
+      list = new AbstractList;
+      for (_i = 0, _len = listFns.length; _i < _len; _i++) {
+        key = listFns[_i];
+        list[key] = items[key].bind(items);
+      }
+      if (isMutable(items)) {
+        for (_j = 0, _len1 = mutableFns.length; _j < _len1; _j++) {
+          key = mutableFns[_j];
+          list[key] = items[key].bind(items);
+        }
+      }
+      if (isObservable(items)) {
+        for (_k = 0, _len2 = observableFns.length; _k < _len2; _k++) {
+          key = observableFns[_k];
+          list[key] = items[key].bind(items);
+        }
+      }
+      return list;
     } else if (Array.isArray(items)) {
-      return new List(items);
+      return new ArrayList(items);
     } else if (arguments.length) {
       return new Unit(items);
     } else {
@@ -192,11 +323,13 @@
     }
   };
 
+  module.exports = factory;
+
 }).call(this);
 
 //# sourceMappingURL=factory.js.map
 
-},{"./abstract_list":1,"./list":6,"./unit":10}],3:[function(require,module,exports){
+},{"./abstract_list":1,"./array_list":2,"./unit":11,"./utilities":12}],4:[function(require,module,exports){
 (function() {
   var AbstractList, FlatMapList, Unit, factory,
     __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
@@ -248,13 +381,13 @@
       } else {
         sourceId = this._sourceIdById[id];
       }
-      if (!sourceId) {
+      if (sourceId == null) {
         return null;
       }
       list = this._getListBySourceId(sourceId);
       prev = list.prev(id);
-      while (!prev) {
-        if (!(sourceId = this._source.prev(sourceId))) {
+      while (prev == null) {
+        if ((sourceId = this._source.prev(sourceId)) == null) {
           return null;
         }
         list = this._getListBySourceId(sourceId);
@@ -274,13 +407,13 @@
       } else {
         sourceId = this._sourceIdById[id];
       }
-      if (!sourceId) {
+      if (sourceId == null) {
         return null;
       }
       list = this._getListBySourceId(sourceId);
       next = list.next(id);
-      while (!next) {
-        if (!(sourceId = this._source.next(sourceId))) {
+      while (next == null) {
+        if ((sourceId = this._source.next(sourceId)) == null) {
           return null;
         }
         list = this._getListBySourceId(sourceId);
@@ -383,7 +516,7 @@
 
 //# sourceMappingURL=flat_map_list.js.map
 
-},{"./abstract_list":1,"./factory":2,"./unit":10}],4:[function(require,module,exports){
+},{"./abstract_list":1,"./factory":3,"./unit":11}],5:[function(require,module,exports){
 (function() {
   var FlatMapList, GroupList, Unit,
     __hasProp = {}.hasOwnProperty,
@@ -431,7 +564,7 @@
 
 //# sourceMappingURL=group_list.js.map
 
-},{"./flat_map_list":3,"./unit":10,"es6-collections":12}],5:[function(require,module,exports){
+},{"./flat_map_list":4,"./unit":11,"es6-collections":13}],6:[function(require,module,exports){
 (function() {
   var Iterator;
 
@@ -452,12 +585,12 @@
 
     Iterator.prototype.moveNext = function() {
       this.currentId = this.list.next(this.currentId);
-      return !!this.currentId;
+      return this.currentId != null;
     };
 
     Iterator.prototype.movePrevious = function() {
       this.currentId = this.list.prev(this.currentId);
-      return !!this.currentId;
+      return this.currentId != null;
     };
 
     Iterator.prototype.next = function() {
@@ -500,81 +633,58 @@
 
 //# sourceMappingURL=iterator.js.map
 
-},{}],6:[function(require,module,exports){
+},{}],7:[function(require,module,exports){
 (function() {
-  var AbstractList, List,
+  var AbstractList, MutableList,
     __hasProp = {}.hasOwnProperty,
     __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
   AbstractList = require('./abstract_list');
 
-  List = (function(_super) {
-    __extends(List, _super);
+  MutableList = (function(_super) {
+    __extends(MutableList, _super);
 
-    function List(values) {
-      var value, _i, _len;
-      List.__super__.constructor.call(this);
-      this._next[0] = 0;
-      this._prev[0] = 0;
-      if (values != null) {
-        for (_i = 0, _len = values.length; _i < _len; _i++) {
-          value = values[_i];
-          this._add(value, null, 0);
-        }
-      }
+    function MutableList() {
+      MutableList.__super__.constructor.apply(this, arguments);
     }
 
-    List.prototype.set = function(id, value) {
-      return this._set(id, value);
+    MutableList.prototype["delete"] = function(id) {
+      return this.splice(this.prev(id), this.next(id));
     };
 
-    List.prototype.push = function(value) {
-      return this._add(value, null, 0);
+    MutableList.prototype.push = function(value) {
+      return this.splice(this.prev(), null, value);
     };
 
-    List.prototype.unshift = function(value) {
-      return this._add(value, 0);
+    MutableList.prototype.unshift = function(value) {
+      return this.splice(null, this.prev, value);
     };
 
-    List.prototype.pop = function() {
-      var id, value;
-      id = this.prev();
-      value = this.get(id);
-      if (this._delete(id)) {
-        return value;
-      }
+    MutableList.prototype.pop = function() {
+      return this.splice(this.prev(this.prev()), null);
     };
 
-    List.prototype.shift = function() {
-      var id, value;
-      id = this.next();
-      value = this.get(id);
-      if (this._delete(id)) {
-        return value;
-      }
+    MutableList.prototype.shift = function() {
+      return this.splice(null, this.next(this.next()));
     };
 
-    List.prototype.remove = function(value) {
+    MutableList.prototype.remove = function(value) {
       var id;
       id = this.idOf(value);
       return this._delete(id);
     };
 
-    List.prototype["delete"] = function(id) {
-      return this._delete(id);
-    };
-
-    return List;
+    return MutableList;
 
   })(AbstractList);
 
-  module.exports = List;
+  module.exports = MutableList;
 
 }).call(this);
 
-//# sourceMappingURL=list.js.map
+//# sourceMappingURL=mutable_list.js.map
 
-},{"./abstract_list":1}],7:[function(require,module,exports){
+},{"./abstract_list":1}],8:[function(require,module,exports){
 (function() {
   var AbstractList, RangeList, factory,
     __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
@@ -719,7 +829,7 @@
 
 //# sourceMappingURL=range_list.js.map
 
-},{"./abstract_list":1,"./factory":2}],8:[function(require,module,exports){
+},{"./abstract_list":1,"./factory":3}],9:[function(require,module,exports){
 (function() {
   var Sonic, key, value, _fn, _ref,
     __slice = [].slice;
@@ -746,7 +856,9 @@
 
   Sonic.AbstractList = require('./abstract_list');
 
-  Sonic.List = require('./list');
+  Sonic.MutableList = require('./mutable_list');
+
+  Sonic.ArrayList = require('./array_list');
 
   Sonic.Unit = require('./unit');
 
@@ -781,7 +893,7 @@
 
 //# sourceMappingURL=sonic.js.map
 
-},{"./abstract_list":1,"./factory":2,"./flat_map_list":3,"./group_list":4,"./iterator":5,"./list":6,"./range_list":7,"./unique_id":9,"./unit":10,"./utilities":11}],9:[function(require,module,exports){
+},{"./abstract_list":1,"./array_list":2,"./factory":3,"./flat_map_list":4,"./group_list":5,"./iterator":6,"./mutable_list":7,"./range_list":8,"./unique_id":10,"./unit":11,"./utilities":12}],10:[function(require,module,exports){
 (function() {
   var counter;
 
@@ -795,13 +907,13 @@
 
 //# sourceMappingURL=unique_id.js.map
 
-},{}],10:[function(require,module,exports){
+},{}],11:[function(require,module,exports){
 (function() {
-  var List, Unit,
+  var MutableList, Unit,
     __hasProp = {}.hasOwnProperty,
     __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
-  List = require('./list');
+  MutableList = require('./mutable_list');
 
   Unit = (function(_super) {
     __extends(Unit, _super);
@@ -833,7 +945,7 @@
 
     return Unit;
 
-  })(List);
+  })(MutableList);
 
   module.exports = Unit;
 
@@ -841,7 +953,7 @@
 
 //# sourceMappingURL=unit.js.map
 
-},{"./list":6}],11:[function(require,module,exports){
+},{"./mutable_list":7}],12:[function(require,module,exports){
 (function() {
   var __slice = [].slice;
 
@@ -856,7 +968,7 @@
     },
     forEach: function(fn) {
       var id;
-      while (id = this.next(id)) {
+      while ((id = this.next(id)) != null) {
         if (fn(this.get(id), id) === false) {
           return false;
         }
@@ -1071,7 +1183,7 @@
 
 //# sourceMappingURL=utilities.js.map
 
-},{"./abstract_list":1,"./factory":2,"./flat_map_list":3,"./group_list":4,"./iterator":5,"./range_list":7,"./unit":10}],12:[function(require,module,exports){
+},{"./abstract_list":1,"./factory":3,"./flat_map_list":4,"./group_list":5,"./iterator":6,"./range_list":8,"./unit":11}],13:[function(require,module,exports){
 (function (global){
 (function (exports) {'use strict';
   //shared pointer
@@ -1303,5 +1415,5 @@
 })(typeof exports != 'undefined' && typeof global != 'undefined' ? global : window );
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}]},{},[8])(8)
+},{}]},{},[9])(9)
 });
