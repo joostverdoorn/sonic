@@ -1,23 +1,34 @@
+uniqueId    = require('./unique_id')
 MutableList = require('./mutable_list')
 
 class Unit extends MutableList
 
   constructor: ( value ) ->
-    values = if arguments.length then [value] else []
-    super(values)
+    super()
+    @splice(null, null, value) if arguments.length
 
-  push: ( value ) ->
-    return @_add(value, 0, 0)
+  has: ( id ) ->
+    return @_id and id is @_id
 
-  unshift: ( value ) ->
-    return @push(value)
+  get: ( id ) ->
+    return @_value if @has(id)
 
-  pop: ( ) ->
-    value = @last()
-    @_splice(0, 0)
-    return value
+  next: ( id ) ->
+    return @_id unless id
+    return null if @has(id)
 
-  shift: ( ) ->
-    return @pop()
+  prev: ( id ) ->
+    return @_id unless id
+    return null if @has(id)
+
+  splice: ( prev, next, value ) ->
+    if arguments.length > 2
+      @_id = uniqueId()
+      @_value = value
+    else
+      delete @_id
+      delete @_value
+
+    @_invalidate(null, null)
 
 module.exports = Unit

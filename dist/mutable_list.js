@@ -13,29 +13,40 @@
     }
 
     MutableList.prototype["delete"] = function(id) {
+      if (!this.has(id)) {
+        return false;
+      }
       return this.splice(this.prev(id), this.next(id));
     };
 
     MutableList.prototype.push = function(value) {
-      return this.splice(this.prev(), null, value);
+      this.splice(this.prev(), null, value);
+      return this.prev();
     };
 
     MutableList.prototype.unshift = function(value) {
-      return this.splice(null, this.prev, value);
+      this.splice(null, this.prev, value);
+      return this.next();
     };
 
     MutableList.prototype.pop = function() {
-      return this.splice(this.prev(this.prev()), null);
+      var value;
+      value = this.last();
+      this.splice(this.prev(this.prev()), null);
+      return value;
     };
 
     MutableList.prototype.shift = function() {
-      return this.splice(null, this.next(this.next()));
+      var value;
+      value = this.first();
+      this.splice(null, this.next(this.next()));
+      return value;
     };
 
     MutableList.prototype.remove = function(value) {
       var id;
       id = this.idOf(value);
-      return this._delete(id);
+      return this["delete"](id);
     };
 
     return MutableList;

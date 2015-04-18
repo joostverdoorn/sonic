@@ -1,21 +1,20 @@
 (function() {
-  var ArrayList, MutableList,
+  var AbstractList, ArrayList,
     __hasProp = {}.hasOwnProperty,
-    __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
-    __slice = [].slice;
+    __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
-  MutableList = require('./mutable_list');
+  AbstractList = require('./abstract_list');
 
   ArrayList = (function(_super) {
     __extends(ArrayList, _super);
 
     function ArrayList(source) {
-      this._source = source && source.slice(0) || [];
       ArrayList.__super__.constructor.call(this);
+      this._source = source || [];
     }
 
     ArrayList.prototype.has = function(index) {
-      return (0 <= index && index < this._source.length);
+      return (-1 < index && index < this._source.length);
     };
 
     ArrayList.prototype.get = function(index) {
@@ -23,58 +22,36 @@
     };
 
     ArrayList.prototype.prev = function(index) {
-      if (!this._source.length) {
+      var length, _ref;
+      length = this._source.length;
+      if (!length) {
         return;
       }
       if (index == null) {
-        return this._source.length - 1;
+        return length - 1;
       }
-      if (this.has(index) && this.has(index - 1)) {
+      if (((-1 < (_ref = index - 1) && _ref < index) && index < length)) {
         return index - 1;
       }
     };
 
     ArrayList.prototype.next = function(index) {
-      if (!this._source.length) {
+      var length, _ref;
+      length = this._source.length;
+      if (!length) {
         return;
       }
       if (index == null) {
         return 0;
       }
-      if (this.has(index) && this.has(index + 1)) {
+      if (((-1 < index && index < (_ref = index + 1)) && _ref < length)) {
         return index + 1;
       }
     };
 
-    ArrayList.prototype.set = function(index, value) {
-      if (!this.has(id)) {
-        return false;
-      }
-      this._source[index] = value;
-      return true;
-    };
-
-    ArrayList.prototype.splice = function() {
-      var items, next, prev, _ref;
-      prev = arguments[0], next = arguments[1], items = 3 <= arguments.length ? __slice.call(arguments, 2) : [];
-      debugger;
-      if (prev == null) {
-        prev = -1;
-      } else if (!this.has(prev)) {
-        return false;
-      }
-      if (next == null) {
-        next = this._source.length;
-      } else if (!this.has(next)) {
-        return false;
-      }
-      (_ref = this._source).splice.apply(_ref, [prev + 1, next - prev - 1].concat(__slice.call(items)));
-      return true;
-    };
-
     return ArrayList;
 
-  })(MutableList);
+  })(AbstractList);
 
   module.exports = ArrayList;
 

@@ -8,6 +8,7 @@ module.exports = ( grunt ) ->
     'abstract_list'
     'mutable_list'
     'array_list'
+    'linked_list'
     'unit'
     'flat_map_list'
     'group_list'

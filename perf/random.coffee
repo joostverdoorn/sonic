@@ -1,16 +1,15 @@
 Sonic   = require('../../dist/sonic')
+x = [0...1000]
 
-list = Sonic(3)
+a = do ( Sonic ) ->
+  -> (new Sonic.ArrayList(x)).toArray()
 
-a = do ( list ) ->
-  -> list.get(list.prev())
-
-b = do ( list ) ->
-  -> list.last()
-
-c = do ( list ) ->
-  -> list
+b = do ( Sonic ) ->
+  ->
+    res = []
+    res.push(y) for y in x
+    res
 
 module.exports =
-  tests: { a, b, c }
+  tests: { a, b }
 

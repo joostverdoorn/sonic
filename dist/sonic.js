@@ -28,6 +28,8 @@
 
   Sonic.ArrayList = require('./array_list');
 
+  Sonic.LinkedList = require('./linked_list');
+
   Sonic.Unit = require('./unit');
 
   Sonic.FlatMapList = require('./flat_map_list');

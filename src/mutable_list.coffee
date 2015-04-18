@@ -6,23 +6,30 @@ class MutableList extends AbstractList
     super
 
   delete: ( id ) ->
+    return false unless @has(id)
     return @splice(@prev(id), @next(id))
 
   push: ( value ) ->
-    return @splice(@prev(), null, value)
+    @splice(@prev(), null, value)
+    return @prev()
 
   unshift: ( value ) ->
-    return @splice(null, @prev, value)
+    @splice(null, @prev, value)
+    return @next()
 
   pop: ( ) ->
-    return @splice(@prev(@prev()), null)
+    value = @last()
+    @splice(@prev(@prev()), null)
+    return value
 
   shift: ( ) ->
-    return @splice(null, @next(@next()))
+    value = @first()
+    @splice(null, @next(@next()))
+    return value
 
   remove: ( value ) ->
     id = @idOf(value)
-    return @_delete(id)
+    return @delete(id)
 
 
 module.exports = MutableList
