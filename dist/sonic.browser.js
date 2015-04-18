@@ -840,6 +840,15 @@
     return new Sonic.Unit();
   };
 
+  Sonic.fromPromise = function(promise) {
+    var unit;
+    unit = new Sonic.Unit();
+    promise.then(function(value) {
+      return unit.push(value);
+    });
+    return unit;
+  };
+
   Sonic.utilities = require('./utilities');
 
   Sonic.uniqueId = require('./unique_id');

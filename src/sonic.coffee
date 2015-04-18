@@ -21,6 +21,12 @@ Sonic.unit = ( item ) ->
 Sonic.empty = ( ) ->
   return new Sonic.Unit()
 
+
+Sonic.fromPromise = ( promise ) ->
+  unit = new Sonic.Unit()
+  promise.then((value) -> unit.push(value))
+  return unit
+
 Sonic.utilities    = require('./utilities')
 Sonic.uniqueId     = require('./unique_id')
 Sonic.factory      = require('./factory')
