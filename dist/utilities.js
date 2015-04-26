@@ -7,12 +7,16 @@
       Iterator = require('./iterator');
       return new Iterator(this, start);
     },
-    each: function(fn) {
-      return this.forEach(fn);
+    each: function(fn, prev, next) {
+      return this.forEach(fn, prev, next);
     },
-    forEach: function(fn) {
+    forEach: function(fn, prev, next) {
       var id;
+      id = prev;
       while ((id = this.next(id)) != null) {
+        if (id === next) {
+          break;
+        }
         if (fn(this.get(id), id) === false) {
           return false;
         }
@@ -109,8 +113,8 @@
       factory = require('./factory');
       Unit = require('./unit');
       flatMapFn = factory(mapFn).flatMap(function(mapFn) {
-        return new Unit(function(value) {
-          return new Unit(mapFn(value));
+        return new Unit(function(value, id) {
+          return new Unit(mapFn(value, id));
         });
       });
       return this.flatMap(flatMapFn);
@@ -141,8 +145,8 @@
       factory = require('./factory');
       Unit = require('./unit');
       flatMapFn = factory(filterFn).map(function(filterFn) {
-        return function(value) {
-          return filterFn(value) && new Unit(value) || new Unit();
+        return function(value, id) {
+          return filterFn(value, id) && new Unit(value) || new Unit();
         };
       });
       return this.flatMap(flatMapFn);
@@ -215,6 +219,60 @@
         };
       })(this);
       return proxy;
+    },
+    indexBy: function(indexFn) {
+      var idBySourceId, list, sourceIdById;
+      indexFn || (indexFn = require('./unique_id'));
+      list = this;
+      idBySourceId = {};
+      sourceIdById = {};
+      return Sonic({
+        has: function(id) {
+          return list.has(sourceIdById[id]);
+        },
+        get: function(id) {
+          return list.get(sourceIdById[id]);
+        },
+        prev: function(id) {
+          var prev;
+          prev = list.prev(sourceIdById[id]);
+          if (prev == null) {
+            return prev;
+          }
+          if ((id = idBySourceId[prev]) == null) {
+            id = indexFn(list.get(prev));
+            idBySourceId[prev] = id;
+            sourceIdById[id] = prev;
+          }
+          return id;
+        },
+        next: function(id) {
+          var next;
+          next = list.next(sourceIdById[id]);
+          if (next == null) {
+            return next;
+          }
+          if ((id = idBySourceId[next]) == null) {
+            id = indexFn(list.get(next));
+            idBySourceId[next] = id;
+            sourceIdById[id] = next;
+          }
+          return id;
+        },
+        onInvalidate: function(fn) {
+          return list.onInvalidate(function(prev, next) {
+            return fn(idBySourceId[prev], idBySourceId[next]);
+          });
+        },
+        removeListener: function(handlerId) {
+          return list.removeListener(handlerId);
+        }
+      });
+    },
+    zoom: function(id) {
+      return this.filter(function(value, _id) {
+        return id === _id;
+      });
     },
     toArray: function() {
       return this.reduce((function(memo, value) {

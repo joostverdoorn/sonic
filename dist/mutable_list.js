@@ -9,7 +9,7 @@
     __extends(MutableList, _super);
 
     function MutableList() {
-      MutableList.__super__.constructor.apply(this, arguments);
+      return MutableList.__super__.constructor.apply(this, arguments);
     }
 
     MutableList.prototype["delete"] = function(id) {
@@ -25,7 +25,7 @@
     };
 
     MutableList.prototype.unshift = function(value) {
-      this.splice(null, this.prev, value);
+      this.splice(null, this.prev(), value);
       return this.next();
     };
 

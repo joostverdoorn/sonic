@@ -1,15 +1,18 @@
 Sonic   = require('../../dist/sonic')
-x = [0...1000]
+global.xs = [0...1000]
+global.ys = new Sonic.ArrayList(xs)
+global.zs = new Sonic.LinkedList(xs)
 
-a = do ( Sonic ) ->
-  -> (new Sonic.ArrayList(x)).toArray()
+a = do ( ys ) ->
+  -> ys.toArray()
 
-b = do ( Sonic ) ->
-  ->
-    res = []
-    res.push(y) for y in x
-    res
+b = do ( zs ) ->
+  -> zs.toArray()
+
+c = do ( ) ->
+  -> xs.reduce(((res, x) -> res.push(x)), [])
+
 
 module.exports =
-  tests: { a, b }
+  tests: { a, b, c }
 

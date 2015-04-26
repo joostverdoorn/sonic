@@ -15,16 +15,18 @@ module.exports =
   # @param [Function] fn The function to execute on each iteration. If the function call returns false explicitly, iteration will be interupted at that point.
   # @return [Boolean] true if all the function executions return true, false otherwise.
   #
-  each: ( fn ) ->
-    return @forEach(fn)
+  each: ( fn, prev, next ) ->
+    return @forEach(fn, prev, next)
 
   # Iterates over a array or list and executes a function with the value and id of the item at each position
   #
   # @param [Function] fn The function to execute on each iteration. If the function call returns false explicitly, iteration will be interupted at that point.
   # @return [Boolean] true if all the function executions return true, false otherwise.
   #
-  forEach: ( fn ) ->
+  forEach: ( fn, prev, next ) ->
+    id = prev
     while (id = @next(id))?
+      break if id is next
       return false if fn(@get(id), id) is false
     return true
 
@@ -142,7 +144,7 @@ module.exports =
   map: ( mapFn ) ->
     factory = require('./factory')
     Unit = require('./unit')
-    flatMapFn = factory(mapFn).flatMap((mapFn) -> new Unit((value) -> new Unit(mapFn(value))))
+    flatMapFn = factory(mapFn).flatMap((mapFn) -> new Unit((value, id) -> new Unit(mapFn(value, id))))
     return @flatMap(flatMapFn)
 
   pluck: ( key ) ->
@@ -158,7 +160,7 @@ module.exports =
   filter: ( filterFn ) ->
     factory = require('./factory')
     Unit = require('./unit')
-    flatMapFn = factory(filterFn).map((filterFn) -> ((value) -> filterFn(value) and new Unit(value) or new Unit()))
+    flatMapFn = factory(filterFn).map((filterFn) -> ((value, id) -> filterFn(value, id) and new Unit(value) or new Unit()))
     return @flatMap(flatMapFn)
 
   append: ( lists ) ->
@@ -196,6 +198,48 @@ module.exports =
         callback(next, prev)
 
     return proxy
+
+  indexBy: ( indexFn ) ->
+    indexFn ||= require('./unique_id')
+
+    list = @
+    idBySourceId = {}
+    sourceIdById = {}
+
+    return Sonic({
+      has: ( id ) -> list.has(sourceIdById[id])
+      get: ( id ) -> list.get(sourceIdById[id])
+
+      prev: ( id ) ->
+        prev = list.prev(sourceIdById[id])
+        return prev unless prev?
+
+        unless (id = idBySourceId[prev])?
+          id = indexFn(list.get(prev))
+          idBySourceId[prev] = id
+          sourceIdById[id] = prev
+        return id
+
+      next: ( id ) ->
+        next = list.next(sourceIdById[id])
+        return next unless next?
+
+        unless (id = idBySourceId[next])?
+          id = indexFn(list.get(next))
+          idBySourceId[next] = id
+          sourceIdById[id] = next
+        return id
+
+      onInvalidate: ( fn ) ->
+        return list.onInvalidate ( prev, next ) ->
+          fn(idBySourceId[prev], idBySourceId[next])
+
+      removeListener: ( handlerId ) ->
+        return list.removeListener(handlerId)
+    })
+
+  zoom: ( id ) ->
+    @filter((value, _id) -> id is _id)
 
   toArray: ( ) ->
     @reduce((( memo, value ) -> memo.push(value)), [])

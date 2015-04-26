@@ -60,11 +60,12 @@
 
 },{"./unique_id":11,"./utilities":13}],2:[function(require,module,exports){
 (function() {
-  var AbstractList, ArrayList,
+  var ArrayList, MutableList,
     __hasProp = {}.hasOwnProperty,
-    __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
+    __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
+    __slice = [].slice;
 
-  AbstractList = require('./abstract_list');
+  MutableList = require('./mutable_list');
 
   ArrayList = (function(_super) {
     __extends(ArrayList, _super);
@@ -110,9 +111,39 @@
       }
     };
 
+    ArrayList.prototype.set = function(index, value) {
+      var next, prev;
+      if (!this.has(index)) {
+        return false;
+      }
+      this._source[index] = value;
+      prev = index > 0 ? index - 1 : null;
+      next = index < this._source.length - 1 ? index + 1 : null;
+      this._invalidate(prev, next);
+      return true;
+    };
+
+    ArrayList.prototype.splice = function() {
+      var next, prev, values, _ref;
+      prev = arguments[0], next = arguments[1], values = 3 <= arguments.length ? __slice.call(arguments, 2) : [];
+      if (prev == null) {
+        prev = -1;
+      } else if (!this.has(prev)) {
+        return false;
+      }
+      if (next == null) {
+        next = this._source.length;
+      } else if (!this.has(next)) {
+        return false;
+      }
+      (_ref = this._source).splice.apply(_ref, [prev + 1, next - prev - 1].concat(__slice.call(values)));
+      this._invalidate(prev, null);
+      return true;
+    };
+
     return ArrayList;
 
-  })(AbstractList);
+  })(MutableList);
 
   module.exports = ArrayList;
 
@@ -120,7 +151,7 @@
 
 //# sourceMappingURL=array_list.js.map
 
-},{"./abstract_list":1}],3:[function(require,module,exports){
+},{"./mutable_list":8}],3:[function(require,module,exports){
 (function() {
   var AbstractList, ArrayList, Unit, factory, isList, isMutable, isObservable, listFns, mutableFns, observableFns, utilities;
 
@@ -296,7 +327,7 @@
       if (!this._source.has(sourceId)) {
         return;
       }
-      list = this._flatMapFn.last()(this._source.get(sourceId));
+      list = this._flatMapFn.last()(this._source.get(sourceId), sourceId).indexBy();
       list.onInvalidate((function(_this) {
         return function(prev, next) {
           return _this._onListInvalidate(sourceId, prev, next);
@@ -312,18 +343,26 @@
 
     FlatMapList.prototype._onSourceInvalidate = function(sourcePrev, sourceNext) {
       var next, nextList, prev, prevList;
-      while (sourcePrev = this._source.prev(sourcePrev)) {
-        if (prevList = this._listBySourceId[sourcePrev]) {
-          break;
+      if (sourcePrev != null) {
+        while (sourcePrev = this._source.prev(sourcePrev)) {
+          if (prevList = this._listBySourceId[sourcePrev]) {
+            break;
+          }
         }
+        prev = (prevList != null ? prevList.prev() : void 0) || 0;
+      } else {
+        prev = this._source.next();
       }
-      prev = (prevList != null ? prevList.prev() : void 0) || 0;
-      while (sourceNext = this._source.next(sourceNext)) {
-        if (nextList = this._listBySourceId[sourceNext]) {
-          break;
+      if (sourceNext != null) {
+        while (sourceNext = this._source.next(sourceNext)) {
+          if (nextList = this._listBySourceId[sourceNext]) {
+            break;
+          }
         }
+        next = (nextList != null ? nextList.next() : void 0) || 0;
+      } else {
+        next = this._source.prev();
       }
-      next = (nextList != null ? nextList.next() : void 0) || 0;
       this._invalidate(prev, next);
       return true;
     };
@@ -628,7 +667,7 @@
     __extends(MutableList, _super);
 
     function MutableList() {
-      MutableList.__super__.constructor.apply(this, arguments);
+      return MutableList.__super__.constructor.apply(this, arguments);
     }
 
     MutableList.prototype["delete"] = function(id) {
@@ -644,7 +683,7 @@
     };
 
     MutableList.prototype.unshift = function(value) {
-      this.splice(null, this.prev, value);
+      this.splice(null, this.prev(), value);
       return this.next();
     };
 
@@ -991,12 +1030,16 @@
       Iterator = require('./iterator');
       return new Iterator(this, start);
     },
-    each: function(fn) {
-      return this.forEach(fn);
+    each: function(fn, prev, next) {
+      return this.forEach(fn, prev, next);
     },
-    forEach: function(fn) {
+    forEach: function(fn, prev, next) {
       var id;
+      id = prev;
       while ((id = this.next(id)) != null) {
+        if (id === next) {
+          break;
+        }
         if (fn(this.get(id), id) === false) {
           return false;
         }
@@ -1093,8 +1136,8 @@
       factory = require('./factory');
       Unit = require('./unit');
       flatMapFn = factory(mapFn).flatMap(function(mapFn) {
-        return new Unit(function(value) {
-          return new Unit(mapFn(value));
+        return new Unit(function(value, id) {
+          return new Unit(mapFn(value, id));
         });
       });
       return this.flatMap(flatMapFn);
@@ -1125,8 +1168,8 @@
       factory = require('./factory');
       Unit = require('./unit');
       flatMapFn = factory(filterFn).map(function(filterFn) {
-        return function(value) {
-          return filterFn(value) && new Unit(value) || new Unit();
+        return function(value, id) {
+          return filterFn(value, id) && new Unit(value) || new Unit();
         };
       });
       return this.flatMap(flatMapFn);
@@ -1200,6 +1243,60 @@
       })(this);
       return proxy;
     },
+    indexBy: function(indexFn) {
+      var idBySourceId, list, sourceIdById;
+      indexFn || (indexFn = require('./unique_id'));
+      list = this;
+      idBySourceId = {};
+      sourceIdById = {};
+      return Sonic({
+        has: function(id) {
+          return list.has(sourceIdById[id]);
+        },
+        get: function(id) {
+          return list.get(sourceIdById[id]);
+        },
+        prev: function(id) {
+          var prev;
+          prev = list.prev(sourceIdById[id]);
+          if (prev == null) {
+            return prev;
+          }
+          if ((id = idBySourceId[prev]) == null) {
+            id = indexFn(list.get(prev));
+            idBySourceId[prev] = id;
+            sourceIdById[id] = prev;
+          }
+          return id;
+        },
+        next: function(id) {
+          var next;
+          next = list.next(sourceIdById[id]);
+          if (next == null) {
+            return next;
+          }
+          if ((id = idBySourceId[next]) == null) {
+            id = indexFn(list.get(next));
+            idBySourceId[next] = id;
+            sourceIdById[id] = next;
+          }
+          return id;
+        },
+        onInvalidate: function(fn) {
+          return list.onInvalidate(function(prev, next) {
+            return fn(idBySourceId[prev], idBySourceId[next]);
+          });
+        },
+        removeListener: function(handlerId) {
+          return list.removeListener(handlerId);
+        }
+      });
+    },
+    zoom: function(id) {
+      return this.filter(function(value, _id) {
+        return id === _id;
+      });
+    },
     toArray: function() {
       return this.reduce((function(memo, value) {
         return memo.push(value);
@@ -1211,7 +1308,7 @@
 
 //# sourceMappingURL=utilities.js.map
 
-},{"./abstract_list":1,"./factory":3,"./flat_map_list":4,"./group_list":5,"./iterator":6,"./range_list":9,"./unit":12}],14:[function(require,module,exports){
+},{"./abstract_list":1,"./factory":3,"./flat_map_list":4,"./group_list":5,"./iterator":6,"./range_list":9,"./unique_id":11,"./unit":12}],14:[function(require,module,exports){
 (function (global){
 (function (exports) {'use strict';
   //shared pointer

@@ -87,7 +87,7 @@ class FlatMapList extends AbstractList
     return list if list = @_listBySourceId[sourceId]
     return unless @_source.has(sourceId)
 
-    list = @_flatMapFn.last()(@_source.get(sourceId))
+    list = @_flatMapFn.last()(@_source.get(sourceId), sourceId).indexBy()
     list.onInvalidate ( prev, next ) => @_onListInvalidate(sourceId, prev, next)
 
     @_listBySourceId[sourceId] = list
@@ -112,13 +112,17 @@ class FlatMapList extends AbstractList
   # @return [boolean] Whether or not to keep listening
   #
   _onSourceInvalidate: ( sourcePrev, sourceNext ) =>
-    while sourcePrev = @_source.prev(sourcePrev)
-      break if prevList = @_listBySourceId[sourcePrev]
-    prev = prevList?.prev() or 0
+    if sourcePrev?
+      while sourcePrev = @_source.prev(sourcePrev)
+        break if prevList = @_listBySourceId[sourcePrev]
+      prev = prevList?.prev() or 0
+    else prev = @_source.next()
 
-    while sourceNext = @_source.next(sourceNext)
-      break if nextList = @_listBySourceId[sourceNext]
-    next = nextList?.next() or 0
+    if sourceNext?
+      while sourceNext = @_source.next(sourceNext)
+        break if nextList = @_listBySourceId[sourceNext]
+      next = nextList?.next() or 0
+    else next = @_source.prev()
 
     @_invalidate(prev, next)
     return true

@@ -2,9 +2,6 @@ AbstractList = require('./abstract_list')
 
 class MutableList extends AbstractList
 
-  constructor: ( ) ->
-    super
-
   delete: ( id ) ->
     return false unless @has(id)
     return @splice(@prev(id), @next(id))
@@ -14,7 +11,7 @@ class MutableList extends AbstractList
     return @prev()
 
   unshift: ( value ) ->
-    @splice(null, @prev, value)
+    @splice(null, @prev(), value)
     return @next()
 
   pop: ( ) ->

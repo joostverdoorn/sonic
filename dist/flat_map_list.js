@@ -99,7 +99,7 @@
       if (!this._source.has(sourceId)) {
         return;
       }
-      list = this._flatMapFn.last()(this._source.get(sourceId));
+      list = this._flatMapFn.last()(this._source.get(sourceId), sourceId).indexBy();
       list.onInvalidate((function(_this) {
         return function(prev, next) {
           return _this._onListInvalidate(sourceId, prev, next);
@@ -115,18 +115,26 @@
 
     FlatMapList.prototype._onSourceInvalidate = function(sourcePrev, sourceNext) {
       var next, nextList, prev, prevList;
-      while (sourcePrev = this._source.prev(sourcePrev)) {
-        if (prevList = this._listBySourceId[sourcePrev]) {
-          break;
+      if (sourcePrev != null) {
+        while (sourcePrev = this._source.prev(sourcePrev)) {
+          if (prevList = this._listBySourceId[sourcePrev]) {
+            break;
+          }
         }
+        prev = (prevList != null ? prevList.prev() : void 0) || 0;
+      } else {
+        prev = this._source.next();
       }
-      prev = (prevList != null ? prevList.prev() : void 0) || 0;
-      while (sourceNext = this._source.next(sourceNext)) {
-        if (nextList = this._listBySourceId[sourceNext]) {
-          break;
+      if (sourceNext != null) {
+        while (sourceNext = this._source.next(sourceNext)) {
+          if (nextList = this._listBySourceId[sourceNext]) {
+            break;
+          }
         }
+        next = (nextList != null ? nextList.next() : void 0) || 0;
+      } else {
+        next = this._source.prev();
       }
-      next = (nextList != null ? nextList.next() : void 0) || 0;
       this._invalidate(prev, next);
       return true;
     };
