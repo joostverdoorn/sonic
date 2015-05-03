@@ -32,7 +32,7 @@ class FlatMapList extends AbstractList
   # @return [boolean] Whether or not the given id is present
   #
   has: ( id ) ->
-    return !!id and id of @_sourceIdById
+    return id of @_sourceIdById
 
   # Returns the id that precedes the given id.
   #
@@ -87,8 +87,8 @@ class FlatMapList extends AbstractList
     return list if list = @_listBySourceId[sourceId]
     return unless @_source.has(sourceId)
 
-    list = @_flatMapFn.last()(@_source.get(sourceId), sourceId).indexBy()
-    list.onInvalidate ( prev, next ) => @_onListInvalidate(sourceId, prev, next)
+    list = @_flatMapFn.last()(@_source.get(sourceId), sourceId)
+    list.onInvalidate(( prev, next ) => @_onListInvalidate(sourceId, prev, next))
 
     @_listBySourceId[sourceId] = list
     return list
@@ -115,13 +115,13 @@ class FlatMapList extends AbstractList
     if sourcePrev?
       while sourcePrev = @_source.prev(sourcePrev)
         break if prevList = @_listBySourceId[sourcePrev]
-      prev = prevList?.prev() or 0
+      prev = prevList?.prev()
     else prev = @_source.next()
 
     if sourceNext?
       while sourceNext = @_source.next(sourceNext)
         break if nextList = @_listBySourceId[sourceNext]
-      next = nextList?.next() or 0
+      next = nextList?.next()
     else next = @_source.prev()
 
     @_invalidate(prev, next)
@@ -140,8 +140,8 @@ class FlatMapList extends AbstractList
   _onListInvalidate: ( sourceId, prev, next ) =>
     return false unless list = @_listBySourceId[sourceId]
 
-    prev ||= @_getListBySourceId(@_source.prev(sourceId))?.prev() or 0
-    next ||= @_getListBySourceId(@_source.next(sourceId))?.next() or 0
+    prev ||= @_getListBySourceId(@_source.prev(sourceId))?.prev()
+    next ||= @_getListBySourceId(@_source.next(sourceId))?.next()
 
     @_invalidate(prev, next)
     return true
@@ -155,29 +155,8 @@ class FlatMapList extends AbstractList
   # @return [boolean] Whether or not to keep listening
   #
   _onFlatMapFnInvalidate: ( prev, next ) =>
-    @_invalidate() if !next
+    @_invalidate()
     return true
-
-  # Invalidates a range given by the prev and next. This will
-  # delete all computed lists within that range and notify
-  # all handlers.
-  #
-  # @param [number] prev The id previous of the invalidated range
-  # @param [number] next The id next of the invalidated range
-  #
-  _invalidate: ( prev = 0, next = 0 ) ->
-    sourcePrev = @_sourceIdById[prev]
-    sourceNext = @_sourceIdById[next]
-
-    while sourcePrev = @_source.next(sourcePrev)
-      break if sourcePrev is sourceNext
-      delete @_listBySourceId[sourcePrev]
-
-    while sourceNext = @_source.next(sourceNext)
-      break if sourceNext is sourcePrev
-      delete @_listBySourceId[sourceNext]
-
-    super(prev, next)
 
 module.exports = FlatMapList
 

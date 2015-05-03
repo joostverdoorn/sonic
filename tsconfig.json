@@ -1,0 +1,10 @@
+{
+    "compilerOptions": {
+        "outDir": "dist",
+        "target": "es6"
+    },
+    "files": [
+        "src/unique_id.ts",
+        "src/observable.ts"
+    ]
+}

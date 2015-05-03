@@ -1,6 +1,16 @@
-AbstractList = require('./abstract_list')
+List = require('./list')
 
-class MutableList extends AbstractList
+class MutableList extends List
+
+  @isMutableList: ( obj ) ->
+    List.isList(obj) and !!obj.set and !!obj.splice
+
+  @create: ( obj ) ->
+    return unless MutableList.isMutableList(obj)
+
+    list = new MutableList
+    list[key] = obj[key] for key in ['has', 'get', 'next', 'prev', 'splice']
+    return list
 
   delete: ( id ) ->
     return false unless @has(id)
@@ -27,6 +37,5 @@ class MutableList extends AbstractList
   remove: ( value ) ->
     id = @idOf(value)
     return @delete(id)
-
 
 module.exports = MutableList

@@ -1,60 +1,45 @@
-(function() {
-  var AbstractList, MutableList,
-    __hasProp = {}.hasOwnProperty,
-    __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
-
-  AbstractList = require('./abstract_list');
-
-  MutableList = (function(_super) {
-    __extends(MutableList, _super);
-
-    function MutableList() {
-      return MutableList.__super__.constructor.apply(this, arguments);
+import { utilities as listUtilities } from 'list';
+export var utilities;
+(function (utilities) {
+    function push(list, value) {
+        list.splice(list.prev(), null, value);
+        return list.prev();
     }
-
-    MutableList.prototype["delete"] = function(id) {
-      if (!this.has(id)) {
-        return false;
-      }
-      return this.splice(this.prev(id), this.next(id));
-    };
-
-    MutableList.prototype.push = function(value) {
-      this.splice(this.prev(), null, value);
-      return this.prev();
-    };
-
-    MutableList.prototype.unshift = function(value) {
-      this.splice(null, this.prev(), value);
-      return this.next();
-    };
-
-    MutableList.prototype.pop = function() {
-      var value;
-      value = this.last();
-      this.splice(this.prev(this.prev()), null);
-      return value;
-    };
-
-    MutableList.prototype.shift = function() {
-      var value;
-      value = this.first();
-      this.splice(null, this.next(this.next()));
-      return value;
-    };
-
-    MutableList.prototype.remove = function(value) {
-      var id;
-      id = this.idOf(value);
-      return this["delete"](id);
-    };
-
-    return MutableList;
-
-  })(AbstractList);
-
-  module.exports = MutableList;
-
-}).call(this);
-
-//# sourceMappingURL=mutable_list.js.map
+    utilities.push = push;
+    function unshift(list, value) {
+        list.splice(list.next(), null, value);
+        return list.next();
+    }
+    utilities.unshift = unshift;
+    function pop(list) {
+        var value = list.get(list.prev());
+        list.splice(list.prev(list.prev()), null);
+        return value;
+    }
+    utilities.pop = pop;
+    function shift(list) {
+        var value = list.get(list.next());
+        list.splice(list.next(list.next()), null);
+        return value;
+    }
+    utilities.shift = shift;
+    function del(list, id) {
+        if (!list.has(id))
+            return false;
+        return list.splice(list.prev(id), list.next(id));
+    }
+    utilities.del = del;
+    function remove(list, value) {
+        var id = listUtilities.idOf(list, value);
+        return delete (list, id);
+    }
+    utilities.remove = remove;
+    function flatMap(list, getFn, setFn) {
+        return null;
+    }
+    utilities.flatMap = flatMap;
+    function map(list, getFn, setFn) {
+        return null;
+    }
+    utilities.map = map;
+})(utilities || (utilities = {}));

@@ -1,6 +1,20 @@
-module.exports =
+# List implements the basic list operations and, as the name implies
+# it serves mainly as a base class for other lists and is not very useful on
+# its own.
+#
+class List extends Observable
 
-  # Creates an iterator over the given array or list
+  @isList: ( obj ) ->
+    return !!obj.has and !!obj.get and !!obj.prev and !!obj.next
+
+  @create: ( obj ) ->
+    return unless @isList(obj)
+
+    list = new List
+    list[key] = obj[key] for key in ['has', 'get', 'next', 'prev']
+    return list
+
+  # Creates an iterator over the given list
   #
   # @param[Array,AbstractList] list The array or list to iterate
   # @param[Number] listst The id of the item to listst at. Can be omitted to listst at the first item
@@ -172,7 +186,7 @@ module.exports =
     return @append(lists)
 
   flatten: ( ) ->
-    return @flatMap((list) -> list)
+    return @flatMap((list) -> list.indexBy())
 
   uniq: ( groupFn = (x) -> x ) ->
     return @group(groupFn).flatMap((list) -> list.take(1))
@@ -238,9 +252,8 @@ module.exports =
         return list.removeListener(handlerId)
     })
 
-  zoom: ( id ) ->
-    @filter((value, _id) -> id is _id)
-
   toArray: ( ) ->
     @reduce((( memo, value ) -> memo.push(value)), [])
 
+
+module.exports = List

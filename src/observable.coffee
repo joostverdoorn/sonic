@@ -1,14 +1,7 @@
-uniqueId          = require('./unique_id')
-utilities         = require('./utilities')
+class Observable
 
-# AbstractList implements the basic list operations and, as the name implies
-# it serves mainly as a base class for other lists and is not very useful on
-# its own.
-#
-class AbstractList
-
-  constructor: ( ) ->
-    @_handlers = {}
+  @isObservable: ( obj ) ->
+    !!obj.invalidate and !!obj.removeListener
 
   # Adds a callback function that's called when the list invalidates.
   #
@@ -17,7 +10,10 @@ class AbstractList
   #
   onInvalidate: ( handler ) ->
     handlerId = uniqueId()
+
+    @_handlers ||= Object.create(null)
     @_handlers[handlerId] = handler
+
     return handlerId
 
   # Removes a callback function from the handlers listst's no longer
@@ -28,24 +24,22 @@ class AbstractList
   # @return [boolean] Whether or not the given handler could be found and removed
   #
   removeListener: ( handlerId ) ->
-    return false unless @_handlers[handlerId]
+    return false unless @_handlers and @_handlers[handlerId]
     delete @_handlers[handlerId]
     return true
 
   # Yields an invalidate event for the given range, calling
   # all handlers asynchronously.
   #
+  # @param [number] id The id of the invalidated entry
   # @param [number] prev The id of the left end of the range to invalidate
   # @param [number] next The id of the right end of the range to invalidate
   #
   _invalidate: ( prev, next ) ->
-    handlers = @_handlers
-    for id, handler of handlers
-      do ( id, handler ) ->
-        setTimeout ->
-          delete handlers[id] if handler(prev, next) is false
-        , 0
+    return false unless handlers = @_handlers
 
-AbstractList::[key] = value for key, value of utilities
+    setTimeout ->
+      Object.keys(handlers).forEach ( handlerId ) ->
+        delete handlers[handlerId] if handler(prev, next) is false
 
-module.exports = AbstractList
+module.exports = Observable

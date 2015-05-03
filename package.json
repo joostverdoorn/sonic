@@ -22,24 +22,12 @@
     "url": "https://github.com/joostverdoorn/sonic.git"
   },
   "devDependencies": {
-    "babel-core": "^4.0.0",
-    "browserify-istanbul": "^0.2.1",
-    "coveralls": "~2.11.1",
-    "grunt": "~0.4.5",
-    "grunt-babel": "^4.0.0",
-    "grunt-benchmark": "^0.3.0",
-    "grunt-browserify": "^3.5.0",
-    "grunt-codo": "^0.2.0",
-    "grunt-contrib-clean": "~0.5.0",
-    "grunt-contrib-coffee": "~0.10.1",
-    "grunt-contrib-concat": "~0.5.0",
-    "grunt-contrib-jasmine": "~0.6.5",
-    "grunt-contrib-qunit": "^0.5.2",
-    "grunt-contrib-uglify": "~0.8.0",
-    "grunt-contrib-watch": "~0.6.1",
-    "grunt-plato": "~1.3.0",
-    "grunt-requirejs": "~0.4.2",
-    "grunt-template-jasmine-istanbul": "~0.3.0"
+    "gulp": "^3.8.11",
+    "gulp-browserify": "^0.5.1",
+    "gulp-typescript": "ivogabe/gulp-typescript",
+    "typescript": "^1.5.0-beta",
+    "typescript-register": "^1.0.7",
+    "typescript-require": "^0.2.8"
   },
   "scripts": {
     "test": "grunt test"

@@ -3,26 +3,11 @@ ArrayList    = require('./array_list')
 Unit         = require('./unit')
 utilities    = require('./utilities')
 
-
-listFns = ['has', 'get', 'prev', 'next']
-mutableFns = ['splice']
-observableFns = ['onInvalidate', 'removeListener']
-
-
-# predicates =
 isList = ( obj ) ->
-  memo = true
-  memo = memo and obj[key]? for key in listFns
-  return memo
+  return !!obj.next and !!obj.prev and isHash(obj)
 
-isMutable = ( obj ) ->
-  return obj['splice']?
-
-isObservable = ( obj ) ->
-  return obj['onInvalidate']? and obj['removeListener']?
-
-
-
+isMutableList = ( obj ) ->
+  return !!obj.splice and isMutableHash(obj) and isList(obj)
 
 factory = ( items ) ->
   if items instanceof AbstractList

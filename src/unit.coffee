@@ -21,14 +21,19 @@ class Unit extends MutableList
     return @_id unless id
     return null if @has(id)
 
-  splice: ( prev, next, value ) ->
-    if arguments.length > 2
-      @_id = uniqueId()
-      @_value = value
-    else
-      delete @_id
-      delete @_value
+  set: ( id, value ) ->
+    @_id = id
+    @_value = value
+    @_invalidate()
+    return true
 
-    @_invalidate(null, null)
+  splice: ( prev, next, value ) ->
+    return @set(uniqueId(), value) if arguments.length > 2
+
+    delete @_id
+    delete @_value
+    @_invalidate()
+
+    return true
 
 module.exports = Unit
