@@ -1,76 +1,62 @@
-var __extends = this.__extends || function (d, b) {
-    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
-    function __() { this.constructor = d; }
-    __.prototype = b.prototype;
-    d.prototype = new __();
-};
-var observable_1 = require('./observable');
-var List = (function (_super) {
-    __extends(List, _super);
-    function List(source) {
-        _super.call(this);
-        this._source = source;
-    }
-    List.prototype.has = function (id) { return this._source.has(id); };
-    List.prototype.get = function (id) { return this._source.get(id); };
-    List.prototype.prev = function (id) { return this._source.prev(id); };
-    List.prototype.next = function (id) { return this._source.next(id); };
-    List.prototype._invalidate = function (prev, next) {
-        if (!this.has(prev))
-            prev = null;
-        if (!this.has(next))
-            next = null;
-        _super.prototype._invalidate.call(this, prev, next);
-    };
-    return List;
-})(observable_1.default);
-exports.List = List;
-var List;
-(function (List) {
+var IList;
+(function (IList) {
     function isList(obj) {
         return !!obj['has'] && !!obj['get'] && !!obj['prev'] && !!obj['next'];
     }
-    List.isList = isList;
+    IList.isList = isList;
     function create(list) {
-        return new List(list);
+        var obj = Object.create(list);
+        Object.keys(IList).forEach(function (key) {
+            obj[key] = function () {
+                var args = [];
+                for (var _i = 0; _i < arguments.length; _i++) {
+                    args[_i - 0] = arguments[_i];
+                }
+                var res = IList[key].apply(IList, [obj].concat(args));
+                if (isList(res)) {
+                    return create(res);
+                }
+                else {
+                    return res;
+                }
+            };
+        });
+        return obj;
     }
-    List.create = create;
-    // export function values<V>(): IIterator<V> {
-    //
-    // }
+    IList.create = create;
     function forEach(list, fn) {
         var id;
         while ((id = list.next(id)) != null)
             fn(list.get(id), id);
     }
-    List.forEach = forEach;
+    IList.forEach = forEach;
     function reduce(list, fn, memo) {
         var id;
         while ((id = list.next(id)) != null)
             memo = fn(memo, list.get(id), id);
         return memo;
     }
-    List.reduce = reduce;
+    IList.reduce = reduce;
     function toArray(list) {
         return reduce(list, function (memo, v) { memo.push(v); return memo; }, []);
     }
-    List.toArray = toArray;
+    IList.toArray = toArray;
     function findId(list, fn) {
         var id;
         while ((id = list.next(id)) != null)
             if (fn(list.get(id), id))
                 return id;
     }
-    List.findId = findId;
+    IList.findId = findId;
     function find(list, fn) {
         return list.get(findId(list, fn));
     }
-    List.find = find;
+    IList.find = find;
     function idOf(list, value) {
         var id;
         return findId(list, function (v) { return v === value; });
     }
-    List.idOf = idOf;
+    IList.idOf = idOf;
     function indexOf(list, value) {
         var id, i = 0;
         while ((id = list.next(id)) != null) {
@@ -79,7 +65,7 @@ var List;
             i++;
         }
     }
-    List.indexOf = indexOf;
+    IList.indexOf = indexOf;
     function idAt(list, index) {
         var id, i = 0;
         while ((id = list.next(id)) != null)
@@ -87,11 +73,11 @@ var List;
                 return id;
         return null;
     }
-    List.idAt = idAt;
+    IList.idAt = idAt;
     function at(list, index) {
         return list.get(idAt(list, index));
     }
-    List.at = at;
+    IList.at = at;
     function every(list, predicate) {
         var id;
         while ((id = list.next(id)) != null)
@@ -99,7 +85,7 @@ var List;
                 return false;
         return true;
     }
-    List.every = every;
+    IList.every = every;
     function some(list, predicate) {
         var id;
         while ((id = list.next(id)) != null)
@@ -107,35 +93,23 @@ var List;
                 return true;
         return false;
     }
-    List.some = some;
+    IList.some = some;
     function contains(list, value) {
         return some(list, function (v) { return v === value; });
     }
-    List.contains = contains;
+    IList.contains = contains;
     function first(list) {
         return list.get(list.next());
     }
-    List.first = first;
+    IList.first = first;
     function last(list) {
         return list.get(list.prev());
     }
-    List.last = last;
-    function reverse(list) {
-        function has(id) {
-            return list.has(id);
-        }
-        function get(id) {
-            return list.get(id);
-        }
-        function prev(id) {
-            return list.next(id);
-        }
-        function next(id) {
-            return list.prev(id);
-        }
-        return create({ has: has, get: get, prev: prev, next: next });
+    IList.last = last;
+    function flatMap(list, flatMapFn) {
+        return flatten(map(list, flatMapFn));
     }
-    List.reverse = reverse;
+    IList.flatMap = flatMap;
     function map(list, mapFn) {
         function has(id) {
             return list.has(id);
@@ -149,9 +123,9 @@ var List;
         function next(id) {
             return list.next(id);
         }
-        return create({ has: has, get: get, prev: prev, next: next });
+        return { has: has, get: get, prev: prev, next: next };
     }
-    List.map = map;
+    IList.map = map;
     function filter(list, filterFn) {
         function has(id) {
             return list.has(id) && filterFn(list.get(id));
@@ -175,9 +149,9 @@ var List;
                     return next;
             return null;
         }
-        return create({ has: has, get: get, prev: prev, next: next });
+        return { has: has, get: get, prev: prev, next: next };
     }
-    List.filter = filter;
+    IList.filter = filter;
     function flatten(list) {
         function has(id) {
             if (list.has(id[0]))
@@ -218,21 +192,8 @@ var List;
             }
             return null;
         }
-        return create({ has: has, get: get, prev: prev, next: next });
+        return { has: has, get: get, prev: prev, next: next };
     }
-    List.flatten = flatten;
-    function flatMap(list, flatMapFn) {
-        return flatten(map(list, flatMapFn));
-    }
-    List.flatMap = flatMap;
-})(List = exports.List || (exports.List = {}));
-Object.keys(List).forEach(function (key) {
-    List.prototype[key] = function () {
-        var args = [];
-        for (var _i = 0; _i < arguments.length; _i++) {
-            args[_i - 0] = arguments[_i];
-        }
-        List[key].apply(List, [this].concat(args));
-    };
-});
-exports.default = List;
+    IList.flatten = flatten;
+})(IList || (IList = {}));
+exports.default = IList;

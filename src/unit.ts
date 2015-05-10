@@ -1,13 +1,12 @@
-import uniqueId         from 'unique_id';
-import Observable       from 'observable';
-import { IMutableList } from 'mutable_list';
+import uniqueId    from './unique_id';
+import MutableList from './mutable_list';
 
-export default class Unit<V> extends Observable<number> implements IMutableList<V,number> {
+export default class Unit<V> extends MutableList<V, number> {
 
   private _id: number;
   private _value: V;
 
-  constructor(value) {
+  constructor(value: V) {
     super();
     if(arguments.length > 2) this.splice(null, null, value);
   }

@@ -22,12 +22,19 @@
     "url": "https://github.com/joostverdoorn/sonic.git"
   },
   "devDependencies": {
+    "babelify": "^6.0.2",
+    "browserify": "^10.1.0",
     "gulp": "^3.8.11",
     "gulp-browserify": "^0.5.1",
-    "gulp-typescript": "ivogabe/gulp-typescript",
+    "gulp-rename": "^1.2.2",
+    "gulp-traceur": "^0.17.1",
+    "gulp-typescript": "^2.6.0",
+    "gulp-webpack": "^1.4.0",
     "typescript": "^1.5.0-beta",
     "typescript-register": "^1.0.7",
-    "typescript-require": "^0.2.8"
+    "typescript-require": "^0.2.8",
+    "vinyl-buffer": "^1.0.0",
+    "vinyl-source-stream": "^1.1.0"
   },
   "scripts": {
     "test": "grunt test"

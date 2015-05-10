@@ -1,51 +1,41 @@
-import uniqueId from 'unique_id';
+import uniqueId from './unique_id';
 
 export interface IObserver<I> {
-  (prev?: I, next?: I): void|boolean;
+  (prev?: I, next?: I): void;
 }
 
-export interface IObservable<I,K> {
-  onInvalidate(handler: IObserver<I>): K;
-  removeHandler(handlerId: K): boolean;
+export interface ISubscription {
+  unsubscribe(): void;
+}
+
+export interface IObservable<I> {
+  subscribe(observer: IObserver<I>): ISubscription;
 }
 
 export function isObservable(obj: Object): boolean {
   return false;
 }
 
-export default class Observable<I> implements IObservable<I,number> {
-
-  private _handlers: Object;
+export class Observable<I> implements IObservable<I> {
+  private _observers: Object;
 
   constructor() {
-    this._handlers = Object.create(null);
+    this._observers = Object.create(null);
   }
 
-  onInvalidate(handler: IObserver<I>): number {
-    var handlerId = uniqueId();
-    this._handlers[handlerId] = handler;
-    return handlerId;
+  subscribe(observer) {
+    var observerId = uniqueId();
+    var observers = this._observers;
+    observers[observerId] = observer;
+
+    return {
+      unsubscribe: function() { delete observers[observerId]; }
+    };
   }
 
-  removeHandler(handlerId): boolean {
-    if(!this._handlers || !this._handlers[handlerId]) return false;
-    delete this._handlers[handlerId];
-    return true;
+  protected _invalidate(prev?, next?) {
+    for(var observerId in this._observers) { this._observers[observerId]; }
   }
-
-  protected _invalidate(prev?: I, next?: I) {
-    if(!this._handlers) return false;
-
-    setTimeout(() => {
-      for(var handlerId in this._handlers) {
-        var handler = this._handlers[handlerId];
-
-        if(handler(prev, next) === false) {
-          delete this._handlers[handlerId];
-        }
-      }
-    });
-  }
-
-
 }
+
+export default Observable;

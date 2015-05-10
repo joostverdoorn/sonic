@@ -1,10 +1,21 @@
 {
     "compilerOptions": {
         "outDir": "dist",
-        "target": "es6"
+        "target": "es5",
+        "module": "commonjs"
     },
+    "filesGlob": [
+        "src/*.ts"
+    ],
     "files": [
+        "src/array_list.ts",
+        "src/factory.ts",
+        "src/linked_list.ts",
+        "src/list.ts",
+        "src/mutable_list.ts",
+        "src/observable.ts",
+        "src/sonic.ts",
         "src/unique_id.ts",
-        "src/observable.ts"
+        "src/unit.ts"
     ]
 }

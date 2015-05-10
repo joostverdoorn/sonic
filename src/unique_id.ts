@@ -1,6 +1,6 @@
 var id = 0;
 
-function uniqueId(): number {
+export function uniqueId(): number {
   return ++id;
 }
 

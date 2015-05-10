@@ -1,35 +1,50 @@
-import uniqueId from 'unique_id';
-import Observable from 'observable';
-export default class LinkedList extends Observable {
-    constructor(source) {
-        super();
+var __extends = this.__extends || function (d, b) {
+    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
+    function __() { this.constructor = d; }
+    __.prototype = b.prototype;
+    d.prototype = new __();
+};
+var unique_id_1 = require('./unique_id');
+var mutable_list_1 = require('./mutable_list');
+var LinkedList = (function (_super) {
+    __extends(LinkedList, _super);
+    function LinkedList(array) {
+        _super.call(this);
         this._byId = Object.create(null);
         this._prev = Object.create(null);
         this._next = Object.create(null);
         this._prev[-1] = -1;
         this._next[-1] = -1;
-        this.splice(null, null, ...source);
+        this.splice.apply(this, [null, null].concat(array));
     }
-    has(id) {
+    LinkedList.prototype.has = function (id) {
         return id in this._byId;
-    }
-    get(id) {
+    };
+    LinkedList.prototype.get = function (id) {
         return this._byId[id];
-    }
-    prev(id = -1) {
+    };
+    LinkedList.prototype.prev = function (id) {
+        if (id === void 0) { id = -1; }
         return this._prev[id];
-    }
-    next(id = -1) {
+    };
+    LinkedList.prototype.next = function (id) {
+        if (id === void 0) { id = -1; }
         return this._next[id];
-    }
-    set(id, value) {
+    };
+    LinkedList.prototype.set = function (id, value) {
         if (!this.has(id))
             return false;
         this._byId[id] = value;
         this._invalidate(this._prev[id], this._next[id]);
         return true;
-    }
-    splice(prev = -1, next = -1, ...values) {
+    };
+    LinkedList.prototype.splice = function (prev, next) {
+        if (prev === void 0) { prev = -1; }
+        if (next === void 0) { next = -1; }
+        var values = [];
+        for (var _i = 2; _i < arguments.length; _i++) {
+            values[_i - 2] = arguments[_i];
+        }
         var _next, _prev, value, id;
         while (_next = this._next[_next || prev]) {
             delete this._next[this._prev[_next]];
@@ -45,8 +60,9 @@ export default class LinkedList extends Observable {
                 break;
             delete this._byId[_next];
         }
-        for (value of values) {
-            id = uniqueId();
+        for (var _a = 0; _a < values.length; _a++) {
+            value = values[_a];
+            id = unique_id_1.default();
             this._byId[id] = value;
             this._prev[id] = prev;
             this._next[prev] = id;
@@ -56,12 +72,7 @@ export default class LinkedList extends Observable {
         this._next[prev] = next;
         this._invalidate(prev, next);
         return true;
-    }
-    _invalidate(prev, next) {
-        if (!this.has(prev))
-            prev = null;
-        if (!this.has(next))
-            next = null;
-        return super._invalidate(prev, next);
-    }
-}
+    };
+    return LinkedList;
+})(mutable_list_1.default);
+exports.default = LinkedList;

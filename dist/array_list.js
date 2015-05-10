@@ -1,50 +1,63 @@
-import Observable from 'observable';
-export default class ArrayList extends Observable {
-    constructor(source = []) {
-        super();
-        this._source = source;
+var __extends = this.__extends || function (d, b) {
+    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
+    function __() { this.constructor = d; }
+    __.prototype = b.prototype;
+    d.prototype = new __();
+};
+var mutable_list_1 = require('./mutable_list');
+var ArrayList = (function (_super) {
+    __extends(ArrayList, _super);
+    function ArrayList(array) {
+        if (array === void 0) { array = []; }
+        _super.call(this);
+        this._array = array;
     }
-    has(id) {
-        return -1 < id && id < this._source.length;
-    }
-    get(id) {
+    ArrayList.prototype.has = function (id) {
+        return -1 < id && id < this._array.length;
+    };
+    ArrayList.prototype.get = function (id) {
         if (this.has(id))
-            return this._source[id];
+            return this._array[id];
         return;
-    }
-    prev(id) {
-        if (this._source.length > 0 && id != null && this.has(id) && this.has(id - 1))
+    };
+    ArrayList.prototype.prev = function (id) {
+        if (id == null && this._array.length)
+            return this._array.length - 1;
+        if (this._array.length > 0 && id != null && this.has(id) && this.has(id - 1))
             return id - 1;
         return null;
-    }
-    next(id) {
-        if (this._source.length > 0 && id != null && this.has(id) && this.has(id + 1))
+    };
+    ArrayList.prototype.next = function (id) {
+        if (id == null && this._array.length)
+            return 0;
+        if (this._array.length > 0 && id != null && this.has(id) && this.has(id + 1))
             return id + 1;
         return null;
-    }
-    set(id, value) {
+    };
+    ArrayList.prototype.set = function (id, value) {
         if (!this.has(id))
             return false;
-        this._source[id] = value;
-    }
-    splice(prev, next, ...values) {
+        this._array[id] = value;
+    };
+    ArrayList.prototype.splice = function (prev, next) {
+        var values = [];
+        for (var _i = 2; _i < arguments.length; _i++) {
+            values[_i - 2] = arguments[_i];
+        }
         if (prev == null)
             prev = -1;
         else if (!this.has(prev))
             return false;
         if (next == null)
-            next = this._source.length;
+            next = this._array.length;
         else if (!this.has(next))
             return false;
-        this._source.splice(prev + 1, next - prev - 1, ...values);
+        (_a = this._array).splice.apply(_a, [prev + 1, next - prev - 1].concat(values));
         this._invalidate(prev, null);
         return true;
-    }
-    _invalidate(prev, next) {
-        if (!this.has(prev))
-            prev = null;
-        if (!this.has(next))
-            next = null;
-        return super._invalidate(prev, next);
-    }
-}
+        var _a;
+    };
+    return ArrayList;
+})(mutable_list_1.default);
+exports.ArrayList = ArrayList;
+exports.default = ArrayList;

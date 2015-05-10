@@ -1,32 +1,26 @@
-import uniqueId from 'unique_id';
-export function isObservable(obj) {
+var unique_id_1 = require('./unique_id');
+function isObservable(obj) {
     return false;
 }
-export default class Observable {
-    constructor() {
-        this._handlers = Object.create(null);
+exports.isObservable = isObservable;
+var Observable = (function () {
+    function Observable() {
+        this._observers = Object.create(null);
     }
-    onInvalidate(handler) {
-        var handlerId = uniqueId();
-        this._handlers[handlerId] = handler;
-        return handlerId;
-    }
-    removeHandler(handlerId) {
-        if (!this._handlers || !this._handlers[handlerId])
-            return false;
-        delete this._handlers[handlerId];
-        return true;
-    }
-    _invalidate(prev, next) {
-        if (!this._handlers)
-            return false;
-        setTimeout(() => {
-            for (var handlerId in this._handlers) {
-                var handler = this._handlers[handlerId];
-                if (handler(prev, next) === false) {
-                    delete this._handlers[handlerId];
-                }
-            }
-        });
-    }
-}
+    Observable.prototype.subscribe = function (observer) {
+        var observerId = unique_id_1.default();
+        var observers = this._observers;
+        observers[observerId] = observer;
+        return {
+            unsubscribe: function () { delete observers[observerId]; }
+        };
+    };
+    Observable.prototype._invalidate = function (prev, next) {
+        for (var observerId in this._observers) {
+            this._observers[observerId];
+        }
+    };
+    return Observable;
+})();
+exports.Observable = Observable;
+exports.default = Observable;

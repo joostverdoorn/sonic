@@ -1,15 +1,15 @@
-import uniqueId         from 'unique_id';
-import Observable       from 'observable';
-import { IMutableList } from 'mutable_list';
+import uniqueId    from './unique_id';
+import Observable  from './observable';
+import MutableList from './mutable_list';
 
-export default class LinkedList<V> extends Observable<number> implements IMutableList<V,number> {
-
+export default class LinkedList<V> extends MutableList<V,number> {
   private _byId: Object;
   private _next: Object;
   private _prev: Object;
 
-  constructor(source: V[]) {
+  constructor(array: V[]) {
     super();
+
     this._byId = Object.create(null);
     this._prev = Object.create(null);
     this._next = Object.create(null);
@@ -17,26 +17,26 @@ export default class LinkedList<V> extends Observable<number> implements IMutabl
     this._prev[-1] = -1;
     this._next[-1] = -1;
 
-    this.splice(null, null, ...source);
+    this.splice(null, null, ...array);
   }
 
-  has(id: number): boolean {
+  has(id) {
     return id in this._byId;
   }
 
-  get(id: number): V {
+  get(id) {
     return this._byId[id];
   }
 
-  prev(id: number = -1): number {
+  prev(id = -1) {
     return this._prev[id];
   }
 
-  next(id: number = -1): number {
+  next(id = -1) {
     return this._next[id];
   }
 
-  set(id: number, value: V): boolean {
+  set(id, value) {
     if(!this.has(id)) return false;
 
     this._byId[id] = value;
@@ -44,7 +44,7 @@ export default class LinkedList<V> extends Observable<number> implements IMutabl
     return true;
   }
 
-  splice(prev: number = -1, next: number = -1, ...values): boolean {
+  splice(prev = -1, next = -1, ...values) {
     var _next, _prev, value, id;
 
     while(_next = this._next[_next || prev]) {
@@ -76,11 +76,5 @@ export default class LinkedList<V> extends Observable<number> implements IMutabl
 
     this._invalidate(prev, next);
     return true;
-  }
-
-  _invalidate(prev: number, next: number): boolean {
-    if(!this.has(prev)) prev = null;
-    if(!this.has(next)) next = null;
-    return super._invalidate(prev, next);
   }
 }

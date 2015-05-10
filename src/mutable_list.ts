@@ -1,11 +1,29 @@
-import { IList, utilities as listUtilities } from 'list';
+import { List, IList } from './list';
 
 export interface IMutableList<V,I> extends IList<V,I> {
   set(id: I, value: V): boolean;
   splice(prev: I, next: I, ...values: V[]): boolean;
 }
 
-export module utilities {
+export class MutableList<V, I> extends List<V, I> implements IMutableList<V, I> {
+  protected _source: IMutableList<V, I>;
+
+  constructor(source?: IMutableList<V, I>) {
+    super(source);
+  }
+
+  set(id, value) { return this._source.set(id, value); }
+  splice(prev, next, ...values) { return this._source.splice(prev, next, ...values); }
+}
+
+export module MutableList {
+  export function isMutableList(obj: Object): boolean {
+    return List.isList(obj) && !!obj['set'] && !!obj['splice'];
+  }
+
+  export function create<V,I>(list: IMutableList<V,I>): MutableList<V,I> {
+    return new MutableList(list);
+  }
 
   export function push<V,I>(list: IMutableList<V,I>, value: V): I {
     list.splice(list.prev(), null, value);
@@ -35,23 +53,13 @@ export module utilities {
   }
 
   export function remove<V,I>(list: IMutableList<V,I>, value: V): boolean {
-    var id = listUtilities.idOf(list, value);
+    var id = List.idOf(list, value);
     return delete(list, id);
   }
-
-  export function flatMap<V,I,W,J>(
-    list: IMutableList<V,I>,
-    getFn: (V) => IList<W,J>,
-    setFn: (list: IList<W,J>) => V
-  ): IMutableList<W,J> {
-    return null;
-  }
-
-  export function map<V,I,W>(
-    list: IMutableList<V,I>,
-    getFn: (V,I?) => W,
-    setFn: (W,I?) => V
-  ): IMutableList<W,I> {
-    return null;
-  }
 }
+
+Object.keys(MutableList).forEach(function(key) {
+  MutableList.prototype[key] = function(...args) { MutableList[key](this, ...args)};
+});
+
+export default MutableList;
