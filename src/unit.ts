@@ -11,25 +11,25 @@ export default class Unit<V> extends MutableList<V, number> {
     if(arguments.length > 2) this.splice(null, null, value);
   }
 
-  has(id: number) {
+  has(id) {
     return this._id == id;
   }
 
-  get(id: number): V {
+  get(id) {
     if(this.has(id)) return this._value ;
   }
 
-  prev(id: number): number {
+  prev(id) {
     if(id == null) return this._id;
     return null;
   }
 
-  next(id: number): number {
+  next(id) {
     if(id == null) return this._id;
     return null;
   }
 
-  set(id: number, value: V): boolean {
+  set(id, value) {
     this._id = id;
     this._value = value;
     this._invalidate();
@@ -37,7 +37,7 @@ export default class Unit<V> extends MutableList<V, number> {
     return true;
   }
 
-  splice(prev: number, next: number, value: V): boolean {
+  splice(prev, next, value) {
     if(arguments.length > 2) return this.set(uniqueId(), value);
 
     delete this._id;
