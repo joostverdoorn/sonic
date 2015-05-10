@@ -35,9 +35,6 @@ var List;
         return new List(list);
     }
     List.create = create;
-    // export function values<V>(): IIterator<V> {
-    //
-    // }
     function forEach(list, fn) {
         var id;
         while ((id = list.next(id)) != null)

@@ -37,10 +37,6 @@ export module List {
     return new List(list);
   }
 
-  // export function values<V>(): IIterator<V> {
-  //
-  // }
-
   export function forEach<V, I>(list: IList<V, I>, fn: (value: V, id?: I) => void): void {
     var id;
     while((id = list.next(id)) != null) fn(list.get(id), id);
