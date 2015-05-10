@@ -1,12 +1,15 @@
-import gulp       = require('gulp');
-import typescript = require('gulp-typescript');
-import source     = require('vinyl-source-stream');
-import buffer     = require('vinyl-buffer');
-import browserify = require('browserify');
+require('coffee-script').register();
+
+var gulp       = require('gulp');
+var typescript = require('gulp-typescript');
+var source     = require('vinyl-source-stream');
+var buffer     = require('vinyl-buffer');
+var browserify = require('browserify');
+var jasmine    = require('gulp-jasmine');
 
 gulp.task('typescript', function() {
   return gulp
-    .src('src/*.ts')
+    .src('src/**/*.ts')
     .pipe(typescript({
             target: 'es5',
             module: 'commonjs',
@@ -24,6 +27,10 @@ gulp.task('browserify', function() {
     .pipe(gulp.dest('dist'))
 });
 
+gulp.task('spec', function() {
+  return gulp.src('spec/**/*.coffee')
+    .pipe(jasmine())
+});
 
 gulp.task('watch', function() {
   gulp.watch('src/*.ts', ['dist']);

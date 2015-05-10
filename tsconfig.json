@@ -5,7 +5,7 @@
         "module": "commonjs"
     },
     "filesGlob": [
-        "src/*.ts"
+        "src/**/*.ts"
     ],
     "files": [
         "src/array_list.ts",
