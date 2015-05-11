@@ -194,6 +194,31 @@ var List = (function () {
     List.flatMap = function (list, flatMapFn) {
         return List.flatten(List.map(list, flatMapFn));
     };
+    List.indexBy = function (ids, values) {
+        function has(id) {
+            return id.toString() in ids;
+        }
+        function get(id) {
+            return values[id.toString()];
+        }
+        function prev(id) {
+            var i = ids.indexOf(id);
+            if (id == null && ids.length)
+                return ids[ids.length - 1];
+            if (ids.length > 0 && id != null && i > 0)
+                return ids[i - 1];
+            return null;
+        }
+        function next(id) {
+            var i = ids.indexOf(id);
+            if (id == null && ids.length)
+                return ids[0];
+            if (ids.length > 0 && id != null && i < ids.length - 1)
+                return ids[i + 1];
+            return null;
+        }
+        return List.create({ has: has, get: get, prev: prev, next: next });
+    };
     List.cache = function (list) {
         var _get = Object.create(null), _next = Object.create(null), _prev = Object.create(null);
         function has(id) {

@@ -225,6 +225,32 @@ export class List<V> implements IList<V> {
     return List.flatten<W>(List.map(list, flatMapFn));
   }
 
+  static indexBy<V>(ids: Id[], values: Object): IList<V> {
+    function has(id: Id): boolean {
+      return id.toString() in ids;
+    }
+
+    function get(id: Id): V {
+      return values[id.toString()]
+    }
+
+    function prev(id?: Id): Id {
+      var i: number = ids.indexOf(id);
+      if(id == null && ids.length) return ids[ids.length - 1];
+      if(ids.length > 0 && id != null && i > 0 ) return ids[i - 1];
+      return null
+    }
+
+    function next(id?: Id): Id {
+      var i: number = ids.indexOf(id);
+      if(id == null && ids.length) return ids[0];
+      if(ids.length > 0 && id != null && i < ids.length - 1 ) return ids[i + 1];
+      return null
+    }
+
+    return List.create({has, get, prev, next})
+  }
+
   static cache<V>(list: IList<V>): List<V> {
     var _get = Object.create(null),
         _next = Object.create(null),

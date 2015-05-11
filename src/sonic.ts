@@ -7,7 +7,7 @@ import Unit        from './unit';
 import ArrayList   from './array_list';
 import LinkedList  from './linked_list';
 
-function Sonic(obj) {
+function Sonic(obj: any) {
   return factory(obj);
 }
 

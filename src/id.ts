@@ -1,5 +1,5 @@
-export type Id = number | number[];
+type IdToken = number | string | IId;
+interface IId extends Array<IdToken> {};
+
+export type Id = IdToken | Array<IdToken | IId>;
 export default Id;
-
-
-// type Pointer = [List, Id];
