@@ -1,11 +1,13 @@
 require('coffee-script').register();
 
 var gulp       = require('gulp');
+var rename     = require('gulp-rename');
 var typescript = require('gulp-typescript');
+var jasmine    = require('gulp-jasmine');
+var uglify     = require('gulp-uglify');
+var browserify = require('browserify');
 var source     = require('vinyl-source-stream');
 var buffer     = require('vinyl-buffer');
-var browserify = require('browserify');
-var jasmine    = require('gulp-jasmine');
 
 gulp.task('typescript', function() {
   return gulp
@@ -19,21 +21,30 @@ gulp.task('typescript', function() {
     .pipe(gulp.dest('dist'));
 });
 
-gulp.task('browserify', function() {
-  return browserify('./dist/sonic.js', {standalone: 'Sonic'})
+gulp.task('browserify', ['typescript'], function() {
+  return browserify('dist/sonic.js', {standalone: 'Sonic'})
     .bundle()
     .pipe(source('sonic.browser.js'))
     .pipe(buffer())
     .pipe(gulp.dest('dist'))
 });
 
+gulp.task('uglify', ['browserify'], function (){
+  return gulp
+    .src('dist/sonic.browser.js')
+    .pipe(uglify())
+    .pipe(rename('sonic.browser.min.js'))
+    .pipe(gulp.dest('dist'))
+})
+
 gulp.task('spec', function() {
-  return gulp.src('spec/**/*.coffee')
+  return gulp
+    .src('spec/**/*.coffee')
     .pipe(jasmine())
 });
+
+gulp.task('dist', ['uglify']);
 
 gulp.task('watch', function() {
   gulp.watch('src/*.ts', ['dist']);
 })
-
-gulp.task('dist', ['typescript', 'browserify']);

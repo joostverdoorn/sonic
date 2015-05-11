@@ -1,21 +1,4 @@
 (function(f){if(typeof exports==="object"&&typeof module!=="undefined"){module.exports=f()}else if(typeof define==="function"&&define.amd){define([],f)}else{var g;if(typeof window!=="undefined"){g=window}else if(typeof global!=="undefined"){g=global}else if(typeof self!=="undefined"){g=self}else{g=this}g.Sonic = f()}})(function(){var define,module,exports;return (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
-var factory_1 = require('./factory');
-var list_1 = require('./list');
-var mutable_list_1 = require('./mutable_list');
-var unit_1 = require('./unit');
-var array_list_1 = require('./array_list');
-var linked_list_1 = require('./linked_list');
-function Sonic(obj) {
-    return factory_1.default(obj);
-}
-Sonic['List'] = list_1.default;
-Sonic['MutableList'] = mutable_list_1.default;
-Sonic['Unit'] = unit_1.default;
-Sonic['ArrayList'] = array_list_1.default;
-Sonic['LinkedList'] = linked_list_1.default;
-module.exports = Sonic;
-
-},{"./array_list":2,"./factory":4,"./linked_list":5,"./list":6,"./mutable_list":7,"./unit":10}],2:[function(require,module,exports){
 var __extends = this.__extends || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
     function __() { this.constructor = d; }
@@ -81,7 +64,7 @@ var ArrayList = (function (_super) {
 exports.ArrayList = ArrayList;
 exports.default = ArrayList;
 
-},{"./mutable_list":7}],3:[function(require,module,exports){
+},{"./mutable_list":6}],2:[function(require,module,exports){
 ;
 function compose(f, g) {
     return function (x) {
@@ -92,7 +75,7 @@ exports.compose = compose;
 ;
 exports.default = compose;
 
-},{}],4:[function(require,module,exports){
+},{}],3:[function(require,module,exports){
 var list_1 = require('./list');
 var observable_list_1 = require('./observable_list');
 var mutable_list_1 = require('./mutable_list');
@@ -111,7 +94,7 @@ function factory(obj) {
 }
 exports.default = factory;
 
-},{"./array_list":2,"./list":6,"./mutable_list":7,"./observable_list":8,"./unit":10}],5:[function(require,module,exports){
+},{"./array_list":1,"./list":5,"./mutable_list":6,"./observable_list":7,"./unit":9}],4:[function(require,module,exports){
 var __extends = this.__extends || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
     function __() { this.constructor = d; }
@@ -192,7 +175,7 @@ var LinkedList = (function (_super) {
 })(mutable_list_1.default);
 exports.default = LinkedList;
 
-},{"./mutable_list":7,"./unique_id":9}],6:[function(require,module,exports){
+},{"./mutable_list":6,"./unique_id":8}],5:[function(require,module,exports){
 var List = (function () {
     function List() {
         var _this = this;
@@ -434,7 +417,7 @@ var List = (function () {
 exports.List = List;
 exports.default = List;
 
-},{}],7:[function(require,module,exports){
+},{}],6:[function(require,module,exports){
 var __extends = this.__extends || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
     function __() { this.constructor = d; }
@@ -510,7 +493,7 @@ Object.keys(MutableList).forEach(function (key) {
 });
 exports.default = MutableList;
 
-},{"./observable_list":8}],8:[function(require,module,exports){
+},{"./observable_list":7}],7:[function(require,module,exports){
 var __extends = this.__extends || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
     function __() { this.constructor = d; }
@@ -590,7 +573,7 @@ var ObservableList = (function (_super) {
 })(list_1.List);
 exports.ObservableList = ObservableList;
 
-},{"./compose":3,"./list":6,"./unique_id":9}],9:[function(require,module,exports){
+},{"./compose":2,"./list":5,"./unique_id":8}],8:[function(require,module,exports){
 var id = 0;
 function uniqueId() {
     return ++id;
@@ -598,7 +581,7 @@ function uniqueId() {
 exports.uniqueId = uniqueId;
 exports.default = uniqueId;
 
-},{}],10:[function(require,module,exports){
+},{}],9:[function(require,module,exports){
 var __extends = this.__extends || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
     function __() { this.constructor = d; }
@@ -654,5 +637,22 @@ var Unit = (function (_super) {
 })(mutable_list_1.default);
 exports.default = Unit;
 
-},{"./mutable_list":7,"./unique_id":9}]},{},[1])(1)
+},{"./mutable_list":6,"./unique_id":8}],10:[function(require,module,exports){
+var factory_1 = require('./factory');
+var list_1 = require('./list');
+var mutable_list_1 = require('./mutable_list');
+var unit_1 = require('./unit');
+var array_list_1 = require('./array_list');
+var linked_list_1 = require('./linked_list');
+function Sonic(obj) {
+    return factory_1.default(obj);
+}
+Sonic['List'] = list_1.default;
+Sonic['MutableList'] = mutable_list_1.default;
+Sonic['Unit'] = unit_1.default;
+Sonic['ArrayList'] = array_list_1.default;
+Sonic['LinkedList'] = linked_list_1.default;
+module.exports = Sonic;
+
+},{"./array_list":1,"./factory":3,"./linked_list":4,"./list":5,"./mutable_list":6,"./unit":9}]},{},[10])(10)
 });
