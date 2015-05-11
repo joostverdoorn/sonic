@@ -1,10 +1,11 @@
 require('coffee-script').register();
 
 var gulp       = require('gulp');
-var rename     = require('gulp-rename');
 var typescript = require('gulp-typescript');
-var jasmine    = require('gulp-jasmine');
+var rename     = require('gulp-rename');
 var uglify     = require('gulp-uglify');
+var jasmine    = require('gulp-jasmine');
+var benchmark  = require('gulp-bench');
 var browserify = require('browserify');
 var source     = require('vinyl-source-stream');
 var buffer     = require('vinyl-buffer');
@@ -41,6 +42,12 @@ gulp.task('spec', function() {
   return gulp
     .src('spec/**/*.coffee')
     .pipe(jasmine())
+});
+
+gulp.task('perf', function () {
+  return gulp
+    .src('perf/**/*.coffee')
+    .pipe(benchmark())
 });
 
 gulp.task('dist', ['uglify']);
