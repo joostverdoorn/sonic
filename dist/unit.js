@@ -9,41 +9,46 @@ var mutable_list_1 = require('./mutable_list');
 var Unit = (function (_super) {
     __extends(Unit, _super);
     function Unit(value) {
+        var _this = this;
         _super.call(this);
+        this.has = function (id) {
+            return _this._id == id;
+        };
+        this.get = function (id) {
+            if (_this.has(id))
+                return _this._value;
+        };
+        this.prev = function (id) {
+            if (id == null)
+                return _this._id;
+            return null;
+        };
+        this.next = function (id) {
+            if (id == null)
+                return _this._id;
+            return null;
+        };
+        this.set = function (id, value) {
+            _this._id = id;
+            _this._value = value;
+            // this._notify();
+            return true;
+        };
+        this.splice = function (prev, next) {
+            var values = [];
+            for (var _i = 2; _i < arguments.length; _i++) {
+                values[_i - 2] = arguments[_i];
+            }
+            if (values.length)
+                return _this.set(unique_id_1.default(), values[0]);
+            delete _this._id;
+            delete _this._value;
+            // this._invalidate();
+            return true;
+        };
         if (arguments.length > 2)
             this.splice(null, null, value);
     }
-    Unit.prototype.has = function (id) {
-        return this._id == id;
-    };
-    Unit.prototype.get = function (id) {
-        if (this.has(id))
-            return this._value;
-    };
-    Unit.prototype.prev = function (id) {
-        if (id == null)
-            return this._id;
-        return null;
-    };
-    Unit.prototype.next = function (id) {
-        if (id == null)
-            return this._id;
-        return null;
-    };
-    Unit.prototype.set = function (id, value) {
-        this._id = id;
-        this._value = value;
-        this._invalidate();
-        return true;
-    };
-    Unit.prototype.splice = function (prev, next, value) {
-        if (arguments.length > 2)
-            return this.set(unique_id_1.default(), value);
-        delete this._id;
-        delete this._value;
-        this._invalidate();
-        return true;
-    };
     return Unit;
 })(mutable_list_1.default);
 exports.default = Unit;

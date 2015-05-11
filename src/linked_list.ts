@@ -1,8 +1,8 @@
+import Id          from './id';
 import uniqueId    from './unique_id';
-import Observable  from './observable';
 import MutableList from './mutable_list';
 
-export default class LinkedList<V> extends MutableList<V,number> {
+export default class LinkedList<V> extends MutableList<V> {
   private _byId: Object;
   private _next: Object;
   private _prev: Object;
@@ -20,23 +20,23 @@ export default class LinkedList<V> extends MutableList<V,number> {
     this.splice(null, null, ...array);
   }
 
-  has(id) {
+  has = (id: number) => {
     return id in this._byId;
   }
 
-  get(id) {
+  get = (id: number) => {
     return this._byId[id];
   }
 
-  prev(id = -1) {
+  prev = (id: number = -1) => {
     return this._prev[id];
   }
 
-  next(id = -1) {
+  next = (id: number = -1) => {
     return this._next[id];
   }
 
-  set(id, value) {
+  set = (id: number, value: V) => {
     if(!this.has(id)) return false;
 
     this._byId[id] = value;
@@ -44,8 +44,8 @@ export default class LinkedList<V> extends MutableList<V,number> {
     return true;
   }
 
-  splice(prev = -1, next = -1, ...values) {
-    var _next, _prev, value, id;
+  splice = (prev = -1, next = -1, ...values: V[]) => {
+    var _next: number, _prev: number, value: V, id: number;
 
     while(_next = this._next[_next || prev]) {
       delete this._next[this._prev[_next]];

@@ -1,29 +1,25 @@
 import uniqueId from './unique_id';
 
-export interface IObserver<I> {
-  (prev?: I, next?: I): void;
-}
-
 export interface ISubscription {
   unsubscribe(): void;
 }
 
-export interface IObservable<I> {
-  subscribe(observer: IObserver<I>): ISubscription;
+export interface IObservable<O> {
+  observe(observer: O): ISubscription;
 }
 
-export function isObservable(obj: Object): boolean {
-  return false;
+export interface INotifier<O> {
+  (observable: O): void;
 }
 
-export class Observable<I> implements IObservable<I> {
+export class Observable<O> implements IObservable<O> {
   private _observers: Object;
 
   constructor() {
     this._observers = Object.create(null);
   }
 
-  subscribe(observer) {
+  observe(observer: O) {
     var observerId = uniqueId();
     var observers = this._observers;
     observers[observerId] = observer;
@@ -33,9 +29,7 @@ export class Observable<I> implements IObservable<I> {
     };
   }
 
-  protected _invalidate(prev?, next?) {
-    for(var observerId in this._observers) { this._observers[observerId]; }
+  protected _notify(notifier: INotifier<O>) {
+    for(var observerId in this._observers) notifier(this._observers[observerId]);
   }
 }
-
-export default Observable;

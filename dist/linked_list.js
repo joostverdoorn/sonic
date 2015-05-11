@@ -9,7 +9,64 @@ var mutable_list_1 = require('./mutable_list');
 var LinkedList = (function (_super) {
     __extends(LinkedList, _super);
     function LinkedList(array) {
+        var _this = this;
         _super.call(this);
+        this.has = function (id) {
+            return id in _this._byId;
+        };
+        this.get = function (id) {
+            return _this._byId[id];
+        };
+        this.prev = function (id) {
+            if (id === void 0) { id = -1; }
+            return _this._prev[id];
+        };
+        this.next = function (id) {
+            if (id === void 0) { id = -1; }
+            return _this._next[id];
+        };
+        this.set = function (id, value) {
+            if (!_this.has(id))
+                return false;
+            _this._byId[id] = value;
+            _this._invalidate(_this._prev[id], _this._next[id]);
+            return true;
+        };
+        this.splice = function (prev, next) {
+            if (prev === void 0) { prev = -1; }
+            if (next === void 0) { next = -1; }
+            var values = [];
+            for (var _i = 2; _i < arguments.length; _i++) {
+                values[_i - 2] = arguments[_i];
+            }
+            var _next, _prev, value, id;
+            while (_next = _this._next[_next || prev]) {
+                delete _this._next[_this._prev[_next]];
+                delete _this._next[_prev];
+                if (_next == next)
+                    break;
+                delete _this._byId[_next];
+            }
+            while (_prev = _this._prev[_prev || next]) {
+                delete _this._prev[_this._next[_prev]];
+                delete _this._prev[_prev];
+                if (_prev == prev)
+                    break;
+                delete _this._byId[_next];
+            }
+            for (var _a = 0; _a < values.length; _a++) {
+                value = values[_a];
+                id = unique_id_1.default();
+                _this._byId[id] = value;
+                _this._prev[id] = prev;
+                _this._next[prev] = id;
+                prev = id;
+            }
+            _this._prev[next] = prev;
+            _this._next[prev] = next;
+            _this._invalidate(prev, next);
+            return true;
+        };
         this._byId = Object.create(null);
         this._prev = Object.create(null);
         this._next = Object.create(null);
@@ -17,62 +74,6 @@ var LinkedList = (function (_super) {
         this._next[-1] = -1;
         this.splice.apply(this, [null, null].concat(array));
     }
-    LinkedList.prototype.has = function (id) {
-        return id in this._byId;
-    };
-    LinkedList.prototype.get = function (id) {
-        return this._byId[id];
-    };
-    LinkedList.prototype.prev = function (id) {
-        if (id === void 0) { id = -1; }
-        return this._prev[id];
-    };
-    LinkedList.prototype.next = function (id) {
-        if (id === void 0) { id = -1; }
-        return this._next[id];
-    };
-    LinkedList.prototype.set = function (id, value) {
-        if (!this.has(id))
-            return false;
-        this._byId[id] = value;
-        this._invalidate(this._prev[id], this._next[id]);
-        return true;
-    };
-    LinkedList.prototype.splice = function (prev, next) {
-        if (prev === void 0) { prev = -1; }
-        if (next === void 0) { next = -1; }
-        var values = [];
-        for (var _i = 2; _i < arguments.length; _i++) {
-            values[_i - 2] = arguments[_i];
-        }
-        var _next, _prev, value, id;
-        while (_next = this._next[_next || prev]) {
-            delete this._next[this._prev[_next]];
-            delete this._next[_prev];
-            if (_next == next)
-                break;
-            delete this._byId[_next];
-        }
-        while (_prev = this._prev[_prev || next]) {
-            delete this._prev[this._next[_prev]];
-            delete this._prev[_prev];
-            if (_prev == prev)
-                break;
-            delete this._byId[_next];
-        }
-        for (var _a = 0; _a < values.length; _a++) {
-            value = values[_a];
-            id = unique_id_1.default();
-            this._byId[id] = value;
-            this._prev[id] = prev;
-            this._next[prev] = id;
-            prev = id;
-        }
-        this._prev[next] = prev;
-        this._next[prev] = next;
-        this._invalidate(prev, next);
-        return true;
-    };
     return LinkedList;
 })(mutable_list_1.default);
 exports.default = LinkedList;

@@ -1,41 +1,41 @@
-import Observable   from './observable';
+import Id from './id'
 import MutableList  from './mutable_list';
 
-export class ArrayList<V> extends MutableList<V, number> {
-  protected _array: V[];
+export class ArrayList<V> extends MutableList<V> {
+  private _array: V[];
 
   constructor(array: V[] = []) {
-    super();
+    super()
     this._array = array;
   }
 
-  has(id) {
+  has = (id: Id) => {
     return -1 < id && id < this._array.length;
   }
 
-  get(id) {
+  get = (id: number) => {
     if(this.has(id)) return this._array[id];
     return;
   }
 
-  prev(id?) {
+  prev = (id?: number) => {
     if(id == null && this._array.length) return this._array.length - 1;
     if(this._array.length > 0 && id != null && this.has(id) && this.has(id - 1)) return id - 1;
     return null;
   }
 
-  next(id?) {
+  next = (id?: number) => {
     if(id == null && this._array.length) return 0;
     if(this._array.length > 0 && id != null && this.has(id) && this.has(id + 1)) return id + 1;
     return null;
   }
 
-  set(id, value) {
+  set = (id: number, value: V) => {
     if(!this.has(id)) return false;
     this._array[id] = value;
   }
 
-  splice(prev: number, next: number, ...values: V[]): boolean {
+  splice = (prev: number, next: number, ...values: V[]) => {
     if(prev == null) prev = -1;
     else if(!this.has(prev)) return false;
 
@@ -46,6 +46,13 @@ export class ArrayList<V> extends MutableList<V, number> {
     this._invalidate(prev, null);
     return true;
   }
+
+    // observe = (observer: IObserver) => {
+    //   null;
+    // }
+
+    // super({has, get, prev, next, set, splice, observe});
+
 }
 
 export default ArrayList;
