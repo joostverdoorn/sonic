@@ -1,26 +1,11 @@
-Sonic   = require('../dist/sonic')
-
-# list = Sonic(3)
+global.Sonic = require('../dist/sonic')
+global.x = [];
 
 a = do ( ) ->
-  list = Sonic([0...1000])
-  -> list.toArray()
+  -> x instanceof Array
 
 b = do ( ) ->
-  list = Sonic([0...1000])
-  mapped = list.map (x)->x*2
-  -> mapped.toArray()
-
-c = do ( ) ->
-  list = Sonic([0...1000])
-  filtered = list.map (x)->x%2==0
-  -> filtered.toArray()
-
-c = do ( ) ->
-  list = Sonic([0...1000])
-  filtered = list.map (x)->x%2==0
-  -> filtered.toArray()
-
+  -> typeof x == 'array'
 
 module.exports =
-  tests: { a, b, c }
+  tests: { a, b }

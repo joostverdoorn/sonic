@@ -15,11 +15,12 @@ export interface INotifier<O> {
 export class Observable<O> implements IObservable<O> {
   private _observers: Object;
 
-  constructor() {
+  constructor(fn?: (notify: (notifier: INotifier<O>) => void) => void) {
+    if(typeof fn == 'function') fn(this._notify);
     this._observers = Object.create(null);
   }
 
-  observe(observer: O) {
+  observe = (observer: O): ISubscription => {
     var observerId = uniqueId();
     var observers = this._observers;
     observers[observerId] = observer;
@@ -33,3 +34,5 @@ export class Observable<O> implements IObservable<O> {
     for(var observerId in this._observers) notifier(this._observers[observerId]);
   }
 }
+
+export default Observable;

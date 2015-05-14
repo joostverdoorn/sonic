@@ -1,4 +1,4 @@
-interface IComposable<A,B> {
+export interface IComposable<A,B> {
   (x: A) : B
 };
 

@@ -1,11 +1,14 @@
-import Id          from './id';
-import uniqueId    from './unique_id';
+import Id         from './id';
+import uniqueId   from './unique_id';
+import Observable from './observable';
+import { IListObserver } from './observable_list';
 import MutableList from './mutable_list';
 
 export default class LinkedList<V> extends MutableList<V> {
   private _byId: Object;
   private _next: Object;
   private _prev: Object;
+  private _invalidate: (prev: Id, next: Id) => void;
 
   constructor(array: V[]) {
     super();
@@ -18,25 +21,33 @@ export default class LinkedList<V> extends MutableList<V> {
     this._next[-1] = -1;
 
     this.splice(null, null, ...array);
+
+    new Observable((notifier) => {
+      this._invalidate = function(prev: Id, next: Id) {
+        notifier(function(observer: IListObserver) {
+          observer.onInvalidate(prev, next)
+        });
+      }
+    });
   }
 
-  has = (id: number) => {
+  has(id: number) {
     return id in this._byId;
   }
 
-  get = (id: number) => {
+  get(id: number) {
     return this._byId[id];
   }
 
-  prev = (id: number = -1) => {
+  prev(id: number = -1) {
     return this._prev[id];
   }
 
-  next = (id: number = -1) => {
+  next(id: number = -1) {
     return this._next[id];
   }
 
-  set = (id: number, value: V) => {
+  set(id: number, value: V) {
     if(!this.has(id)) return false;
 
     this._byId[id] = value;
@@ -44,7 +55,7 @@ export default class LinkedList<V> extends MutableList<V> {
     return true;
   }
 
-  splice = (prev = -1, next = -1, ...values: V[]) => {
+  splice(prev = -1, next = -1, ...values: V[]) {
     var _next: number, _prev: number, value: V, id: number;
 
     while(_next = this._next[_next || prev]) {

@@ -1,3 +1,27 @@
+Sonic = require('../dist/sonic')
+# ArrayList = require('../dist/array_list')
+
+
+describe "module List", ->
+
+  describe "has", ->
+
+    it "should work", ->
+      a = new Sonic.ArrayList [0, 1, 2]
+      b = new Sonic.ArrayList [a, 3, 4]
+
+
+
+      console.log Sonic.List.next(b, null)
+      console.log Sonic.List.next(b, 0)
+      console.log Sonic.List.next(b, 1)
+      console.log Sonic.List.next(b, 2)
+      #
+      # expect(List.has(a, 0)).toBe true
+
+
+
+
 # describe "AbstractList", ->
 #
 #   beforeEach ->

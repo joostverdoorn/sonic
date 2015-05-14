@@ -1,41 +1,52 @@
-import Id from './id'
-import MutableList  from './mutable_list';
+import Id from './id';
+import Observable from './observable';
+import { IListObserver } from './observable_list';
+import MutableList from './mutable_list';
 
 export class ArrayList<V> extends MutableList<V> {
   private _array: V[];
+  private _invalidate: (prev: Id, next: Id) => void;
 
   constructor(array: V[] = []) {
-    super()
+    super();
     this._array = array;
+
+    new Observable((notifier) => {
+      this._invalidate = function(prev: Id, next: Id) {
+        notifier(function(observer: IListObserver) {
+          observer.onInvalidate(prev, next)
+        });
+      }
+    });
   }
 
-  has = (id: Id) => {
+  has(id: Id): boolean {
     return -1 < id && id < this._array.length;
   }
 
-  get = (id: number) => {
+  get(id: number): V {
     if(this.has(id)) return this._array[id];
     return;
   }
 
-  prev = (id?: number) => {
+  prev(id?: number): number {
     if(id == null && this._array.length) return this._array.length - 1;
     if(this._array.length > 0 && id != null && this.has(id) && this.has(id - 1)) return id - 1;
     return null;
   }
 
-  next = (id?: number) => {
+  next(id?: number): number {
     if(id == null && this._array.length) return 0;
     if(this._array.length > 0 && id != null && this.has(id) && this.has(id + 1)) return id + 1;
     return null;
   }
 
-  set = (id: number, value: V) => {
+  set(id: number, value: V): boolean {
     if(!this.has(id)) return false;
     this._array[id] = value;
   }
 
-  splice = (prev: number, next: number, ...values: V[]) => {
+  splice(prev: number, next: number, ...values: V[]): boolean {
     if(prev == null) prev = -1;
     else if(!this.has(prev)) return false;
 
@@ -46,13 +57,6 @@ export class ArrayList<V> extends MutableList<V> {
     this._invalidate(prev, null);
     return true;
   }
-
-    // observe = (observer: IObserver) => {
-    //   null;
-    // }
-
-    // super({has, get, prev, next, set, splice, observe});
-
 }
 
 export default ArrayList;

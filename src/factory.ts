@@ -10,7 +10,7 @@ export default function factory<V,I>(obj: IObservableList<V>): ObservableList<V>
 export default function factory<V,I>(obj: IList<V>): List<V>;
 export default function factory<V>(obj: V[]): ArrayList<V>;
 export default function factory<V>(obj: V): Unit<V>;
-export default function factory(obj): any {
+export default function factory(obj: any): any {
   if(MutableList.isMutableList(obj)) return MutableList.create(obj);
   if(ObservableList.isObservableList(obj)) return ObservableList.create(obj);
   if(List.isList(obj)) return List.create(obj);

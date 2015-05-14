@@ -23,7 +23,7 @@ gulp.task('typescript', function() {
       }))
 
   return merge([
-    tsResult.dts.pipe(gulp.dest('dist')),
+    tsResult.dts.pipe(gulp.dest('dist/d.ts')),
     tsResult.js.pipe(gulp.dest('dist'))
   ]);
 
@@ -48,13 +48,15 @@ gulp.task('uglify', ['browserify'], function (){
 gulp.task('spec', function() {
   return gulp
     .src('spec/**/*.coffee')
-    .pipe(jasmine())
+    .pipe(jasmine({
+      includeStackTrace: true
+    }))
 });
 
 gulp.task('perf', function () {
   return gulp
     .src('perf/**/*.coffee')
-    .pipe(benchmark())
+    .pipe(benchmark({defer: true}))
 });
 
 gulp.task('dist', ['uglify']);
