@@ -1,16 +1,19 @@
 export interface ISubscription {
     unsubscribe(): void;
 }
-export interface IObservable<O> {
-    observe(observer: O): ISubscription;
-}
 export interface INotifier<O> {
     (observable: O): void;
 }
-export declare class Observable<O> implements IObservable<O> {
-    private _observers;
-    constructor(fn?: (notify: (notifier: INotifier<O>) => void) => void);
-    observe: (observer: O) => ISubscription;
-    protected _notify(notifier: INotifier<O>): void;
+export interface IObservable<O> {
+    observe(observer: O): ISubscription;
 }
-export default Observable;
+export interface ISubject<O> {
+    observe(observer: O): ISubscription;
+    notify(notifier: INotifier<O>): void;
+}
+export declare class Subject<O> {
+    private _observers;
+    constructor();
+    observe: (observer: O) => ISubscription;
+    notify: (notifier: INotifier<O>) => void;
+}

@@ -19,7 +19,7 @@
         "src/observable.ts",
         "src/observable_list.ts",
         "src/sonic.ts",
-        "src/unique_id.ts",
+        "src/tree.ts",
         "src/unit.ts"
     ]
 }

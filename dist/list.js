@@ -1,123 +1,97 @@
-var id_1 = require('./id');
+var tree_1 = require('./tree');
 var List = (function () {
     function List(list) {
+        var _this = this;
+        this.has = function (id) {
+            throw new Error("Not implemented");
+        };
+        this.get = function (id) {
+            throw new Error("Not implemented");
+        };
+        this.prev = function (id) {
+            throw new Error("Not implemented");
+        };
+        this.next = function (id) {
+            throw new Error("Not implemented");
+        };
+        this.first = function () {
+            return List.first(_this);
+        };
+        this.last = function () {
+            return List.last(_this);
+        };
+        this.forEach = function (fn) {
+            return List.forEach(_this, fn);
+        };
+        this.reduce = function (fn, memo) {
+            return List.reduce(_this, fn);
+        };
+        this.toArray = function () {
+            return List.toArray(_this);
+        };
+        this.findId = function (fn) {
+            return List.findId(_this, fn);
+        };
+        this.find = function (fn) {
+            return List.find(_this, fn);
+        };
+        this.idOf = function (value) {
+            return List.idOf(_this, value);
+        };
+        this.indexOf = function (value) {
+            return List.indexOf(_this, value);
+        };
+        this.idAt = function (index) {
+            return List.idAt(_this, index);
+        };
+        this.at = function (index) {
+            return List.at(_this, index);
+        };
+        this.every = function (predicate) {
+            return List.every(_this, predicate);
+        };
+        this.some = function (predicate) {
+            return List.some(_this, predicate);
+        };
+        this.contains = function (value) {
+            return List.contains(_this, value);
+        };
+        this.reverse = function () {
+            return List.create(List.reverse(_this));
+        };
+        this.map = function (mapFn) {
+            return List.create(List.map(_this, mapFn));
+        };
+        this.filter = function (filterFn) {
+            return List.create(List.filter(_this, filterFn));
+        };
+        this.flatten = function () {
+            return List.create(List.flatten(_this));
+        };
+        this.flatMap = function (flatMapFn) {
+            return List.create(List.flatMap(_this, flatMapFn));
+        };
+        this.cache = function () {
+            return List.create(List.cache(_this));
+        };
         if (list != null) {
             this.has = list.has;
             this.get = list.get;
             this.prev = list.prev;
-            this.next = list.prev;
+            this.next = list.next;
         }
     }
     ;
-    List.prototype.has = function (id) {
-        throw new Error("Not implemented");
-    };
-    List.prototype.get = function (id) {
-        throw new Error("Not implemented");
-    };
-    List.prototype.prev = function (id) {
-        throw new Error("Not implemented");
-    };
-    List.prototype.next = function (id) {
-        throw new Error("Not implemented");
-    };
-    List.prototype.first = function () {
-        return List.first(this);
-    };
-    List.prototype.last = function () {
-        return List.last(this);
-    };
-    List.prototype.forEach = function (fn) {
-        return List.forEach(this, fn);
-    };
-    List.prototype.reduce = function (fn, memo) {
-        return List.reduce(this, fn);
-    };
-    List.prototype.toArray = function () {
-        return List.toArray(this);
-    };
-    List.prototype.findId = function (fn) {
-        return List.findId(this, fn);
-    };
-    List.prototype.find = function (fn) {
-        return List.find(this, fn);
-    };
-    List.prototype.idOf = function (value) {
-        return List.idOf(this, value);
-    };
-    List.prototype.indexOf = function (value) {
-        return List.indexOf(this, value);
-    };
-    List.prototype.idAt = function (index) {
-        return List.idAt(this, index);
-    };
-    List.prototype.at = function (index) {
-        return List.at(this, index);
-    };
-    List.prototype.every = function (predicate) {
-        return List.every(this, predicate);
-    };
-    List.prototype.some = function (predicate) {
-        return List.some(this, predicate);
-    };
-    List.prototype.contains = function (value) {
-        return List.contains(this, value);
-    };
-    List.prototype.reverse = function () {
-        return List.create(List.reverse(this));
-    };
-    List.prototype.map = function (mapFn) {
-        return List.create(List.map(this, mapFn));
-    };
-    List.prototype.filter = function (filterFn) {
-        return List.create(List.filter(this, filterFn));
-    };
-    List.prototype.flatten = function () {
-        return List.create(List.flatten(this));
-    };
-    List.prototype.flatMap = function (flatMapFn) {
-        return List.create(List.flatMap(this, flatMapFn));
-    };
-    List.prototype.cache = function () {
-        return List.create(List.cache(this));
-    };
     List.isList = function (obj) {
         return obj != null && !!obj['has'] && !!obj['get'] && !!obj['prev'] && !!obj['next'];
     };
     List.create = function (list) {
         return new List({
-            has: list.has.bind(list),
-            get: list.get.bind(list),
-            prev: list.prev.bind(list),
-            next: list.next.bind(list)
+            has: list.has,
+            get: list.get,
+            prev: list.prev,
+            next: list.next
         });
-    };
-    List.has = function (list, id, depth) {
-        if (depth === void 0) { depth = Infinity; }
-        var head = id_1.default.head(id), tail = id_1.default.tail(id);
-        return list.has(head) && (tail.length == 0 || depth == 0 || List.has(list.get(head), tail, depth));
-    };
-    List.get = function (list, id, depth) {
-        if (depth === void 0) { depth = Infinity; }
-        var head = id_1.default.head(id), tail = id_1.default.tail(id);
-        if (!list.has(head))
-            return;
-        var value = list.get(head);
-        if (tail.length == 0 || depth == 0)
-            return value;
-        return List.get(value, tail, depth);
-    };
-    List.next = function (list, id, depth) {
-        if (depth === void 0) { depth = Infinity; }
-        var head = id_1.default.head(id), tail = id_1.default.tail(id), value;
-        if (head != null && !list.has(head))
-            return;
-        if (depth == 0)
-            return list.next(head);
-        if (head == null) {
-            var first = list.next();
-            return;
-        }
     };
     List.first = function (list) {
         return list.get(list.next());
@@ -199,7 +173,7 @@ var List = (function () {
     List.map = function (list, mapFn) {
         var has = list.has, prev = list.prev, next = list.next;
         function get(id) {
-            return mapFn(list.get(id), id);
+            return has(id) ? mapFn(list.get(id), id) : undefined;
         }
         return { has: has, get: get, prev: prev, next: next };
     };
@@ -228,64 +202,22 @@ var List = (function () {
         }
         return { has: has, get: get, prev: prev, next: next };
     };
-    // static // flatten<V>(list: IList<IList<V>>): IList<V>;
     List.flatten = function (list) {
         function has(id) {
-            var head = id_1.default.head(id), scnd = id_1.default.get(id, 1);
-            return list.has(head) && list.get(head).has(scnd);
+            var path = tree_1.Path.create(id);
+            return tree_1.Tree.has(list, path, 1);
         }
         function get(id) {
-            var head = id_1.default.head(id), scnd = id_1.default.get(id, 1);
-            return list.has(head) ? list.get(head).get(scnd) : undefined;
+            var path = tree_1.Path.create(id);
+            return tree_1.Tree.get(list, path, 1);
         }
         function prev(id) {
-            var head = id_1.default.head(id), scnd = id_1.default.get(id, 1);
-            if (head == null) {
-                head = list.prev();
-            }
-            else if (!list.has(head))
-                return;
-            scnd = list.get(head).prev(scnd);
-            while (scnd == null) {
-                head = list.prev(head);
-                scnd = list.get(head).prev();
-            }
-            return id_1.default.append(head, scnd);
-            //
-            //
-            // head = Id.head(id),
-            // scnd = Id.get(id, 1);
-            //
-            // // var prev: Id, listId = id[0];
-            //
-            //
-            //
-            // if(list.has(head)) {
-            //
-            //
-            //   while(scnd == null) {
-            //     head = list.prev(head);
-            //     scnd = list.get(head).prev()
-            //   }
-            //
-            //   return Id.append(head, scnd);
-            // }
-            //
-            // return null;
+            var path = tree_1.Path.create(id);
+            return tree_1.Path.id(tree_1.Tree.prev(list, path, 1));
         }
         function next(id) {
-            if (id == null)
-                return [].concat(list.next()).concat((List.first(list)).next());
-            var next, listId = id[0];
-            if (list.has(listId)) {
-                if ((next = (list.get(listId)).next(id[1])) != null)
-                    return [listId, next];
-                while ((listId = list.next(listId)) != null) {
-                    if ((next = (list.get(listId)).next()) != null)
-                        return [listId, next];
-                }
-            }
-            return null;
+            var path = tree_1.Path.create(id);
+            return tree_1.Path.id(tree_1.Tree.next(list, path, 1));
         }
         return { has: has, get: get, prev: prev, next: next };
     };
@@ -295,31 +227,38 @@ var List = (function () {
     List.cache = function (list) {
         var valueCache = Object.create(null), nextCache = Object.create(null), prevCache = Object.create(null);
         function has(id) {
-            return id_1.default.key(id) in valueCache || list.has(id);
+            return id in valueCache || list.has(id);
         }
         function get(id) {
-            var key = id_1.default.key(id);
-            if (key in valueCache)
-                return valueCache[key];
+            if (id in valueCache)
+                return valueCache[id];
             if (list.has(id))
-                return valueCache[key] = list.get(id);
+                return valueCache[id] = list.get(id);
             return;
         }
         function prev(id) {
             if (id == null)
                 return list.prev();
-            var key = id_1.default.key(id);
-            if (key in prevCache)
-                return prevCache[key];
-            return prevCache[key] = list.prev(id);
+            if (id in prevCache)
+                return prevCache[id];
+            var prevId = list.prev(id);
+            if (prevId != null) {
+                prevCache[id] = prevId;
+                nextCache[prevId] = id;
+            }
+            return prevId;
         }
         function next(id) {
             if (id == null)
-                return list.prev();
-            var key = id_1.default.key(id);
-            if (key in prevCache)
-                return prevCache[key];
-            return prevCache[key] = list.prev(id);
+                return list.next();
+            if (id in nextCache)
+                return nextCache[id];
+            var nextId = list.next(id);
+            if (nextId != null) {
+                nextCache[id] = nextId;
+                prevCache[nextId] = id;
+            }
+            return nextId;
         }
         return { has: has, get: get, prev: prev, next: next };
     };

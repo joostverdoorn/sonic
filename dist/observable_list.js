@@ -5,19 +5,39 @@ var __extends = this.__extends || function (d, b) {
     d.prototype = new __();
 };
 var list_1 = require('./list');
+var tree_1 = require('./tree');
 var observable_1 = require('./observable');
 ;
 var ObservableList = (function (_super) {
     __extends(ObservableList, _super);
     function ObservableList(list) {
+        var _this = this;
         _super.call(this, list);
+        this.observe = function (observer) {
+            throw new Error("Not implemented");
+        };
+        this.reverse = function () {
+            return ObservableList.create(ObservableList.reverse(_this));
+        };
+        this.map = function (mapFn) {
+            return ObservableList.create(ObservableList.map(_this, mapFn));
+        };
+        this.filter = function (filterFn) {
+            return ObservableList.create(ObservableList.filter(_this, filterFn));
+        };
+        this.flatten = function () {
+            return ObservableList.create(ObservableList.flatten(_this));
+        };
+        this.flatMap = function (flatMapFn) {
+            return ObservableList.create(ObservableList.flatMap(_this, flatMapFn));
+        };
+        this.cache = function () {
+            return ObservableList.create(ObservableList.cache(_this));
+        };
         if (list != null) {
             this.observe = list.observe;
         }
     }
-    ObservableList.prototype.observe = function (observer) {
-        throw new Error("Not implemented");
-    };
     ObservableList.isObservableList = function (obj) {
         return list_1.List.isList(obj) && !!obj['observe'];
     };
@@ -35,14 +55,11 @@ var ObservableList = (function (_super) {
         function observe(observer) {
             return list.observe(observer);
         }
-        return ObservableList.create({ has: has, get: get, prev: prev, next: next, observe: observe });
+        return { has: has, get: get, prev: prev, next: next, observe: observe };
     };
     ObservableList.map = function (list, mapFn) {
-        var has = list.has, prev = list.prev, next = list.next, observe = list.observe;
-        function get(id) {
-            return mapFn(list.get(id), id);
-        }
-        return ObservableList.create({ has: has, get: get, prev: prev, next: next, observe: observe });
+        var _a = list_1.List.map(list, mapFn), has = _a.has, get = _a.get, prev = _a.prev, next = _a.next;
+        return { has: has, get: get, prev: prev, next: next, observe: list.observe };
     };
     ObservableList.filter = function (list, filterFn) {
         var _a = list_1.List.filter(list, filterFn), has = _a.has, get = _a.get, prev = _a.prev, next = _a.next;
@@ -55,40 +72,45 @@ var ObservableList = (function (_super) {
                 }
             });
         }
-        return ObservableList.create({ has: has, get: get, prev: prev, next: next, observe: observe });
+        return { has: has, get: get, prev: prev, next: next, observe: observe };
     };
     ObservableList.flatten = function (list) {
         var cache;
         var subscriptions = Object.create(null);
-        var notify;
-        var observable = new observable_1.Observable(function (n) { notify = n; });
+        var subject = new observable_1.Subject();
         list.observe({
             onInvalidate: function (prev, next) {
                 var id;
                 id = prev;
                 while ((id = cache.next(id)) != null && id != next) {
-                    var subscription = subscriptions[id.toString()];
+                    var subscription = subscriptions[id];
                     if (subscription) {
                         subscription.unsubscribe();
-                        delete subscriptions[id.toString()];
+                        delete subscriptions[id];
                     }
                 }
                 id = next;
                 while ((id = cache.prev(id)) != null && id != prev) {
-                    var subscription = subscriptions[id.toString()];
+                    var subscription = subscriptions[id];
                     if (subscription) {
                         subscription.unsubscribe();
-                        delete subscriptions[id.toString()];
+                        delete subscriptions[id];
                     }
                 }
             }
         });
         cache = ObservableList.cache(ObservableList.map(list, function (value, id) {
-            subscriptions[id.toString()] = value.observe({
+            subscriptions[id] = value.observe({
                 onInvalidate: function (prev, next) {
-                    notify(function (observer) {
-                        var p = [].concat(id).concat(prev), n = [].concat(id).concat(next);
-                        observer.onInvalidate(p, n);
+                    var prevId, nextId, prevPath = tree_1.Path.append(id, prev), nextPath = tree_1.Path.append(id, next);
+                    if (prev == null)
+                        prevPath = tree_1.Tree.prev(list, tree_1.Tree.next(list, prevPath));
+                    if (next == null)
+                        nextPath = tree_1.Tree.next(list, tree_1.Tree.prev(list, nextPath));
+                    prevId = tree_1.Path.id(prevPath);
+                    nextId = tree_1.Path.id(nextPath);
+                    subject.notify(function (observer) {
+                        observer.onInvalidate(prevId, nextId);
                     });
                 }
             });
@@ -96,76 +118,71 @@ var ObservableList = (function (_super) {
         }));
         cache.observe({
             onInvalidate: function (prev, next) {
-                var _prev = cache.get(prev).prev(), _next = cache.get(next).next();
-                notify(function (observer) {
-                    var p = [].concat(prev).concat(_prev), n = [].concat(next).concat(_next);
-                    observer.onInvalidate(p, n);
+                var prevId = tree_1.Path.id(tree_1.Tree.prev(list, [prev])), nextId = tree_1.Path.id(tree_1.Tree.next(list, [next]));
+                subject.notify(function (observer) {
+                    observer.onInvalidate(prevId, nextId);
                 });
             }
         });
         var _a = list_1.List.flatten(cache), has = _a.has, get = _a.get, next = _a.next, prev = _a.prev;
-        return { has: has, get: get, next: next, prev: prev, observe: observable.observe };
+        return { has: has, get: get, next: next, prev: prev, observe: subject.observe };
+    };
+    ObservableList.flatMap = function (list, flatMapFn) {
+        return ObservableList.flatten(ObservableList.map(list, flatMapFn));
     };
     ObservableList.cache = function (list) {
-        var _get = Object.create(null), _next = Object.create(null), _prev = Object.create(null);
+        var valueCache = Object.create(null), nextCache = Object.create(null), prevCache = Object.create(null);
         function has(id) {
-            if (id == null)
-                return false;
-            return id.toString() in _get || list.has(id);
+            return id in valueCache || list.has(id);
         }
         function get(id) {
-            if (id == null)
-                return undefined;
-            var idString = id.toString();
-            if (idString in _get) {
-                return _get[idString];
-            }
-            if (list.has(id)) {
-                return _get[idString] = list.get(id);
-            }
+            if (id in valueCache)
+                return valueCache[id];
+            if (list.has(id))
+                return valueCache[id] = list.get(id);
+            return;
         }
         function prev(id) {
             if (id == null)
                 return list.prev();
-            var idString = id.toString();
-            if (idString in _prev) {
-                return _prev[idString];
+            if (id in prevCache)
+                return prevCache[id];
+            var prevId = list.prev(id);
+            if (prevId != null) {
+                prevCache[id] = prevId;
+                nextCache[prevId] = id;
             }
-            if (list.prev(id) != null) {
-                var prevId = _prev[idString] = list.prev(id);
-                _next[prevId.toString()] = id;
-                return prevId;
-            }
+            return prevId;
         }
         function next(id) {
             if (id == null)
                 return list.next();
-            var idString = id.toString();
-            if (idString in _next) {
-                return _next[idString];
+            if (id in nextCache)
+                return nextCache[id];
+            var nextId = list.next(id);
+            if (nextId != null) {
+                nextCache[id] = nextId;
+                prevCache[nextId] = id;
             }
-            if (list.next(id) != null) {
-                var nextId = _next[idString] = list.next(id);
-                _prev[nextId.toString()] = id;
-                return nextId;
-            }
+            return nextId;
         }
         list.observe({
             onInvalidate: function (prev, next) {
-                var nextId = prev, prevId = next;
-                while (nextId != null && (nextId = _next[nextId.toString()])) {
-                    delete _next[_prev[nextId.toString()]];
-                    delete _prev[nextId.toString()];
-                    if (next != null && nextId.toString() == next.toString())
+                var id;
+                id = prev;
+                while ((id = nextCache[id]) != null) {
+                    delete nextCache[prevCache[id]];
+                    delete prevCache[id];
+                    if (id == next)
                         break;
-                    delete _get[nextId.toString()];
+                    delete valueCache[id];
                 }
-                while (prevId != null && (prevId = _prev[prevId.toString()])) {
-                    delete _prev[_next[prevId.toString()]];
-                    delete _next[prevId.toString()];
-                    if (prev != null && prevId.toString() == prev.toString())
+                while ((id = prevCache[id]) != null) {
+                    delete prevCache[nextCache[id]];
+                    delete nextCache[id];
+                    if (id == prev)
                         break;
-                    delete _get[prevId.toString()];
+                    delete valueCache[id];
                 }
             }
         });

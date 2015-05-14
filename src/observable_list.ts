@@ -1,8 +1,8 @@
 import compose  from './compose'
 import Id       from './id';
-import uniqueId from './unique_id';
 import { List, IList } from './list';
-import { Observable, IObservable, ISubscription, INotifier } from './observable';
+import { Tree, Path }  from './tree';
+import { Subject, IObservable, ISubscription, INotifier } from './observable';
 
 export interface IListObserver {
   onInvalidate: (prev: Id, next: Id) => void;
@@ -11,7 +11,6 @@ export interface IListObserver {
 export interface IObservableList<V> extends IList<V>, IObservable<IListObserver> {};
 
 export class ObservableList<V> extends List<V> implements IObservableList<V> {
-
   constructor(list?: IObservableList<V>) {
     super(list);
 
@@ -20,8 +19,32 @@ export class ObservableList<V> extends List<V> implements IObservableList<V> {
     }
   }
 
-  observe(observer: IListObserver): ISubscription {
+  observe = (observer: IListObserver): ISubscription => {
     throw new Error("Not implemented");
+  }
+
+  reverse = (): ObservableList<V> => {
+    return ObservableList.create(ObservableList.reverse(this));
+  }
+
+  map = <W>(mapFn: (value: V, id?: Id) => W): ObservableList<W> => {
+    return ObservableList.create(ObservableList.map(this, mapFn));
+  }
+
+  filter = (filterFn: (value: V, id?: Id) => boolean): ObservableList<V> => {
+    return ObservableList.create(ObservableList.filter(this, filterFn));
+  }
+
+  flatten = (): ObservableList<any> => {
+    return ObservableList.create(ObservableList.flatten(this));
+  }
+
+  flatMap = <W>(flatMapFn:(value: V, id?: Id) => IObservableList<W>): ObservableList<W> => {
+    return ObservableList.create(ObservableList.flatMap(this, flatMapFn));
+  }
+
+  cache = (): List<V> => {
+    return ObservableList.create(ObservableList.cache(this));
   }
 
   static isObservableList(obj: any) {
@@ -38,25 +61,22 @@ export class ObservableList<V> extends List<V> implements IObservableList<V> {
     });
   }
 
-  static reverse<V>(list: IObservableList<V>): ObservableList<V> {
+  static reverse<V>(list: IObservableList<V>): IObservableList<V> {
     var { has, get, prev, next } = List.reverse(list);
 
     function observe(observer: IListObserver) {
       return list.observe(observer);
     }
 
-    return ObservableList.create({has, get, prev, next, observe});
+    return {has, get, prev, next, observe};
   }
 
-  static map<V, W>(list: IObservableList<V>, mapFn: (value: V, id?: Id) => W): ObservableList<W> {
-    var { has, prev, next, observe }  = list;
-    function get(id: Id) {
-      return mapFn(list.get(id), id);
-    }
-    return ObservableList.create({has, get, prev, next, observe});
+  static map<V, W>(list: IObservableList<V>, mapFn: (value: V, id?: Id) => W): IObservableList<W> {
+    var { has, get, prev, next } = List.map(list, mapFn);
+    return { has, get, prev, next, observe: list.observe };
   }
 
-  static filter<V>(list: IObservableList<V>, filterFn: (value: V, id?: Id) => boolean): ObservableList<V> {
+  static filter<V>(list: IObservableList<V>, filterFn: (value: V, id?: Id) => boolean): IObservableList<V> {
     var { has, get, prev, next } = List.filter(list, filterFn);
 
     function observe(observer: IListObserver) {
@@ -69,15 +89,13 @@ export class ObservableList<V> extends List<V> implements IObservableList<V> {
       });
     }
 
-    return ObservableList.create({has, get, prev, next, observe});
+    return { has, get, prev, next, observe };
   }
 
-  static flatten<V>(list: IObservableList<IObservableList<V>>): IObservableList<V>;
-  static flatten(list: IObservableList<any>): IObservableList<any> {
+  static flatten<V>(list: IObservableList<IObservableList<V> | V | any>): IObservableList<V> {
     var cache: IObservableList<any>;
     var subscriptions = Object.create(null);
-    var notify: (notifier: INotifier<IListObserver>) => void;
-    var observable = new Observable(function(n) { notify = n; })
+    var subject = new Subject();
 
     list.observe({
       onInvalidate: function(prev, next) {
@@ -85,129 +103,126 @@ export class ObservableList<V> extends List<V> implements IObservableList<V> {
 
         id = prev;
         while((id = cache.next(id)) != null && id != next) {
-          var subscription = subscriptions[id.toString()];
-          if (subscription) {
+          var subscription = subscriptions[id];
+          if(subscription) {
             subscription.unsubscribe();
-            delete subscriptions[id.toString()];
+            delete subscriptions[id];
           }
         }
 
         id = next;
         while((id = cache.prev(id)) != null && id != prev) {
-          var subscription = subscriptions[id.toString()];
-          if (subscription) {
+          var subscription = subscriptions[id];
+          if(subscription) {
             subscription.unsubscribe();
-            delete subscriptions[id.toString()];
+            delete subscriptions[id];
           }
         }
       }
     });
 
     cache = ObservableList.cache(ObservableList.map(list, function(value, id) {
-      subscriptions[id.toString()] = value.observe({
+      subscriptions[id] = value.observe({
         onInvalidate: function(prev: Id, next: Id) {
-          notify(function(observer: IListObserver) {
-            var p = [].concat(id).concat(prev),
-                n = [].concat(id).concat(next);
+          var prevId: Id,
+              nextId: Id,
+              prevPath = Path.append(id, prev),
+              nextPath = Path.append(id, next);
 
-            observer.onInvalidate(p, n);
+          if(prev == null) prevPath = Tree.prev(list, Tree.next(list, prevPath));
+          if(next == null) nextPath = Tree.next(list, Tree.prev(list, nextPath));
+
+          prevId = Path.id(prevPath);
+          nextId = Path.id(nextPath);
+
+          subject.notify(function(observer: IListObserver) {
+            observer.onInvalidate(prevId, nextId);
           });
         }
-      })
+      });
       return value;
     }));
 
     cache.observe({
       onInvalidate: function(prev, next) {
-        var _prev = cache.get(prev).prev(),
-            _next = cache.get(next).next();
+        var prevId = Path.id(Tree.prev(list, [prev])),
+            nextId = Path.id(Tree.next(list, [next]));
 
-        notify(function(observer: IListObserver) {
-          var p = [].concat(prev).concat(_prev),
-              n = [].concat(next).concat(_next);
-
-          observer.onInvalidate(p, n);
+        subject.notify(function(observer: IListObserver) {
+          observer.onInvalidate(prevId, nextId);
         })
       }
     });
 
-    var { has, get, next, prev } = List.flatten(cache)
-    return { has, get, next, prev, observe: observable.observe }
+    var { has, get, next, prev } = List.flatten<V>(cache)
+    return { has, get, next, prev, observe: subject.observe }
+  }
+
+  static flatMap<V, W>(list: IObservableList<V>, flatMapFn:(value: V, id?: Id) => IObservableList<W>): IObservableList<W> {
+    return ObservableList.flatten<W>(ObservableList.map(list, flatMapFn));
   }
 
   static cache<V>(list: IObservableList<V>): IObservableList<V> {
-    var _get = Object.create(null),
-        _next = Object.create(null),
-        _prev = Object.create(null);
+    var valueCache = Object.create(null),
+        nextCache  = Object.create(null),
+        prevCache  = Object.create(null);
 
-    function has(id: Id) : boolean {
-      if (id == null) return false;
-      return id.toString() in _get || list.has(id);
+    function has(id: Id): boolean {
+      return id in valueCache || list.has(id);
     }
 
-    function get(id: Id) : V {
-      if (id == null) return undefined;
-      var idString = id.toString();
-
-      if(idString in _get) {
-        return _get[idString]
-      }
-
-      if(list.has(id)) {
-        return _get[idString] = list.get(id);
-      }
+    function get(id: Id): V {
+      if(id in valueCache) return valueCache[id];
+      if(list.has(id)) return valueCache[id] = list.get(id);
+      return;
     }
 
     function prev(id: Id): Id {
-      if (id == null) return list.prev();
-      var idString = id.toString();
+      if(id == null) return list.prev();
+      if(id in prevCache) return prevCache[id];
 
-      if(idString in _prev) {
-        return _prev[idString];
+      var prevId = list.prev(id);
+      if(prevId != null) {
+        prevCache[id] = prevId;
+        nextCache[prevId] = id;
       }
 
-      if(list.prev(id) != null) {
-        var prevId = _prev[idString] = list.prev(id);
-        _next[prevId.toString()] = id;
-        return prevId
-      }
+      return prevId;
     }
 
     function next(id: Id): Id {
-      if (id == null) return list.next();
-      var idString = id.toString();
+      if(id == null) return list.next();
+      if(id in nextCache) return nextCache[id];
 
-      if(idString in _next) {
-        return _next[idString];
+      var nextId = list.next(id);
+      if(nextId != null) {
+        nextCache[id] = nextId;
+        prevCache[nextId] = id;
       }
 
-      if(list.next(id) != null) {
-        var nextId = _next[idString] = list.next(id);
-        _prev[nextId.toString()] = id;
-        return nextId
-      }
+      return nextId;
     }
 
     list.observe({
-      onInvalidate: function(prev, next) {
-        var nextId: Id = prev,
-          prevId: Id = next;
+      onInvalidate: function(prev: Id, next: Id) {
+        var id: Id;
 
-        while (nextId != null && (nextId = _next[nextId.toString()])) {
-          delete _next[_prev[nextId.toString()]];
-          delete _prev[nextId.toString()];
-          if (next != null && nextId.toString() == next.toString()) break;
-          delete _get[nextId.toString()];
+        id = prev;
+        while((id = nextCache[id]) != null) {
+          delete nextCache[prevCache[id]];
+          delete prevCache[id];
+          if(id == next) break;
+          delete valueCache[id];
         }
 
-        while (prevId != null && (prevId = _prev[prevId.toString()])) {
-          delete _prev[_next[prevId.toString()]];
-          delete _next[prevId.toString()];
-          if (prev != null && prevId.toString() == prev.toString()) break;
-          delete _get[prevId.toString()];
+        while((id = prevCache[id]) != null) {
+          delete prevCache[nextCache[id]];
+          delete nextCache[id];
+          if(id == prev) break;
+          delete valueCache[id];
         }
       }
-    })
+    });
 
     return {has, get, prev, next, observe: list.observe};
   }

@@ -1,6 +1,7 @@
 import Id from './id';
 import { ObservableList, IObservableList } from './observable_list';
 
+
 export interface IMutableList<V> extends IObservableList<V> {
   set(id: Id, value: V): boolean;
   splice(prev: Id, next: Id, ...values: V[]): boolean;
@@ -12,45 +13,45 @@ export class MutableList<V> extends ObservableList<V> implements IMutableList<V>
     super(list);
 
     if(list != null) {
-      this.has     = list.has
-      this.get     = list.get
-      this.prev    = list.prev
-      this.next    = list.next
-      this.observe = list.observe
-      this.set     = list.set
-      this.splice  = list.splice
+      this.has     = list.has;
+      this.get     = list.get;
+      this.prev    = list.prev;
+      this.next    = list.next;
+      this.observe = list.observe;
+      this.set     = list.set;
+      this.splice  = list.splice;
     }
   }
 
-  set(id: Id, value: V): boolean {
+  set = (id: Id, value: V): boolean => {
     throw new Error("Not implemented");
   }
 
-  splice(prev: Id, next: Id, ...values: V[]): boolean {
+  splice = (prev: Id, next: Id, ...values: V[]): boolean => {
     throw new Error("Not implemented");
   }
 
-  push(value: V) {
+  push = (value: V) => {
     return MutableList.push(this, value);
   }
 
-  unshift(value: V) {
+  unshift = (value: V) => {
     return MutableList.unshift(this, value);
   }
 
-  pop() {
+  pop = () => {
     return MutableList.pop(this);
   }
 
-  shift() {
+  shift = () => {
     return MutableList.shift(this);
   }
 
-  delete(id: Id) {
+  delete = (id: Id) => {
     return MutableList.delete(this, id);
   }
 
-  remove(value: V) {
+  remove = (value: V) => {
     return MutableList.remove(this, value);
   }
 
@@ -75,12 +76,10 @@ export class MutableList<V> extends ObservableList<V> implements IMutableList<V>
     return list.prev();
   }
 
-
   static unshift<V>(list: IMutableList<V>, value: V): Id {
-    list.splice(list.next(), null, value);
+    list.splice(null, list.next(), value);
     return list.next();
   }
-
 
   static pop<V>(list: IMutableList<V>): V {
     var value = list.get(list.prev());
@@ -90,7 +89,7 @@ export class MutableList<V> extends ObservableList<V> implements IMutableList<V>
 
   static shift<V>(list: IMutableList<V>): V {
     var value = list.get(list.next());
-    list.splice(list.next(list.next()), null);
+    list.splice(null, list.next(list.next()));
     return value;
   }
 
@@ -98,7 +97,6 @@ export class MutableList<V> extends ObservableList<V> implements IMutableList<V>
     if(!list.has(id)) return false;
     return list.splice(list.prev(id), list.next(id));
   }
-
 
   static remove<V>(list: IMutableList<V>, value: V): boolean {
     var id = MutableList.idOf(list, value);

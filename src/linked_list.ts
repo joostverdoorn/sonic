@@ -1,53 +1,48 @@
-import Id         from './id';
-import uniqueId   from './unique_id';
-import Observable from './observable';
+import Id       from './id';
+import { Subject, ISubject, ISubscription } from './observable';
 import { IListObserver } from './observable_list';
 import MutableList from './mutable_list';
+
 
 export default class LinkedList<V> extends MutableList<V> {
   private _byId: Object;
   private _next: Object;
   private _prev: Object;
-  private _invalidate: (prev: Id, next: Id) => void;
+  private _subject: ISubject<IListObserver>;
 
   constructor(array: V[]) {
     super();
 
+    this._subject = new Subject();
     this._byId = Object.create(null);
     this._prev = Object.create(null);
     this._next = Object.create(null);
 
-    this._prev[-1] = -1;
-    this._next[-1] = -1;
+    this._prev[<number> null] = null;
+    this._next[<number> null] = null;
 
     this.splice(null, null, ...array);
-
-    new Observable((notifier) => {
-      this._invalidate = function(prev: Id, next: Id) {
-        notifier(function(observer: IListObserver) {
-          observer.onInvalidate(prev, next)
-        });
-      }
-    });
   }
 
-  has(id: number) {
+  has = (id: number) => {
     return id in this._byId;
   }
 
-  get(id: number) {
+  get = (id: number) => {
     return this._byId[id];
   }
 
-  prev(id: number = -1) {
-    return this._prev[id];
+  prev = (id: number = null) => {
+    var prev = this._prev[id];
+    return prev == null ? null : prev;
   }
 
-  next(id: number = -1) {
-    return this._next[id];
+  next = (id: number = null) => {
+    var next = this._next[id];
+    return next == null ? null : next;
   }
 
-  set(id: number, value: V) {
+  set = (id: number, value: V) => {
     if(!this.has(id)) return false;
 
     this._byId[id] = value;
@@ -55,37 +50,51 @@ export default class LinkedList<V> extends MutableList<V> {
     return true;
   }
 
-  splice(prev = -1, next = -1, ...values: V[]) {
-    var _next: number, _prev: number, value: V, id: number;
+  splice = (prev: number = null, next: number = null, ...values: V[]) => {
+    var id: number,
+        value: V;
 
-    while(_next = this._next[_next || prev]) {
-      delete this._next[this._prev[_next]];
-      delete this._next[_prev];
-
-      if(_next == next) break;
-      delete this._byId[_next];
+    id = prev;
+    while((id = this._next[id]) != null) {
+      delete this._next[this._prev[id]];
+      delete this._prev[id];
+      if(id == next) break;
+      delete this._byId[id];
     }
 
-    while(_prev = this._prev[_prev || next]) {
-      delete this._prev[this._next[_prev]];
-      delete this._prev[_prev];
-
-      if(_prev == prev) break;
-      delete this._byId[_next];
+    id = next;
+    while((id = this._prev[id]) != null) {
+      delete this._prev[this._next[id]];
+      delete this._next[id];
+      if(id == prev) break;
+      delete this._byId[id];
     }
 
+    var _id = prev;
     for(value of values) {
-      id = uniqueId();
+      id = Id.create();
       this._byId[id] = value;
-      this._prev[id] = prev;
-      this._next[prev] = id;
-      prev = id;
+      this._prev[id] = _id;
+      this._next[_id] = id;
+      _id = id;
     }
 
-    this._prev[next] = prev;
-    this._next[prev] = next;
+    this._prev[next] = _id;
+    this._next[_id] = next;
 
     this._invalidate(prev, next);
     return true;
+  }
+
+  observe = (observer: IListObserver): ISubscription => {
+    return this._subject.observe(observer);
+  }
+
+  private _invalidate = (prev?: number, next?: number) => {
+    if(!this.has(prev)) prev = null;
+    if(!this.has(next)) next = null;
+    this._subject.notify(function(observer: IListObserver) {
+      observer.onInvalidate(prev, next);
+    })
   }
 }

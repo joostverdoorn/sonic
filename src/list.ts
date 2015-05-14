@@ -1,4 +1,5 @@
 import Id from './id';
+import { Tree, ITree, Path } from './tree';
 
 export interface IList<V> {
   has: (id: Id) => boolean;
@@ -14,106 +15,105 @@ export class List<V> implements IList<V> {
       this.has  = list.has;
       this.get  = list.get;
       this.prev = list.prev;
-      this.next = list.prev;
+      this.next = list.next;
     }
   };
 
-  has(id: Id): boolean {
+  has = (id: Id): boolean => {
     throw new Error("Not implemented");
   }
 
-  get(id: Id): V {
+  get = (id: Id): V => {
     throw new Error("Not implemented");
   }
 
-  prev(id: Id): Id {
+  prev = (id: Id): Id => {
     throw new Error("Not implemented");
   }
 
-  next(id: Id): Id {
+  next = (id: Id): Id => {
     throw new Error("Not implemented");
   }
 
-  first(): V {
+  first = (): V => {
     return List.first(this);
   }
 
-  last(): V {
+  last = (): V => {
     return List.last(this);
   }
 
-  forEach(fn: (value: V, id?: Id) => void) {
+  forEach = (fn: (value: V, id?: Id) => void) => {
     return List.forEach(this, fn);
   }
 
-  reduce<W>(fn: (memo: W, value: V, id?: Id) => W, memo?: W): W {
+  reduce = <W>(fn: (memo: W, value: V, id?: Id) => W, memo?: W): W => {
     return List.reduce(this, fn);
   }
 
-  toArray(): V[] {
+  toArray = (): V[] => {
     return List.toArray(this);
   }
 
-  findId(fn: (value: V, id?: Id) => boolean): Id {
+  findId = (fn: (value: V, id?: Id) => boolean): Id => {
     return List.findId(this, fn);
   }
 
-  find(fn: (value: V, id?: Id) => boolean): V {
+  find = (fn: (value: V, id?: Id) => boolean): V => {
     return List.find(this, fn);
   }
 
-  idOf(value: V): Id {
+  idOf = (value: V): Id => {
     return List.idOf(this, value);
   }
 
-  indexOf(value: V): Id {
+  indexOf = (value: V): Id => {
     return List.indexOf(this, value);
   }
 
-  idAt(index: number): Id {
+  idAt = (index: number): Id => {
     return List.idAt(this, index);
   }
 
-  at(index: number): V {
+  at = (index: number): V => {
     return List.at(this, index);
   }
 
-  every(predicate: (value: V, id?: Id) => boolean): boolean {
+  every = (predicate: (value: V, id?: Id) => boolean): boolean => {
     return List.every(this, predicate);
   }
 
-  some(predicate: (value: V, id?: Id) => boolean): boolean {
+  some = (predicate: (value: V, id?: Id) => boolean): boolean => {
     return List.some(this, predicate);
   }
 
-  contains(value: V): boolean {
+  contains = (value: V): boolean => {
     return List.contains(this, value);
   }
 
-  reverse(): List<V> {
+  reverse = (): List<V> => {
     return List.create(List.reverse(this));
   }
 
-  map<W>(mapFn: (value: V, id?: Id) => W): List<W> {
+  map = <W>(mapFn: (value: V, id?: Id) => W): List<W> => {
     return List.create(List.map(this, mapFn));
   }
 
-  filter(filterFn: (value: V, id?: Id) => boolean): List<V> {
+  filter = (filterFn: (value: V, id?: Id) => boolean): List<V> => {
     return List.create(List.filter(this, filterFn));
   }
 
-  flatten(): IList<any> {
+  flatten = (): List<any> => {
     return List.create(List.flatten(this));
   }
 
-  flatMap<W>(flatMapFn:(value: V, id?: Id) => IList<W>): List<W> {
+  flatMap = <W>(flatMapFn:(value: V, id?: Id) => IList<W>): List<W> => {
     return List.create(List.flatMap(this, flatMapFn));
   }
 
-  cache(): List<V> {
+  cache = (): List<V> => {
     return List.create(List.cache(this));
   }
-
 
   static isList(obj: any): boolean {
     return obj != null && !!obj['has'] && !!obj['get'] && !!obj['prev'] && !!obj['next'];
@@ -121,44 +121,11 @@ export class List<V> implements IList<V> {
 
   static create<V>(list: IList<V>): List<V> {
     return new List<V>({
-      has:  list.has.bind(list),
-      get:  list.get.bind(list),
-      prev: list.prev.bind(list),
-      next: list.next.bind(list)
+      has:  list.has,
+      get:  list.get,
+      prev: list.prev,
+      next: list.next
     });
-  }
-
-
-  static has(list: IList<any>, id: Id, depth: number = Infinity): boolean {
-    var head = Id.head(id),
-        tail = Id.tail(id);
-
-    return list.has(head) && (tail.length == 0 || depth == 0 || List.has(list.get(head), tail, depth))
-  }
-
-  static get(list: IList<any>, id: Id, depth: number = Infinity): any {
-    var head = Id.head(id),
-        tail = Id.tail(id);
-
-    if(!list.has(head)) return;
-    var value = list.get(head);
-
-    if(tail.length == 0 || depth == 0) return value;
-    return List.get(value, tail, depth)
-  }
-
-  static next(list: IList<any>, id: Id, depth: number = Infinity): Id {
-    var head: Id = Id.head(id),
-        tail: Id = Id.tail(id),
-        value: any;
-
-    if(head != null && !list.has(head)) return;
-    if(depth == 0) return list.next(head);
-
-    if(head == null) {
-      var first = list.next();
-      return
-    }
   }
 
   static first<V>(list: IList<V>): V {
@@ -249,10 +216,10 @@ export class List<V> implements IList<V> {
     var { has, prev, next } = list;
 
     function get(id: Id) {
-      return mapFn(list.get(id), id);
+      return has(id) ? mapFn(list.get(id), id) : undefined;
     }
 
-    return {has, get, prev, next};
+    return { has, get, prev, next };
   }
 
   static filter<V>(list: IList<V>, filterFn: (value: V, id?: Id) => boolean): IList<V> {
@@ -277,84 +244,35 @@ export class List<V> implements IList<V> {
       return null;
     }
 
-    return {has, get, prev, next};
+    return { has, get, prev, next };
   }
 
-  // static // flatten<V>(list: IList<IList<V>>): IList<V>;
-  static flatten<V>(list: IList<any>): IList<any> {
-    function has(id: Id) {
-      var head = Id.head(id),
-          scnd = Id.get(id, 1);
-
-      return list.has(head) && list.get(head).has(scnd);
+  static flatten<V>(list: IList<IList<V> | V | any>): IList<V> {
+    function has(id: Id): boolean {
+      var path = Path.create(id);
+      return Tree.has(list, path, 1);
     }
 
-    function get(id: Id) {
-      var head = Id.head(id),
-          scnd = Id.get(id, 1);
-
-      return list.has(head) ? list.get(head).get(scnd) : undefined;
+    function get(id: Id): V {
+      var path = Path.create(id);
+      return Tree.get(list, path, 1);
     }
 
     function prev(id: Id): Id {
-      var head: Id = Id.head(id),
-          scnd: Id = Id.get(id, 1);
-
-
-      if(head == null) {
-        head = list.prev();
-      } else if(!list.has(head)) return;
-
-      scnd = list.get(head).prev(scnd);
-      while(scnd == null) {
-        head = list.prev(head);
-        scnd = list.get(head).prev()
-      }
-
-      return Id.append(head, scnd)
-      //
-      //
-      // head = Id.head(id),
-      // scnd = Id.get(id, 1);
-      //
-      // // var prev: Id, listId = id[0];
-      //
-      //
-      //
-      // if(list.has(head)) {
-      //
-      //
-      //   while(scnd == null) {
-      //     head = list.prev(head);
-      //     scnd = list.get(head).prev()
-      //   }
-      //
-      //   return Id.append(head, scnd);
-      // }
-      //
-      // return null;
+      var path = Path.create(id);
+      return Path.id(Tree.prev(list, path, 1));
     }
 
     function next(id: Id): Id {
-      if(id == null) return [].concat(list.next()).concat((List.first(list)).next());
-      var next: Id, listId = id[0];
-
-      if(list.has(listId)) {
-        if((next = (list.get(listId)).next(id[1])) != null) return [listId, next];
-
-        while((listId = list.next(listId)) != null) {
-          if((next = (list.get(listId)).next()) != null) return [listId, next];
-        }
-      }
-
-      return null;
+      var path = Path.create(id);
+      return Path.id(Tree.next(list, path, 1));
     }
 
-    return {has, get, prev, next};
+    return { has, get, prev, next };
   }
 
   static flatMap<V, W>(list: IList<V>, flatMapFn:(value: V, id?: Id) => IList<W>): IList<W> {
-    return List.flatten(List.map(list, flatMapFn));
+    return List.flatten<W>(List.map(list, flatMapFn));
   }
 
   static cache<V>(list: IList<V>): IList<V> {
@@ -363,34 +281,42 @@ export class List<V> implements IList<V> {
         prevCache  = Object.create(null);
 
     function has(id: Id): boolean {
-      return Id.key(id) in valueCache || list.has(id);
+      return id in valueCache || list.has(id);
     }
 
     function get(id: Id): V {
-      var key = Id.key(id);
-
-      if(key in valueCache) return valueCache[key];
-      if(list.has(id)) return valueCache[key] = list.get(id);
+      if(id in valueCache) return valueCache[id];
+      if(list.has(id)) return valueCache[id] = list.get(id);
       return;
     }
 
     function prev(id: Id): Id {
       if(id == null) return list.prev();
+      if(id in prevCache) return prevCache[id];
 
-      var key = Id.key(id);
-      if(key in prevCache) return prevCache[key];
-      return prevCache[key] = list.prev(id);
+      var prevId = list.prev(id);
+      if(prevId != null) {
+        prevCache[id] = prevId;
+        nextCache[prevId] = id;
+      }
+
+      return prevId;
     }
 
     function next(id: Id): Id {
-      if(id == null) return list.prev();
+      if(id == null) return list.next();
+      if(id in nextCache) return nextCache[id];
 
-      var key = Id.key(id);
-      if(key in prevCache) return prevCache[key];
-      return prevCache[key] = list.prev(id);
+      var nextId = list.next(id);
+      if(nextId != null) {
+        nextCache[id] = nextId;
+        prevCache[nextId] = id;
+      }
+
+      return nextId;
     }
 
-    return {has, get, prev, next};
+    return { has, get, prev, next };
   }
 }
 

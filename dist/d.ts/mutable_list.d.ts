@@ -6,14 +6,14 @@ export interface IMutableList<V> extends IObservableList<V> {
 }
 export declare class MutableList<V> extends ObservableList<V> implements IMutableList<V> {
     constructor(list?: IMutableList<V>);
-    set(id: Id, value: V): boolean;
-    splice(prev: Id, next: Id, ...values: V[]): boolean;
-    push(value: V): string | number | (string | number)[];
-    unshift(value: V): string | number | (string | number)[];
-    pop(): V;
-    shift(): V;
-    delete(id: Id): boolean;
-    remove(value: V): boolean;
+    set: (id: string | number, value: V) => boolean;
+    splice: (prev: string | number, next: string | number, ...values: V[]) => boolean;
+    push: (value: V) => string | number;
+    unshift: (value: V) => string | number;
+    pop: () => V;
+    shift: () => V;
+    delete: (id: string | number) => boolean;
+    remove: (value: V) => boolean;
     static isMutableList(obj: Object): boolean;
     static create<V>(list: IMutableList<V>): MutableList<V>;
     static push<V>(list: IMutableList<V>, value: V): Id;

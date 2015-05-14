@@ -1,38 +1,38 @@
-import uniqueId from './unique_id';
+import Id from './id';
 
 export interface ISubscription {
   unsubscribe(): void;
-}
-
-export interface IObservable<O> {
-  observe(observer: O): ISubscription;
 }
 
 export interface INotifier<O> {
   (observable: O): void;
 }
 
-export class Observable<O> implements IObservable<O> {
+export interface IObservable<O> {
+  observe(observer: O): ISubscription;
+}
+
+export interface ISubject<O> {
+  observe(observer: O): ISubscription;
+  notify(notifier: INotifier<O>): void;
+}
+
+export class Subject<O> {
   private _observers: Object;
 
-  constructor(fn?: (notify: (notifier: INotifier<O>) => void) => void) {
-    if(typeof fn == 'function') fn(this._notify);
+  constructor() {
     this._observers = Object.create(null);
   }
 
   observe = (observer: O): ISubscription => {
-    var observerId = uniqueId();
-    var observers = this._observers;
-    observers[observerId] = observer;
-
+    var observerId = Id.create();
+    this._observers[observerId] = observer;
     return {
-      unsubscribe: function() { delete observers[observerId]; }
-    };
+      unsubscribe: () => { delete this._observers[observerId]; }
+    }
   }
 
-  protected _notify(notifier: INotifier<O>) {
+  notify = (notifier: INotifier<O>) => {
     for(var observerId in this._observers) notifier(this._observers[observerId]);
   }
 }
-
-export default Observable;
