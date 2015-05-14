@@ -143,8 +143,6 @@ var ObservableList = (function (_super) {
             return;
         }
         function prev(id) {
-            if (id == null)
-                return list.prev();
             if (id in prevCache)
                 return prevCache[id];
             var prevId = list.prev(id);
@@ -155,8 +153,6 @@ var ObservableList = (function (_super) {
             return prevId;
         }
         function next(id) {
-            if (id == null)
-                return list.next();
             if (id in nextCache)
                 return nextCache[id];
             var nextId = list.next(id);
