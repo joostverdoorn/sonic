@@ -30,6 +30,7 @@
     "gulp-rename": "^1.2.2",
     "gulp-typescript": "^2.6.0",
     "gulp-uglify": "^1.2.0",
+    "merge2": "^0.3.5",
     "typescript": "^1.5.0-beta",
     "typescript-register": "^1.0.7",
     "typescript-require": "^0.2.8",

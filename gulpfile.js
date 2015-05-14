@@ -8,17 +8,24 @@ var uglify     = require('gulp-uglify');
 var browserify = require('browserify');
 var source     = require('vinyl-source-stream');
 var buffer     = require('vinyl-buffer');
+var merge      = require('merge2');
 
 gulp.task('typescript', function() {
-  return gulp
+  var tsResult = gulp
     .src('src/**/*.ts')
     .pipe(typescript({
-            target: 'es5',
-            module: 'commonjs',
-            typescript: require('typescript')
-          }))
-    .js
-    .pipe(gulp.dest('dist'));
+        target: 'es5',
+        module: 'commonjs',
+        noEmitOnError: true,
+        declarationFiles: true,
+        typescript: require('typescript')
+      }))
+
+  return merge([
+    tsResult.dts.pipe(gulp.dest('dist')),
+    tsResult.js.pipe(gulp.dest('dist'))
+  ]);
+
 });
 
 gulp.task('browserify', ['typescript'], function() {
