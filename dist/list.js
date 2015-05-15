@@ -74,6 +74,12 @@ var List = (function () {
         this.cache = function () {
             return List.create(List.cache(_this));
         };
+        this.index = function () {
+            return List.create(List.index(_this));
+        };
+        this.zip = function (other, zipFn) {
+            return List.create(List.zip(_this, other, zipFn));
+        };
         if (list != null) {
             this.has = list.has;
             this.get = list.get;
@@ -257,6 +263,89 @@ var List = (function () {
             return nextId;
         }
         return { has: has, get: get, prev: prev, next: next };
+    };
+    List.index = function (list) {
+        var ids = [];
+        function has(id) {
+            if (0 <= id && id < ids.length)
+                return true;
+            var last = ids.length - 1;
+            while ((last = next(last)) != null)
+                if (last == id)
+                    return true;
+            return false;
+        }
+        function get(id) {
+            return has(id) ? list.get(ids[id]) : undefined;
+        }
+        function prev(id) {
+            if (has(id))
+                return id ? id - 1 : null;
+            else if (id == null)
+                return ids.length ? ids.length - 1 : null;
+        }
+        function next(id) {
+            if (id == null && ids.length)
+                return 0;
+            if (0 <= id && id < ids.length - 1)
+                return id + 1;
+            var next, last = ids.length ? ids[ids.length - 1] : null;
+            while ((last = list.next(last)) != null) {
+                var next = ids.push(last) - 1;
+                if (next == (id != null ? id + 1 : 0))
+                    return next;
+            }
+            return null;
+        }
+        return { has: has, get: get, prev: prev, next: next };
+    };
+    List.zip = function (list, other, zipFn) {
+        list = List.index(list);
+        other = List.index(other);
+        function has(id) {
+            return list.has(id) && other.has(id);
+        }
+        function get(id) {
+            return has(id) ? zipFn(list.get(id), other.get(id)) : undefined;
+        }
+        function prev(id) {
+            var prev = list.prev(id);
+            return prev != null && prev == other.prev(id) ? prev : null;
+        }
+        function next(id) {
+            var next = list.next(id);
+            return next != null && next == other.next(id) ? next : null;
+        }
+        return { has: has, get: get, prev: prev, next: next };
+    };
+    List.skip = function (list, k) {
+        return List.filter(List.index(list), function (value, id) {
+            return id >= k;
+        });
+    };
+    List.take = function (list, n) {
+        return List.filter(List.index(list), function (value, id) {
+            return id < n;
+        });
+    };
+    List.range = function (list, k, n) {
+        return List.filter(List.index(list), function (value, id) {
+            return id >= k && id < n + k;
+        });
+    };
+    List.scan = function (list, scanFn, memo) {
+        list = List.index(list);
+        var memoCache = [memo];
+        function get(id) {
+            if (!list.has(id))
+                return;
+            var memo = memoCache[id];
+            while (id + 1 >= memoCache.length) {
+                memoCache.push(memo = scanFn(memo, list.get(id)));
+            }
+            return memoCache[id + 1];
+        }
+        return { has: list.has, get: get, prev: list.prev, next: list.next };
     };
     return List;
 })();

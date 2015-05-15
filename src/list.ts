@@ -1,5 +1,6 @@
 import Id from './id';
 import { Tree, ITree, Path } from './tree';
+import ArrayList from './array_list';
 
 export interface IList<V> {
   has: (id: Id) => boolean;
@@ -113,6 +114,14 @@ export class List<V> implements IList<V> {
 
   cache = (): List<V> => {
     return List.create(List.cache(this));
+  }
+
+  index = (): List<V> => {
+    return List.create(List.index(this));
+  }
+
+  zip = <W, U>(other: IList<W>, zipFn: (v: V, w: W) => U): List<U> => {
+    return List.create(List.zip(this, other, zipFn));
   }
 
   static isList(obj: any): boolean {
@@ -316,6 +325,109 @@ export class List<V> implements IList<V> {
 
     return { has, get, prev, next };
   }
+
+  static index<V>(list: IList<V>) {
+    var ids: Id[] = [];
+
+    function has(id: number): boolean {
+      if(0 <= id && id < ids.length) return true;
+
+      var last = ids.length - 1;
+      while((last = next(last)) != null) if(last ==  id) return true;
+      return false;
+    }
+
+    function get(id: number): V {
+      return has(id) ? list.get(ids[id]) : undefined;
+    }
+
+    function prev(id: number): number {
+      if (has(id)) return id ? id - 1 : null;
+      else if (id == null) return ids.length ? ids.length - 1 : null;
+    }
+
+    function next(id: number): number {
+      if(id == null && ids.length) return 0;
+      if(0 <= id && id < ids.length - 1) return id + 1;
+
+
+      var next: number,
+          last = ids.length ? ids[ids.length - 1]: null;
+
+      while((last = list.next(last)) != null) {
+        var next = ids.push(last) - 1;
+        if(next == (id != null ? id + 1 : 0)) return next;
+      }
+
+      return null;
+    }
+
+    return { has, get, prev, next };
+  }
+
+  static zip<V, W, U>(list: IList<V>, other: IList<W>, zipFn: (v: V, w: W) => U): IList<U> {
+    list = List.index(list);
+    other = List.index(other);
+
+    function has(id: number): boolean {
+      return list.has(id) && other.has(id);
+    }
+
+    function get(id: number): U {
+      return has(id) ? zipFn(list.get(id), other.get(id)): undefined;
+    }
+
+    function prev(id?: number): number {
+      var prev = list.prev(id);
+      return prev != null && prev == other.prev(id) ? <number> prev : null
+    }
+
+    function next(id?: number): number {
+      var next = list.next(id);
+      return next != null && next == other.next(id) ? <number> next : null
+    }
+
+    return { has, get, prev, next };
+  }
+
+  static skip<V>(list: IList<V>, k: number): IList<V> {
+    return List.filter(List.index(list), function(value, id) {
+      return id >= k;
+    });
+  }
+
+  static take<V>(list: IList<V>, n: number): IList<V> {
+    return List.filter(List.index(list), function(value, id) {
+      return id < n;
+    });
+  }
+
+  static range<V>(list: IList<V>, k: number, n: number): IList<V> {
+    return List.filter(List.index(list), function(value, id) {
+      return id >= k && id < n + k;
+    });
+  }
+
+  static scan<V, W>(list: IList<V>, scanFn: (memo: W, value: V) => W, memo?: W): IList<W> {
+    list = List.index(list);
+
+    var memoCache = [memo];
+
+    function get(id: number): W {
+      if (!list.has(id)) return;
+
+      var memo = memoCache[id];
+
+      while(id + 1 >= memoCache.length) {
+        memoCache.push(memo = scanFn(memo, list.get(id)));
+      }
+
+      return memoCache[id + 1];
+    }
+
+    return {has: list.has, get, prev: list.prev, next: list.next}
+  }
+
 }
 
 export default List;

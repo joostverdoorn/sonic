@@ -31,6 +31,8 @@ export declare class List<V> implements IList<V> {
     flatten: () => List<any>;
     flatMap: <W>(flatMapFn: (value: V, id?: string | number) => IList<W>) => List<W>;
     cache: () => List<V>;
+    index: () => List<V>;
+    zip: <W, U>(other: IList<W>, zipFn: (v: V, w: W) => U) => List<U>;
     static isList(obj: any): boolean;
     static create<V>(list: IList<V>): List<V>;
     static first<V>(list: IList<V>): V;
@@ -53,5 +55,16 @@ export declare class List<V> implements IList<V> {
     static flatten<V>(list: IList<IList<V> | V | any>): IList<V>;
     static flatMap<V, W>(list: IList<V>, flatMapFn: (value: V, id?: Id) => IList<W>): IList<W>;
     static cache<V>(list: IList<V>): IList<V>;
+    static index<V>(list: IList<V>): {
+        has: (id: number) => boolean;
+        get: (id: number) => V;
+        prev: (id: number) => number;
+        next: (id: number) => number;
+    };
+    static zip<V, W, U>(list: IList<V>, other: IList<W>, zipFn: (v: V, w: W) => U): IList<U>;
+    static skip<V>(list: IList<V>, k: number): IList<V>;
+    static take<V>(list: IList<V>, n: number): IList<V>;
+    static range<V>(list: IList<V>, k: number, n: number): IList<V>;
+    static scan<V, W>(list: IList<V>, scanFn: (memo: W, value: V) => W, memo?: W): IList<W>;
 }
 export default List;
