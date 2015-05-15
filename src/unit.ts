@@ -9,7 +9,7 @@ export class Unit<V> extends MutableList<V> {
   private _value: V;
   private _subject: ISubject<IListObserver>;
 
-  constructor(value: V) {
+  constructor(value?: V) {
     super();
 
     this._subject = new Subject();

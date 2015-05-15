@@ -5,7 +5,7 @@ export declare class Unit<V> extends MutableList<V> {
     private _id;
     private _value;
     private _subject;
-    constructor(value: V);
+    constructor(value?: V);
     has: (id: string | number) => boolean;
     get: (id: string | number) => V;
     prev: (id: string | number) => string | number;
