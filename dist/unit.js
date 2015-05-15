@@ -56,7 +56,7 @@ var Unit = (function (_super) {
             });
         };
         this._subject = new observable_1.Subject();
-        if (arguments.length > 2)
+        if (arguments.length)
             this.splice(null, null, value);
     }
     return Unit;

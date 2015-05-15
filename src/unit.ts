@@ -13,7 +13,7 @@ export class Unit<V> extends MutableList<V> {
     super();
 
     this._subject = new Subject();
-    if(arguments.length > 2) this.splice(null, null, value);
+    if(arguments.length) this.splice(null, null, value);
   }
 
   has = (id: Id) => {
