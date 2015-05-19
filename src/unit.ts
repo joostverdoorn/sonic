@@ -34,22 +34,20 @@ export class Unit<V> extends MutableList<V> {
     return null;
   }
 
-  set = (id: Id, value: V) => {
+  set = (id: Id, value: V): Id => {
     this._id = id;
     this._value = value;
     this._invalidate();
 
-    return true;
+    return id;
   }
 
-  splice = (prev: Id, next: Id, ...values: V[]) => {
-    if(values.length) return this.set(Id.create(), values[0]);
+  splice = (prev: Id, next: Id, ...values: V[]): void => {
+    if(values.length) this.set(Id.create(), values[0]); return;
 
     delete this._id;
     delete this._value;
     this._invalidate();
-
-    return true;
   }
 
   observe = (observer: IListObserver): ISubscription => {

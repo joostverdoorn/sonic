@@ -17,3 +17,4 @@ export declare module Tree {
     function prev(list: ITree<any>, path?: Path, depth?: number): Path;
     function next(list: ITree<any>, path?: Path, depth?: number): Path;
 }
+export default Tree;

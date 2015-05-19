@@ -11,20 +11,16 @@ var source     = require('vinyl-source-stream');
 var buffer     = require('vinyl-buffer');
 var merge      = require('merge2');
 
+var typescriptProject = typescript.createProject('tsconfig.json', { typescript: require('typescript') });
+
 gulp.task('typescript', function() {
-  var tsResult = gulp
+  var result = gulp
     .src('src/**/*.ts')
-    .pipe(typescript({
-        target: 'es5',
-        module: 'commonjs',
-        noEmitOnError: true,
-        declarationFiles: true,
-        typescript: require('typescript')
-      }))
+    .pipe(typescript(typescriptProject))
 
   return merge([
-    tsResult.dts.pipe(gulp.dest('dist/d.ts')),
-    tsResult.js.pipe(gulp.dest('dist'))
+    result.dts.pipe(gulp.dest('dist/d.ts')),
+    result.js.pipe(gulp.dest('dist'))
   ]);
 
 });
@@ -60,6 +56,7 @@ gulp.task('perf', function () {
 });
 
 gulp.task('dist', ['uglify']);
+gulp.task('default', ['dist'])
 
 gulp.task('watch', function() {
   gulp.watch('src/*.ts', ['dist']);

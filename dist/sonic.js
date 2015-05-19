@@ -9,11 +9,14 @@ var tree_1 = require('./tree');
 function Sonic(obj) {
     return factory_1.default(obj);
 }
-Sonic['List'] = list_1.default;
-Sonic['ObservableList'] = observable_list_1.default;
-Sonic['MutableList'] = mutable_list_1.default;
-Sonic['Unit'] = unit_1.default;
-Sonic['ArrayList'] = array_list_1.default;
-Sonic['LinkedList'] = linked_list_1.default;
-Sonic['Tree'] = tree_1.Tree;
+var Sonic;
+(function (Sonic) {
+    Sonic.List = list_1.default;
+    Sonic.ObservableList = observable_list_1.default;
+    Sonic.MutableList = mutable_list_1.default;
+    Sonic.Unit = unit_1.default;
+    Sonic.ArrayList = array_list_1.default;
+    Sonic.LinkedList = linked_list_1.default;
+    Sonic.Tree = tree_1.default;
+})(Sonic || (Sonic = {}));
 module.exports = Sonic;

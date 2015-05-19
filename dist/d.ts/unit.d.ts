@@ -10,8 +10,8 @@ export declare class Unit<V> extends MutableList<V> {
     get: (id: string | number) => V;
     prev: (id: string | number) => string | number;
     next: (id: string | number) => string | number;
-    set: (id: string | number, value: V) => boolean;
-    splice: (prev: string | number, next: string | number, ...values: V[]) => boolean;
+    set: (id: string | number, value: V) => string | number;
+    splice: (prev: string | number, next: string | number, ...values: V[]) => void;
     observe: (observer: IListObserver) => ISubscription;
     private _invalidate;
 }

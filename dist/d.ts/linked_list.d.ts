@@ -7,12 +7,12 @@ export default class LinkedList<V> extends MutableList<V> {
     private _prev;
     private _subject;
     constructor(array: V[]);
-    has: (id: number) => boolean;
-    get: (id: number) => any;
-    prev: (id?: number) => any;
-    next: (id?: number) => any;
-    set: (id: number, value: V) => boolean;
-    splice: (prev?: number, next?: number, ...values: V[]) => boolean;
+    has: (id: string | number) => boolean;
+    get: (id: string | number) => V;
+    prev: (id?: string | number) => string | number;
+    next: (id?: string | number) => string | number;
+    set: (id: string | number, value: V) => string | number;
+    splice: (prev?: string | number, next?: string | number, ...values: V[]) => void;
     observe: (observer: IListObserver) => ISubscription;
     private _invalidate;
 }

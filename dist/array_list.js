@@ -36,8 +36,9 @@ var ArrayList = (function (_super) {
         };
         this.set = function (id, value) {
             if (!_this.has(id))
-                return false;
+                return null;
             _this._array[id] = value;
+            return id;
         };
         this.splice = function (prev, next) {
             var values = [];
@@ -47,14 +48,13 @@ var ArrayList = (function (_super) {
             if (prev == null)
                 prev = -1;
             else if (!_this.has(prev))
-                return false;
+                return;
             if (next == null)
                 next = _this._array.length;
             else if (!_this.has(next))
-                return false;
+                return;
             (_a = _this._array).splice.apply(_a, [prev + 1, next - prev - 1].concat(values));
             _this._invalidate(prev, null);
-            return true;
             var _a;
         };
         this.observe = function (observer) {

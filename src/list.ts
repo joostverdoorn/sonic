@@ -409,7 +409,7 @@ export class List<V> implements IList<V> {
   }
 
   static scan<V, W>(list: IList<V>, scanFn: (memo: W, value: V) => W, memo?: W): IList<W> {
-    list = List.index(list);
+    var { has, prev, next } = list = List.index(list);
 
     var memoCache = [memo];
 
@@ -425,7 +425,7 @@ export class List<V> implements IList<V> {
       return memoCache[id + 1];
     }
 
-    return {has: list.has, get, prev: list.prev, next: list.next}
+    return {has, get, prev, next}
   }
 
 }

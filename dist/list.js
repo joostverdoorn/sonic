@@ -334,7 +334,7 @@ var List = (function () {
         });
     };
     List.scan = function (list, scanFn, memo) {
-        list = List.index(list);
+        var _a = list = List.index(list), has = _a.has, prev = _a.prev, next = _a.next;
         var memoCache = [memo];
         function get(id) {
             if (!list.has(id))
@@ -345,7 +345,7 @@ var List = (function () {
             }
             return memoCache[id + 1];
         }
-        return { has: list.has, get: get, prev: list.prev, next: list.next };
+        return { has: has, get: get, prev: prev, next: next };
     };
     return List;
 })();

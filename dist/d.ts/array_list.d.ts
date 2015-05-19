@@ -9,8 +9,8 @@ export declare class ArrayList<V> extends MutableList<V> {
     get: (id: number) => V;
     prev: (id?: number) => number;
     next: (id?: number) => number;
-    set: (id: number, value: V) => boolean;
-    splice: (prev: number, next: number, ...values: V[]) => boolean;
+    set: (id: number, value: V) => string | number;
+    splice: (prev: number, next: number, ...values: V[]) => void;
     observe: (observer: IListObserver) => ISubscription;
     private _invalidate;
 }

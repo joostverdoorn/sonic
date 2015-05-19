@@ -1,23 +1,26 @@
+
 import factory        from './factory';
 
-import List           from './list';
-import ObservableList from './observable_list';
-import MutableList    from './mutable_list';
-import Unit           from './unit';
-import ArrayList      from './array_list';
-import LinkedList     from './linked_list';
-import {Tree}         from './tree';
+import _List           from './list';
+import _ObservableList from './observable_list';
+import _MutableList    from './mutable_list';
+import _Unit           from './unit';
+import _ArrayList      from './array_list';
+import _LinkedList     from './linked_list';
+import _Tree           from './tree';
 
 function Sonic(obj: any) {
   return factory(obj);
 }
 
-Sonic['List'] = List;
-Sonic['ObservableList'] = ObservableList;
-Sonic['MutableList'] = MutableList;
-Sonic['Unit'] = Unit;
-Sonic['ArrayList'] = ArrayList;
-Sonic['LinkedList'] = LinkedList;
-Sonic['Tree'] = Tree;
+module Sonic {
+  export var List           = _List;
+  export var ObservableList = _ObservableList;
+  export var MutableList    = _MutableList;
+  export var Unit           = _Unit;
+  export var ArrayList      = _ArrayList;
+  export var LinkedList     = _LinkedList;
+  export var Tree           = _Tree;
+}
 
 export = Sonic;

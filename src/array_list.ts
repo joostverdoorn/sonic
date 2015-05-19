@@ -36,21 +36,21 @@ export class ArrayList<V> extends MutableList<V> {
     return null;
   }
 
-  set = (id: number, value: V): boolean => {
-    if(!this.has(id)) return false;
+  set = (id: number, value: V): Id => {
+    if(!this.has(id)) return null;
     this._array[id] = value;
+    return id;
   }
 
-  splice = (prev: number, next: number, ...values: V[]): boolean => {
+  splice = (prev: number, next: number, ...values: V[]): void => {
     if(prev == null) prev = -1;
-    else if(!this.has(prev)) return false;
+    else if(!this.has(prev)) return;
 
     if(next == null) next = this._array.length;
-    else if(!this.has(next)) return false;
+    else if(!this.has(next)) return;
 
     this._array.splice(prev + 1, next - prev - 1, ...values);
     this._invalidate(prev, null);
-    return true;
   }
 
   observe = (observer: IListObserver): ISubscription => {

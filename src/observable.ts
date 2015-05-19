@@ -18,7 +18,7 @@ export interface ISubject<O> {
 }
 
 export class Subject<O> {
-  private _observers: Object;
+  private _observers: {[key: number]: O};
 
   constructor() {
     this._observers = Object.create(null);

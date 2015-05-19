@@ -37,8 +37,9 @@ var ArrayList = (function (_super) {
         };
         this.set = function (id, value) {
             if (!_this.has(id))
-                return false;
+                return null;
             _this._array[id] = value;
+            return id;
         };
         this.splice = function (prev, next) {
             var values = [];
@@ -48,14 +49,13 @@ var ArrayList = (function (_super) {
             if (prev == null)
                 prev = -1;
             else if (!_this.has(prev))
-                return false;
+                return;
             if (next == null)
                 next = _this._array.length;
             else if (!_this.has(next))
-                return false;
+                return;
             (_a = _this._array).splice.apply(_a, [prev + 1, next - prev - 1].concat(values));
             _this._invalidate(prev, null);
-            return true;
             var _a;
         };
         this.observe = function (observer) {
@@ -145,10 +145,10 @@ var LinkedList = (function (_super) {
         };
         this.set = function (id, value) {
             if (!_this.has(id))
-                return false;
+                return null;
             _this._byId[id] = value;
             _this._invalidate(_this._prev[id], _this._next[id]);
-            return true;
+            return id;
         };
         this.splice = function (prev, next) {
             if (prev === void 0) { prev = null; }
@@ -186,7 +186,6 @@ var LinkedList = (function (_super) {
             _this._prev[next] = _id;
             _this._next[_id] = next;
             _this._invalidate(prev, next);
-            return true;
         };
         this.observe = function (observer) {
             return _this._subject.observe(observer);
@@ -549,7 +548,7 @@ var List = (function () {
         });
     };
     List.scan = function (list, scanFn, memo) {
-        list = List.index(list);
+        var _a = list = List.index(list), has = _a.has, prev = _a.prev, next = _a.next;
         var memoCache = [memo];
         function get(id) {
             if (!list.has(id))
@@ -560,7 +559,7 @@ var List = (function () {
             }
             return memoCache[id + 1];
         }
-        return { has: list.has, get: get, prev: list.prev, next: list.next };
+        return { has: has, get: get, prev: prev, next: next };
     };
     return List;
 })();
@@ -590,20 +589,32 @@ var MutableList = (function (_super) {
             }
             throw new Error("Not implemented");
         };
+        this.addBefore = function (id, value) {
+            return MutableList.addBefore(_this, id, value);
+        };
+        this.addAfter = function (id, value) {
+            return MutableList.addAfter(_this, id, value);
+        };
         this.push = function (value) {
             return MutableList.push(_this, value);
         };
         this.unshift = function (value) {
             return MutableList.unshift(_this, value);
         };
+        this.delete = function (id) {
+            return MutableList.delete(_this, id);
+        };
+        this.deleteBefore = function (id) {
+            return MutableList.deleteBefore(_this, id);
+        };
+        this.deleteAfter = function (id) {
+            return MutableList.deleteAfter(_this, id);
+        };
         this.pop = function () {
             return MutableList.pop(_this);
         };
         this.shift = function () {
             return MutableList.shift(_this);
-        };
-        this.delete = function (id) {
-            return MutableList.delete(_this, id);
         };
         this.remove = function (value) {
             return MutableList.remove(_this, value);
@@ -623,41 +634,54 @@ var MutableList = (function (_super) {
     };
     MutableList.create = function (list) {
         return new MutableList({
-            has: list.has.bind(list),
-            get: list.get.bind(list),
-            prev: list.prev.bind(list),
-            next: list.next.bind(list),
-            observe: list.observe.bind(list),
-            set: list.set.bind(list),
-            splice: list.splice.bind(list)
+            has: list.has,
+            get: list.get,
+            prev: list.prev,
+            next: list.next,
+            observe: list.observe,
+            set: list.set,
+            splice: list.splice
         });
     };
+    MutableList.addBefore = function (list, id, value) {
+        list.splice(list.prev(id), id, value);
+        return list.prev(id);
+    };
+    MutableList.addAfter = function (list, id, value) {
+        list.splice(id, list.next(id), value);
+        return list.next(id);
+    };
     MutableList.push = function (list, value) {
-        list.splice(list.prev(), null, value);
-        return list.prev();
+        return MutableList.addAfter(list, null, value);
     };
     MutableList.unshift = function (list, value) {
-        list.splice(null, list.next(), value);
-        return list.next();
-    };
-    MutableList.pop = function (list) {
-        var value = list.get(list.prev());
-        list.splice(list.prev(list.prev()), null);
-        return value;
-    };
-    MutableList.shift = function (list) {
-        var value = list.get(list.next());
-        list.splice(null, list.next(list.next()));
-        return value;
+        return MutableList.addBefore(list, null, value);
     };
     MutableList.delete = function (list, id) {
         if (!list.has(id))
-            return false;
-        return list.splice(list.prev(id), list.next(id));
+            return;
+        var value = list.get(id);
+        list.splice(list.prev(id), list.next(id));
+        return value;
+    };
+    MutableList.deleteBefore = function (list, id) {
+        return MutableList.delete(list, list.prev(id));
+    };
+    MutableList.deleteAfter = function (list, id) {
+        return MutableList.delete(list, list.prev(id));
+    };
+    MutableList.pop = function (list) {
+        return MutableList.deleteBefore(list, null);
+    };
+    MutableList.shift = function (list) {
+        return MutableList.deleteAfter(list, null);
     };
     MutableList.remove = function (list, value) {
         var id = MutableList.idOf(list, value);
-        return delete (list, id);
+        if (id == null)
+            return false;
+        delete (list, id);
+        return true;
     };
     return MutableList;
 })(observable_list_1.ObservableList);
@@ -970,6 +994,7 @@ var Tree;
     }
     Tree.next = next;
 })(Tree = exports.Tree || (exports.Tree = {}));
+exports.default = Tree;
 
 },{"./list":5}],10:[function(require,module,exports){
 var __extends = this.__extends || function (d, b) {
@@ -1007,7 +1032,7 @@ var Unit = (function (_super) {
             _this._id = id;
             _this._value = value;
             _this._invalidate();
-            return true;
+            return id;
         };
         this.splice = function (prev, next) {
             var values = [];
@@ -1015,11 +1040,11 @@ var Unit = (function (_super) {
                 values[_i - 2] = arguments[_i];
             }
             if (values.length)
-                return _this.set(id_1.default.create(), values[0]);
+                _this.set(id_1.default.create(), values[0]);
+            return;
             delete _this._id;
             delete _this._value;
             _this._invalidate();
-            return true;
         };
         this.observe = function (observer) {
             return _this._subject.observe(observer);
@@ -1050,13 +1075,16 @@ var tree_1 = require('./tree');
 function Sonic(obj) {
     return factory_1.default(obj);
 }
-Sonic['List'] = list_1.default;
-Sonic['ObservableList'] = observable_list_1.default;
-Sonic['MutableList'] = mutable_list_1.default;
-Sonic['Unit'] = unit_1.default;
-Sonic['ArrayList'] = array_list_1.default;
-Sonic['LinkedList'] = linked_list_1.default;
-Sonic['Tree'] = tree_1.Tree;
+var Sonic;
+(function (Sonic) {
+    Sonic.List = list_1.default;
+    Sonic.ObservableList = observable_list_1.default;
+    Sonic.MutableList = mutable_list_1.default;
+    Sonic.Unit = unit_1.default;
+    Sonic.ArrayList = array_list_1.default;
+    Sonic.LinkedList = linked_list_1.default;
+    Sonic.Tree = tree_1.default;
+})(Sonic || (Sonic = {}));
 module.exports = Sonic;
 
 },{"./array_list":1,"./factory":2,"./linked_list":4,"./list":5,"./mutable_list":6,"./observable_list":8,"./tree":9,"./unit":10}]},{},[11])(11)

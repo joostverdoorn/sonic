@@ -91,3 +91,5 @@ export module Tree {
     } while((id = list.next(id)) != null);
   }
 }
+
+export default Tree;

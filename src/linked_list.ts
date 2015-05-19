@@ -5,9 +5,9 @@ import MutableList from './mutable_list';
 
 
 export default class LinkedList<V> extends MutableList<V> {
-  private _byId: Object;
-  private _next: Object;
-  private _prev: Object;
+  private _byId: {[key: string]: V};
+  private _next: {[key: string]: Id};
+  private _prev: {[key: string]: Id};
   private _subject: ISubject<IListObserver>;
 
   constructor(array: V[]) {
@@ -18,40 +18,40 @@ export default class LinkedList<V> extends MutableList<V> {
     this._prev = Object.create(null);
     this._next = Object.create(null);
 
-    this._prev[<number> null] = null;
-    this._next[<number> null] = null;
+    this._prev[<Id> null] = null;
+    this._next[<Id> null] = null;
 
     this.splice(null, null, ...array);
   }
 
-  has = (id: number) => {
+  has = (id: Id) => {
     return id in this._byId;
   }
 
-  get = (id: number) => {
+  get = (id: Id) => {
     return this._byId[id];
   }
 
-  prev = (id: number = null) => {
+  prev = (id: Id = null) => {
     var prev = this._prev[id];
     return prev == null ? null : prev;
   }
 
-  next = (id: number = null) => {
+  next = (id: Id = null) => {
     var next = this._next[id];
     return next == null ? null : next;
   }
 
-  set = (id: number, value: V) => {
-    if(!this.has(id)) return false;
+  set = (id: Id, value: V): Id => {
+    if(!this.has(id)) return null;
 
     this._byId[id] = value;
     this._invalidate(this._prev[id], this._next[id])
-    return true;
+    return id;
   }
 
-  splice = (prev: number = null, next: number = null, ...values: V[]) => {
-    var id: number,
+  splice = (prev: Id = null, next: Id = null, ...values: V[]): void => {
+    var id: Id,
         value: V;
 
     id = prev;
@@ -83,14 +83,13 @@ export default class LinkedList<V> extends MutableList<V> {
     this._next[_id] = next;
 
     this._invalidate(prev, next);
-    return true;
   }
 
   observe = (observer: IListObserver): ISubscription => {
     return this._subject.observe(observer);
   }
 
-  private _invalidate = (prev?: number, next?: number) => {
+  private _invalidate = (prev?: Id, next?: Id) => {
     if(!this.has(prev)) prev = null;
     if(!this.has(next)) next = null;
     this._subject.notify(function(observer: IListObserver) {

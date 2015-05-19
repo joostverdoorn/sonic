@@ -3,8 +3,8 @@ import { ObservableList, IObservableList } from './observable_list';
 
 
 export interface IMutableList<V> extends IObservableList<V> {
-  set(id: Id, value: V): boolean;
-  splice(prev: Id, next: Id, ...values: V[]): boolean;
+  set(id: Id, value: V): Id;
+  splice(prev: Id, next: Id, ...values: V[]): void;
 }
 
 export class MutableList<V> extends ObservableList<V> implements IMutableList<V> {
@@ -23,12 +23,20 @@ export class MutableList<V> extends ObservableList<V> implements IMutableList<V>
     }
   }
 
-  set = (id: Id, value: V): boolean => {
+  set = (id: Id, value: V): Id => {
     throw new Error("Not implemented");
   }
 
-  splice = (prev: Id, next: Id, ...values: V[]): boolean => {
+  splice = (prev: Id, next: Id, ...values: V[]): void => {
     throw new Error("Not implemented");
+  }
+
+  addBefore = (id: Id, value: V) => {
+    return MutableList.addBefore(this, id, value);
+  }
+
+  addAfter = (id: Id, value: V) => {
+    return MutableList.addAfter(this, id, value);
   }
 
   push = (value: V) => {
@@ -39,6 +47,18 @@ export class MutableList<V> extends ObservableList<V> implements IMutableList<V>
     return MutableList.unshift(this, value);
   }
 
+  delete = (id: Id) => {
+    return MutableList.delete(this, id);
+  }
+
+  deleteBefore = (id: Id) => {
+    return MutableList.deleteBefore(this, id);
+  }
+
+  deleteAfter = (id: Id) => {
+    return MutableList.deleteAfter(this, id);
+  }
+
   pop = () => {
     return MutableList.pop(this);
   }
@@ -47,60 +67,73 @@ export class MutableList<V> extends ObservableList<V> implements IMutableList<V>
     return MutableList.shift(this);
   }
 
-  delete = (id: Id) => {
-    return MutableList.delete(this, id);
-  }
-
   remove = (value: V) => {
     return MutableList.remove(this, value);
   }
 
-  static isMutableList(obj: Object): boolean {
+  static isMutableList(obj: any): boolean {
     return ObservableList.isObservableList(obj) && !!obj['set'] && !!obj['splice'];
   }
 
   static create<V>(list: IMutableList<V>): MutableList<V> {
     return new MutableList<V>({
-      has:     list.has.bind(list),
-      get:     list.get.bind(list),
-      prev:    list.prev.bind(list),
-      next:    list.next.bind(list),
-      observe: list.observe.bind(list),
-      set:     list.set.bind(list),
-      splice:  list.splice.bind(list)
+      has:     list.has,
+      get:     list.get,
+      prev:    list.prev,
+      next:    list.next,
+      observe: list.observe,
+      set:     list.set,
+      splice:  list.splice
     });
   }
 
+  static addBefore<V>(list: IMutableList<V>, id: Id, value: V): Id {
+    list.splice(list.prev(id), id, value);
+    return list.prev(id);
+  }
+
+  static addAfter<V>(list: IMutableList<V>, id: Id, value: V): Id {
+    list.splice(id, list.next(id), value);
+    return list.next(id);
+  }
+
   static push<V>(list: IMutableList<V>, value: V): Id {
-    list.splice(list.prev(), null, value);
-    return list.prev();
+    return MutableList.addAfter(list, null, value);
   }
 
   static unshift<V>(list: IMutableList<V>, value: V): Id {
-    list.splice(null, list.next(), value);
-    return list.next();
+    return MutableList.addBefore(list, null, value);
+  }
+
+  static delete<V>(list: IMutableList<V>, id: Id): V {
+    if(!list.has(id)) return;
+    var value = list.get(id);
+    list.splice(list.prev(id), list.next(id));
+    return value;
+  }
+
+  static deleteBefore<V>(list: IMutableList<V>, id: Id): V {
+    return MutableList.delete(list, list.prev(id));
+  }
+
+  static deleteAfter<V>(list: IMutableList<V>, id: Id): V {
+    return MutableList.delete(list, list.next(id));
   }
 
   static pop<V>(list: IMutableList<V>): V {
-    var value = list.get(list.prev());
-    list.splice(list.prev(list.prev()), null);
-    return value;
+    return MutableList.deleteBefore(list, null);
   }
 
   static shift<V>(list: IMutableList<V>): V {
-    var value = list.get(list.next());
-    list.splice(null, list.next(list.next()));
-    return value;
-  }
-
-  static delete<V>(list: IMutableList<V>, id: Id): boolean {
-    if(!list.has(id)) return false;
-    return list.splice(list.prev(id), list.next(id));
+    return MutableList.deleteAfter(list, null);
   }
 
   static remove<V>(list: IMutableList<V>, value: V): boolean {
     var id = MutableList.idOf(list, value);
-    return delete(list, id);
+    if(id == null) return false;
+
+    delete(list, id);
+    return true;
   }
 }
 

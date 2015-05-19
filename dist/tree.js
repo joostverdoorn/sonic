@@ -89,3 +89,4 @@ var Tree;
     }
     Tree.next = next;
 })(Tree = exports.Tree || (exports.Tree = {}));
+exports.default = Tree;

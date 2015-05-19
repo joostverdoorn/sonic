@@ -33,7 +33,7 @@ var Unit = (function (_super) {
             _this._id = id;
             _this._value = value;
             _this._invalidate();
-            return true;
+            return id;
         };
         this.splice = function (prev, next) {
             var values = [];
@@ -41,11 +41,11 @@ var Unit = (function (_super) {
                 values[_i - 2] = arguments[_i];
             }
             if (values.length)
-                return _this.set(id_1.default.create(), values[0]);
+                _this.set(id_1.default.create(), values[0]);
+            return;
             delete _this._id;
             delete _this._value;
             _this._invalidate();
-            return true;
         };
         this.observe = function (observer) {
             return _this._subject.observe(observer);

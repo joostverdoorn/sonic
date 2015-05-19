@@ -30,10 +30,10 @@ var LinkedList = (function (_super) {
         };
         this.set = function (id, value) {
             if (!_this.has(id))
-                return false;
+                return null;
             _this._byId[id] = value;
             _this._invalidate(_this._prev[id], _this._next[id]);
-            return true;
+            return id;
         };
         this.splice = function (prev, next) {
             if (prev === void 0) { prev = null; }
@@ -71,7 +71,6 @@ var LinkedList = (function (_super) {
             _this._prev[next] = _id;
             _this._next[_id] = next;
             _this._invalidate(prev, next);
-            return true;
         };
         this.observe = function (observer) {
             return _this._subject.observe(observer);
