@@ -1,12 +1,13 @@
-import Id from './id';
+import Key from './key';
 import { Tree, ITree, Path } from './tree';
 import ArrayList from './array_list';
+import Cache from './cache';
 
 export interface IList<V> {
-  has: (id: Id) => boolean;
-  get: (id: Id) => V;
-  prev: (id?: Id) => Id;
-  next: (id?: Id) => Id;
+  has: (key: Key) => boolean;
+  get: (key: Key) => V;
+  prev: (key?: Key) => Key;
+  next: (key?: Key) => Key;
 }
 
 export class List<V> implements IList<V> {
@@ -20,19 +21,19 @@ export class List<V> implements IList<V> {
     }
   };
 
-  has = (id: Id): boolean => {
+  has = (key: Key): boolean => {
     throw new Error("Not implemented");
   }
 
-  get = (id: Id): V => {
+  get = (key: Key): V => {
     throw new Error("Not implemented");
   }
 
-  prev = (id: Id): Id => {
+  prev = (key: Key): Key => {
     throw new Error("Not implemented");
   }
 
-  next = (id: Id): Id => {
+  next = (key: Key): Key => {
     throw new Error("Not implemented");
   }
 
@@ -44,11 +45,11 @@ export class List<V> implements IList<V> {
     return List.last(this);
   }
 
-  forEach = (fn: (value: V, id?: Id) => void) => {
+  forEach = (fn: (value: V, key?: Key) => void) => {
     return List.forEach(this, fn);
   }
 
-  reduce = <W>(fn: (memo: W, value: V, id?: Id) => W, memo?: W): W => {
+  reduce = <W>(fn: (memo: W, value: V, key?: Key) => W, memo?: W): W => {
     return List.reduce(this, fn);
   }
 
@@ -56,35 +57,35 @@ export class List<V> implements IList<V> {
     return List.toArray(this);
   }
 
-  findId = (fn: (value: V, id?: Id) => boolean): Id => {
-    return List.findId(this, fn);
+  findKey = (fn: (value: V, key?: Key) => boolean): Key => {
+    return List.findKey(this, fn);
   }
 
-  find = (fn: (value: V, id?: Id) => boolean): V => {
+  find = (fn: (value: V, key?: Key) => boolean): V => {
     return List.find(this, fn);
   }
 
-  idOf = (value: V): Id => {
-    return List.idOf(this, value);
+  keyOf = (value: V): Key => {
+    return List.keyOf(this, value);
   }
 
-  indexOf = (value: V): Id => {
+  indexOf = (value: V): Key => {
     return List.indexOf(this, value);
   }
 
-  idAt = (index: number): Id => {
-    return List.idAt(this, index);
+  keyAt = (index: number): Key => {
+    return List.keyAt(this, index);
   }
 
   at = (index: number): V => {
     return List.at(this, index);
   }
 
-  every = (predicate: (value: V, id?: Id) => boolean): boolean => {
+  every = (predicate: (value: V, key?: Key) => boolean): boolean => {
     return List.every(this, predicate);
   }
 
-  some = (predicate: (value: V, id?: Id) => boolean): boolean => {
+  some = (predicate: (value: V, key?: Key) => boolean): boolean => {
     return List.some(this, predicate);
   }
 
@@ -96,11 +97,11 @@ export class List<V> implements IList<V> {
     return List.create(List.reverse(this));
   }
 
-  map = <W>(mapFn: (value: V, id?: Id) => W): List<W> => {
+  map = <W>(mapFn: (value: V, key?: Key) => W): List<W> => {
     return List.create(List.map(this, mapFn));
   }
 
-  filter = (filterFn: (value: V, id?: Id) => boolean): List<V> => {
+  filter = (filterFn: (value: V, key?: Key) => boolean): List<V> => {
     return List.create(List.filter(this, filterFn));
   }
 
@@ -108,7 +109,7 @@ export class List<V> implements IList<V> {
     return List.create(List.flatten(this));
   }
 
-  flatMap = <W>(flatMapFn:(value: V, id?: Id) => IList<W>): List<W> => {
+  flatMap = <W>(flatMapFn:(value: V, key?: Key) => IList<W>): List<W> => {
     return List.create(List.flatMap(this, flatMapFn));
   }
 
@@ -116,13 +117,13 @@ export class List<V> implements IList<V> {
     return List.create(List.cache(this));
   }
 
-  index = (): List<V> => {
-    return List.create(List.index(this));
-  }
-
-  zip = <W, U>(other: IList<W>, zipFn: (v: V, w: W) => U): List<U> => {
-    return List.create(List.zip(this, other, zipFn));
-  }
+  // index = (): List<V> => {
+  //   return List.create(List.index(this));
+  // }
+  // 
+  // zip = <W, U>(other: IList<W>, zipFn: (v: V, w: W) => U): List<U> => {
+  //   return List.create(List.zip(this, other, zipFn));
+  // }
 
   static isList(obj: any): boolean {
     return obj != null && !!obj['has'] && !!obj['get'] && !!obj['prev'] && !!obj['next'];
@@ -145,14 +146,14 @@ export class List<V> implements IList<V> {
     return list.get(list.prev());
   }
 
-  static forEach<V>(list: IList<V>, fn: (value: V, id?: Id) => void): void {
-    var id: Id;
-    while((id = list.next(id)) != null) fn(list.get(id), id);
+  static forEach<V>(list: IList<V>, fn: (value: V, key?: Key) => void): void {
+    var key: Key;
+    while((key = list.next(key)) != null) fn(list.get(key), key);
   }
 
-  static reduce<V, W>(list: IList<V>, fn: (memo: W, value: V, id?: Id) => W, memo?: W): W {
-    var id: Id;
-    while((id = list.next(id)) != null) memo = fn(memo, list.get(id), id);
+  static reduce<V, W>(list: IList<V>, fn: (memo: W, value: V, key?: Key) => W, memo?: W): W {
+    var key: Key;
+    while((key = list.next(key)) != null) memo = fn(memo, list.get(key), key);
     return memo;
   }
 
@@ -160,46 +161,46 @@ export class List<V> implements IList<V> {
     return List.reduce(list, function(memo, v) { memo.push(v); return memo }, []);
   }
 
-  static findId<V>(list: IList<V>, fn: (value: V, id?: Id) => boolean): Id {
-    var id: Id;
-    while((id = list.next(id)) != null) if(fn(list.get(id), id)) return id;
+  static findKey<V>(list: IList<V>, fn: (value: V, key?: Key) => boolean): Key {
+    var key: Key;
+    while((key = list.next(key)) != null) if(fn(list.get(key), key)) return key;
   }
 
-  static find<V>(list: IList<V>, fn: (value: V, id?: Id) => boolean): V {
-    return list.get(List.findId(list, fn));
+  static find<V>(list: IList<V>, fn: (value: V, key?: Key) => boolean): V {
+    return list.get(List.findKey(list, fn));
   }
 
-  static idOf<V>(list: IList<V>, value: V): Id {
-    return List.findId(list, v => v === value);
+  static keyOf<V>(list: IList<V>, value: V): Key {
+    return List.findKey(list, v => v === value);
   }
 
   static indexOf<V>(list: IList<V>, value: V): number {
-    var id: Id, i = 0;
-    while((id = list.next(id)) != null) {
-      if(list.get(id) === value) return i;
+    var key: Key, i = 0;
+    while((key = list.next(key)) != null) {
+      if(list.get(key) === value) return i;
       i++;
     }
   }
 
-  static idAt<V>(list: IList<V>, index: number): Id {
-    var id: Id, i = 0;
-    while((id = list.next(id)) != null) if(i++ == index) return id;
+  static keyAt<V>(list: IList<V>, index: number): Key {
+    var key: Key, i = 0;
+    while((key = list.next(key)) != null) if(i++ == index) return key;
     return null;
   }
 
   static at<V>(list: IList<V>, index: number): V {
-    return list.get(List.idAt(list, index));
+    return list.get(List.keyAt(list, index));
   }
 
-  static every<V>(list: IList<V>, predicate: (value: V, id?: Id) => boolean): boolean {
-    var id: Id;
-    while((id = list.next(id)) != null) if(!predicate(list.get(id), id)) return false;
+  static every<V>(list: IList<V>, predicate: (value: V, key?: Key) => boolean): boolean {
+    var key: Key;
+    while((key = list.next(key)) != null) if(!predicate(list.get(key), key)) return false;
     return true;
   }
 
-  static some<V>(list: IList<V>, predicate: (value: V, id?: Id) => boolean): boolean {
-    var id: Id;
-    while((id = list.next(id)) != null) if(predicate(list.get(id), id)) return true;
+  static some<V>(list: IList<V>, predicate: (value: V, key?: Key) => boolean): boolean {
+    var key: Key;
+    while((key = list.next(key)) != null) if(predicate(list.get(key), key)) return true;
     return false;
   }
 
@@ -210,45 +211,45 @@ export class List<V> implements IList<V> {
   static reverse<V>(list: IList<V>): IList<V> {
     var { has, get } = list;
 
-    function prev(id: Id) {
-      return list.next(id);
+    function prev(key: Key) {
+      return list.next(key);
     }
 
-    function next(id: Id) {
-      return list.prev(id);
+    function next(key: Key) {
+      return list.prev(key);
     }
 
     return {has, get, prev, next};
   }
 
-  static map<V, W>(list: IList<V>, mapFn: (value: V, id?: Id) => W): IList<W> {
+  static map<V, W>(list: IList<V>, mapFn: (value: V, key?: Key) => W): IList<W> {
     var { has, prev, next } = list;
 
-    function get(id: Id) {
-      return has(id) ? mapFn(list.get(id), id) : undefined;
+    function get(key: Key) {
+      return has(key) ? mapFn(list.get(key), key) : undefined;
     }
 
     return { has, get, prev, next };
   }
 
-  static filter<V>(list: IList<V>, filterFn: (value: V, id?: Id) => boolean): IList<V> {
-    function has(id: Id) {
-      return list.has(id) && filterFn(list.get(id), id);
+  static filter<V>(list: IList<V>, filterFn: (value: V, key?: Key) => boolean): IList<V> {
+    function has(key: Key) {
+      return list.has(key) && filterFn(list.get(key), key);
     }
 
-    function get(id: Id) {
-      if(has(id)) return list.get(id);
+    function get(key: Key) {
+      if(has(key)) return list.get(key);
       return;
     }
 
-    function prev(id: Id) {
-      var prev = id;
+    function prev(key: Key) {
+      var prev = key;
       while((prev = list.prev(prev)) != null) if(has(prev)) return prev;
       return null;
     }
 
-    function next(id: Id) {
-      var next = id;
+    function next(key: Key) {
+      var next = key;
       while((next = list.next(next)) != null) if(has(next)) return next;
       return null;
     }
@@ -256,177 +257,165 @@ export class List<V> implements IList<V> {
     return { has, get, prev, next };
   }
 
-  static flatten<V>(list: IList<IList<V> | V | any>): IList<V> {
-    function has(id: Id): boolean {
-      var path = Path.create(id);
+  static flatten<V>(list: ITree<V>): ITree<V> {
+    function has(key: Key): boolean {
+      var path = Path.create(key);
       return Tree.has(list, path, 1);
     }
 
-    function get(id: Id): V {
-      var path = Path.create(id);
+    function get(key: Key): V | ITree<V> {
+      var path = Path.create(key);
       return Tree.get(list, path, 1);
     }
 
-    function prev(id: Id): Id {
-      var path = Path.create(id);
-      return Path.id(Tree.prev(list, path, 1));
+    function prev(key: Key): Key {
+      var path = Path.create(key);
+      return Path.key(Tree.prev(list, path, 1));
     }
 
-    function next(id: Id): Id {
-      var path = Path.create(id);
-      return Path.id(Tree.next(list, path, 1));
+    function next(key: Key): Key {
+      var path = Path.create(key);
+      return Path.key(Tree.next(list, path, 1));
     }
 
     return { has, get, prev, next };
   }
 
-  static flatMap<V, W>(list: IList<V>, flatMapFn:(value: V, id?: Id) => IList<W>): IList<W> {
-    return List.flatten<W>(List.map(list, flatMapFn));
+  static flatMap<V, W>(list: IList<V>, flatMapFn:(value: V, key?: Key) => IList<W>): IList<W> {
+    return <IList<W>> List.flatten<W>(List.map(list, flatMapFn));
   }
 
   static cache<V>(list: IList<V>): IList<V> {
-    var valueCache = Object.create(null),
-        nextCache  = Object.create(null),
-        prevCache  = Object.create(null);
-
-    function has(id: Id): boolean {
-      return id in valueCache || list.has(id);
-    }
-
-    function get(id: Id): V {
-      if(id in valueCache) return valueCache[id];
-      if(list.has(id)) return valueCache[id] = list.get(id);
-      return;
-    }
-
-    function prev(id: Id): Id {
-      if(id in prevCache) return prevCache[id];
-
-      var prevId = list.prev(id);
-      if(prevId != null) {
-        prevCache[id] = prevId;
-        nextCache[prevId] = id;
-      }
-
-      return prevId;
-    }
-
-    function next(id: Id): Id {
-      if(id in nextCache) return nextCache[id];
-
-      var nextId = list.next(id);
-      if(nextId != null) {
-        nextCache[id] = nextId;
-        prevCache[nextId] = id;
-      }
-
-      return nextId;
-    }
-
-    return { has, get, prev, next };
+    return new Cache<V>(list);
   }
 
-  static index<V>(list: IList<V>) {
-    var ids: Id[] = [];
-
-    function has(id: number): boolean {
-      if(0 <= id && id < ids.length) return true;
-
-      var last = ids.length - 1;
-      while((last = next(last)) != null) if(last ==  id) return true;
-      return false;
-    }
-
-    function get(id: number): V {
-      return has(id) ? list.get(ids[id]) : undefined;
-    }
-
-    function prev(id: number): number {
-      if (has(id)) return id ? id - 1 : null;
-      else if (id == null) return ids.length ? ids.length - 1 : null;
-    }
-
-    function next(id: number): number {
-      if(id == null && ids.length) return 0;
-      if(0 <= id && id < ids.length - 1) return id + 1;
-
-
-      var next: number,
-          last = ids.length ? ids[ids.length - 1]: null;
-
-      while((last = list.next(last)) != null) {
-        var next = ids.push(last) - 1;
-        if(next == (id != null ? id + 1 : 0)) return next;
-      }
-
-      return null;
-    }
-
-    return { has, get, prev, next };
-  }
-
-  static zip<V, W, U>(list: IList<V>, other: IList<W>, zipFn: (v: V, w: W) => U): IList<U> {
-    list = List.index(list);
-    other = List.index(other);
-
-    function has(id: number): boolean {
-      return list.has(id) && other.has(id);
-    }
-
-    function get(id: number): U {
-      return has(id) ? zipFn(list.get(id), other.get(id)): undefined;
-    }
-
-    function prev(id?: number): number {
-      var prev = list.prev(id);
-      return prev != null && prev == other.prev(id) ? <number> prev : null
-    }
-
-    function next(id?: number): number {
-      var next = list.next(id);
-      return next != null && next == other.next(id) ? <number> next : null
-    }
-
-    return { has, get, prev, next };
-  }
-
-  static skip<V>(list: IList<V>, k: number): IList<V> {
-    return List.filter(List.index(list), function(value, id) {
-      return id >= k;
-    });
-  }
-
-  static take<V>(list: IList<V>, n: number): IList<V> {
-    return List.filter(List.index(list), function(value, id) {
-      return id < n;
-    });
-  }
-
-  static range<V>(list: IList<V>, k: number, n: number): IList<V> {
-    return List.filter(List.index(list), function(value, id) {
-      return id >= k && id < n + k;
-    });
-  }
-
-  static scan<V, W>(list: IList<V>, scanFn: (memo: W, value: V) => W, memo?: W): IList<W> {
-    var { has, prev, next } = list = List.index(list);
-
-    var memoCache = [memo];
-
-    function get(id: number): W {
-      if (!list.has(id)) return;
-
-      var memo = memoCache[id];
-
-      while(id + 1 >= memoCache.length) {
-        memoCache.push(memo = scanFn(memo, list.get(id)));
-      }
-
-      return memoCache[id + 1];
-    }
-
-    return {has, get, prev, next}
-  }
+  // static index<V>(list: IList<V>): IList<V> {
+  //   var keys : Key[] = [];
+  //   return List.keyBy(list, (value: V, key: Key): Key => {
+  //
+  //     if (key == null) return keys.length;
+  //     else if (keys[key]) return keys[key];
+  //     else {
+  //       keys[key] = ++keys.length;
+  //     }
+  //
+  //     return keys.length - 1;
+  //   });
+  // }
+  //
+  // static keyBy<V>(list: IList<V>, keyFn: (value: V, key?: Key) => Key) {
+  //   var sourceKeyByKey: {[key: string]: Key} = Object.create(null),
+  //       keyBySourceKey: {[key: string]: Key} = Object.create(null);
+  //
+  //   function has(key: Key): boolean {
+  //     if(key in sourceKeyByKey) return true;
+  //
+  //     var last: Key = null;
+  //     while((last = next(last)) != null) if(last == key) return true;
+  //     return false;
+  //   }
+  //
+  //   function get(key: Key): V {
+  //     return has(key) ? list.get(sourceKeyByKey[key]) : undefined;
+  //   }
+  //
+  //   function prev(key: Key): Key {
+  //     if(has(key) || key == null) return keyBySourceKey[list.prev(sourceKeyByKey[key])];
+  //   }
+  //
+  //   function next(key: Key = null): Key {
+  //     var sourceKey: Key, sourceNext: Key, res: Key;
+  //
+  //     if(key in sourceKeyByKey) sourceKey = sourceKeyByKey[key];
+  //     else sourceKey = null;
+  //
+  //     while(key != null && !(key in sourceKeyByKey)) {
+  //       sourceKey = list.next(sourceKey);
+  //
+  //       if (!(sourceKey in keyBySourceKey)) {
+  //         if (sourceKey == null) return null;
+  //         res = keyFn(list.get(sourceKey), sourceKey);
+  //         keyBySourceKey[sourceKey] = res;
+  //         sourceKeyByKey[res] = sourceKey;
+  //
+  //         if (res == key) break;
+  //       }
+  //     }
+  //
+  //     sourceKey = list.next(sourceKey);
+  //     if (sourceKey == null) return null;
+  //     res = keyFn(list.get(sourceKey), sourceKey);
+  //     keyBySourceKey[sourceKey] = res;
+  //     sourceKeyByKey[res] = sourceKey;
+  //
+  //     return res;
+  //   }
+  //
+  //   return { has, get, prev, next };
+  // }
+  //
+  // static zip<V, W, U>(list: IList<V>, other: IList<W>, zipFn: (v: V, w: W) => U): IList<U> {
+  //   list = List.index(list);
+  //   other = List.index(other);
+  //
+  //   function has(key: number): boolean {
+  //     return list.has(key) && other.has(key);
+  //   }
+  //
+  //   function get(key: number): U {
+  //     return has(key) ? zipFn(list.get(key), other.get(key)): undefined;
+  //   }
+  //
+  //   function prev(key?: number): number {
+  //     var prev = list.prev(key);
+  //     return prev != null && prev == other.prev(key) ? <number> prev : null
+  //   }
+  //
+  //   function next(key?: number): number {
+  //     var next = list.next(key);
+  //     return next != null && next == other.next(key) ? <number> next : null
+  //   }
+  //
+  //   return { has, get, prev, next };
+  // }
+  //
+  // static skip<V>(list: IList<V>, k: number): IList<V> {
+  //   return List.filter(List.index(list), function(value, key) {
+  //     return key >= k;
+  //   });
+  // }
+  //
+  // static take<V>(list: IList<V>, n: number): IList<V> {
+  //   return List.filter(List.index(list), function(value, key) {
+  //     return key < n;
+  //   });
+  // }
+  //
+  // static range<V>(list: IList<V>, k: number, n: number): IList<V> {
+  //   return List.filter(List.index(list), function(value, key) {
+  //     return key >= k && key < n + k;
+  //   });
+  // }
+  //
+  // static scan<V, W>(list: IList<V>, scanFn: (memo: W, value: V) => W, memo?: W): IList<W> {
+  //   var { has, prev, next } = list = List.index(list);
+  //
+  //   var memoCache = [memo];
+  //
+  //   function get(key: number): W {
+  //     if (!list.has(key)) return;
+  //
+  //     var memo = memoCache[key];
+  //
+  //     while(key + 1 >= memoCache.length) {
+  //       memoCache.push(memo = scanFn(memo, list.get(key)));
+  //     }
+  //
+  //     return memoCache[key + 1];
+  //   }
+  //
+  //   return {has, get, prev, next}
+  // }
 
 }
 

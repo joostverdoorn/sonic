@@ -1,17 +1,18 @@
 var tree_1 = require('./tree');
+var cache_1 = require('./cache');
 var List = (function () {
     function List(list) {
         var _this = this;
-        this.has = function (id) {
+        this.has = function (key) {
             throw new Error("Not implemented");
         };
-        this.get = function (id) {
+        this.get = function (key) {
             throw new Error("Not implemented");
         };
-        this.prev = function (id) {
+        this.prev = function (key) {
             throw new Error("Not implemented");
         };
-        this.next = function (id) {
+        this.next = function (key) {
             throw new Error("Not implemented");
         };
         this.first = function () {
@@ -29,20 +30,20 @@ var List = (function () {
         this.toArray = function () {
             return List.toArray(_this);
         };
-        this.findId = function (fn) {
-            return List.findId(_this, fn);
+        this.findKey = function (fn) {
+            return List.findKey(_this, fn);
         };
         this.find = function (fn) {
             return List.find(_this, fn);
         };
-        this.idOf = function (value) {
-            return List.idOf(_this, value);
+        this.keyOf = function (value) {
+            return List.keyOf(_this, value);
         };
         this.indexOf = function (value) {
             return List.indexOf(_this, value);
         };
-        this.idAt = function (index) {
-            return List.idAt(_this, index);
+        this.keyAt = function (index) {
+            return List.keyAt(_this, index);
         };
         this.at = function (index) {
             return List.at(_this, index);
@@ -74,12 +75,6 @@ var List = (function () {
         this.cache = function () {
             return List.create(List.cache(_this));
         };
-        this.index = function () {
-            return List.create(List.index(_this));
-        };
-        this.zip = function (other, zipFn) {
-            return List.create(List.zip(_this, other, zipFn));
-        };
         if (list != null) {
             this.has = list.has;
             this.get = list.get;
@@ -88,6 +83,13 @@ var List = (function () {
         }
     }
     ;
+    // index = (): List<V> => {
+    //   return List.create(List.index(this));
+    // }
+    // 
+    // zip = <W, U>(other: IList<W>, zipFn: (v: V, w: W) => U): List<U> => {
+    //   return List.create(List.zip(this, other, zipFn));
+    // }
     List.isList = function (obj) {
         return obj != null && !!obj['has'] && !!obj['get'] && !!obj['prev'] && !!obj['next'];
     };
@@ -106,60 +108,60 @@ var List = (function () {
         return list.get(list.prev());
     };
     List.forEach = function (list, fn) {
-        var id;
-        while ((id = list.next(id)) != null)
-            fn(list.get(id), id);
+        var key;
+        while ((key = list.next(key)) != null)
+            fn(list.get(key), key);
     };
     List.reduce = function (list, fn, memo) {
-        var id;
-        while ((id = list.next(id)) != null)
-            memo = fn(memo, list.get(id), id);
+        var key;
+        while ((key = list.next(key)) != null)
+            memo = fn(memo, list.get(key), key);
         return memo;
     };
     List.toArray = function (list) {
         return List.reduce(list, function (memo, v) { memo.push(v); return memo; }, []);
     };
-    List.findId = function (list, fn) {
-        var id;
-        while ((id = list.next(id)) != null)
-            if (fn(list.get(id), id))
-                return id;
+    List.findKey = function (list, fn) {
+        var key;
+        while ((key = list.next(key)) != null)
+            if (fn(list.get(key), key))
+                return key;
     };
     List.find = function (list, fn) {
-        return list.get(List.findId(list, fn));
+        return list.get(List.findKey(list, fn));
     };
-    List.idOf = function (list, value) {
-        return List.findId(list, function (v) { return v === value; });
+    List.keyOf = function (list, value) {
+        return List.findKey(list, function (v) { return v === value; });
     };
     List.indexOf = function (list, value) {
-        var id, i = 0;
-        while ((id = list.next(id)) != null) {
-            if (list.get(id) === value)
+        var key, i = 0;
+        while ((key = list.next(key)) != null) {
+            if (list.get(key) === value)
                 return i;
             i++;
         }
     };
-    List.idAt = function (list, index) {
-        var id, i = 0;
-        while ((id = list.next(id)) != null)
+    List.keyAt = function (list, index) {
+        var key, i = 0;
+        while ((key = list.next(key)) != null)
             if (i++ == index)
-                return id;
+                return key;
         return null;
     };
     List.at = function (list, index) {
-        return list.get(List.idAt(list, index));
+        return list.get(List.keyAt(list, index));
     };
     List.every = function (list, predicate) {
-        var id;
-        while ((id = list.next(id)) != null)
-            if (!predicate(list.get(id), id))
+        var key;
+        while ((key = list.next(key)) != null)
+            if (!predicate(list.get(key), key))
                 return false;
         return true;
     };
     List.some = function (list, predicate) {
-        var id;
-        while ((id = list.next(id)) != null)
-            if (predicate(list.get(id), id))
+        var key;
+        while ((key = list.next(key)) != null)
+            if (predicate(list.get(key), key))
                 return true;
         return false;
     };
@@ -168,39 +170,39 @@ var List = (function () {
     };
     List.reverse = function (list) {
         var has = list.has, get = list.get;
-        function prev(id) {
-            return list.next(id);
+        function prev(key) {
+            return list.next(key);
         }
-        function next(id) {
-            return list.prev(id);
+        function next(key) {
+            return list.prev(key);
         }
         return { has: has, get: get, prev: prev, next: next };
     };
     List.map = function (list, mapFn) {
         var has = list.has, prev = list.prev, next = list.next;
-        function get(id) {
-            return has(id) ? mapFn(list.get(id), id) : undefined;
+        function get(key) {
+            return has(key) ? mapFn(list.get(key), key) : undefined;
         }
         return { has: has, get: get, prev: prev, next: next };
     };
     List.filter = function (list, filterFn) {
-        function has(id) {
-            return list.has(id) && filterFn(list.get(id), id);
+        function has(key) {
+            return list.has(key) && filterFn(list.get(key), key);
         }
-        function get(id) {
-            if (has(id))
-                return list.get(id);
+        function get(key) {
+            if (has(key))
+                return list.get(key);
             return;
         }
-        function prev(id) {
-            var prev = id;
+        function prev(key) {
+            var prev = key;
             while ((prev = list.prev(prev)) != null)
                 if (has(prev))
                     return prev;
             return null;
         }
-        function next(id) {
-            var next = id;
+        function next(key) {
+            var next = key;
             while ((next = list.next(next)) != null)
                 if (has(next))
                     return next;
@@ -209,21 +211,21 @@ var List = (function () {
         return { has: has, get: get, prev: prev, next: next };
     };
     List.flatten = function (list) {
-        function has(id) {
-            var path = tree_1.Path.create(id);
+        function has(key) {
+            var path = tree_1.Path.create(key);
             return tree_1.Tree.has(list, path, 1);
         }
-        function get(id) {
-            var path = tree_1.Path.create(id);
+        function get(key) {
+            var path = tree_1.Path.create(key);
             return tree_1.Tree.get(list, path, 1);
         }
-        function prev(id) {
-            var path = tree_1.Path.create(id);
-            return tree_1.Path.id(tree_1.Tree.prev(list, path, 1));
+        function prev(key) {
+            var path = tree_1.Path.create(key);
+            return tree_1.Path.key(tree_1.Tree.prev(list, path, 1));
         }
-        function next(id) {
-            var path = tree_1.Path.create(id);
-            return tree_1.Path.id(tree_1.Tree.next(list, path, 1));
+        function next(key) {
+            var path = tree_1.Path.create(key);
+            return tree_1.Path.key(tree_1.Tree.next(list, path, 1));
         }
         return { has: has, get: get, prev: prev, next: next };
     };
@@ -231,121 +233,7 @@ var List = (function () {
         return List.flatten(List.map(list, flatMapFn));
     };
     List.cache = function (list) {
-        var valueCache = Object.create(null), nextCache = Object.create(null), prevCache = Object.create(null);
-        function has(id) {
-            return id in valueCache || list.has(id);
-        }
-        function get(id) {
-            if (id in valueCache)
-                return valueCache[id];
-            if (list.has(id))
-                return valueCache[id] = list.get(id);
-            return;
-        }
-        function prev(id) {
-            if (id in prevCache)
-                return prevCache[id];
-            var prevId = list.prev(id);
-            if (prevId != null) {
-                prevCache[id] = prevId;
-                nextCache[prevId] = id;
-            }
-            return prevId;
-        }
-        function next(id) {
-            if (id in nextCache)
-                return nextCache[id];
-            var nextId = list.next(id);
-            if (nextId != null) {
-                nextCache[id] = nextId;
-                prevCache[nextId] = id;
-            }
-            return nextId;
-        }
-        return { has: has, get: get, prev: prev, next: next };
-    };
-    List.index = function (list) {
-        var ids = [];
-        function has(id) {
-            if (0 <= id && id < ids.length)
-                return true;
-            var last = ids.length - 1;
-            while ((last = next(last)) != null)
-                if (last == id)
-                    return true;
-            return false;
-        }
-        function get(id) {
-            return has(id) ? list.get(ids[id]) : undefined;
-        }
-        function prev(id) {
-            if (has(id))
-                return id ? id - 1 : null;
-            else if (id == null)
-                return ids.length ? ids.length - 1 : null;
-        }
-        function next(id) {
-            if (id == null && ids.length)
-                return 0;
-            if (0 <= id && id < ids.length - 1)
-                return id + 1;
-            var next, last = ids.length ? ids[ids.length - 1] : null;
-            while ((last = list.next(last)) != null) {
-                var next = ids.push(last) - 1;
-                if (next == (id != null ? id + 1 : 0))
-                    return next;
-            }
-            return null;
-        }
-        return { has: has, get: get, prev: prev, next: next };
-    };
-    List.zip = function (list, other, zipFn) {
-        list = List.index(list);
-        other = List.index(other);
-        function has(id) {
-            return list.has(id) && other.has(id);
-        }
-        function get(id) {
-            return has(id) ? zipFn(list.get(id), other.get(id)) : undefined;
-        }
-        function prev(id) {
-            var prev = list.prev(id);
-            return prev != null && prev == other.prev(id) ? prev : null;
-        }
-        function next(id) {
-            var next = list.next(id);
-            return next != null && next == other.next(id) ? next : null;
-        }
-        return { has: has, get: get, prev: prev, next: next };
-    };
-    List.skip = function (list, k) {
-        return List.filter(List.index(list), function (value, id) {
-            return id >= k;
-        });
-    };
-    List.take = function (list, n) {
-        return List.filter(List.index(list), function (value, id) {
-            return id < n;
-        });
-    };
-    List.range = function (list, k, n) {
-        return List.filter(List.index(list), function (value, id) {
-            return id >= k && id < n + k;
-        });
-    };
-    List.scan = function (list, scanFn, memo) {
-        var _a = list = List.index(list), has = _a.has, prev = _a.prev, next = _a.next;
-        var memoCache = [memo];
-        function get(id) {
-            if (!list.has(id))
-                return;
-            var memo = memoCache[id];
-            while (id + 1 >= memoCache.length) {
-                memoCache.push(memo = scanFn(memo, list.get(id)));
-            }
-            return memoCache[id + 1];
-        }
-        return { has: has, get: get, prev: prev, next: next };
+        return new cache_1.default(list);
     };
     return List;
 })();

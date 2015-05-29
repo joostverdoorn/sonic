@@ -1,23 +1,23 @@
-import Id from './id';
+import Key from './key';
 import { List, IList } from './list';
 
-export type Path = Id[];
+export type Path = Key[];
 export interface ITree<V> extends IList<ITree<V> | V> {};
 
 export module Path {
-  export function id(path: Path): string {
+  export function key(path: Path): string {
     return JSON.stringify(path)
   }
 
-  export function create(id: Id): Path {
-    return id == null ? null : JSON.parse(id.toString());
+  export function create(key: Key): Path {
+    return key == null ? null : JSON.parse(key.toString());
   }
 
-  export function head(path: Path): Id {
+  export function head(path: Path): Key {
     return path ? path[0] : null;
   }
 
-  export function get(path: Path, index: number): Id {
+  export function get(path: Path, index: number): Key {
     return path[index];
   }
 
@@ -25,7 +25,7 @@ export module Path {
     return path == null ? [] : path.slice(1, path.length);
   }
 
-  export function append(a: Id | Path, b: Id | Path): Path {
+  export function append(a: Key | Path, b: Key | Path): Path {
     return [].concat(a).concat(b);
   }
 }
@@ -52,43 +52,43 @@ export module Tree {
   export function prev(list: ITree<any>, path: Path = [], depth: number = Infinity): Path {
     var head = Path.head(path),
         tail = Path.tail(path),
-        id = head,
+        key = head,
         value: any;
 
     if(head != null && !list.has(head)) return;
 
     do {
-      value = list.get(id);
+      value = list.get(key);
 
       if(!List.isList(value) || depth == 0) {
-        if(id != null && id != head) return [id];
+        if(key != null && key != head) return [key];
       } else {
         var prevPath = Tree.prev(value, tail, depth - 1);
-        if(prevPath != null) return Path.append(id, prevPath);
+        if(prevPath != null) return Path.append(key, prevPath);
         tail = [];
       }
-    } while((id = list.prev(id)) != null);
+    } while((key = list.prev(key)) != null);
   }
 
   export function next(list: ITree<any>, path: Path = [], depth: number = Infinity): Path {
     var head = Path.head(path),
         tail = Path.tail(path),
-        id = head,
+        key = head,
         value: any;
 
     if(head != null && !list.has(head)) return;
 
     do {
-      value = list.get(id);
+      value = list.get(key);
 
       if(!List.isList(value) || depth == 0) {
-        if(id != null && id != head) return [id];
+        if(key != null && key != head) return [key];
       } else {
         var nextPath = Tree.next(value, tail, depth - 1);
-        if(nextPath != null) return Path.append(id, nextPath);
+        if(nextPath != null) return Path.append(key, nextPath);
         tail = [];
       }
-    } while((id = list.next(id)) != null);
+    } while((key = list.next(key)) != null);
   }
 }
 

@@ -4,7 +4,7 @@ var __extends = this.__extends || function (d, b) {
     __.prototype = b.prototype;
     d.prototype = new __();
 };
-var id_1 = require('./id');
+var key_1 = require('./key');
 var observable_1 = require('./observable');
 var mutable_list_1 = require('./mutable_list');
 var Unit = (function (_super) {
@@ -12,28 +12,27 @@ var Unit = (function (_super) {
     function Unit(value) {
         var _this = this;
         _super.call(this);
-        this.has = function (id) {
-            return _this._id == id;
+        this.has = function (key) {
+            return _this._key == key;
         };
-        this.get = function (id) {
-            if (_this.has(id))
+        this.get = function (key) {
+            if (_this.has(key))
                 return _this._value;
         };
-        this.prev = function (id) {
-            if (id == null)
-                return _this._id;
+        this.prev = function (key) {
+            if (key == null)
+                return _this._key;
             return null;
         };
-        this.next = function (id) {
-            if (id == null)
-                return _this._id;
+        this.next = function (key) {
+            if (key == null)
+                return _this._key;
             return null;
         };
-        this.set = function (id, value) {
-            _this._id = id;
+        this.set = function (key, value) {
+            _this._key = key;
             _this._value = value;
             _this._invalidate();
-            return id;
         };
         this.splice = function (prev, next) {
             var values = [];
@@ -41,9 +40,8 @@ var Unit = (function (_super) {
                 values[_i - 2] = arguments[_i];
             }
             if (values.length)
-                _this.set(id_1.default.create(), values[0]);
-            return;
-            delete _this._id;
+                return _this.set(key_1.default.create(), values[0]);
+            delete _this._key;
             delete _this._value;
             _this._invalidate();
         };
@@ -60,6 +58,5 @@ var Unit = (function (_super) {
             this.splice(null, null, value);
     }
     return Unit;
-})(mutable_list_1.default);
-exports.Unit = Unit;
+})(mutable_list_1.MutableList);
 exports.default = Unit;

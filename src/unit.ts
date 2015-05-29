@@ -1,11 +1,10 @@
-import Id from './id';
+import Key from './key';
 import { Subject, ISubject, ISubscription } from './observable';
 import { IListObserver } from './observable_list';
-import MutableList from './mutable_list';
+import { MutableList } from './mutable_list';
 
-
-export class Unit<V> extends MutableList<V> {
-  private _id: Id;
+export default class Unit<V> extends MutableList<V> {
+  private _key: Key;
   private _value: V;
   private _subject: ISubject<IListObserver>;
 
@@ -16,36 +15,34 @@ export class Unit<V> extends MutableList<V> {
     if(arguments.length) this.splice(null, null, value);
   }
 
-  has = (id: Id) => {
-    return this._id == id;
+  has = (key: Key) => {
+    return this._key == key;
   }
 
-  get = (id: Id) => {
-    if(this.has(id)) return this._value ;
+  get = (key: Key) => {
+    if(this.has(key)) return this._value ;
   }
 
-  prev = (id: Id) => {
-    if(id == null) return this._id;
+  prev = (key: Key) => {
+    if(key == null) return this._key;
     return null;
   }
 
-  next = (id: Id) => {
-    if(id == null) return this._id;
+  next = (key: Key) => {
+    if(key == null) return this._key;
     return null;
   }
 
-  set = (id: Id, value: V): Id => {
-    this._id = id;
+  set = (key: Key, value: V): void => {
+    this._key = key;
     this._value = value;
     this._invalidate();
-
-    return id;
   }
 
-  splice = (prev: Id, next: Id, ...values: V[]): void => {
-    if(values.length) this.set(Id.create(), values[0]); return;
+  splice = (prev: Key, next: Key, ...values: V[]): void => {
+    if(values.length) return this.set(Key.create(), values[0]);
 
-    delete this._id;
+    delete this._key;
     delete this._value;
     this._invalidate();
   }
@@ -54,11 +51,9 @@ export class Unit<V> extends MutableList<V> {
     return this._subject.observe(observer);
   }
 
-  private _invalidate = (prev?: Id, next?: Id) => {
+  private _invalidate = (prev?: Key, next?: Key) => {
     this._subject.notify(function(observer: IListObserver) {
       observer.onInvalidate(prev, next);
     })
   }
 }
-
-export default Unit;

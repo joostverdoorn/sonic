@@ -4,36 +4,36 @@ var __extends = this.__extends || function (d, b) {
     __.prototype = b.prototype;
     d.prototype = new __();
 };
-var id_1 = require('./id');
+var key_1 = require('./key');
 var observable_1 = require('./observable');
 var mutable_list_1 = require('./mutable_list');
 var LinkedList = (function (_super) {
     __extends(LinkedList, _super);
-    function LinkedList(array) {
+    function LinkedList(values) {
         var _this = this;
         _super.call(this);
-        this.has = function (id) {
-            return id in _this._byId;
+        this.has = function (key) {
+            return key in _this._byKey;
         };
-        this.get = function (id) {
-            return _this._byId[id];
+        this.get = function (key) {
+            return _this._byKey[key];
         };
-        this.prev = function (id) {
-            if (id === void 0) { id = null; }
-            var prev = _this._prev[id];
+        this.prev = function (key) {
+            if (key === void 0) { key = null; }
+            var prev = _this._prev[key];
             return prev == null ? null : prev;
         };
-        this.next = function (id) {
-            if (id === void 0) { id = null; }
-            var next = _this._next[id];
+        this.next = function (key) {
+            if (key === void 0) { key = null; }
+            var next = _this._next[key];
             return next == null ? null : next;
         };
-        this.set = function (id, value) {
-            if (!_this.has(id))
+        this.set = function (key, value) {
+            if (!_this.has(key))
                 return null;
-            _this._byId[id] = value;
-            _this._invalidate(_this._prev[id], _this._next[id]);
-            return id;
+            _this._byKey[key] = value;
+            _this._invalidate(_this._prev[key], _this._next[key]);
+            return key;
         };
         this.splice = function (prev, next) {
             if (prev === void 0) { prev = null; }
@@ -42,34 +42,34 @@ var LinkedList = (function (_super) {
             for (var _i = 2; _i < arguments.length; _i++) {
                 values[_i - 2] = arguments[_i];
             }
-            var id, value;
-            id = prev;
-            while ((id = _this._next[id]) != null) {
-                delete _this._next[_this._prev[id]];
-                delete _this._prev[id];
-                if (id == next)
+            var key, value;
+            key = prev;
+            while ((key = _this._next[key]) != null) {
+                delete _this._next[_this._prev[key]];
+                delete _this._prev[key];
+                if (key == next)
                     break;
-                delete _this._byId[id];
+                delete _this._byKey[key];
             }
-            id = next;
-            while ((id = _this._prev[id]) != null) {
-                delete _this._prev[_this._next[id]];
-                delete _this._next[id];
-                if (id == prev)
+            key = next;
+            while ((key = _this._prev[key]) != null) {
+                delete _this._prev[_this._next[key]];
+                delete _this._next[key];
+                if (key == prev)
                     break;
-                delete _this._byId[id];
+                delete _this._byKey[key];
             }
-            var _id = prev;
+            var _key = prev;
             for (var _a = 0; _a < values.length; _a++) {
                 value = values[_a];
-                id = id_1.default.create();
-                _this._byId[id] = value;
-                _this._prev[id] = _id;
-                _this._next[_id] = id;
-                _id = id;
+                key = key_1.default.create();
+                _this._byKey[key] = value;
+                _this._prev[key] = _key;
+                _this._next[_key] = key;
+                _key = key;
             }
-            _this._prev[next] = _id;
-            _this._next[_id] = next;
+            _this._prev[next] = _key;
+            _this._next[_key] = next;
             _this._invalidate(prev, next);
         };
         this.observe = function (observer) {
@@ -85,13 +85,13 @@ var LinkedList = (function (_super) {
             });
         };
         this._subject = new observable_1.Subject();
-        this._byId = Object.create(null);
+        this._byKey = Object.create(null);
         this._prev = Object.create(null);
         this._next = Object.create(null);
         this._prev[null] = null;
         this._next[null] = null;
-        this.splice.apply(this, [null, null].concat(array));
+        this.splice.apply(this, [null, null].concat(values));
     }
     return LinkedList;
-})(mutable_list_1.default);
+})(mutable_list_1.MutableList);
 exports.default = LinkedList;

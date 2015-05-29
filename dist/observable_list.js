@@ -7,6 +7,7 @@ var __extends = this.__extends || function (d, b) {
 var list_1 = require('./list');
 var tree_1 = require('./tree');
 var observable_1 = require('./observable');
+var observable_cache_1 = require('./observable_cache');
 ;
 var ObservableList = (function (_super) {
     __extends(ObservableList, _super);
@@ -34,9 +35,8 @@ var ObservableList = (function (_super) {
         this.cache = function () {
             return ObservableList.create(ObservableList.cache(_this));
         };
-        if (list != null) {
+        if (list != null)
             this.observe = list.observe;
-        }
     }
     ObservableList.isObservableList = function (obj) {
         return list_1.List.isList(obj) && !!obj['observe'];
@@ -80,37 +80,37 @@ var ObservableList = (function (_super) {
         var subject = new observable_1.Subject();
         list.observe({
             onInvalidate: function (prev, next) {
-                var id;
-                id = prev;
-                while ((id = cache.next(id)) != null && id != next) {
-                    var subscription = subscriptions[id];
+                var key;
+                key = prev;
+                while ((key = cache.next(key)) != null && key != next) {
+                    var subscription = subscriptions[key];
                     if (subscription) {
                         subscription.unsubscribe();
-                        delete subscriptions[id];
+                        delete subscriptions[key];
                     }
                 }
-                id = next;
-                while ((id = cache.prev(id)) != null && id != prev) {
-                    var subscription = subscriptions[id];
+                key = next;
+                while ((key = cache.prev(key)) != null && key != prev) {
+                    var subscription = subscriptions[key];
                     if (subscription) {
                         subscription.unsubscribe();
-                        delete subscriptions[id];
+                        delete subscriptions[key];
                     }
                 }
             }
         });
-        cache = ObservableList.cache(ObservableList.map(list, function (value, id) {
-            subscriptions[id] = value.observe({
+        cache = ObservableList.cache(ObservableList.map(list, function (value, key) {
+            subscriptions[key] = value.observe({
                 onInvalidate: function (prev, next) {
-                    var prevId, nextId, prevPath = tree_1.Path.append(id, prev), nextPath = tree_1.Path.append(id, next);
+                    var prevKey, nextKey, prevPath = tree_1.Path.append(key, prev), nextPath = tree_1.Path.append(key, next);
                     if (prev == null)
                         prevPath = tree_1.Tree.prev(list, tree_1.Tree.next(list, prevPath));
                     if (next == null)
                         nextPath = tree_1.Tree.next(list, tree_1.Tree.prev(list, nextPath));
-                    prevId = tree_1.Path.id(prevPath);
-                    nextId = tree_1.Path.id(nextPath);
+                    prevKey = tree_1.Path.key(prevPath);
+                    nextKey = tree_1.Path.key(nextPath);
                     subject.notify(function (observer) {
-                        observer.onInvalidate(prevId, nextId);
+                        observer.onInvalidate(prevKey, nextKey);
                     });
                 }
             });
@@ -118,9 +118,9 @@ var ObservableList = (function (_super) {
         }));
         cache.observe({
             onInvalidate: function (prev, next) {
-                var prevId = tree_1.Path.id(tree_1.Tree.prev(list, [prev])), nextId = tree_1.Path.id(tree_1.Tree.next(list, [next]));
+                var prevKey = tree_1.Path.key(tree_1.Tree.prev(list, [prev])), nextKey = tree_1.Path.key(tree_1.Tree.next(list, [next]));
                 subject.notify(function (observer) {
-                    observer.onInvalidate(prevId, nextId);
+                    observer.onInvalidate(prevKey, nextKey);
                 });
             }
         });
@@ -131,58 +131,7 @@ var ObservableList = (function (_super) {
         return ObservableList.flatten(ObservableList.map(list, flatMapFn));
     };
     ObservableList.cache = function (list) {
-        var valueCache = Object.create(null), nextCache = Object.create(null), prevCache = Object.create(null);
-        function has(id) {
-            return id in valueCache || list.has(id);
-        }
-        function get(id) {
-            if (id in valueCache)
-                return valueCache[id];
-            if (list.has(id))
-                return valueCache[id] = list.get(id);
-            return;
-        }
-        function prev(id) {
-            if (id in prevCache)
-                return prevCache[id];
-            var prevId = list.prev(id);
-            if (prevId != null) {
-                prevCache[id] = prevId;
-                nextCache[prevId] = id;
-            }
-            return prevId;
-        }
-        function next(id) {
-            if (id in nextCache)
-                return nextCache[id];
-            var nextId = list.next(id);
-            if (nextId != null) {
-                nextCache[id] = nextId;
-                prevCache[nextId] = id;
-            }
-            return nextId;
-        }
-        list.observe({
-            onInvalidate: function (prev, next) {
-                var id;
-                id = prev;
-                while ((id = nextCache[id]) != null) {
-                    delete nextCache[prevCache[id]];
-                    delete prevCache[id];
-                    if (id == next)
-                        break;
-                    delete valueCache[id];
-                }
-                while ((id = prevCache[id]) != null) {
-                    delete prevCache[nextCache[id]];
-                    delete nextCache[id];
-                    if (id == prev)
-                        break;
-                    delete valueCache[id];
-                }
-            }
-        });
-        return { has: has, get: get, prev: prev, next: next, observe: list.observe };
+        return new observable_cache_1.default(list);
     };
     return ObservableList;
 })(list_1.List);

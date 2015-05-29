@@ -1,4 +1,4 @@
-import Id from './id';
+import Key from './key';
 
 export interface ISubscription {
   unsubscribe(): void;
@@ -25,14 +25,14 @@ export class Subject<O> {
   }
 
   observe = (observer: O): ISubscription => {
-    var observerId = Id.create();
-    this._observers[observerId] = observer;
+    var observerKey = Key.create();
+    this._observers[observerKey] = observer;
     return {
-      unsubscribe: () => { delete this._observers[observerId]; }
+      unsubscribe: () => { delete this._observers[observerKey]; }
     }
   }
 
   notify = (notifier: INotifier<O>) => {
-    for(var observerId in this._observers) notifier(this._observers[observerId]);
+    for(var observerKey in this._observers) notifier(this._observers[observerKey]);
   }
 }

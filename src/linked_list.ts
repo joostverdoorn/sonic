@@ -1,86 +1,85 @@
-import Id       from './id';
+import Key                                  from './key';
 import { Subject, ISubject, ISubscription } from './observable';
 import { IListObserver } from './observable_list';
-import MutableList from './mutable_list';
-
+import { MutableList } from './mutable_list';
 
 export default class LinkedList<V> extends MutableList<V> {
-  private _byId: {[key: string]: V};
-  private _next: {[key: string]: Id};
-  private _prev: {[key: string]: Id};
+  private _byKey: {[key: string]: V};
+  private _next: {[key: string]: Key};
+  private _prev: {[key: string]: Key};
   private _subject: ISubject<IListObserver>;
 
-  constructor(array: V[]) {
+  constructor(values: V[]) {
     super();
 
     this._subject = new Subject();
-    this._byId = Object.create(null);
+    this._byKey = Object.create(null);
     this._prev = Object.create(null);
     this._next = Object.create(null);
 
-    this._prev[<Id> null] = null;
-    this._next[<Id> null] = null;
+    this._prev[<Key> null] = null;
+    this._next[<Key> null] = null;
 
-    this.splice(null, null, ...array);
+    this.splice(null, null, ...values);
   }
 
-  has = (id: Id) => {
-    return id in this._byId;
+  has = (key: Key) => {
+    return key in this._byKey;
   }
 
-  get = (id: Id) => {
-    return this._byId[id];
+  get = (key: Key) => {
+    return this._byKey[key];
   }
 
-  prev = (id: Id = null) => {
-    var prev = this._prev[id];
+  prev = (key: Key = null) => {
+    var prev = this._prev[key];
     return prev == null ? null : prev;
   }
 
-  next = (id: Id = null) => {
-    var next = this._next[id];
+  next = (key: Key = null) => {
+    var next = this._next[key];
     return next == null ? null : next;
   }
 
-  set = (id: Id, value: V): Id => {
-    if(!this.has(id)) return null;
+  set = (key: Key, value: V): Key => {
+    if(!this.has(key)) return null;
 
-    this._byId[id] = value;
-    this._invalidate(this._prev[id], this._next[id])
-    return id;
+    this._byKey[key] = value;
+    this._invalidate(this._prev[key], this._next[key])
+    return key;
   }
 
-  splice = (prev: Id = null, next: Id = null, ...values: V[]): void => {
-    var id: Id,
+  splice = (prev: Key = null, next: Key = null, ...values: V[]): void => {
+    var key: Key,
         value: V;
 
-    id = prev;
-    while((id = this._next[id]) != null) {
-      delete this._next[this._prev[id]];
-      delete this._prev[id];
-      if(id == next) break;
-      delete this._byId[id];
+    key = prev;
+    while((key = this._next[key]) != null) {
+      delete this._next[this._prev[key]];
+      delete this._prev[key];
+      if(key == next) break;
+      delete this._byKey[key];
     }
 
-    id = next;
-    while((id = this._prev[id]) != null) {
-      delete this._prev[this._next[id]];
-      delete this._next[id];
-      if(id == prev) break;
-      delete this._byId[id];
+    key = next;
+    while((key = this._prev[key]) != null) {
+      delete this._prev[this._next[key]];
+      delete this._next[key];
+      if(key == prev) break;
+      delete this._byKey[key];
     }
 
-    var _id = prev;
+    var _key = prev;
     for(value of values) {
-      id = Id.create();
-      this._byId[id] = value;
-      this._prev[id] = _id;
-      this._next[_id] = id;
-      _id = id;
+      key = Key.create();
+      this._byKey[key] = value;
+      this._prev[key] = _key;
+      this._next[_key] = key;
+      _key = key;
     }
 
-    this._prev[next] = _id;
-    this._next[_id] = next;
+    this._prev[next] = _key;
+    this._next[_key] = next;
 
     this._invalidate(prev, next);
   }
@@ -89,7 +88,7 @@ export default class LinkedList<V> extends MutableList<V> {
     return this._subject.observe(observer);
   }
 
-  private _invalidate = (prev?: Id, next?: Id) => {
+  private _invalidate = (prev?: Key, next?: Key) => {
     if(!this.has(prev)) prev = null;
     if(!this.has(next)) next = null;
     this._subject.notify(function(observer: IListObserver) {

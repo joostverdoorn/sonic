@@ -13,33 +13,33 @@ var ArrayList = (function (_super) {
         var _this = this;
         if (array === void 0) { array = []; }
         _super.call(this);
-        this.has = function (id) {
-            return id != null && -1 < id && id < _this._array.length;
+        this.has = function (key) {
+            return key != null && -1 < key && key < _this._array.length;
         };
-        this.get = function (id) {
-            if (_this.has(id))
-                return _this._array[id];
+        this.get = function (key) {
+            if (_this.has(key))
+                return _this._array[key];
             return;
         };
-        this.prev = function (id) {
-            if (id == null && _this._array.length)
+        this.prev = function (key) {
+            if (key == null && _this._array.length)
                 return _this._array.length - 1;
-            if (_this._array.length > 0 && id != null && _this.has(id) && _this.has(id - 1))
-                return id - 1;
+            if (_this._array.length > 0 && key != null && _this.has(key) && _this.has(key - 1))
+                return key - 1;
             return null;
         };
-        this.next = function (id) {
-            if (id == null && _this._array.length)
+        this.next = function (key) {
+            if (key == null && _this._array.length)
                 return 0;
-            if (_this._array.length > 0 && id != null && _this.has(id) && _this.has(id + 1))
-                return id + 1;
+            if (_this._array.length > 0 && key != null && _this.has(key) && _this.has(key + 1))
+                return key + 1;
             return null;
         };
-        this.set = function (id, value) {
-            if (!_this.has(id))
+        this.set = function (key, value) {
+            if (!_this.has(key))
                 return null;
-            _this._array[id] = value;
-            return id;
+            _this._array[key] = value;
+            return key;
         };
         this.splice = function (prev, next) {
             var values = [];
@@ -54,7 +54,7 @@ var ArrayList = (function (_super) {
                 next = _this._array.length;
             else if (!_this.has(next))
                 return;
-            (_a = _this._array).splice.apply(_a, [prev + 1, next - prev - 1].concat(values));
+            (_a = _this._array).splice.apply(_a, [prev + 1, next - (prev + 1)].concat(values));
             _this._invalidate(prev, null);
             var _a;
         };
@@ -74,11 +74,53 @@ var ArrayList = (function (_super) {
         this._array = array;
     }
     return ArrayList;
-})(mutable_list_1.default);
-exports.ArrayList = ArrayList;
+})(mutable_list_1.MutableList);
 exports.default = ArrayList;
 
-},{"./mutable_list":6,"./observable":7}],2:[function(require,module,exports){
+},{"./mutable_list":7,"./observable":8}],2:[function(require,module,exports){
+var Cache = (function () {
+    function Cache(list) {
+        this._byKey = Object.create(null),
+            this._next = Object.create(null),
+            this._prev = Object.create(null);
+        this._list = list;
+    }
+    Cache.prototype.has = function (key) {
+        return key in this._byKey || this._list.has(key);
+    };
+    Cache.prototype.get = function (key) {
+        if (key in this._byKey)
+            return this._byKey[key];
+        if (this._list.has(key))
+            return this._byKey[key] = this._list.get(key);
+        return;
+    };
+    Cache.prototype.prev = function (key) {
+        if (key in this._prev)
+            return this._prev[key];
+        var prevKey = this._list.prev(key);
+        if (prevKey == null)
+            prevKey = null;
+        this._prev[key] = prevKey;
+        this._next[prevKey] = key;
+        return prevKey;
+    };
+    Cache.prototype.next = function (key) {
+        if (key === void 0) { key = null; }
+        if (key in this._next)
+            return this._next[key];
+        var nextKey = this._list.next(key);
+        if (nextKey == null)
+            nextKey = null;
+        this._next[key] = nextKey;
+        this._prev[nextKey] = key;
+        return nextKey;
+    };
+    return Cache;
+})();
+exports.default = Cache;
+
+},{}],3:[function(require,module,exports){
 var list_1 = require('./list');
 var observable_list_1 = require('./observable_list');
 var mutable_list_1 = require('./mutable_list');
@@ -97,58 +139,58 @@ function factory(obj) {
 }
 exports.default = factory;
 
-},{"./array_list":1,"./list":5,"./mutable_list":6,"./observable_list":8,"./unit":10}],3:[function(require,module,exports){
-var Id;
-(function (Id) {
-    var uniqueId = 0;
-    function key(id) {
-        return id.toString();
+},{"./array_list":1,"./list":6,"./mutable_list":7,"./observable_list":10,"./unit":12}],4:[function(require,module,exports){
+var Key;
+(function (Key) {
+    var uniqueKey = 0;
+    function key(key) {
+        return key.toString();
     }
-    Id.key = key;
+    Key.key = key;
     function create() {
-        return uniqueId++;
+        return uniqueKey++;
     }
-    Id.create = create;
-})(Id || (Id = {}));
-exports.default = Id;
+    Key.create = create;
+})(Key || (Key = {}));
+exports.default = Key;
 
-},{}],4:[function(require,module,exports){
+},{}],5:[function(require,module,exports){
 var __extends = this.__extends || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
     function __() { this.constructor = d; }
     __.prototype = b.prototype;
     d.prototype = new __();
 };
-var id_1 = require('./id');
+var key_1 = require('./key');
 var observable_1 = require('./observable');
 var mutable_list_1 = require('./mutable_list');
 var LinkedList = (function (_super) {
     __extends(LinkedList, _super);
-    function LinkedList(array) {
+    function LinkedList(values) {
         var _this = this;
         _super.call(this);
-        this.has = function (id) {
-            return id in _this._byId;
+        this.has = function (key) {
+            return key in _this._byKey;
         };
-        this.get = function (id) {
-            return _this._byId[id];
+        this.get = function (key) {
+            return _this._byKey[key];
         };
-        this.prev = function (id) {
-            if (id === void 0) { id = null; }
-            var prev = _this._prev[id];
+        this.prev = function (key) {
+            if (key === void 0) { key = null; }
+            var prev = _this._prev[key];
             return prev == null ? null : prev;
         };
-        this.next = function (id) {
-            if (id === void 0) { id = null; }
-            var next = _this._next[id];
+        this.next = function (key) {
+            if (key === void 0) { key = null; }
+            var next = _this._next[key];
             return next == null ? null : next;
         };
-        this.set = function (id, value) {
-            if (!_this.has(id))
+        this.set = function (key, value) {
+            if (!_this.has(key))
                 return null;
-            _this._byId[id] = value;
-            _this._invalidate(_this._prev[id], _this._next[id]);
-            return id;
+            _this._byKey[key] = value;
+            _this._invalidate(_this._prev[key], _this._next[key]);
+            return key;
         };
         this.splice = function (prev, next) {
             if (prev === void 0) { prev = null; }
@@ -157,34 +199,34 @@ var LinkedList = (function (_super) {
             for (var _i = 2; _i < arguments.length; _i++) {
                 values[_i - 2] = arguments[_i];
             }
-            var id, value;
-            id = prev;
-            while ((id = _this._next[id]) != null) {
-                delete _this._next[_this._prev[id]];
-                delete _this._prev[id];
-                if (id == next)
+            var key, value;
+            key = prev;
+            while ((key = _this._next[key]) != null) {
+                delete _this._next[_this._prev[key]];
+                delete _this._prev[key];
+                if (key == next)
                     break;
-                delete _this._byId[id];
+                delete _this._byKey[key];
             }
-            id = next;
-            while ((id = _this._prev[id]) != null) {
-                delete _this._prev[_this._next[id]];
-                delete _this._next[id];
-                if (id == prev)
+            key = next;
+            while ((key = _this._prev[key]) != null) {
+                delete _this._prev[_this._next[key]];
+                delete _this._next[key];
+                if (key == prev)
                     break;
-                delete _this._byId[id];
+                delete _this._byKey[key];
             }
-            var _id = prev;
+            var _key = prev;
             for (var _a = 0; _a < values.length; _a++) {
                 value = values[_a];
-                id = id_1.default.create();
-                _this._byId[id] = value;
-                _this._prev[id] = _id;
-                _this._next[_id] = id;
-                _id = id;
+                key = key_1.default.create();
+                _this._byKey[key] = value;
+                _this._prev[key] = _key;
+                _this._next[_key] = key;
+                _key = key;
             }
-            _this._prev[next] = _id;
-            _this._next[_id] = next;
+            _this._prev[next] = _key;
+            _this._next[_key] = next;
             _this._invalidate(prev, next);
         };
         this.observe = function (observer) {
@@ -200,32 +242,33 @@ var LinkedList = (function (_super) {
             });
         };
         this._subject = new observable_1.Subject();
-        this._byId = Object.create(null);
+        this._byKey = Object.create(null);
         this._prev = Object.create(null);
         this._next = Object.create(null);
         this._prev[null] = null;
         this._next[null] = null;
-        this.splice.apply(this, [null, null].concat(array));
+        this.splice.apply(this, [null, null].concat(values));
     }
     return LinkedList;
-})(mutable_list_1.default);
+})(mutable_list_1.MutableList);
 exports.default = LinkedList;
 
-},{"./id":3,"./mutable_list":6,"./observable":7}],5:[function(require,module,exports){
+},{"./key":4,"./mutable_list":7,"./observable":8}],6:[function(require,module,exports){
 var tree_1 = require('./tree');
+var cache_1 = require('./cache');
 var List = (function () {
     function List(list) {
         var _this = this;
-        this.has = function (id) {
+        this.has = function (key) {
             throw new Error("Not implemented");
         };
-        this.get = function (id) {
+        this.get = function (key) {
             throw new Error("Not implemented");
         };
-        this.prev = function (id) {
+        this.prev = function (key) {
             throw new Error("Not implemented");
         };
-        this.next = function (id) {
+        this.next = function (key) {
             throw new Error("Not implemented");
         };
         this.first = function () {
@@ -243,20 +286,20 @@ var List = (function () {
         this.toArray = function () {
             return List.toArray(_this);
         };
-        this.findId = function (fn) {
-            return List.findId(_this, fn);
+        this.findKey = function (fn) {
+            return List.findKey(_this, fn);
         };
         this.find = function (fn) {
             return List.find(_this, fn);
         };
-        this.idOf = function (value) {
-            return List.idOf(_this, value);
+        this.keyOf = function (value) {
+            return List.keyOf(_this, value);
         };
         this.indexOf = function (value) {
             return List.indexOf(_this, value);
         };
-        this.idAt = function (index) {
-            return List.idAt(_this, index);
+        this.keyAt = function (index) {
+            return List.keyAt(_this, index);
         };
         this.at = function (index) {
             return List.at(_this, index);
@@ -288,12 +331,6 @@ var List = (function () {
         this.cache = function () {
             return List.create(List.cache(_this));
         };
-        this.index = function () {
-            return List.create(List.index(_this));
-        };
-        this.zip = function (other, zipFn) {
-            return List.create(List.zip(_this, other, zipFn));
-        };
         if (list != null) {
             this.has = list.has;
             this.get = list.get;
@@ -302,6 +339,13 @@ var List = (function () {
         }
     }
     ;
+    // index = (): List<V> => {
+    //   return List.create(List.index(this));
+    // }
+    // 
+    // zip = <W, U>(other: IList<W>, zipFn: (v: V, w: W) => U): List<U> => {
+    //   return List.create(List.zip(this, other, zipFn));
+    // }
     List.isList = function (obj) {
         return obj != null && !!obj['has'] && !!obj['get'] && !!obj['prev'] && !!obj['next'];
     };
@@ -320,60 +364,60 @@ var List = (function () {
         return list.get(list.prev());
     };
     List.forEach = function (list, fn) {
-        var id;
-        while ((id = list.next(id)) != null)
-            fn(list.get(id), id);
+        var key;
+        while ((key = list.next(key)) != null)
+            fn(list.get(key), key);
     };
     List.reduce = function (list, fn, memo) {
-        var id;
-        while ((id = list.next(id)) != null)
-            memo = fn(memo, list.get(id), id);
+        var key;
+        while ((key = list.next(key)) != null)
+            memo = fn(memo, list.get(key), key);
         return memo;
     };
     List.toArray = function (list) {
         return List.reduce(list, function (memo, v) { memo.push(v); return memo; }, []);
     };
-    List.findId = function (list, fn) {
-        var id;
-        while ((id = list.next(id)) != null)
-            if (fn(list.get(id), id))
-                return id;
+    List.findKey = function (list, fn) {
+        var key;
+        while ((key = list.next(key)) != null)
+            if (fn(list.get(key), key))
+                return key;
     };
     List.find = function (list, fn) {
-        return list.get(List.findId(list, fn));
+        return list.get(List.findKey(list, fn));
     };
-    List.idOf = function (list, value) {
-        return List.findId(list, function (v) { return v === value; });
+    List.keyOf = function (list, value) {
+        return List.findKey(list, function (v) { return v === value; });
     };
     List.indexOf = function (list, value) {
-        var id, i = 0;
-        while ((id = list.next(id)) != null) {
-            if (list.get(id) === value)
+        var key, i = 0;
+        while ((key = list.next(key)) != null) {
+            if (list.get(key) === value)
                 return i;
             i++;
         }
     };
-    List.idAt = function (list, index) {
-        var id, i = 0;
-        while ((id = list.next(id)) != null)
+    List.keyAt = function (list, index) {
+        var key, i = 0;
+        while ((key = list.next(key)) != null)
             if (i++ == index)
-                return id;
+                return key;
         return null;
     };
     List.at = function (list, index) {
-        return list.get(List.idAt(list, index));
+        return list.get(List.keyAt(list, index));
     };
     List.every = function (list, predicate) {
-        var id;
-        while ((id = list.next(id)) != null)
-            if (!predicate(list.get(id), id))
+        var key;
+        while ((key = list.next(key)) != null)
+            if (!predicate(list.get(key), key))
                 return false;
         return true;
     };
     List.some = function (list, predicate) {
-        var id;
-        while ((id = list.next(id)) != null)
-            if (predicate(list.get(id), id))
+        var key;
+        while ((key = list.next(key)) != null)
+            if (predicate(list.get(key), key))
                 return true;
         return false;
     };
@@ -382,39 +426,39 @@ var List = (function () {
     };
     List.reverse = function (list) {
         var has = list.has, get = list.get;
-        function prev(id) {
-            return list.next(id);
+        function prev(key) {
+            return list.next(key);
         }
-        function next(id) {
-            return list.prev(id);
+        function next(key) {
+            return list.prev(key);
         }
         return { has: has, get: get, prev: prev, next: next };
     };
     List.map = function (list, mapFn) {
         var has = list.has, prev = list.prev, next = list.next;
-        function get(id) {
-            return has(id) ? mapFn(list.get(id), id) : undefined;
+        function get(key) {
+            return has(key) ? mapFn(list.get(key), key) : undefined;
         }
         return { has: has, get: get, prev: prev, next: next };
     };
     List.filter = function (list, filterFn) {
-        function has(id) {
-            return list.has(id) && filterFn(list.get(id), id);
+        function has(key) {
+            return list.has(key) && filterFn(list.get(key), key);
         }
-        function get(id) {
-            if (has(id))
-                return list.get(id);
+        function get(key) {
+            if (has(key))
+                return list.get(key);
             return;
         }
-        function prev(id) {
-            var prev = id;
+        function prev(key) {
+            var prev = key;
             while ((prev = list.prev(prev)) != null)
                 if (has(prev))
                     return prev;
             return null;
         }
-        function next(id) {
-            var next = id;
+        function next(key) {
+            var next = key;
             while ((next = list.next(next)) != null)
                 if (has(next))
                     return next;
@@ -423,21 +467,21 @@ var List = (function () {
         return { has: has, get: get, prev: prev, next: next };
     };
     List.flatten = function (list) {
-        function has(id) {
-            var path = tree_1.Path.create(id);
+        function has(key) {
+            var path = tree_1.Path.create(key);
             return tree_1.Tree.has(list, path, 1);
         }
-        function get(id) {
-            var path = tree_1.Path.create(id);
+        function get(key) {
+            var path = tree_1.Path.create(key);
             return tree_1.Tree.get(list, path, 1);
         }
-        function prev(id) {
-            var path = tree_1.Path.create(id);
-            return tree_1.Path.id(tree_1.Tree.prev(list, path, 1));
+        function prev(key) {
+            var path = tree_1.Path.create(key);
+            return tree_1.Path.key(tree_1.Tree.prev(list, path, 1));
         }
-        function next(id) {
-            var path = tree_1.Path.create(id);
-            return tree_1.Path.id(tree_1.Tree.next(list, path, 1));
+        function next(key) {
+            var path = tree_1.Path.create(key);
+            return tree_1.Path.key(tree_1.Tree.next(list, path, 1));
         }
         return { has: has, get: get, prev: prev, next: next };
     };
@@ -445,128 +489,14 @@ var List = (function () {
         return List.flatten(List.map(list, flatMapFn));
     };
     List.cache = function (list) {
-        var valueCache = Object.create(null), nextCache = Object.create(null), prevCache = Object.create(null);
-        function has(id) {
-            return id in valueCache || list.has(id);
-        }
-        function get(id) {
-            if (id in valueCache)
-                return valueCache[id];
-            if (list.has(id))
-                return valueCache[id] = list.get(id);
-            return;
-        }
-        function prev(id) {
-            if (id in prevCache)
-                return prevCache[id];
-            var prevId = list.prev(id);
-            if (prevId != null) {
-                prevCache[id] = prevId;
-                nextCache[prevId] = id;
-            }
-            return prevId;
-        }
-        function next(id) {
-            if (id in nextCache)
-                return nextCache[id];
-            var nextId = list.next(id);
-            if (nextId != null) {
-                nextCache[id] = nextId;
-                prevCache[nextId] = id;
-            }
-            return nextId;
-        }
-        return { has: has, get: get, prev: prev, next: next };
-    };
-    List.index = function (list) {
-        var ids = [];
-        function has(id) {
-            if (0 <= id && id < ids.length)
-                return true;
-            var last = ids.length - 1;
-            while ((last = next(last)) != null)
-                if (last == id)
-                    return true;
-            return false;
-        }
-        function get(id) {
-            return has(id) ? list.get(ids[id]) : undefined;
-        }
-        function prev(id) {
-            if (has(id))
-                return id ? id - 1 : null;
-            else if (id == null)
-                return ids.length ? ids.length - 1 : null;
-        }
-        function next(id) {
-            if (id == null && ids.length)
-                return 0;
-            if (0 <= id && id < ids.length - 1)
-                return id + 1;
-            var next, last = ids.length ? ids[ids.length - 1] : null;
-            while ((last = list.next(last)) != null) {
-                var next = ids.push(last) - 1;
-                if (next == (id != null ? id + 1 : 0))
-                    return next;
-            }
-            return null;
-        }
-        return { has: has, get: get, prev: prev, next: next };
-    };
-    List.zip = function (list, other, zipFn) {
-        list = List.index(list);
-        other = List.index(other);
-        function has(id) {
-            return list.has(id) && other.has(id);
-        }
-        function get(id) {
-            return has(id) ? zipFn(list.get(id), other.get(id)) : undefined;
-        }
-        function prev(id) {
-            var prev = list.prev(id);
-            return prev != null && prev == other.prev(id) ? prev : null;
-        }
-        function next(id) {
-            var next = list.next(id);
-            return next != null && next == other.next(id) ? next : null;
-        }
-        return { has: has, get: get, prev: prev, next: next };
-    };
-    List.skip = function (list, k) {
-        return List.filter(List.index(list), function (value, id) {
-            return id >= k;
-        });
-    };
-    List.take = function (list, n) {
-        return List.filter(List.index(list), function (value, id) {
-            return id < n;
-        });
-    };
-    List.range = function (list, k, n) {
-        return List.filter(List.index(list), function (value, id) {
-            return id >= k && id < n + k;
-        });
-    };
-    List.scan = function (list, scanFn, memo) {
-        var _a = list = List.index(list), has = _a.has, prev = _a.prev, next = _a.next;
-        var memoCache = [memo];
-        function get(id) {
-            if (!list.has(id))
-                return;
-            var memo = memoCache[id];
-            while (id + 1 >= memoCache.length) {
-                memoCache.push(memo = scanFn(memo, list.get(id)));
-            }
-            return memoCache[id + 1];
-        }
-        return { has: has, get: get, prev: prev, next: next };
+        return new cache_1.default(list);
     };
     return List;
 })();
 exports.List = List;
 exports.default = List;
 
-},{"./tree":9}],6:[function(require,module,exports){
+},{"./cache":2,"./tree":11}],7:[function(require,module,exports){
 var __extends = this.__extends || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
     function __() { this.constructor = d; }
@@ -579,7 +509,7 @@ var MutableList = (function (_super) {
     function MutableList(list) {
         var _this = this;
         _super.call(this, list);
-        this.set = function (id, value) {
+        this.set = function (key, value) {
             throw new Error("Not implemented");
         };
         this.splice = function (prev, next) {
@@ -589,11 +519,11 @@ var MutableList = (function (_super) {
             }
             throw new Error("Not implemented");
         };
-        this.addBefore = function (id, value) {
-            return MutableList.addBefore(_this, id, value);
+        this.addBefore = function (key, value) {
+            return MutableList.addBefore(_this, key, value);
         };
-        this.addAfter = function (id, value) {
-            return MutableList.addAfter(_this, id, value);
+        this.addAfter = function (key, value) {
+            return MutableList.addAfter(_this, key, value);
         };
         this.push = function (value) {
             return MutableList.push(_this, value);
@@ -601,14 +531,14 @@ var MutableList = (function (_super) {
         this.unshift = function (value) {
             return MutableList.unshift(_this, value);
         };
-        this.delete = function (id) {
-            return MutableList.delete(_this, id);
+        this.delete = function (key) {
+            return MutableList.delete(_this, key);
         };
-        this.deleteBefore = function (id) {
-            return MutableList.deleteBefore(_this, id);
+        this.deleteBefore = function (key) {
+            return MutableList.deleteBefore(_this, key);
         };
-        this.deleteAfter = function (id) {
-            return MutableList.deleteAfter(_this, id);
+        this.deleteAfter = function (key) {
+            return MutableList.deleteAfter(_this, key);
         };
         this.pop = function () {
             return MutableList.pop(_this);
@@ -620,11 +550,6 @@ var MutableList = (function (_super) {
             return MutableList.remove(_this, value);
         };
         if (list != null) {
-            this.has = list.has;
-            this.get = list.get;
-            this.prev = list.prev;
-            this.next = list.next;
-            this.observe = list.observe;
             this.set = list.set;
             this.splice = list.splice;
         }
@@ -643,32 +568,32 @@ var MutableList = (function (_super) {
             splice: list.splice
         });
     };
-    MutableList.addBefore = function (list, id, value) {
-        list.splice(list.prev(id), id, value);
-        return list.prev(id);
+    MutableList.addBefore = function (list, key, value) {
+        list.splice(list.prev(key), key, value);
+        return list.prev(key);
     };
-    MutableList.addAfter = function (list, id, value) {
-        list.splice(id, list.next(id), value);
-        return list.next(id);
+    MutableList.addAfter = function (list, key, value) {
+        list.splice(key, list.next(key), value);
+        return list.next(key);
     };
     MutableList.push = function (list, value) {
-        return MutableList.addAfter(list, null, value);
-    };
-    MutableList.unshift = function (list, value) {
         return MutableList.addBefore(list, null, value);
     };
-    MutableList.delete = function (list, id) {
-        if (!list.has(id))
+    MutableList.unshift = function (list, value) {
+        return MutableList.addAfter(list, null, value);
+    };
+    MutableList.delete = function (list, key) {
+        if (!list.has(key))
             return;
-        var value = list.get(id);
-        list.splice(list.prev(id), list.next(id));
+        var value = list.get(key);
+        list.splice(list.prev(key), list.next(key));
         return value;
     };
-    MutableList.deleteBefore = function (list, id) {
-        return MutableList.delete(list, list.prev(id));
+    MutableList.deleteBefore = function (list, key) {
+        return MutableList.delete(list, list.prev(key));
     };
-    MutableList.deleteAfter = function (list, id) {
-        return MutableList.delete(list, list.prev(id));
+    MutableList.deleteAfter = function (list, key) {
+        return MutableList.delete(list, list.next(key));
     };
     MutableList.pop = function (list) {
         return MutableList.deleteBefore(list, null);
@@ -677,10 +602,10 @@ var MutableList = (function (_super) {
         return MutableList.deleteAfter(list, null);
     };
     MutableList.remove = function (list, value) {
-        var id = MutableList.idOf(list, value);
-        if (id == null)
+        var key = MutableList.keyOf(list, value);
+        if (key == null)
             return false;
-        delete (list, id);
+        delete (list, key);
         return true;
     };
     return MutableList;
@@ -688,21 +613,21 @@ var MutableList = (function (_super) {
 exports.MutableList = MutableList;
 exports.default = MutableList;
 
-},{"./observable_list":8}],7:[function(require,module,exports){
-var id_1 = require('./id');
+},{"./observable_list":10}],8:[function(require,module,exports){
+var key_1 = require('./key');
 var Subject = (function () {
     function Subject() {
         var _this = this;
         this.observe = function (observer) {
-            var observerId = id_1.default.create();
-            _this._observers[observerId] = observer;
+            var observerKey = key_1.default.create();
+            _this._observers[observerKey] = observer;
             return {
-                unsubscribe: function () { delete _this._observers[observerId]; }
+                unsubscribe: function () { delete _this._observers[observerKey]; }
             };
         };
         this.notify = function (notifier) {
-            for (var observerId in _this._observers)
-                notifier(_this._observers[observerId]);
+            for (var observerKey in _this._observers)
+                notifier(_this._observers[observerKey]);
         };
         this._observers = Object.create(null);
     }
@@ -710,7 +635,48 @@ var Subject = (function () {
 })();
 exports.Subject = Subject;
 
-},{"./id":3}],8:[function(require,module,exports){
+},{"./key":4}],9:[function(require,module,exports){
+var __extends = this.__extends || function (d, b) {
+    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
+    function __() { this.constructor = d; }
+    __.prototype = b.prototype;
+    d.prototype = new __();
+};
+var cache_1 = require('./cache');
+var ObservableCache = (function (_super) {
+    __extends(ObservableCache, _super);
+    function ObservableCache(list) {
+        var _this = this;
+        _super.call(this, list);
+        list.observe({
+            onInvalidate: function (prev, next) {
+                var key;
+                key = prev;
+                while ((key = _this._next[key]) !== undefined) {
+                    delete _this._next[_this._prev[key]];
+                    delete _this._prev[key];
+                    if (key == next)
+                        break;
+                    delete _this._byKey[key];
+                }
+                while ((key = _this._prev[key]) !== undefined) {
+                    delete _this._prev[_this._next[key]];
+                    delete _this._next[key];
+                    if (key == prev)
+                        break;
+                    delete _this._byKey[key];
+                }
+            }
+        });
+    }
+    ObservableCache.prototype.observe = function (observer) {
+        return this._list.observe(observer);
+    };
+    return ObservableCache;
+})(cache_1.default);
+exports.default = ObservableCache;
+
+},{"./cache":2}],10:[function(require,module,exports){
 var __extends = this.__extends || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
     function __() { this.constructor = d; }
@@ -720,6 +686,7 @@ var __extends = this.__extends || function (d, b) {
 var list_1 = require('./list');
 var tree_1 = require('./tree');
 var observable_1 = require('./observable');
+var observable_cache_1 = require('./observable_cache');
 ;
 var ObservableList = (function (_super) {
     __extends(ObservableList, _super);
@@ -747,9 +714,8 @@ var ObservableList = (function (_super) {
         this.cache = function () {
             return ObservableList.create(ObservableList.cache(_this));
         };
-        if (list != null) {
+        if (list != null)
             this.observe = list.observe;
-        }
     }
     ObservableList.isObservableList = function (obj) {
         return list_1.List.isList(obj) && !!obj['observe'];
@@ -793,37 +759,37 @@ var ObservableList = (function (_super) {
         var subject = new observable_1.Subject();
         list.observe({
             onInvalidate: function (prev, next) {
-                var id;
-                id = prev;
-                while ((id = cache.next(id)) != null && id != next) {
-                    var subscription = subscriptions[id];
+                var key;
+                key = prev;
+                while ((key = cache.next(key)) != null && key != next) {
+                    var subscription = subscriptions[key];
                     if (subscription) {
                         subscription.unsubscribe();
-                        delete subscriptions[id];
+                        delete subscriptions[key];
                     }
                 }
-                id = next;
-                while ((id = cache.prev(id)) != null && id != prev) {
-                    var subscription = subscriptions[id];
+                key = next;
+                while ((key = cache.prev(key)) != null && key != prev) {
+                    var subscription = subscriptions[key];
                     if (subscription) {
                         subscription.unsubscribe();
-                        delete subscriptions[id];
+                        delete subscriptions[key];
                     }
                 }
             }
         });
-        cache = ObservableList.cache(ObservableList.map(list, function (value, id) {
-            subscriptions[id] = value.observe({
+        cache = ObservableList.cache(ObservableList.map(list, function (value, key) {
+            subscriptions[key] = value.observe({
                 onInvalidate: function (prev, next) {
-                    var prevId, nextId, prevPath = tree_1.Path.append(id, prev), nextPath = tree_1.Path.append(id, next);
+                    var prevKey, nextKey, prevPath = tree_1.Path.append(key, prev), nextPath = tree_1.Path.append(key, next);
                     if (prev == null)
                         prevPath = tree_1.Tree.prev(list, tree_1.Tree.next(list, prevPath));
                     if (next == null)
                         nextPath = tree_1.Tree.next(list, tree_1.Tree.prev(list, nextPath));
-                    prevId = tree_1.Path.id(prevPath);
-                    nextId = tree_1.Path.id(nextPath);
+                    prevKey = tree_1.Path.key(prevPath);
+                    nextKey = tree_1.Path.key(nextPath);
                     subject.notify(function (observer) {
-                        observer.onInvalidate(prevId, nextId);
+                        observer.onInvalidate(prevKey, nextKey);
                     });
                 }
             });
@@ -831,9 +797,9 @@ var ObservableList = (function (_super) {
         }));
         cache.observe({
             onInvalidate: function (prev, next) {
-                var prevId = tree_1.Path.id(tree_1.Tree.prev(list, [prev])), nextId = tree_1.Path.id(tree_1.Tree.next(list, [next]));
+                var prevKey = tree_1.Path.key(tree_1.Tree.prev(list, [prev])), nextKey = tree_1.Path.key(tree_1.Tree.next(list, [next]));
                 subject.notify(function (observer) {
-                    observer.onInvalidate(prevId, nextId);
+                    observer.onInvalidate(prevKey, nextKey);
                 });
             }
         });
@@ -844,75 +810,24 @@ var ObservableList = (function (_super) {
         return ObservableList.flatten(ObservableList.map(list, flatMapFn));
     };
     ObservableList.cache = function (list) {
-        var valueCache = Object.create(null), nextCache = Object.create(null), prevCache = Object.create(null);
-        function has(id) {
-            return id in valueCache || list.has(id);
-        }
-        function get(id) {
-            if (id in valueCache)
-                return valueCache[id];
-            if (list.has(id))
-                return valueCache[id] = list.get(id);
-            return;
-        }
-        function prev(id) {
-            if (id in prevCache)
-                return prevCache[id];
-            var prevId = list.prev(id);
-            if (prevId != null) {
-                prevCache[id] = prevId;
-                nextCache[prevId] = id;
-            }
-            return prevId;
-        }
-        function next(id) {
-            if (id in nextCache)
-                return nextCache[id];
-            var nextId = list.next(id);
-            if (nextId != null) {
-                nextCache[id] = nextId;
-                prevCache[nextId] = id;
-            }
-            return nextId;
-        }
-        list.observe({
-            onInvalidate: function (prev, next) {
-                var id;
-                id = prev;
-                while ((id = nextCache[id]) != null) {
-                    delete nextCache[prevCache[id]];
-                    delete prevCache[id];
-                    if (id == next)
-                        break;
-                    delete valueCache[id];
-                }
-                while ((id = prevCache[id]) != null) {
-                    delete prevCache[nextCache[id]];
-                    delete nextCache[id];
-                    if (id == prev)
-                        break;
-                    delete valueCache[id];
-                }
-            }
-        });
-        return { has: has, get: get, prev: prev, next: next, observe: list.observe };
+        return new observable_cache_1.default(list);
     };
     return ObservableList;
 })(list_1.List);
 exports.ObservableList = ObservableList;
 exports.default = ObservableList;
 
-},{"./list":5,"./observable":7,"./tree":9}],9:[function(require,module,exports){
+},{"./list":6,"./observable":8,"./observable_cache":9,"./tree":11}],11:[function(require,module,exports){
 var list_1 = require('./list');
 ;
 var Path;
 (function (Path) {
-    function id(path) {
+    function key(path) {
         return JSON.stringify(path);
     }
-    Path.id = id;
-    function create(id) {
-        return id == null ? null : JSON.parse(id.toString());
+    Path.key = key;
+    function create(key) {
+        return key == null ? null : JSON.parse(key.toString());
     }
     Path.create = create;
     function head(path) {
@@ -954,56 +869,56 @@ var Tree;
     function prev(list, path, depth) {
         if (path === void 0) { path = []; }
         if (depth === void 0) { depth = Infinity; }
-        var head = Path.head(path), tail = Path.tail(path), id = head, value;
+        var head = Path.head(path), tail = Path.tail(path), key = head, value;
         if (head != null && !list.has(head))
             return;
         do {
-            value = list.get(id);
+            value = list.get(key);
             if (!list_1.List.isList(value) || depth == 0) {
-                if (id != null && id != head)
-                    return [id];
+                if (key != null && key != head)
+                    return [key];
             }
             else {
                 var prevPath = Tree.prev(value, tail, depth - 1);
                 if (prevPath != null)
-                    return Path.append(id, prevPath);
+                    return Path.append(key, prevPath);
                 tail = [];
             }
-        } while ((id = list.prev(id)) != null);
+        } while ((key = list.prev(key)) != null);
     }
     Tree.prev = prev;
     function next(list, path, depth) {
         if (path === void 0) { path = []; }
         if (depth === void 0) { depth = Infinity; }
-        var head = Path.head(path), tail = Path.tail(path), id = head, value;
+        var head = Path.head(path), tail = Path.tail(path), key = head, value;
         if (head != null && !list.has(head))
             return;
         do {
-            value = list.get(id);
+            value = list.get(key);
             if (!list_1.List.isList(value) || depth == 0) {
-                if (id != null && id != head)
-                    return [id];
+                if (key != null && key != head)
+                    return [key];
             }
             else {
                 var nextPath = Tree.next(value, tail, depth - 1);
                 if (nextPath != null)
-                    return Path.append(id, nextPath);
+                    return Path.append(key, nextPath);
                 tail = [];
             }
-        } while ((id = list.next(id)) != null);
+        } while ((key = list.next(key)) != null);
     }
     Tree.next = next;
 })(Tree = exports.Tree || (exports.Tree = {}));
 exports.default = Tree;
 
-},{"./list":5}],10:[function(require,module,exports){
+},{"./list":6}],12:[function(require,module,exports){
 var __extends = this.__extends || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
     function __() { this.constructor = d; }
     __.prototype = b.prototype;
     d.prototype = new __();
 };
-var id_1 = require('./id');
+var key_1 = require('./key');
 var observable_1 = require('./observable');
 var mutable_list_1 = require('./mutable_list');
 var Unit = (function (_super) {
@@ -1011,28 +926,27 @@ var Unit = (function (_super) {
     function Unit(value) {
         var _this = this;
         _super.call(this);
-        this.has = function (id) {
-            return _this._id == id;
+        this.has = function (key) {
+            return _this._key == key;
         };
-        this.get = function (id) {
-            if (_this.has(id))
+        this.get = function (key) {
+            if (_this.has(key))
                 return _this._value;
         };
-        this.prev = function (id) {
-            if (id == null)
-                return _this._id;
+        this.prev = function (key) {
+            if (key == null)
+                return _this._key;
             return null;
         };
-        this.next = function (id) {
-            if (id == null)
-                return _this._id;
+        this.next = function (key) {
+            if (key == null)
+                return _this._key;
             return null;
         };
-        this.set = function (id, value) {
-            _this._id = id;
+        this.set = function (key, value) {
+            _this._key = key;
             _this._value = value;
             _this._invalidate();
-            return id;
         };
         this.splice = function (prev, next) {
             var values = [];
@@ -1040,9 +954,8 @@ var Unit = (function (_super) {
                 values[_i - 2] = arguments[_i];
             }
             if (values.length)
-                _this.set(id_1.default.create(), values[0]);
-            return;
-            delete _this._id;
+                return _this.set(key_1.default.create(), values[0]);
+            delete _this._key;
             delete _this._value;
             _this._invalidate();
         };
@@ -1059,11 +972,10 @@ var Unit = (function (_super) {
             this.splice(null, null, value);
     }
     return Unit;
-})(mutable_list_1.default);
-exports.Unit = Unit;
+})(mutable_list_1.MutableList);
 exports.default = Unit;
 
-},{"./id":3,"./mutable_list":6,"./observable":7}],11:[function(require,module,exports){
+},{"./key":4,"./mutable_list":7,"./observable":8}],13:[function(require,module,exports){
 var factory_1 = require('./factory');
 var list_1 = require('./list');
 var observable_list_1 = require('./observable_list');
@@ -1087,5 +999,5 @@ var Sonic;
 })(Sonic || (Sonic = {}));
 module.exports = Sonic;
 
-},{"./array_list":1,"./factory":2,"./linked_list":4,"./list":5,"./mutable_list":6,"./observable_list":8,"./tree":9,"./unit":10}]},{},[11])(11)
+},{"./array_list":1,"./factory":3,"./linked_list":5,"./list":6,"./mutable_list":7,"./observable_list":10,"./tree":11,"./unit":12}]},{},[13])(13)
 });
