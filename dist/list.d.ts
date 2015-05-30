@@ -1,0 +1,58 @@
+import Key from './key';
+import { ITree } from './tree';
+export interface IList<V> {
+    has: (key: Key) => boolean;
+    get: (key: Key) => V;
+    prev: (key?: Key) => Key;
+    next: (key?: Key) => Key;
+}
+export declare class List<V> implements IList<V> {
+    constructor(list?: IList<V>);
+    has: (key: string | number) => boolean;
+    get: (key: string | number) => V;
+    prev: (key: string | number) => string | number;
+    next: (key: string | number) => string | number;
+    first: () => V;
+    last: () => V;
+    forEach: (fn: (value: V, key?: string | number) => void) => void;
+    reduce: <W>(fn: (memo: W, value: V, key?: string | number) => W, memo?: W) => W;
+    toArray: () => V[];
+    findKey: (fn: (value: V, key?: string | number) => boolean) => string | number;
+    find: (fn: (value: V, key?: string | number) => boolean) => V;
+    keyOf: (value: V) => string | number;
+    indexOf: (value: V) => string | number;
+    keyAt: (index: number) => string | number;
+    at: (index: number) => V;
+    every: (predicate: (value: V, key?: string | number) => boolean) => boolean;
+    some: (predicate: (value: V, key?: string | number) => boolean) => boolean;
+    contains: (value: V) => boolean;
+    reverse: () => List<V>;
+    map: <W>(mapFn: (value: V, key?: string | number) => W) => List<W>;
+    filter: (filterFn: (value: V, key?: string | number) => boolean) => List<V>;
+    flatten: () => List<any>;
+    flatMap: <W>(flatMapFn: (value: V, key?: string | number) => IList<W>) => List<W>;
+    cache: () => List<V>;
+    static isList(obj: any): boolean;
+    static create<V>(list: IList<V>): List<V>;
+    static first<V>(list: IList<V>): V;
+    static last<V>(list: IList<V>): V;
+    static forEach<V>(list: IList<V>, fn: (value: V, key?: Key) => void): void;
+    static reduce<V, W>(list: IList<V>, fn: (memo: W, value: V, key?: Key) => W, memo?: W): W;
+    static toArray<V>(list: IList<V>): V[];
+    static findKey<V>(list: IList<V>, fn: (value: V, key?: Key) => boolean): Key;
+    static find<V>(list: IList<V>, fn: (value: V, key?: Key) => boolean): V;
+    static keyOf<V>(list: IList<V>, value: V): Key;
+    static indexOf<V>(list: IList<V>, value: V): number;
+    static keyAt<V>(list: IList<V>, index: number): Key;
+    static at<V>(list: IList<V>, index: number): V;
+    static every<V>(list: IList<V>, predicate: (value: V, key?: Key) => boolean): boolean;
+    static some<V>(list: IList<V>, predicate: (value: V, key?: Key) => boolean): boolean;
+    static contains<V>(list: IList<V>, value: V): boolean;
+    static reverse<V>(list: IList<V>): IList<V>;
+    static map<V, W>(list: IList<V>, mapFn: (value: V, key?: Key) => W): IList<W>;
+    static filter<V>(list: IList<V>, filterFn: (value: V, key?: Key) => boolean): IList<V>;
+    static flatten<V>(list: ITree<V>): ITree<V>;
+    static flatMap<V, W>(list: IList<V>, flatMapFn: (value: V, key?: Key) => IList<W>): IList<W>;
+    static cache<V>(list: IList<V>): IList<V>;
+}
+export default List;

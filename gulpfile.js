@@ -14,10 +14,15 @@ var merge      = require('merge2');
 var typescriptProject = typescript.createProject('tsconfig.json', { typescript: require('typescript') });
 
 gulp.task('typescript', function() {
-  return gulp
+  var result = gulp
     .src('src/**/*.ts')
     .pipe(typescript(typescriptProject))
-    .pipe(gulp.dest('dist'))
+
+  return merge([
+    result.dts.pipe(gulp.dest('dist')),
+    result.js.pipe(gulp.dest('dist'))
+  ]);
+
 });
 
 gulp.task('browserify', ['typescript'], function() {

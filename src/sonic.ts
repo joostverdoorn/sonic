@@ -1,4 +1,3 @@
-
 import factory        from './factory';
 
 import _List           from './list';
