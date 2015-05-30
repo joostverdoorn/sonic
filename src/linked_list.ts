@@ -8,10 +8,12 @@ export default class LinkedList<V> extends MutableList<V> {
   private _next: {[key: string]: Key};
   private _prev: {[key: string]: Key};
   private _subject: ISubject<IListObserver>;
+  private _keyFn: (value: V) => Key  = Key.create;
 
-  constructor(values: V[]) {
+  constructor(values: V[], keyFn?: (value: V) => Key) {
     super();
 
+    if (keyFn) this._keyFn = keyFn;
     this._subject = new Subject();
     this._byKey = Object.create(null);
     this._prev = Object.create(null);
@@ -71,7 +73,7 @@ export default class LinkedList<V> extends MutableList<V> {
 
     var _key = prev;
     for(value of values) {
-      key = Key.create();
+      key = this._keyFn(value);
       this._byKey[key] = value;
       this._prev[key] = _key;
       this._next[_key] = key;

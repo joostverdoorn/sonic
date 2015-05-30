@@ -22,7 +22,6 @@ gulp.task('typescript', function() {
     result.dts.pipe(gulp.dest('dist')),
     result.js.pipe(gulp.dest('dist'))
   ]);
-
 });
 
 gulp.task('browserify', ['typescript'], function() {

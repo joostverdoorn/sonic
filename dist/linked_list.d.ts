@@ -1,3 +1,4 @@
+import Key from './key';
 import { ISubscription } from './observable';
 import { IListObserver } from './observable_list';
 import { MutableList } from './mutable_list';
@@ -6,7 +7,8 @@ export default class LinkedList<V> extends MutableList<V> {
     private _next;
     private _prev;
     private _subject;
-    constructor(values: V[]);
+    private _keyFn;
+    constructor(values: V[], keyFn?: (value: V) => Key);
     has: (key: string | number) => boolean;
     get: (key: string | number) => V;
     prev: (key?: string | number) => string | number;

@@ -9,9 +9,10 @@ var observable_1 = require('./observable');
 var mutable_list_1 = require('./mutable_list');
 var LinkedList = (function (_super) {
     __extends(LinkedList, _super);
-    function LinkedList(values) {
+    function LinkedList(values, keyFn) {
         var _this = this;
         _super.call(this);
+        this._keyFn = key_1.default.create;
         this.has = function (key) {
             return key in _this._byKey;
         };
@@ -62,7 +63,7 @@ var LinkedList = (function (_super) {
             var _key = prev;
             for (var _a = 0; _a < values.length; _a++) {
                 value = values[_a];
-                key = key_1.default.create();
+                key = _this._keyFn(value);
                 _this._byKey[key] = value;
                 _this._prev[key] = _key;
                 _this._next[_key] = key;
@@ -84,6 +85,8 @@ var LinkedList = (function (_super) {
                 observer.onInvalidate(prev, next);
             });
         };
+        if (keyFn)
+            this._keyFn = keyFn;
         this._subject = new observable_1.Subject();
         this._byKey = Object.create(null);
         this._prev = Object.create(null);
