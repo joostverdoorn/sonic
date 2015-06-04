@@ -9,6 +9,7 @@ var tree_1 = require('./tree');
 var observable_1 = require('./observable');
 var observable_cache_1 = require('./observable_cache');
 var observable_index_1 = require('./observable_index');
+var observable_key_by_1 = require('./observable_key_by');
 ;
 var ObservableList = (function (_super) {
     __extends(ObservableList, _super);
@@ -38,6 +39,9 @@ var ObservableList = (function (_super) {
         };
         this.index = function () {
             return ObservableList.create(ObservableList.index(_this));
+        };
+        this.keyBy = function (keyFn) {
+            return ObservableList.create(ObservableList.keyBy(_this, keyFn));
         };
         this.zip = function (other, zipFn) {
             return ObservableList.create(ObservableList.zip(_this, other, zipFn));
@@ -158,6 +162,9 @@ var ObservableList = (function (_super) {
     };
     ObservableList.index = function (list) {
         return new observable_index_1.default(list);
+    };
+    ObservableList.keyBy = function (list, keyFn) {
+        return new observable_key_by_1.default(list, keyFn);
     };
     ObservableList.zip = function (list, other, zipFn) {
         list = ObservableList.index(list);

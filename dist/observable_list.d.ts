@@ -16,6 +16,7 @@ export declare class ObservableList<V> extends List<V> implements IObservableLis
     flatMap: <W>(flatMapFn: (value: V, key?: string | number) => IObservableList<W>) => ObservableList<W>;
     cache: () => ObservableList<V>;
     index: () => ObservableList<V>;
+    keyBy: (keyFn: (value: V, key?: string | number) => string | number) => ObservableList<V>;
     zip: <W, U>(other: IObservableList<W>, zipFn: (v: V, w: W) => U) => ObservableList<U>;
     skip: (k: number) => IObservableList<V>;
     take: (n: number) => IObservableList<V>;
@@ -30,6 +31,7 @@ export declare class ObservableList<V> extends List<V> implements IObservableLis
     static flatMap<V, W>(list: IObservableList<V>, flatMapFn: (value: V, key?: Key) => IObservableList<W>): IObservableList<W>;
     static cache<V>(list: IObservableList<V>): IObservableList<V>;
     static index<V>(list: IObservableList<V>): IObservableList<V>;
+    static keyBy<V>(list: IObservableList<V>, keyFn: (value: V, key?: Key) => Key): IObservableList<V>;
     static zip<V, W, U>(list: IObservableList<V>, other: IObservableList<W>, zipFn: (v: V, w: W) => U): IObservableList<U>;
     static skip<V>(list: IObservableList<V>, k: number): IObservableList<V>;
     static take<V>(list: IObservableList<V>, n: number): IObservableList<V>;

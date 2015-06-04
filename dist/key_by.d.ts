@@ -1,20 +1,18 @@
 import Key from './key';
 import { IList } from './list';
-export declare class Cache<V> implements IList<V> {
-    protected _byKey: {
-        [key: string]: V;
-    };
-    protected _next: {
+export declare class KeyBy<V> implements IList<V> {
+    protected _sourceKeyByKey: {
         [key: string]: Key;
     };
-    protected _prev: {
+    protected _keyBySourceKey: {
         [key: string]: Key;
     };
+    protected _keyFn: (value: V, key?: Key) => Key;
     protected _list: IList<V>;
-    constructor(list: IList<V>);
+    constructor(list: IList<V>, keyFn: (value: V, key?: Key) => Key);
     has: (key: string | number) => boolean;
     get: (key: string | number) => V;
     prev: (key: string | number) => string | number;
     next: (key?: string | number) => string | number;
 }
-export default Cache;
+export default KeyBy;

@@ -3,6 +3,7 @@ import { Tree, ITree, Path } from './tree';
 import ArrayList from './array_list';
 import Cache from './cache';
 import Index from './index';
+import KeyBy from './key_by';
 
 export interface IList<V> {
   has: (key: Key) => boolean;
@@ -120,6 +121,10 @@ export class List<V> implements IList<V> {
 
   index = (): List<V> => {
     return List.create(List.index(this));
+  }
+
+  keyBy = (keyFn: (value: V, key?: Key) => Key): List<V> => {
+    return List.create(List.keyBy(this, keyFn));
   }
 
   zip = <W, U>(other: IList<W>, zipFn: (v: V, w: W) => U): List<U> => {
@@ -312,57 +317,10 @@ export class List<V> implements IList<V> {
     return new Index<V>(list);
   }
 
-  // static keyBy<V>(list: IList<V>, keyFn: (value: V, key?: Key) => Key) {
-  //   var sourceKeyByKey: {[key: string]: Key} = Object.create(null),
-  //       keyBySourceKey: {[key: string]: Key} = Object.create(null);
-  //
-  //   function has(key: Key): boolean {
-  //     if(key in sourceKeyByKey) return true;
-  //
-  //     var last: Key = null;
-  //     while((last = next(last)) != null) if(last == key) return true;
-  //     return false;
-  //   }
-  //
-  //   function get(key: Key): V {
-  //     return has(key) ? list.get(sourceKeyByKey[key]) : undefined;
-  //   }
-  //
-  //   function prev(key: Key): Key {
-  //     if(has(key) || key == null) return keyBySourceKey[list.prev(sourceKeyByKey[key])];
-  //   }
-  //
-  //   function next(key: Key = null): Key {
-  //     var sourceKey: Key, sourceNext: Key, res: Key;
-  //
-  //     if(key in sourceKeyByKey) sourceKey = sourceKeyByKey[key];
-  //     else sourceKey = null;
-  //
-  //     while(key != null && !(key in sourceKeyByKey)) {
-  //       sourceKey = list.next(sourceKey);
-  //
-  //       if (!(sourceKey in keyBySourceKey)) {
-  //         if (sourceKey == null) return null;
-  //         res = keyFn(list.get(sourceKey), sourceKey);
-  //         keyBySourceKey[sourceKey] = res;
-  //         sourceKeyByKey[res] = sourceKey;
-  //
-  //         if (res == key) break;
-  //       }
-  //     }
-  //
-  //     sourceKey = list.next(sourceKey);
-  //     if (sourceKey == null) return null;
-  //     res = keyFn(list.get(sourceKey), sourceKey);
-  //     keyBySourceKey[sourceKey] = res;
-  //     sourceKeyByKey[res] = sourceKey;
-  //
-  //     return res;
-  //   }
-  //
-  //   return { has, get, prev, next };
-  // }
-  //
+  static keyBy<V>(list: IList<V>, keyFn: (value: V, key?: Key) => Key): IList<V> {
+    return new KeyBy<V>(list, keyFn);
+  }
+
   static zip<V, W, U>(list: IList<V>, other: IList<W>, zipFn: (v: V, w: W) => U): IList<U> {
     list = List.index(list);
     other = List.index(other);
@@ -411,7 +369,7 @@ export class List<V> implements IList<V> {
         scanList: IList<W>;
 
     function get(key: Key): W {
-      var prev = list.prev(key);
+      var prev = scanList.prev(key);
       return scanFn(prev != null ? scanList.get(prev) : memo, list.get(key));
     }
 

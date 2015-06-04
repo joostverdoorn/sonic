@@ -3,7 +3,7 @@ import Cache from './cache';
 import { ISubscription } from './observable';
 import { IObservableList, IListObserver } from './observable_list';
 
-export class ObservableCache<V> extends Cache<V> implements IObservableList<V> {
+export class ObservableCache<V> extends Cache<V> implements IObservableList<V>, IListObserver {
   protected _list: IObservableList<V>;
 
   constructor(list: IObservableList<V>) {

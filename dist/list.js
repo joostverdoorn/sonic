@@ -1,6 +1,7 @@
 var tree_1 = require('./tree');
 var cache_1 = require('./cache');
 var index_1 = require('./index');
+var key_by_1 = require('./key_by');
 var List = (function () {
     function List(list) {
         var _this = this;
@@ -78,6 +79,9 @@ var List = (function () {
         };
         this.index = function () {
             return List.create(List.index(_this));
+        };
+        this.keyBy = function (keyFn) {
+            return List.create(List.keyBy(_this, keyFn));
         };
         this.zip = function (other, zipFn) {
             return List.create(List.zip(_this, other, zipFn));
@@ -253,57 +257,9 @@ var List = (function () {
     List.index = function (list) {
         return new index_1.default(list);
     };
-    // static keyBy<V>(list: IList<V>, keyFn: (value: V, key?: Key) => Key) {
-    //   var sourceKeyByKey: {[key: string]: Key} = Object.create(null),
-    //       keyBySourceKey: {[key: string]: Key} = Object.create(null);
-    //
-    //   function has(key: Key): boolean {
-    //     if(key in sourceKeyByKey) return true;
-    //
-    //     var last: Key = null;
-    //     while((last = next(last)) != null) if(last == key) return true;
-    //     return false;
-    //   }
-    //
-    //   function get(key: Key): V {
-    //     return has(key) ? list.get(sourceKeyByKey[key]) : undefined;
-    //   }
-    //
-    //   function prev(key: Key): Key {
-    //     if(has(key) || key == null) return keyBySourceKey[list.prev(sourceKeyByKey[key])];
-    //   }
-    //
-    //   function next(key: Key = null): Key {
-    //     var sourceKey: Key, sourceNext: Key, res: Key;
-    //
-    //     if(key in sourceKeyByKey) sourceKey = sourceKeyByKey[key];
-    //     else sourceKey = null;
-    //
-    //     while(key != null && !(key in sourceKeyByKey)) {
-    //       sourceKey = list.next(sourceKey);
-    //
-    //       if (!(sourceKey in keyBySourceKey)) {
-    //         if (sourceKey == null) return null;
-    //         res = keyFn(list.get(sourceKey), sourceKey);
-    //         keyBySourceKey[sourceKey] = res;
-    //         sourceKeyByKey[res] = sourceKey;
-    //
-    //         if (res == key) break;
-    //       }
-    //     }
-    //
-    //     sourceKey = list.next(sourceKey);
-    //     if (sourceKey == null) return null;
-    //     res = keyFn(list.get(sourceKey), sourceKey);
-    //     keyBySourceKey[sourceKey] = res;
-    //     sourceKeyByKey[res] = sourceKey;
-    //
-    //     return res;
-    //   }
-    //
-    //   return { has, get, prev, next };
-    // }
-    //
+    List.keyBy = function (list, keyFn) {
+        return new key_by_1.default(list, keyFn);
+    };
     List.zip = function (list, other, zipFn) {
         list = List.index(list);
         other = List.index(other);
@@ -341,7 +297,7 @@ var List = (function () {
     List.scan = function (list, scanFn, memo) {
         var has = list.has, prev = list.prev, next = list.next, scanList;
         function get(key) {
-            var prev = list.prev(key);
+            var prev = scanList.prev(key);
             return scanFn(prev != null ? scanList.get(prev) : memo, list.get(key));
         }
         scanList = List.cache({ has: has, get: get, prev: prev, next: next });

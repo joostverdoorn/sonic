@@ -77,7 +77,7 @@ var ArrayList = (function (_super) {
 })(mutable_list_1.MutableList);
 exports.default = ArrayList;
 
-},{"./mutable_list":8,"./observable":9}],2:[function(require,module,exports){
+},{"./mutable_list":9,"./observable":10}],2:[function(require,module,exports){
 var Cache = (function () {
     function Cache(list) {
         var _this = this;
@@ -141,7 +141,7 @@ function factory(obj) {
 }
 exports.default = factory;
 
-},{"./array_list":1,"./list":7,"./mutable_list":8,"./observable_list":12,"./unit":14}],4:[function(require,module,exports){
+},{"./array_list":1,"./list":8,"./mutable_list":9,"./observable_list":14,"./unit":16}],4:[function(require,module,exports){
 var Index = (function () {
     function Index(list) {
         var _this = this;
@@ -197,6 +197,63 @@ var Key;
 exports.default = Key;
 
 },{}],6:[function(require,module,exports){
+var KeyBy = (function () {
+    function KeyBy(list, keyFn) {
+        var _this = this;
+        this.has = function (key) {
+            if (key in _this._sourceKeyByKey)
+                return true;
+            var last = null;
+            while ((last = _this.next(last)) != null)
+                if (last == key)
+                    return true;
+            return false;
+        };
+        this.get = function (key) {
+            return _this.has(key) ? _this._list.get(_this._sourceKeyByKey[key]) : undefined;
+        };
+        this.prev = function (key) {
+            if (_this.has(key) || key == null)
+                return _this._keyBySourceKey[_this._list.prev(_this._sourceKeyByKey[key])];
+        };
+        this.next = function (key) {
+            if (key === void 0) { key = null; }
+            var sourceKey, sourceNext, res;
+            if (key in _this._sourceKeyByKey)
+                sourceKey = _this._sourceKeyByKey[key];
+            else
+                sourceKey = null;
+            while (key != null && !(key in _this._sourceKeyByKey)) {
+                sourceKey = _this._list.next(sourceKey);
+                if (!(sourceKey in _this._keyBySourceKey)) {
+                    if (sourceKey == null)
+                        return null;
+                    res = _this._keyFn(_this._list.get(sourceKey), sourceKey);
+                    _this._keyBySourceKey[sourceKey] = res;
+                    _this._sourceKeyByKey[res] = sourceKey;
+                    if (res == key)
+                        break;
+                }
+            }
+            sourceKey = _this._list.next(sourceKey);
+            if (sourceKey == null)
+                return null;
+            res = _this._keyFn(_this._list.get(sourceKey), sourceKey);
+            _this._keyBySourceKey[sourceKey] = res;
+            _this._sourceKeyByKey[res] = sourceKey;
+            return res;
+        };
+        this._list = list;
+        this._keyFn = keyFn;
+        this._sourceKeyByKey = Object.create(null);
+        this._keyBySourceKey = Object.create(null);
+    }
+    return KeyBy;
+})();
+exports.KeyBy = KeyBy;
+exports.default = KeyBy;
+
+},{}],7:[function(require,module,exports){
 var __extends = this.__extends || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
     function __() { this.constructor = d; }
@@ -298,10 +355,11 @@ var LinkedList = (function (_super) {
 })(mutable_list_1.MutableList);
 exports.default = LinkedList;
 
-},{"./key":5,"./mutable_list":8,"./observable":9}],7:[function(require,module,exports){
+},{"./key":5,"./mutable_list":9,"./observable":10}],8:[function(require,module,exports){
 var tree_1 = require('./tree');
 var cache_1 = require('./cache');
 var index_1 = require('./index');
+var key_by_1 = require('./key_by');
 var List = (function () {
     function List(list) {
         var _this = this;
@@ -379,6 +437,9 @@ var List = (function () {
         };
         this.index = function () {
             return List.create(List.index(_this));
+        };
+        this.keyBy = function (keyFn) {
+            return List.create(List.keyBy(_this, keyFn));
         };
         this.zip = function (other, zipFn) {
             return List.create(List.zip(_this, other, zipFn));
@@ -554,57 +615,9 @@ var List = (function () {
     List.index = function (list) {
         return new index_1.default(list);
     };
-    // static keyBy<V>(list: IList<V>, keyFn: (value: V, key?: Key) => Key) {
-    //   var sourceKeyByKey: {[key: string]: Key} = Object.create(null),
-    //       keyBySourceKey: {[key: string]: Key} = Object.create(null);
-    //
-    //   function has(key: Key): boolean {
-    //     if(key in sourceKeyByKey) return true;
-    //
-    //     var last: Key = null;
-    //     while((last = next(last)) != null) if(last == key) return true;
-    //     return false;
-    //   }
-    //
-    //   function get(key: Key): V {
-    //     return has(key) ? list.get(sourceKeyByKey[key]) : undefined;
-    //   }
-    //
-    //   function prev(key: Key): Key {
-    //     if(has(key) || key == null) return keyBySourceKey[list.prev(sourceKeyByKey[key])];
-    //   }
-    //
-    //   function next(key: Key = null): Key {
-    //     var sourceKey: Key, sourceNext: Key, res: Key;
-    //
-    //     if(key in sourceKeyByKey) sourceKey = sourceKeyByKey[key];
-    //     else sourceKey = null;
-    //
-    //     while(key != null && !(key in sourceKeyByKey)) {
-    //       sourceKey = list.next(sourceKey);
-    //
-    //       if (!(sourceKey in keyBySourceKey)) {
-    //         if (sourceKey == null) return null;
-    //         res = keyFn(list.get(sourceKey), sourceKey);
-    //         keyBySourceKey[sourceKey] = res;
-    //         sourceKeyByKey[res] = sourceKey;
-    //
-    //         if (res == key) break;
-    //       }
-    //     }
-    //
-    //     sourceKey = list.next(sourceKey);
-    //     if (sourceKey == null) return null;
-    //     res = keyFn(list.get(sourceKey), sourceKey);
-    //     keyBySourceKey[sourceKey] = res;
-    //     sourceKeyByKey[res] = sourceKey;
-    //
-    //     return res;
-    //   }
-    //
-    //   return { has, get, prev, next };
-    // }
-    //
+    List.keyBy = function (list, keyFn) {
+        return new key_by_1.default(list, keyFn);
+    };
     List.zip = function (list, other, zipFn) {
         list = List.index(list);
         other = List.index(other);
@@ -642,7 +655,7 @@ var List = (function () {
     List.scan = function (list, scanFn, memo) {
         var has = list.has, prev = list.prev, next = list.next, scanList;
         function get(key) {
-            var prev = list.prev(key);
+            var prev = scanList.prev(key);
             return scanFn(prev != null ? scanList.get(prev) : memo, list.get(key));
         }
         scanList = List.cache({ has: has, get: get, prev: prev, next: next });
@@ -653,7 +666,7 @@ var List = (function () {
 exports.List = List;
 exports.default = List;
 
-},{"./cache":2,"./index":4,"./tree":13}],8:[function(require,module,exports){
+},{"./cache":2,"./index":4,"./key_by":6,"./tree":15}],9:[function(require,module,exports){
 var __extends = this.__extends || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
     function __() { this.constructor = d; }
@@ -770,7 +783,7 @@ var MutableList = (function (_super) {
 exports.MutableList = MutableList;
 exports.default = MutableList;
 
-},{"./observable_list":12}],9:[function(require,module,exports){
+},{"./observable_list":14}],10:[function(require,module,exports){
 var key_1 = require('./key');
 var Subject = (function () {
     function Subject() {
@@ -792,7 +805,7 @@ var Subject = (function () {
 })();
 exports.Subject = Subject;
 
-},{"./key":5}],10:[function(require,module,exports){
+},{"./key":5}],11:[function(require,module,exports){
 var __extends = this.__extends || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
     function __() { this.constructor = d; }
@@ -833,7 +846,7 @@ var ObservableCache = (function (_super) {
 exports.ObservableCache = ObservableCache;
 exports.default = ObservableCache;
 
-},{"./cache":2}],11:[function(require,module,exports){
+},{"./cache":2}],12:[function(require,module,exports){
 var __extends = this.__extends || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
     function __() { this.constructor = d; }
@@ -881,7 +894,37 @@ var ObservableIndex = (function (_super) {
 exports.ObservableIndex = ObservableIndex;
 exports.default = ObservableIndex;
 
-},{"./index":4,"./observable":9}],12:[function(require,module,exports){
+},{"./index":4,"./observable":10}],13:[function(require,module,exports){
+var __extends = this.__extends || function (d, b) {
+    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
+    function __() { this.constructor = d; }
+    __.prototype = b.prototype;
+    d.prototype = new __();
+};
+var key_by_1 = require('./key_by');
+var observable_1 = require('./observable');
+var ObservableKeyBy = (function (_super) {
+    __extends(ObservableKeyBy, _super);
+    function ObservableKeyBy(list, keyFn) {
+        var _this = this;
+        _super.call(this, list, keyFn);
+        this.observe = function (observer) {
+            return _this._subject.observe(observer);
+        };
+        this.onInvalidate = function (prev, next) {
+            _this._subject.notify(function (observer) {
+                observer.onInvalidate(this._keyBySourceKey[prev], this._keyBySourceKey[next]);
+            });
+        };
+        this._subject = new observable_1.Subject();
+        list.observe(this);
+    }
+    return ObservableKeyBy;
+})(key_by_1.default);
+exports.ObservableKeyBy = ObservableKeyBy;
+exports.default = ObservableKeyBy;
+
+},{"./key_by":6,"./observable":10}],14:[function(require,module,exports){
 var __extends = this.__extends || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
     function __() { this.constructor = d; }
@@ -893,6 +936,7 @@ var tree_1 = require('./tree');
 var observable_1 = require('./observable');
 var observable_cache_1 = require('./observable_cache');
 var observable_index_1 = require('./observable_index');
+var observable_key_by_1 = require('./observable_key_by');
 ;
 var ObservableList = (function (_super) {
     __extends(ObservableList, _super);
@@ -922,6 +966,9 @@ var ObservableList = (function (_super) {
         };
         this.index = function () {
             return ObservableList.create(ObservableList.index(_this));
+        };
+        this.keyBy = function (keyFn) {
+            return ObservableList.create(ObservableList.keyBy(_this, keyFn));
         };
         this.zip = function (other, zipFn) {
             return ObservableList.create(ObservableList.zip(_this, other, zipFn));
@@ -1043,6 +1090,9 @@ var ObservableList = (function (_super) {
     ObservableList.index = function (list) {
         return new observable_index_1.default(list);
     };
+    ObservableList.keyBy = function (list, keyFn) {
+        return new observable_key_by_1.default(list, keyFn);
+    };
     ObservableList.zip = function (list, other, zipFn) {
         list = ObservableList.index(list);
         other = ObservableList.index(other);
@@ -1107,7 +1157,7 @@ var ObservableList = (function (_super) {
 exports.ObservableList = ObservableList;
 exports.default = ObservableList;
 
-},{"./list":7,"./observable":9,"./observable_cache":10,"./observable_index":11,"./tree":13}],13:[function(require,module,exports){
+},{"./list":8,"./observable":10,"./observable_cache":11,"./observable_index":12,"./observable_key_by":13,"./tree":15}],15:[function(require,module,exports){
 var list_1 = require('./list');
 ;
 var Path;
@@ -1201,7 +1251,7 @@ var Tree;
 })(Tree = exports.Tree || (exports.Tree = {}));
 exports.default = Tree;
 
-},{"./list":7}],14:[function(require,module,exports){
+},{"./list":8}],16:[function(require,module,exports){
 var __extends = this.__extends || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
     function __() { this.constructor = d; }
@@ -1265,7 +1315,7 @@ var Unit = (function (_super) {
 })(mutable_list_1.MutableList);
 exports.default = Unit;
 
-},{"./key":5,"./mutable_list":8,"./observable":9}],15:[function(require,module,exports){
+},{"./key":5,"./mutable_list":9,"./observable":10}],17:[function(require,module,exports){
 var factory_1 = require('./factory');
 var list_1 = require('./list');
 var observable_list_1 = require('./observable_list');
@@ -1289,5 +1339,5 @@ var Sonic;
 })(Sonic || (Sonic = {}));
 module.exports = Sonic;
 
-},{"./array_list":1,"./factory":3,"./linked_list":6,"./list":7,"./mutable_list":8,"./observable_list":12,"./tree":13,"./unit":14}]},{},[15])(15)
+},{"./array_list":1,"./factory":3,"./linked_list":7,"./list":8,"./mutable_list":9,"./observable_list":14,"./tree":15,"./unit":16}]},{},[17])(17)
 });

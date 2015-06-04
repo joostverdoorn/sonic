@@ -33,6 +33,7 @@ export declare class List<V> implements IList<V> {
     flatMap: <W>(flatMapFn: (value: V, key?: string | number) => IList<W>) => List<W>;
     cache: () => List<V>;
     index: () => List<V>;
+    keyBy: (keyFn: (value: V, key?: string | number) => string | number) => List<V>;
     zip: <W, U>(other: IList<W>, zipFn: (v: V, w: W) => U) => List<U>;
     skip: (k: number) => IList<V>;
     take: (n: number) => IList<V>;
@@ -61,6 +62,7 @@ export declare class List<V> implements IList<V> {
     static flatMap<V, W>(list: IList<V>, flatMapFn: (value: V, key?: Key) => IList<W>): IList<W>;
     static cache<V>(list: IList<V>): IList<V>;
     static index<V>(list: IList<V>): IList<V>;
+    static keyBy<V>(list: IList<V>, keyFn: (value: V, key?: Key) => Key): IList<V>;
     static zip<V, W, U>(list: IList<V>, other: IList<W>, zipFn: (v: V, w: W) => U): IList<U>;
     static skip<V>(list: IList<V>, k: number): IList<V>;
     static take<V>(list: IList<V>, n: number): IList<V>;
