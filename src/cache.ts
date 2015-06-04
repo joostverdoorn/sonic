@@ -1,7 +1,7 @@
-import {IList} from './list';
 import Key from './key';
+import { IList } from './list';
 
-export default class Cache<V> implements IList<V> {
+export class Cache<V> implements IList<V> {
   protected _byKey: {[key: string]: V};
   protected _next: {[key: string]: Key};
   protected _prev: {[key: string]: Key};
@@ -14,17 +14,17 @@ export default class Cache<V> implements IList<V> {
     this._list = list;
   }
 
-  has(key: Key): boolean {
+  has = (key: Key): boolean => {
     return key in this._byKey || this._list.has(key);
   }
 
-  get(key: Key): V {
+  get = (key: Key): V => {
     if(key in this._byKey) return this._byKey[key];
     if(this._list.has(key)) return this._byKey[key] = this._list.get(key);
     return;
   }
 
-  prev(key: Key): Key {
+  prev = (key: Key): Key => {
     if(key in this._prev) return this._prev[key];
 
     var prevKey = this._list.prev(key);
@@ -36,7 +36,7 @@ export default class Cache<V> implements IList<V> {
     return prevKey;
   }
 
-  next(key: Key = null): Key {
+  next = (key: Key = null): Key => {
     if(key in this._next) return this._next[key];
 
     var nextKey = this._list.next(key);
@@ -48,3 +48,5 @@ export default class Cache<V> implements IList<V> {
     return nextKey;
   }
 }
+
+export default Cache;

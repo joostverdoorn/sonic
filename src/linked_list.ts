@@ -1,7 +1,7 @@
 import Key                                  from './key';
 import { Subject, ISubject, ISubscription } from './observable';
-import { IListObserver } from './observable_list';
-import { MutableList } from './mutable_list';
+import { IListObserver }                    from './observable_list';
+import { MutableList }                      from './mutable_list';
 
 export default class LinkedList<V> extends MutableList<V> {
   private _byKey: {[key: string]: V};
@@ -13,7 +13,7 @@ export default class LinkedList<V> extends MutableList<V> {
   constructor(values: V[], keyFn?: (value: V) => Key) {
     super();
 
-    if (keyFn) this._keyFn = keyFn;
+    if(keyFn) this._keyFn = keyFn;
     this._subject = new Subject();
     this._byKey = Object.create(null);
     this._prev = Object.create(null);

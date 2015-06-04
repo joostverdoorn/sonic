@@ -8,6 +8,7 @@ var list_1 = require('./list');
 var tree_1 = require('./tree');
 var observable_1 = require('./observable');
 var observable_cache_1 = require('./observable_cache');
+var observable_index_1 = require('./observable_index');
 ;
 var ObservableList = (function (_super) {
     __extends(ObservableList, _super);
@@ -35,6 +36,24 @@ var ObservableList = (function (_super) {
         this.cache = function () {
             return ObservableList.create(ObservableList.cache(_this));
         };
+        this.index = function () {
+            return ObservableList.create(ObservableList.index(_this));
+        };
+        this.zip = function (other, zipFn) {
+            return ObservableList.create(ObservableList.zip(_this, other, zipFn));
+        };
+        this.skip = function (k) {
+            return ObservableList.create(ObservableList.skip(_this, k));
+        };
+        this.take = function (n) {
+            return ObservableList.create(ObservableList.take(_this, n));
+        };
+        this.range = function (k, n) {
+            return ObservableList.create(ObservableList.range(_this, k, n));
+        };
+        this.scan = function (scanFn, memo) {
+            return ObservableList.create(ObservableList.scan(_this, scanFn, memo));
+        };
         if (list != null)
             this.observe = list.observe;
     }
@@ -43,17 +62,21 @@ var ObservableList = (function (_super) {
     };
     ObservableList.create = function (list) {
         return new ObservableList({
-            has: list.has.bind(list),
-            get: list.get.bind(list),
-            prev: list.prev.bind(list),
-            next: list.next.bind(list),
-            observe: list.observe.bind(list)
+            has: list.has,
+            get: list.get,
+            prev: list.prev,
+            next: list.next,
+            observe: list.observe
         });
     };
     ObservableList.reverse = function (list) {
         var _a = list_1.List.reverse(list), has = _a.has, get = _a.get, prev = _a.prev, next = _a.next;
         function observe(observer) {
-            return list.observe(observer);
+            return list.observe({
+                onInvalidate: function (prev, next) {
+                    observer.onInvalidate(next, prev);
+                }
+            });
         }
         return { has: has, get: get, prev: prev, next: next, observe: observe };
     };
@@ -132,6 +155,68 @@ var ObservableList = (function (_super) {
     };
     ObservableList.cache = function (list) {
         return new observable_cache_1.default(list);
+    };
+    ObservableList.index = function (list) {
+        return new observable_index_1.default(list);
+    };
+    ObservableList.zip = function (list, other, zipFn) {
+        list = ObservableList.index(list);
+        other = ObservableList.index(other);
+        function has(key) {
+            return list.has(key) && other.has(key);
+        }
+        function get(key) {
+            return has(key) ? zipFn(list.get(key), other.get(key)) : undefined;
+        }
+        function prev(key) {
+            var prev = list.prev(key);
+            return prev != null && prev == other.prev(key) ? prev : null;
+        }
+        function next(key) {
+            var next = list.next(key);
+            return next != null && next == other.next(key) ? next : null;
+        }
+        var subject = new observable_1.Subject(), observer = {
+            onInvalidate: function (prev, next) {
+                subject.notify(function (_observer) {
+                    _observer.onInvalidate(prev, next);
+                });
+            }
+        };
+        list.observe(observer);
+        other.observe(observer);
+        return { has: has, get: get, prev: prev, next: next, observe: subject.observe };
+    };
+    ObservableList.skip = function (list, k) {
+        return ObservableList.filter(ObservableList.index(list), function (value, key) {
+            return key >= k;
+        });
+    };
+    ObservableList.take = function (list, n) {
+        return ObservableList.filter(ObservableList.index(list), function (value, key) {
+            return key < n;
+        });
+    };
+    ObservableList.range = function (list, k, n) {
+        return ObservableList.filter(ObservableList.index(list), function (value, key) {
+            return key >= k && key < n + k;
+        });
+    };
+    ObservableList.scan = function (list, scanFn, memo) {
+        var has = list.has, prev = list.prev, next = list.next, scanList;
+        function get(key) {
+            var prev = scanList.prev(key);
+            return scanFn(prev != null ? scanList.get(prev) : memo, list.get(key));
+        }
+        function observe(observer) {
+            return list.observe({
+                onInvalidate: function (prev, next) {
+                    observer.onInvalidate(prev, null);
+                }
+            });
+        }
+        scanList = ObservableList.cache({ has: has, get: get, prev: prev, next: next, observe: observe });
+        return scanList;
     };
     return ObservableList;
 })(list_1.List);

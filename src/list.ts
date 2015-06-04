@@ -2,6 +2,7 @@ import Key from './key';
 import { Tree, ITree, Path } from './tree';
 import ArrayList from './array_list';
 import Cache from './cache';
+import Index from './index';
 
 export interface IList<V> {
   has: (key: Key) => boolean;
@@ -117,13 +118,29 @@ export class List<V> implements IList<V> {
     return List.create(List.cache(this));
   }
 
-  // index = (): List<V> => {
-  //   return List.create(List.index(this));
-  // }
-  // 
-  // zip = <W, U>(other: IList<W>, zipFn: (v: V, w: W) => U): List<U> => {
-  //   return List.create(List.zip(this, other, zipFn));
-  // }
+  index = (): List<V> => {
+    return List.create(List.index(this));
+  }
+
+  zip = <W, U>(other: IList<W>, zipFn: (v: V, w: W) => U): List<U> => {
+    return List.create(List.zip(this, other, zipFn));
+  }
+
+  skip = (k: number): IList<V> => {
+    return List.create(List.skip(this, k));
+  }
+
+  take = (n: number): IList<V> => {
+    return List.create(List.take(this, n));
+  }
+
+  range = (k: number, n: number): IList<V> => {
+    return List.create(List.range(this, k, n));
+  }
+
+  scan = <W>(scanFn: (memo: W, value: V) => W, memo?: W): IList<W> => {
+    return List.create(List.scan(this, scanFn, memo));
+  }
 
   static isList(obj: any): boolean {
     return obj != null && !!obj['has'] && !!obj['get'] && !!obj['prev'] && !!obj['next'];
@@ -158,7 +175,9 @@ export class List<V> implements IList<V> {
   }
 
   static toArray<V>(list: IList<V>): V[] {
-    return List.reduce(list, function(memo, v) { memo.push(v); return memo }, []);
+    var key: Key, index: number = 0, array: V[] = [];
+    while((key = list.next(key)) != null) array[index++] = list.get(key);
+    return array;
   }
 
   static findKey<V>(list: IList<V>, fn: (value: V, key?: Key) => boolean): Key {
@@ -289,20 +308,10 @@ export class List<V> implements IList<V> {
     return new Cache<V>(list);
   }
 
-  // static index<V>(list: IList<V>): IList<V> {
-  //   var keys : Key[] = [];
-  //   return List.keyBy(list, (value: V, key: Key): Key => {
-  //
-  //     if (key == null) return keys.length;
-  //     else if (keys[key]) return keys[key];
-  //     else {
-  //       keys[key] = ++keys.length;
-  //     }
-  //
-  //     return keys.length - 1;
-  //   });
-  // }
-  //
+  static index<V>(list: IList<V>): IList<V> {
+    return new Index<V>(list);
+  }
+
   // static keyBy<V>(list: IList<V>, keyFn: (value: V, key?: Key) => Key) {
   //   var sourceKeyByKey: {[key: string]: Key} = Object.create(null),
   //       keyBySourceKey: {[key: string]: Key} = Object.create(null);
@@ -354,68 +363,61 @@ export class List<V> implements IList<V> {
   //   return { has, get, prev, next };
   // }
   //
-  // static zip<V, W, U>(list: IList<V>, other: IList<W>, zipFn: (v: V, w: W) => U): IList<U> {
-  //   list = List.index(list);
-  //   other = List.index(other);
-  //
-  //   function has(key: number): boolean {
-  //     return list.has(key) && other.has(key);
-  //   }
-  //
-  //   function get(key: number): U {
-  //     return has(key) ? zipFn(list.get(key), other.get(key)): undefined;
-  //   }
-  //
-  //   function prev(key?: number): number {
-  //     var prev = list.prev(key);
-  //     return prev != null && prev == other.prev(key) ? <number> prev : null
-  //   }
-  //
-  //   function next(key?: number): number {
-  //     var next = list.next(key);
-  //     return next != null && next == other.next(key) ? <number> next : null
-  //   }
-  //
-  //   return { has, get, prev, next };
-  // }
-  //
-  // static skip<V>(list: IList<V>, k: number): IList<V> {
-  //   return List.filter(List.index(list), function(value, key) {
-  //     return key >= k;
-  //   });
-  // }
-  //
-  // static take<V>(list: IList<V>, n: number): IList<V> {
-  //   return List.filter(List.index(list), function(value, key) {
-  //     return key < n;
-  //   });
-  // }
-  //
-  // static range<V>(list: IList<V>, k: number, n: number): IList<V> {
-  //   return List.filter(List.index(list), function(value, key) {
-  //     return key >= k && key < n + k;
-  //   });
-  // }
-  //
-  // static scan<V, W>(list: IList<V>, scanFn: (memo: W, value: V) => W, memo?: W): IList<W> {
-  //   var { has, prev, next } = list = List.index(list);
-  //
-  //   var memoCache = [memo];
-  //
-  //   function get(key: number): W {
-  //     if (!list.has(key)) return;
-  //
-  //     var memo = memoCache[key];
-  //
-  //     while(key + 1 >= memoCache.length) {
-  //       memoCache.push(memo = scanFn(memo, list.get(key)));
-  //     }
-  //
-  //     return memoCache[key + 1];
-  //   }
-  //
-  //   return {has, get, prev, next}
-  // }
+  static zip<V, W, U>(list: IList<V>, other: IList<W>, zipFn: (v: V, w: W) => U): IList<U> {
+    list = List.index(list);
+    other = List.index(other);
+
+    function has(key: number): boolean {
+      return list.has(key) && other.has(key);
+    }
+
+    function get(key: number): U {
+      return has(key) ? zipFn(list.get(key), other.get(key)): undefined;
+    }
+
+    function prev(key?: number): number {
+      var prev = list.prev(key);
+      return prev != null && prev == other.prev(key) ? <number> prev : null
+    }
+
+    function next(key?: number): number {
+      var next = list.next(key);
+      return next != null && next == other.next(key) ? <number> next : null
+    }
+
+    return { has, get, prev, next };
+  }
+
+  static skip<V>(list: IList<V>, k: number): IList<V> {
+    return List.filter(List.index(list), function(value, key) {
+      return key >= k;
+    });
+  }
+
+  static take<V>(list: IList<V>, n: number): IList<V> {
+    return List.filter(List.index(list), function(value, key) {
+      return key < n;
+    });
+  }
+
+  static range<V>(list: IList<V>, k: number, n: number): IList<V> {
+    return List.filter(List.index(list), function(value, key) {
+      return key >= k && key < n + k;
+    });
+  }
+
+  static scan<V, W>(list: IList<V>, scanFn: (memo: W, value: V) => W, memo?: W): IList<W> {
+    var { has, prev, next } = list,
+        scanList: IList<W>;
+
+    function get(key: Key): W {
+      var prev = list.prev(key);
+      return scanFn(prev != null ? scanList.get(prev) : memo, list.get(key));
+    }
+
+    scanList = List.cache({has, get, prev, next});
+    return scanList;
+  }
 
 }
 

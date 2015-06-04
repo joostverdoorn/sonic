@@ -10,30 +10,30 @@ var ObservableCache = (function (_super) {
     function ObservableCache(list) {
         var _this = this;
         _super.call(this, list);
-        list.observe({
-            onInvalidate: function (prev, next) {
-                var key;
-                key = prev;
-                while ((key = _this._next[key]) !== undefined) {
-                    delete _this._next[_this._prev[key]];
-                    delete _this._prev[key];
-                    if (key == next)
-                        break;
-                    delete _this._byKey[key];
-                }
-                while ((key = _this._prev[key]) !== undefined) {
-                    delete _this._prev[_this._next[key]];
-                    delete _this._next[key];
-                    if (key == prev)
-                        break;
-                    delete _this._byKey[key];
-                }
+        this.observe = function (observer) {
+            return _this._list.observe(observer);
+        };
+        this.onInvalidate = function (prev, next) {
+            var key;
+            key = prev;
+            while ((key = _this._next[key]) !== undefined) {
+                delete _this._next[_this._prev[key]];
+                delete _this._prev[key];
+                if (key == next)
+                    break;
+                delete _this._byKey[key];
             }
-        });
+            while ((key = _this._prev[key]) !== undefined) {
+                delete _this._prev[_this._next[key]];
+                delete _this._next[key];
+                if (key == prev)
+                    break;
+                delete _this._byKey[key];
+            }
+        };
+        list.observe(this);
     }
-    ObservableCache.prototype.observe = function (observer) {
-        return this._list.observe(observer);
-    };
     return ObservableCache;
 })(cache_1.default);
+exports.ObservableCache = ObservableCache;
 exports.default = ObservableCache;

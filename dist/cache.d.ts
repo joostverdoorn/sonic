@@ -1,6 +1,6 @@
-import { IList } from './list';
 import Key from './key';
-export default class Cache<V> implements IList<V> {
+import { IList } from './list';
+export declare class Cache<V> implements IList<V> {
     protected _byKey: {
         [key: string]: V;
     };
@@ -12,8 +12,9 @@ export default class Cache<V> implements IList<V> {
     };
     protected _list: IList<V>;
     constructor(list: IList<V>);
-    has(key: Key): boolean;
-    get(key: Key): V;
-    prev(key: Key): Key;
-    next(key?: Key): Key;
+    has: (key: string | number) => boolean;
+    get: (key: string | number) => V;
+    prev: (key: string | number) => string | number;
+    next: (key?: string | number) => string | number;
 }
+export default Cache;

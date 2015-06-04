@@ -14,7 +14,13 @@ export declare class ObservableList<V> extends List<V> implements IObservableLis
     filter: (filterFn: (value: V, key?: string | number) => boolean) => ObservableList<V>;
     flatten: () => ObservableList<any>;
     flatMap: <W>(flatMapFn: (value: V, key?: string | number) => IObservableList<W>) => ObservableList<W>;
-    cache: () => List<V>;
+    cache: () => ObservableList<V>;
+    index: () => ObservableList<V>;
+    zip: <W, U>(other: IObservableList<W>, zipFn: (v: V, w: W) => U) => ObservableList<U>;
+    skip: (k: number) => IObservableList<V>;
+    take: (n: number) => IObservableList<V>;
+    range: (k: number, n: number) => IObservableList<V>;
+    scan: <W>(scanFn: (memo: W, value: V) => W, memo?: W) => ObservableList<W>;
     static isObservableList(obj: any): boolean;
     static create<V>(list: IObservableList<V>): ObservableList<V>;
     static reverse<V>(list: IObservableList<V>): IObservableList<V>;
@@ -23,5 +29,11 @@ export declare class ObservableList<V> extends List<V> implements IObservableLis
     static flatten<V>(list: IObservableList<IObservableList<V> | V | any>): IObservableList<V>;
     static flatMap<V, W>(list: IObservableList<V>, flatMapFn: (value: V, key?: Key) => IObservableList<W>): IObservableList<W>;
     static cache<V>(list: IObservableList<V>): IObservableList<V>;
+    static index<V>(list: IObservableList<V>): IObservableList<V>;
+    static zip<V, W, U>(list: IObservableList<V>, other: IObservableList<W>, zipFn: (v: V, w: W) => U): IObservableList<U>;
+    static skip<V>(list: IObservableList<V>, k: number): IObservableList<V>;
+    static take<V>(list: IObservableList<V>, n: number): IObservableList<V>;
+    static range<V>(list: IObservableList<V>, k: number, n: number): IObservableList<V>;
+    static scan<V, W>(list: IObservableList<V>, scanFn: (memo: W, value: V) => W, memo?: W): IObservableList<W>;
 }
 export default ObservableList;

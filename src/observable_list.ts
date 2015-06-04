@@ -4,6 +4,7 @@ import { List, IList } from './list';
 import { Tree, Path }  from './tree';
 import { Subject, IObservable, ISubscription, INotifier } from './observable';
 import ObservableCache from './observable_cache';
+import ObservableIndex from './observable_index';
 
 export interface IListObserver {
   onInvalidate: (prev: Key, next: Key) => void;
@@ -42,21 +43,45 @@ export class ObservableList<V> extends List<V> implements IObservableList<V> {
     return ObservableList.create(ObservableList.flatMap(this, flatMapFn));
   }
 
-  cache = (): List<V> => {
+  cache = (): ObservableList<V> => {
     return ObservableList.create(ObservableList.cache(this));
   }
 
-  static isObservableList(obj: any) {
+  index = (): ObservableList<V> => {
+    return ObservableList.create(ObservableList.index(this));
+  }
+
+  zip = <W, U>(other: IObservableList<W>, zipFn: (v: V, w: W) => U): ObservableList<U> => {
+    return ObservableList.create(ObservableList.zip(this, other, zipFn));
+  }
+
+  skip = (k: number): IObservableList<V> => {
+    return ObservableList.create(ObservableList.skip(this, k));
+  }
+
+  take = (n: number): IObservableList<V> => {
+    return ObservableList.create(ObservableList.take(this, n));
+  }
+
+  range = (k: number, n: number): IObservableList<V> => {
+    return ObservableList.create(ObservableList.range(this, k, n));
+  }
+
+  scan = <W>(scanFn: (memo: W, value: V) => W, memo?: W): ObservableList<W> => {
+    return ObservableList.create(ObservableList.scan(this, scanFn, memo));
+  }
+
+  static isObservableList(obj: any): boolean {
     return List.isList(obj) && !!obj['observe'];
   }
 
   static create<V>(list: IObservableList<V>): ObservableList<V> {
     return new ObservableList<V>({
-      has:     list.has.bind(list),
-      get:     list.get.bind(list),
-      prev:    list.prev.bind(list),
-      next:    list.next.bind(list),
-      observe: list.observe.bind(list)
+      has:     list.has,
+      get:     list.get,
+      prev:    list.prev,
+      next:    list.next,
+      observe: list.observe
     });
   }
 
@@ -64,7 +89,11 @@ export class ObservableList<V> extends List<V> implements IObservableList<V> {
     var { has, get, prev, next } = List.reverse(list);
 
     function observe(observer: IListObserver) {
-      return list.observe(observer);
+      return list.observe({
+        onInvalidate: function(prev, next) {
+          observer.onInvalidate(next, prev);
+        }
+      });
     }
 
     return {has, get, prev, next, observe};
@@ -163,6 +192,86 @@ export class ObservableList<V> extends List<V> implements IObservableList<V> {
 
   static cache<V>(list: IObservableList<V>): IObservableList<V> {
     return new ObservableCache<V>(list);
+  }
+
+  static index<V>(list: IObservableList<V>): IObservableList<V> {
+    return new ObservableIndex<V>(list);
+  }
+
+  static zip<V, W, U>(list: IObservableList<V>, other: IObservableList<W>, zipFn: (v: V, w: W) => U): IObservableList<U> {
+    list = ObservableList.index(list);
+    other = ObservableList.index(other);
+
+    function has(key: number): boolean {
+      return list.has(key) && other.has(key);
+    }
+
+    function get(key: number): U {
+      return has(key) ? zipFn(list.get(key), other.get(key)): undefined;
+    }
+
+    function prev(key?: number): number {
+      var prev = list.prev(key);
+      return prev != null && prev == other.prev(key) ? <number> prev : null
+    }
+
+    function next(key?: number): number {
+      var next = list.next(key);
+      return next != null && next == other.next(key) ? <number> next : null
+    }
+
+    var subject = new Subject<IListObserver>(),
+        observer = {
+          onInvalidate: function(prev: number, next: number) {
+            subject.notify(function(_observer: IListObserver) {
+              _observer.onInvalidate(prev, next);
+            });
+          }
+        };
+
+    list.observe(observer);
+    other.observe(observer);
+
+    return { has, get, prev, next, observe: subject.observe };
+  }
+
+  static skip<V>(list: IObservableList<V>, k: number): IObservableList<V> {
+    return ObservableList.filter(ObservableList.index(list), function(value, key) {
+      return key >= k;
+    });
+  }
+
+  static take<V>(list: IObservableList<V>, n: number): IObservableList<V> {
+    return ObservableList.filter(ObservableList.index(list), function(value, key) {
+      return key < n;
+    });
+  }
+
+  static range<V>(list: IObservableList<V>, k: number, n: number): IObservableList<V> {
+    return ObservableList.filter(ObservableList.index(list), function(value, key) {
+      return key >= k && key < n + k;
+    });
+  }
+
+  static scan<V, W>(list: IObservableList<V>, scanFn: (memo: W, value: V) => W, memo?: W): IObservableList<W> {
+    var { has, prev, next } = list,
+        scanList: IObservableList<W>;
+
+    function get(key: Key): W {
+      var prev = scanList.prev(key);
+      return scanFn(prev != null ? scanList.get(prev) : memo, list.get(key));
+    }
+
+    function observe(observer: IListObserver) {
+      return list.observe({
+        onInvalidate: function(prev, next) {
+          observer.onInvalidate(prev, null);
+        }
+      });
+    }
+
+    scanList = ObservableList.cache({has, get, prev, next, observe});
+    return scanList;
   }
 }
 

@@ -1,5 +1,6 @@
 var tree_1 = require('./tree');
 var cache_1 = require('./cache');
+var index_1 = require('./index');
 var List = (function () {
     function List(list) {
         var _this = this;
@@ -75,6 +76,24 @@ var List = (function () {
         this.cache = function () {
             return List.create(List.cache(_this));
         };
+        this.index = function () {
+            return List.create(List.index(_this));
+        };
+        this.zip = function (other, zipFn) {
+            return List.create(List.zip(_this, other, zipFn));
+        };
+        this.skip = function (k) {
+            return List.create(List.skip(_this, k));
+        };
+        this.take = function (n) {
+            return List.create(List.take(_this, n));
+        };
+        this.range = function (k, n) {
+            return List.create(List.range(_this, k, n));
+        };
+        this.scan = function (scanFn, memo) {
+            return List.create(List.scan(_this, scanFn, memo));
+        };
         if (list != null) {
             this.has = list.has;
             this.get = list.get;
@@ -83,13 +102,6 @@ var List = (function () {
         }
     }
     ;
-    // index = (): List<V> => {
-    //   return List.create(List.index(this));
-    // }
-    // 
-    // zip = <W, U>(other: IList<W>, zipFn: (v: V, w: W) => U): List<U> => {
-    //   return List.create(List.zip(this, other, zipFn));
-    // }
     List.isList = function (obj) {
         return obj != null && !!obj['has'] && !!obj['get'] && !!obj['prev'] && !!obj['next'];
     };
@@ -119,7 +131,10 @@ var List = (function () {
         return memo;
     };
     List.toArray = function (list) {
-        return List.reduce(list, function (memo, v) { memo.push(v); return memo; }, []);
+        var key, index = 0, array = [];
+        while ((key = list.next(key)) != null)
+            array[index++] = list.get(key);
+        return array;
     };
     List.findKey = function (list, fn) {
         var key;
@@ -234,6 +249,103 @@ var List = (function () {
     };
     List.cache = function (list) {
         return new cache_1.default(list);
+    };
+    List.index = function (list) {
+        return new index_1.default(list);
+    };
+    // static keyBy<V>(list: IList<V>, keyFn: (value: V, key?: Key) => Key) {
+    //   var sourceKeyByKey: {[key: string]: Key} = Object.create(null),
+    //       keyBySourceKey: {[key: string]: Key} = Object.create(null);
+    //
+    //   function has(key: Key): boolean {
+    //     if(key in sourceKeyByKey) return true;
+    //
+    //     var last: Key = null;
+    //     while((last = next(last)) != null) if(last == key) return true;
+    //     return false;
+    //   }
+    //
+    //   function get(key: Key): V {
+    //     return has(key) ? list.get(sourceKeyByKey[key]) : undefined;
+    //   }
+    //
+    //   function prev(key: Key): Key {
+    //     if(has(key) || key == null) return keyBySourceKey[list.prev(sourceKeyByKey[key])];
+    //   }
+    //
+    //   function next(key: Key = null): Key {
+    //     var sourceKey: Key, sourceNext: Key, res: Key;
+    //
+    //     if(key in sourceKeyByKey) sourceKey = sourceKeyByKey[key];
+    //     else sourceKey = null;
+    //
+    //     while(key != null && !(key in sourceKeyByKey)) {
+    //       sourceKey = list.next(sourceKey);
+    //
+    //       if (!(sourceKey in keyBySourceKey)) {
+    //         if (sourceKey == null) return null;
+    //         res = keyFn(list.get(sourceKey), sourceKey);
+    //         keyBySourceKey[sourceKey] = res;
+    //         sourceKeyByKey[res] = sourceKey;
+    //
+    //         if (res == key) break;
+    //       }
+    //     }
+    //
+    //     sourceKey = list.next(sourceKey);
+    //     if (sourceKey == null) return null;
+    //     res = keyFn(list.get(sourceKey), sourceKey);
+    //     keyBySourceKey[sourceKey] = res;
+    //     sourceKeyByKey[res] = sourceKey;
+    //
+    //     return res;
+    //   }
+    //
+    //   return { has, get, prev, next };
+    // }
+    //
+    List.zip = function (list, other, zipFn) {
+        list = List.index(list);
+        other = List.index(other);
+        function has(key) {
+            return list.has(key) && other.has(key);
+        }
+        function get(key) {
+            return has(key) ? zipFn(list.get(key), other.get(key)) : undefined;
+        }
+        function prev(key) {
+            var prev = list.prev(key);
+            return prev != null && prev == other.prev(key) ? prev : null;
+        }
+        function next(key) {
+            var next = list.next(key);
+            return next != null && next == other.next(key) ? next : null;
+        }
+        return { has: has, get: get, prev: prev, next: next };
+    };
+    List.skip = function (list, k) {
+        return List.filter(List.index(list), function (value, key) {
+            return key >= k;
+        });
+    };
+    List.take = function (list, n) {
+        return List.filter(List.index(list), function (value, key) {
+            return key < n;
+        });
+    };
+    List.range = function (list, k, n) {
+        return List.filter(List.index(list), function (value, key) {
+            return key >= k && key < n + k;
+        });
+    };
+    List.scan = function (list, scanFn, memo) {
+        var has = list.has, prev = list.prev, next = list.next, scanList;
+        function get(key) {
+            var prev = list.prev(key);
+            return scanFn(prev != null ? scanList.get(prev) : memo, list.get(key));
+        }
+        scanList = List.cache({ has: has, get: get, prev: prev, next: next });
+        return scanList;
     };
     return List;
 })();
