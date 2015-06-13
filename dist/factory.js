@@ -1,17 +1,32 @@
-var list_1 = require('./list');
-var observable_list_1 = require('./observable_list');
-var mutable_list_1 = require('./mutable_list');
-var unit_1 = require('./unit');
-var array_list_1 = require('./array_list');
-function factory(obj) {
-    if (mutable_list_1.MutableList.isMutableList(obj))
-        return mutable_list_1.MutableList.create(obj);
-    if (observable_list_1.ObservableList.isObservableList(obj))
-        return observable_list_1.ObservableList.create(obj);
-    if (list_1.List.isList(obj))
-        return list_1.List.create(obj);
+import { List } from './list';
+import { ObservableList } from './observable_list';
+import { MutableList } from './mutable_list';
+import Unit from './unit';
+import ArrayList from './array_list';
+export default function factory(obj) {
+    if (MutableList.isMutableList(obj))
+        return MutableList.create(obj);
+    if (ObservableList.isObservableList(obj))
+        return ObservableList.create(obj);
+    if (List.isList(obj))
+        return List.create(obj);
     if (Array.isArray(obj))
-        return new array_list_1.default(obj);
-    return unit_1.default.create(obj);
+        return new ArrayList(obj);
+    return Unit.create(obj);
 }
-exports.default = factory;
+export function fromPromise(promise) {
+    var unit = new Unit();
+    promise.then((value) => {
+        unit.push(value);
+    });
+    return ObservableList.create(unit);
+}
+export function fromIterator(iterator) {
+    var list = {
+        has: function (key) { return null; },
+        get: function (key) { return null; },
+        prev: function (key) { return null; },
+        next: function (key) { return null; }
+    };
+    return list;
+}

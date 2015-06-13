@@ -1,47 +1,45 @@
-var KeyBy = (function () {
-    function KeyBy(list, keyFn) {
-        var _this = this;
-        this.has = function (key) {
-            if (key in _this._sourceKeyByKey)
+export class KeyBy {
+    constructor(list, keyFn) {
+        this.has = (key) => {
+            if (key in this._sourceKeyByKey)
                 return true;
             var last = null;
-            while ((last = _this.next(last)) != null)
+            while ((last = this.next(last)) != null)
                 if (last == key)
                     return true;
             return false;
         };
-        this.get = function (key) {
-            return _this.has(key) ? _this._list.get(_this._sourceKeyByKey[key]) : undefined;
+        this.get = (key) => {
+            return this.has(key) ? this._list.get(this._sourceKeyByKey[key]) : undefined;
         };
-        this.prev = function (key) {
-            if (_this.has(key) || key == null)
-                return _this._keyBySourceKey[_this._list.prev(_this._sourceKeyByKey[key])];
+        this.prev = (key) => {
+            if (this.has(key) || key == null)
+                return this._keyBySourceKey[this._list.prev(this._sourceKeyByKey[key])];
         };
-        this.next = function (key) {
-            if (key === void 0) { key = null; }
+        this.next = (key = null) => {
             var sourceKey, sourceNext, res;
-            if (key in _this._sourceKeyByKey)
-                sourceKey = _this._sourceKeyByKey[key];
+            if (key in this._sourceKeyByKey)
+                sourceKey = this._sourceKeyByKey[key];
             else
                 sourceKey = null;
-            while (key != null && !(key in _this._sourceKeyByKey)) {
-                sourceKey = _this._list.next(sourceKey);
-                if (!(sourceKey in _this._keyBySourceKey)) {
+            while (key != null && !(key in this._sourceKeyByKey)) {
+                sourceKey = this._list.next(sourceKey);
+                if (!(sourceKey in this._keyBySourceKey)) {
                     if (sourceKey == null)
                         return null;
-                    res = _this._keyFn(_this._list.get(sourceKey), sourceKey);
-                    _this._keyBySourceKey[sourceKey] = res;
-                    _this._sourceKeyByKey[res] = sourceKey;
+                    res = this._keyFn(this._list.get(sourceKey), sourceKey);
+                    this._keyBySourceKey[sourceKey] = res;
+                    this._sourceKeyByKey[res] = sourceKey;
                     if (res == key)
                         break;
                 }
             }
-            sourceKey = _this._list.next(sourceKey);
+            sourceKey = this._list.next(sourceKey);
             if (sourceKey == null)
                 return null;
-            res = _this._keyFn(_this._list.get(sourceKey), sourceKey);
-            _this._keyBySourceKey[sourceKey] = res;
-            _this._sourceKeyByKey[res] = sourceKey;
+            res = this._keyFn(this._list.get(sourceKey), sourceKey);
+            this._keyBySourceKey[sourceKey] = res;
+            this._sourceKeyByKey[res] = sourceKey;
             return res;
         };
         this._list = list;
@@ -49,7 +47,5 @@ var KeyBy = (function () {
         this._sourceKeyByKey = Object.create(null);
         this._keyBySourceKey = Object.create(null);
     }
-    return KeyBy;
-})();
-exports.KeyBy = KeyBy;
-exports.default = KeyBy;
+}
+export default KeyBy;

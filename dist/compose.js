@@ -1,9 +1,8 @@
 ;
-function compose(f, g) {
-    return function (x) {
+export function compose(f, g) {
+    return (x) => {
         return f(g(x));
     };
 }
-exports.compose = compose;
 ;
-exports.default = compose;
+export default compose;

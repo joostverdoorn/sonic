@@ -1,3 +1,4 @@
+import Key from './key';
 import { List,           IList           } from './list';
 import { ObservableList, IObservableList } from './observable_list';
 import { MutableList,    IMutableList    } from './mutable_list';
@@ -16,4 +17,24 @@ export default function factory(obj: any): any {
   if(List.isList(obj)) return List.create(obj);
   if(Array.isArray(obj)) return new ArrayList(obj);
   return Unit.create(obj);
+}
+
+export function fromPromise<V>(promise: Promise<V>): IObservableList<V> {
+  var unit = new Unit<V>();
+
+  promise.then( (value: V) => {
+    unit.push(value);
+  });
+
+  return ObservableList.create(unit);
+}
+
+export function fromIterator<V>(iterator: Iterator<V>): IList<V> {
+  var list = {
+    has: function(key: Key): boolean { return null; },
+    get: function(key: Key): V { return null; },
+    prev: function(key: Key): Key { return null; },
+    next: function(key: Key): Key { return null; }
+  }
+  return list;
 }

@@ -1,22 +1,24 @@
-var factory_1 = require('./factory');
-var list_1 = require('./list');
-var observable_list_1 = require('./observable_list');
-var mutable_list_1 = require('./mutable_list');
-var unit_1 = require('./unit');
-var array_list_1 = require('./array_list');
-var linked_list_1 = require('./linked_list');
-var tree_1 = require('./tree');
+import { default as factory, fromPromise as _fromPromise, fromIterator as _fromIterator } from './factory';
+import _List from './list';
+import _ObservableList from './observable_list';
+import _MutableList from './mutable_list';
+import _Unit from './unit';
+import _ArrayList from './array_list';
+import _LinkedList from './linked_list';
+import _Tree from './tree';
 function Sonic(obj) {
-    return factory_1.default(obj);
+    return factory(obj);
 }
 var Sonic;
 (function (Sonic) {
-    Sonic.List = list_1.default;
-    Sonic.ObservableList = observable_list_1.default;
-    Sonic.MutableList = mutable_list_1.default;
-    Sonic.Unit = unit_1.default;
-    Sonic.ArrayList = array_list_1.default;
-    Sonic.LinkedList = linked_list_1.default;
-    Sonic.Tree = tree_1.default;
+    Sonic.List = _List;
+    Sonic.ObservableList = _ObservableList;
+    Sonic.MutableList = _MutableList;
+    Sonic.Unit = _Unit;
+    Sonic.ArrayList = _ArrayList;
+    Sonic.LinkedList = _LinkedList;
+    Sonic.Tree = _Tree;
+    Sonic.fromPromise = _fromPromise;
+    Sonic.fromIterator = _fromIterator;
 })(Sonic || (Sonic = {}));
-module.exports = Sonic;
+export default Sonic;

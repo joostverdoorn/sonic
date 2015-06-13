@@ -1,6 +1,6 @@
-var list_1 = require('./list');
+import { List } from './list';
 ;
-var Path;
+export var Path;
 (function (Path) {
     function key(path) {
         return JSON.stringify(path);
@@ -26,17 +26,15 @@ var Path;
         return [].concat(a).concat(b);
     }
     Path.append = append;
-})(Path = exports.Path || (exports.Path = {}));
-var Tree;
+})(Path || (Path = {}));
+export var Tree;
 (function (Tree) {
-    function has(list, path, depth) {
-        if (depth === void 0) { depth = Infinity; }
+    function has(list, path, depth = Infinity) {
         var head = Path.head(path), tail = Path.tail(path);
         return list.has(head) && (tail.length == 0 || depth == 0 || Tree.has(list.get(head), tail, depth));
     }
     Tree.has = has;
-    function get(list, path, depth) {
-        if (depth === void 0) { depth = Infinity; }
+    function get(list, path, depth = Infinity) {
         var head = Path.head(path), tail = Path.tail(path);
         if (!list.has(head))
             return;
@@ -46,15 +44,13 @@ var Tree;
         return Tree.get(value, tail, depth);
     }
     Tree.get = get;
-    function prev(list, path, depth) {
-        if (path === void 0) { path = []; }
-        if (depth === void 0) { depth = Infinity; }
+    function prev(list, path = [], depth = Infinity) {
         var head = Path.head(path), tail = Path.tail(path), key = head, value;
         if (head != null && !list.has(head))
             return;
         do {
             value = list.get(key);
-            if (!list_1.List.isList(value) || depth == 0) {
+            if (!List.isList(value) || depth == 0) {
                 if (key != null && key != head)
                     return [key];
             }
@@ -67,15 +63,13 @@ var Tree;
         } while ((key = list.prev(key)) != null);
     }
     Tree.prev = prev;
-    function next(list, path, depth) {
-        if (path === void 0) { path = []; }
-        if (depth === void 0) { depth = Infinity; }
+    function next(list, path = [], depth = Infinity) {
         var head = Path.head(path), tail = Path.tail(path), key = head, value;
         if (head != null && !list.has(head))
             return;
         do {
             value = list.get(key);
-            if (!list_1.List.isList(value) || depth == 0) {
+            if (!List.isList(value) || depth == 0) {
                 if (key != null && key != head)
                     return [key];
             }
@@ -88,5 +82,5 @@ var Tree;
         } while ((key = list.next(key)) != null);
     }
     Tree.next = next;
-})(Tree = exports.Tree || (exports.Tree = {}));
-exports.default = Tree;
+})(Tree || (Tree = {}));
+export default Tree;

@@ -1,3 +1,4 @@
+import { fromPromise as _fromPromise, fromIterator as _fromIterator } from './factory';
 import _List from './list';
 import _ObservableList from './observable_list';
 import _MutableList from './mutable_list';
@@ -14,5 +15,7 @@ declare module Sonic {
     var ArrayList: typeof _ArrayList;
     var LinkedList: typeof _LinkedList;
     var Tree: typeof _Tree;
+    var fromPromise: typeof _fromPromise;
+    var fromIterator: typeof _fromIterator;
 }
-export = Sonic;
+export default Sonic;

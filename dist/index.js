@@ -1,38 +1,34 @@
-var Index = (function () {
-    function Index(list) {
-        var _this = this;
-        this.has = function (index) {
-            if (index >= 0 && index < _this._byIndex.length)
+export class Index {
+    constructor(list) {
+        this.has = (index) => {
+            if (index >= 0 && index < this._byIndex.length)
                 return true;
-            var next, last = _this._byIndex.length - 1;
+            var next, last = this._byIndex.length - 1;
             while (last != index) {
-                next = _this._list.next(_this._byIndex[last]);
+                next = this._list.next(this._byIndex[last]);
                 if (next == null)
                     return false;
-                _this._byIndex[++last] = next;
+                this._byIndex[++last] = next;
             }
             return true;
         };
-        this.get = function (index) {
-            return _this.has(index) ? _this._list.get(_this._byIndex[index]) : undefined;
+        this.get = (index) => {
+            return this.has(index) ? this._list.get(this._byIndex[index]) : undefined;
         };
-        this.prev = function (index) {
-            if (_this.has(index - 1))
+        this.prev = (index) => {
+            if (this.has(index - 1))
                 return index - 1;
-            if (index == null && _this._byIndex.length)
-                return _this._byIndex.length - 1;
+            if (index == null && this._byIndex.length)
+                return this._byIndex.length - 1;
             return null;
         };
-        this.next = function (index) {
-            if (index === void 0) { index = -1; }
-            if (_this.has(index + 1))
+        this.next = (index = -1) => {
+            if (this.has(index + 1))
                 return index + 1;
             return null;
         };
         this._byIndex = [];
         this._list = list;
     }
-    return Index;
-})();
-exports.Index = Index;
-exports.default = Index;
+}
+export default Index;

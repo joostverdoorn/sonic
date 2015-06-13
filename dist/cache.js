@@ -1,35 +1,33 @@
-var Cache = (function () {
-    function Cache(list) {
-        var _this = this;
-        this.has = function (key) {
-            return key in _this._byKey || _this._list.has(key);
+export class Cache {
+    constructor(list) {
+        this.has = (key) => {
+            return key in this._byKey || this._list.has(key);
         };
-        this.get = function (key) {
-            if (key in _this._byKey)
-                return _this._byKey[key];
-            if (_this._list.has(key))
-                return _this._byKey[key] = _this._list.get(key);
+        this.get = (key) => {
+            if (key in this._byKey)
+                return this._byKey[key];
+            if (this._list.has(key))
+                return this._byKey[key] = this._list.get(key);
             return;
         };
-        this.prev = function (key) {
-            if (key in _this._prev)
-                return _this._prev[key];
-            var prevKey = _this._list.prev(key);
+        this.prev = (key) => {
+            if (key in this._prev)
+                return this._prev[key];
+            var prevKey = this._list.prev(key);
             if (prevKey == null)
                 prevKey = null;
-            _this._prev[key] = prevKey;
-            _this._next[prevKey] = key;
+            this._prev[key] = prevKey;
+            this._next[prevKey] = key;
             return prevKey;
         };
-        this.next = function (key) {
-            if (key === void 0) { key = null; }
-            if (key in _this._next)
-                return _this._next[key];
-            var nextKey = _this._list.next(key);
+        this.next = (key = null) => {
+            if (key in this._next)
+                return this._next[key];
+            var nextKey = this._list.next(key);
             if (nextKey == null)
                 nextKey = null;
-            _this._next[key] = nextKey;
-            _this._prev[nextKey] = key;
+            this._next[key] = nextKey;
+            this._prev[nextKey] = key;
             return nextKey;
         };
         this._byKey = Object.create(null),
@@ -37,7 +35,5 @@ var Cache = (function () {
             this._prev = Object.create(null);
         this._list = list;
     }
-    return Cache;
-})();
-exports.Cache = Cache;
-exports.default = Cache;
+}
+export default Cache;

@@ -1,62 +1,48 @@
-var __extends = this.__extends || function (d, b) {
-    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
-    function __() { this.constructor = d; }
-    __.prototype = b.prototype;
-    d.prototype = new __();
-};
-var key_1 = require('./key');
-var observable_1 = require('./observable');
-var mutable_list_1 = require('./mutable_list');
-var Unit = (function (_super) {
-    __extends(Unit, _super);
-    function Unit(value) {
-        var _this = this;
-        _super.call(this);
-        this.has = function (key) {
-            return _this._key == key;
+import Key from './key';
+import { Subject } from './observable';
+import { MutableList } from './mutable_list';
+export default class Unit extends MutableList {
+    constructor(value) {
+        super();
+        this.has = (key) => {
+            return this._key == key;
         };
-        this.get = function (key) {
-            if (_this.has(key))
-                return _this._value;
+        this.get = (key) => {
+            if (this.has(key))
+                return this._value;
         };
-        this.prev = function (key) {
+        this.prev = (key) => {
             if (key == null)
-                return _this._key;
+                return this._key;
             return null;
         };
-        this.next = function (key) {
+        this.next = (key) => {
             if (key == null)
-                return _this._key;
+                return this._key;
             return null;
         };
-        this.set = function (key, value) {
-            _this._key = key;
-            _this._value = value;
-            _this._invalidate();
+        this.set = (key, value) => {
+            this._key = key;
+            this._value = value;
+            this._invalidate();
         };
-        this.splice = function (prev, next) {
-            var values = [];
-            for (var _i = 2; _i < arguments.length; _i++) {
-                values[_i - 2] = arguments[_i];
-            }
+        this.splice = (prev, next, ...values) => {
             if (values.length)
-                return _this.set(key_1.default.create(), values[0]);
-            delete _this._key;
-            delete _this._value;
-            _this._invalidate();
+                return this.set(Key.create(), values[0]);
+            delete this._key;
+            delete this._value;
+            this._invalidate();
         };
-        this.observe = function (observer) {
-            return _this._subject.observe(observer);
+        this.observe = (observer) => {
+            return this._subject.observe(observer);
         };
-        this._invalidate = function (prev, next) {
-            _this._subject.notify(function (observer) {
+        this._invalidate = (prev, next) => {
+            this._subject.notify(function (observer) {
                 observer.onInvalidate(prev, next);
             });
         };
-        this._subject = new observable_1.Subject();
+        this._subject = new Subject();
         if (arguments.length)
             this.splice(null, null, value);
     }
-    return Unit;
-})(mutable_list_1.MutableList);
-exports.default = Unit;
+}

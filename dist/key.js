@@ -10,4 +10,4 @@ var Key;
     }
     Key.create = create;
 })(Key || (Key = {}));
-exports.default = Key;
+export default Key;

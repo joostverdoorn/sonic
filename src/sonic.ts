@@ -1,4 +1,6 @@
-import factory        from './factory';
+import { default      as factory,
+         fromPromise  as _fromPromise,
+         fromIterator as _fromIterator } from './factory';
 
 import _List           from './list';
 import _ObservableList from './observable_list';
@@ -7,6 +9,7 @@ import _Unit           from './unit';
 import _ArrayList      from './array_list';
 import _LinkedList     from './linked_list';
 import _Tree           from './tree';
+
 
 function Sonic(obj: any) {
   return factory(obj);
@@ -20,6 +23,9 @@ module Sonic {
   export var ArrayList      = _ArrayList;
   export var LinkedList     = _LinkedList;
   export var Tree           = _Tree;
+
+  export var fromPromise    = _fromPromise;
+  export var fromIterator   = _fromIterator;
 }
 
-export = Sonic;
+export default Sonic;

@@ -1,64 +1,52 @@
-var __extends = this.__extends || function (d, b) {
-    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
-    function __() { this.constructor = d; }
-    __.prototype = b.prototype;
-    d.prototype = new __();
-};
-var observable_list_1 = require('./observable_list');
-var MutableList = (function (_super) {
-    __extends(MutableList, _super);
-    function MutableList(list) {
-        var _this = this;
-        _super.call(this, list);
-        this.set = function (key, value) {
+import { ObservableList } from './observable_list';
+export class MutableList extends ObservableList {
+    constructor(list) {
+        super(list);
+        this.set = (key, value) => {
             throw new Error("Not implemented");
         };
-        this.splice = function (prev, next) {
-            var values = [];
-            for (var _i = 2; _i < arguments.length; _i++) {
-                values[_i - 2] = arguments[_i];
-            }
+        this.splice = (prev, next, ...values) => {
             throw new Error("Not implemented");
         };
-        this.addBefore = function (key, value) {
-            return MutableList.addBefore(_this, key, value);
+        this.addBefore = (key, value) => {
+            return MutableList.addBefore(this, key, value);
         };
-        this.addAfter = function (key, value) {
-            return MutableList.addAfter(_this, key, value);
+        this.addAfter = (key, value) => {
+            return MutableList.addAfter(this, key, value);
         };
-        this.push = function (value) {
-            return MutableList.push(_this, value);
+        this.push = (value) => {
+            return MutableList.push(this, value);
         };
-        this.unshift = function (value) {
-            return MutableList.unshift(_this, value);
+        this.unshift = (value) => {
+            return MutableList.unshift(this, value);
         };
-        this.delete = function (key) {
-            return MutableList.delete(_this, key);
+        this.delete = (key) => {
+            return MutableList.delete(this, key);
         };
-        this.deleteBefore = function (key) {
-            return MutableList.deleteBefore(_this, key);
+        this.deleteBefore = (key) => {
+            return MutableList.deleteBefore(this, key);
         };
-        this.deleteAfter = function (key) {
-            return MutableList.deleteAfter(_this, key);
+        this.deleteAfter = (key) => {
+            return MutableList.deleteAfter(this, key);
         };
-        this.pop = function () {
-            return MutableList.pop(_this);
+        this.pop = () => {
+            return MutableList.pop(this);
         };
-        this.shift = function () {
-            return MutableList.shift(_this);
+        this.shift = () => {
+            return MutableList.shift(this);
         };
-        this.remove = function (value) {
-            return MutableList.remove(_this, value);
+        this.remove = (value) => {
+            return MutableList.remove(this, value);
         };
         if (list != null) {
             this.set = list.set;
             this.splice = list.splice;
         }
     }
-    MutableList.isMutableList = function (obj) {
-        return observable_list_1.ObservableList.isObservableList(obj) && !!obj['set'] && !!obj['splice'];
-    };
-    MutableList.create = function (list) {
+    static isMutableList(obj) {
+        return ObservableList.isObservableList(obj) && !!obj['set'] && !!obj['splice'];
+    }
+    static create(list) {
         return new MutableList({
             has: list.has,
             get: list.get,
@@ -68,48 +56,46 @@ var MutableList = (function (_super) {
             set: list.set,
             splice: list.splice
         });
-    };
-    MutableList.addBefore = function (list, key, value) {
+    }
+    static addBefore(list, key, value) {
         list.splice(list.prev(key), key, value);
         return list.prev(key);
-    };
-    MutableList.addAfter = function (list, key, value) {
+    }
+    static addAfter(list, key, value) {
         list.splice(key, list.next(key), value);
         return list.next(key);
-    };
-    MutableList.push = function (list, value) {
+    }
+    static push(list, value) {
         return MutableList.addBefore(list, null, value);
-    };
-    MutableList.unshift = function (list, value) {
+    }
+    static unshift(list, value) {
         return MutableList.addAfter(list, null, value);
-    };
-    MutableList.delete = function (list, key) {
+    }
+    static delete(list, key) {
         if (!list.has(key))
             return;
         var value = list.get(key);
         list.splice(list.prev(key), list.next(key));
         return value;
-    };
-    MutableList.deleteBefore = function (list, key) {
+    }
+    static deleteBefore(list, key) {
         return MutableList.delete(list, list.prev(key));
-    };
-    MutableList.deleteAfter = function (list, key) {
+    }
+    static deleteAfter(list, key) {
         return MutableList.delete(list, list.next(key));
-    };
-    MutableList.pop = function (list) {
+    }
+    static pop(list) {
         return MutableList.deleteBefore(list, null);
-    };
-    MutableList.shift = function (list) {
+    }
+    static shift(list) {
         return MutableList.deleteAfter(list, null);
-    };
-    MutableList.remove = function (list, value) {
+    }
+    static remove(list, value) {
         var key = MutableList.keyOf(list, value);
         if (key == null)
             return false;
         delete (list, key);
         return true;
-    };
-    return MutableList;
-})(observable_list_1.ObservableList);
-exports.MutableList = MutableList;
-exports.default = MutableList;
+    }
+}
+export default MutableList;

@@ -89,7 +89,7 @@ export class ObservableList<V> extends List<V> implements IObservableList<V> {
       observe: list.observe
     });
   }
-
+  
   static reverse<V>(list: IObservableList<V>): IObservableList<V> {
     var { has, get, prev, next } = List.reverse(list);
 

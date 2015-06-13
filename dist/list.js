@@ -1,102 +1,102 @@
-var tree_1 = require('./tree');
-var cache_1 = require('./cache');
-var index_1 = require('./index');
-var key_by_1 = require('./key_by');
-var List = (function () {
-    function List(list) {
-        var _this = this;
-        this.has = function (key) {
+import { Tree, Path } from './tree';
+import Cache from './cache';
+import Index from './index';
+import KeyBy from './key_by';
+import { AsyncList } from './async_list';
+export class List {
+    constructor(list) {
+        this.has = (key) => {
             throw new Error("Not implemented");
         };
-        this.get = function (key) {
+        this.get = (key) => {
             throw new Error("Not implemented");
         };
-        this.prev = function (key) {
+        this.prev = (key) => {
             throw new Error("Not implemented");
         };
-        this.next = function (key) {
+        this.next = (key) => {
             throw new Error("Not implemented");
         };
-        this.first = function () {
-            return List.first(_this);
+        this.first = () => {
+            return List.first(this);
         };
-        this.last = function () {
-            return List.last(_this);
+        this.last = () => {
+            return List.last(this);
         };
-        this.forEach = function (fn) {
-            return List.forEach(_this, fn);
+        this.forEach = (fn) => {
+            return List.forEach(this, fn);
         };
-        this.reduce = function (fn, memo) {
-            return List.reduce(_this, fn);
+        this.reduce = (fn, memo) => {
+            return List.reduce(this, fn);
         };
-        this.toArray = function () {
-            return List.toArray(_this);
+        this.toArray = () => {
+            return List.toArray(this);
         };
-        this.findKey = function (fn) {
-            return List.findKey(_this, fn);
+        this.findKey = (fn) => {
+            return List.findKey(this, fn);
         };
-        this.find = function (fn) {
-            return List.find(_this, fn);
+        this.find = (fn) => {
+            return List.find(this, fn);
         };
-        this.keyOf = function (value) {
-            return List.keyOf(_this, value);
+        this.keyOf = (value) => {
+            return List.keyOf(this, value);
         };
-        this.indexOf = function (value) {
-            return List.indexOf(_this, value);
+        this.indexOf = (value) => {
+            return List.indexOf(this, value);
         };
-        this.keyAt = function (index) {
-            return List.keyAt(_this, index);
+        this.keyAt = (index) => {
+            return List.keyAt(this, index);
         };
-        this.at = function (index) {
-            return List.at(_this, index);
+        this.at = (index) => {
+            return List.at(this, index);
         };
-        this.every = function (predicate) {
-            return List.every(_this, predicate);
+        this.every = (predicate) => {
+            return List.every(this, predicate);
         };
-        this.some = function (predicate) {
-            return List.some(_this, predicate);
+        this.some = (predicate) => {
+            return List.some(this, predicate);
         };
-        this.contains = function (value) {
-            return List.contains(_this, value);
+        this.contains = (value) => {
+            return List.contains(this, value);
         };
-        this.reverse = function () {
-            return List.create(List.reverse(_this));
+        this.reverse = () => {
+            return List.create(List.reverse(this));
         };
-        this.map = function (mapFn) {
-            return List.create(List.map(_this, mapFn));
+        this.map = (mapFn) => {
+            return List.create(List.map(this, mapFn));
         };
-        this.filter = function (filterFn) {
-            return List.create(List.filter(_this, filterFn));
+        this.filter = (filterFn) => {
+            return List.create(List.filter(this, filterFn));
         };
-        this.flatten = function () {
-            return List.create(List.flatten(_this));
+        this.flatten = () => {
+            return List.create(List.flatten(this));
         };
-        this.flatMap = function (flatMapFn) {
-            return List.create(List.flatMap(_this, flatMapFn));
+        this.flatMap = (flatMapFn) => {
+            return List.create(List.flatMap(this, flatMapFn));
         };
-        this.cache = function () {
-            return List.create(List.cache(_this));
+        this.cache = () => {
+            return List.create(List.cache(this));
         };
-        this.index = function () {
-            return List.create(List.index(_this));
+        this.index = () => {
+            return List.create(List.index(this));
         };
-        this.keyBy = function (keyFn) {
-            return List.create(List.keyBy(_this, keyFn));
+        this.keyBy = (keyFn) => {
+            return List.create(List.keyBy(this, keyFn));
         };
-        this.zip = function (other, zipFn) {
-            return List.create(List.zip(_this, other, zipFn));
+        this.zip = (other, zipFn) => {
+            return List.create(List.zip(this, other, zipFn));
         };
-        this.skip = function (k) {
-            return List.create(List.skip(_this, k));
+        this.skip = (k) => {
+            return List.create(List.skip(this, k));
         };
-        this.take = function (n) {
-            return List.create(List.take(_this, n));
+        this.take = (n) => {
+            return List.create(List.take(this, n));
         };
-        this.range = function (k, n) {
-            return List.create(List.range(_this, k, n));
+        this.range = (k, n) => {
+            return List.create(List.range(this, k, n));
         };
-        this.scan = function (scanFn, memo) {
-            return List.create(List.scan(_this, scanFn, memo));
+        this.scan = (scanFn, memo) => {
+            return List.create(List.scan(this, scanFn, memo));
         };
         if (list != null) {
             this.has = list.has;
@@ -106,105 +106,105 @@ var List = (function () {
         }
     }
     ;
-    List.isList = function (obj) {
+    static isList(obj) {
         return obj != null && !!obj['has'] && !!obj['get'] && !!obj['prev'] && !!obj['next'];
-    };
-    List.create = function (list) {
+    }
+    static create(list) {
         return new List({
             has: list.has,
             get: list.get,
             prev: list.prev,
             next: list.next
         });
-    };
-    List.first = function (list) {
+    }
+    static first(list) {
         return list.get(list.next());
-    };
-    List.last = function (list) {
+    }
+    static last(list) {
         return list.get(list.prev());
-    };
-    List.forEach = function (list, fn) {
+    }
+    static forEach(list, fn) {
         var key;
         while ((key = list.next(key)) != null)
             fn(list.get(key), key);
-    };
-    List.reduce = function (list, fn, memo) {
+    }
+    static reduce(list, fn, memo) {
         var key;
         while ((key = list.next(key)) != null)
             memo = fn(memo, list.get(key), key);
         return memo;
-    };
-    List.toArray = function (list) {
+    }
+    static toArray(list) {
         var key, index = 0, array = [];
         while ((key = list.next(key)) != null)
             array[index++] = list.get(key);
         return array;
-    };
-    List.findKey = function (list, fn) {
+    }
+    static findKey(list, fn) {
         var key;
         while ((key = list.next(key)) != null)
             if (fn(list.get(key), key))
                 return key;
-    };
-    List.find = function (list, fn) {
+    }
+    static find(list, fn) {
         return list.get(List.findKey(list, fn));
-    };
-    List.keyOf = function (list, value) {
-        return List.findKey(list, function (v) { return v === value; });
-    };
-    List.indexOf = function (list, value) {
+    }
+    static keyOf(list, value) {
+        return List.findKey(list, v => v === value);
+    }
+    static indexOf(list, value) {
         var key, i = 0;
         while ((key = list.next(key)) != null) {
             if (list.get(key) === value)
                 return i;
             i++;
         }
-    };
-    List.keyAt = function (list, index) {
+    }
+    static keyAt(list, index) {
         var key, i = 0;
         while ((key = list.next(key)) != null)
             if (i++ == index)
                 return key;
         return null;
-    };
-    List.at = function (list, index) {
+    }
+    static at(list, index) {
         return list.get(List.keyAt(list, index));
-    };
-    List.every = function (list, predicate) {
+    }
+    static every(list, predicate) {
         var key;
         while ((key = list.next(key)) != null)
             if (!predicate(list.get(key), key))
                 return false;
         return true;
-    };
-    List.some = function (list, predicate) {
+    }
+    static some(list, predicate) {
         var key;
         while ((key = list.next(key)) != null)
             if (predicate(list.get(key), key))
                 return true;
         return false;
-    };
-    List.contains = function (list, value) {
-        return List.some(list, function (v) { return v === value; });
-    };
-    List.reverse = function (list) {
-        var has = list.has, get = list.get;
+    }
+    static contains(list, value) {
+        return List.some(list, v => v === value);
+    }
+    static reverse(list) {
+        var { has, get } = list;
         function prev(key) {
             return list.next(key);
         }
         function next(key) {
             return list.prev(key);
         }
-        return { has: has, get: get, prev: prev, next: next };
-    };
-    List.map = function (list, mapFn) {
-        var has = list.has, prev = list.prev, next = list.next;
+        return { has, get, prev, next };
+    }
+    static map(list, mapFn) {
+        var { has, prev, next } = list;
         function get(key) {
             return has(key) ? mapFn(list.get(key), key) : undefined;
         }
-        return { has: has, get: get, prev: prev, next: next };
-    };
-    List.filter = function (list, filterFn) {
+        return { has, get, prev, next };
+    }
+    static filter(list, filterFn) {
         function has(key) {
             return list.has(key) && filterFn(list.get(key), key);
         }
@@ -227,40 +227,40 @@ var List = (function () {
                     return next;
             return null;
         }
-        return { has: has, get: get, prev: prev, next: next };
-    };
-    List.flatten = function (list) {
+        return { has, get, prev, next };
+    }
+    static flatten(list) {
         function has(key) {
-            var path = tree_1.Path.create(key);
-            return tree_1.Tree.has(list, path, 1);
+            var path = Path.create(key);
+            return Tree.has(list, path, 1);
         }
         function get(key) {
-            var path = tree_1.Path.create(key);
-            return tree_1.Tree.get(list, path, 1);
+            var path = Path.create(key);
+            return Tree.get(list, path, 1);
         }
         function prev(key) {
-            var path = tree_1.Path.create(key);
-            return tree_1.Path.key(tree_1.Tree.prev(list, path, 1));
+            var path = Path.create(key);
+            return Path.key(Tree.prev(list, path, 1));
         }
         function next(key) {
-            var path = tree_1.Path.create(key);
-            return tree_1.Path.key(tree_1.Tree.next(list, path, 1));
+            var path = Path.create(key);
+            return Path.key(Tree.next(list, path, 1));
         }
-        return { has: has, get: get, prev: prev, next: next };
-    };
-    List.flatMap = function (list, flatMapFn) {
+        return { has, get, prev, next };
+    }
+    static flatMap(list, flatMapFn) {
         return List.flatten(List.map(list, flatMapFn));
-    };
-    List.cache = function (list) {
-        return new cache_1.default(list);
-    };
-    List.index = function (list) {
-        return new index_1.default(list);
-    };
-    List.keyBy = function (list, keyFn) {
-        return new key_by_1.default(list, keyFn);
-    };
-    List.zip = function (list, other, zipFn) {
+    }
+    static cache(list) {
+        return new Cache(list);
+    }
+    static index(list) {
+        return new Index(list);
+    }
+    static keyBy(list, keyFn) {
+        return new KeyBy(list, keyFn);
+    }
+    static zip(list, other, zipFn) {
         list = List.index(list);
         other = List.index(other);
         function has(key) {
@@ -277,33 +277,34 @@ var List = (function () {
             var next = list.next(key);
             return next != null && next == other.next(key) ? next : null;
         }
-        return { has: has, get: get, prev: prev, next: next };
-    };
-    List.skip = function (list, k) {
+        return { has, get, prev, next };
+    }
+    static skip(list, k) {
         return List.filter(List.index(list), function (value, key) {
             return key >= k;
         });
-    };
-    List.take = function (list, n) {
+    }
+    static take(list, n) {
         return List.filter(List.index(list), function (value, key) {
             return key < n;
         });
-    };
-    List.range = function (list, k, n) {
+    }
+    static range(list, k, n) {
         return List.filter(List.index(list), function (value, key) {
             return key >= k && key < n + k;
         });
-    };
-    List.scan = function (list, scanFn, memo) {
-        var has = list.has, prev = list.prev, next = list.next, scanList;
+    }
+    static scan(list, scanFn, memo) {
+        var { has, prev, next } = list, scanList;
         function get(key) {
             var prev = scanList.prev(key);
             return scanFn(prev != null ? scanList.get(prev) : memo, list.get(key));
         }
-        scanList = List.cache({ has: has, get: get, prev: prev, next: next });
+        scanList = List.cache({ has, get, prev, next });
         return scanList;
-    };
-    return List;
-})();
-exports.List = List;
-exports.default = List;
+    }
+    static async(list, scheduler) {
+        return new AsyncList(list);
+    }
+}
+export default List;

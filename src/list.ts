@@ -4,6 +4,7 @@ import ArrayList from './array_list';
 import Cache from './cache';
 import Index from './index';
 import KeyBy from './key_by';
+import { AsyncList, IAsyncList, IScheduler } from './async_list';
 
 export interface IList<V> {
   has: (key: Key) => boolean;
@@ -377,6 +378,9 @@ export class List<V> implements IList<V> {
     return scanList;
   }
 
+  static async<V>(list: IList<V>, scheduler?: IScheduler) {
+    return new AsyncList(list);
+  }
 }
 
 export default List;

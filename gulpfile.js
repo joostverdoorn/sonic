@@ -1,15 +1,17 @@
 require('coffee-script').register();
 
-var gulp       = require('gulp');
-var typescript = require('gulp-typescript');
-var rename     = require('gulp-rename');
-var uglify     = require('gulp-uglify');
-var jasmine    = require('gulp-jasmine');
-var benchmark  = require('gulp-bench');
-var browserify = require('browserify');
-var source     = require('vinyl-source-stream');
-var buffer     = require('vinyl-buffer');
-var merge      = require('merge2');
+var gulp       = require('gulp'),
+    typescript = require('gulp-typescript'),
+    rename     = require('gulp-rename'),
+    uglify     = require('gulp-uglify'),
+    jasmine    = require('gulp-jasmine'),
+    benchmark  = require('gulp-bench'),
+    browserify = require('browserify'),
+    source     = require('vinyl-source-stream'),
+    buffer     = require('vinyl-buffer'),
+    merge      = require('merge2'),
+    es6ify     = require('es6ify');
+
 
 var typescriptProject = typescript.createProject('tsconfig.json', { typescript: require('typescript') });
 
@@ -25,7 +27,8 @@ gulp.task('typescript', function() {
 });
 
 gulp.task('browserify', ['typescript'], function() {
-  return browserify('dist/sonic.js', {standalone: 'Sonic'})
+  return browserify('dist/sonic.js', {standalone: 'Sonic', sourceType: 'module'})
+    .transform(es6ify)
     .bundle()
     .pipe(source('sonic.browser.js'))
     .pipe(buffer())

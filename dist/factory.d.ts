@@ -8,3 +8,5 @@ export default function factory<V, I>(obj: IObservableList<V>): ObservableList<V
 export default function factory<V, I>(obj: IList<V>): List<V>;
 export default function factory<V>(obj: V[]): ArrayList<V>;
 export default function factory<V>(obj: V): Unit<V>;
+export declare function fromPromise<V>(promise: Promise<V>): IObservableList<V>;
+export declare function fromIterator<V>(iterator: Iterator<V>): IList<V>;

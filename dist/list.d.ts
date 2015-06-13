@@ -1,5 +1,6 @@
 import Key from './key';
 import { ITree } from './tree';
+import { AsyncList, IScheduler } from './async_list';
 export interface IList<V> {
     has: (key: Key) => boolean;
     get: (key: Key) => V;
@@ -68,5 +69,6 @@ export declare class List<V> implements IList<V> {
     static take<V>(list: IList<V>, n: number): IList<V>;
     static range<V>(list: IList<V>, k: number, n: number): IList<V>;
     static scan<V, W>(list: IList<V>, scanFn: (memo: W, value: V) => W, memo?: W): IList<W>;
+    static async<V>(list: IList<V>, scheduler?: IScheduler): AsyncList<V>;
 }
 export default List;
