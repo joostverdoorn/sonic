@@ -63,6 +63,15 @@ export class AsyncList<V> implements IAsyncList<V> {
   static create<V>(list: IAsyncList<V>): AsyncList<V> {
     return new AsyncList<V>(list);
   }
+
+  static map<V, W>(list: IAsyncList<V>, mapFn: (value: V, key?: Key) => W): AsyncList<W> {
+    var {has, prev, next} = list;
+    function get(key: Key) {
+      return list.get(key).then(mapFn)
+    }
+
+    return new AsyncList<W>({has, get, prev, next})
+  }
 }
 
 export default AsyncList;

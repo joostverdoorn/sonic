@@ -21,4 +21,4 @@ var Sonic;
     Sonic.fromPromise = _fromPromise;
     Sonic.fromIterator = _fromIterator;
 })(Sonic || (Sonic = {}));
-export default Sonic;
+module['exports'] = Sonic;

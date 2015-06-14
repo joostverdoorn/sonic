@@ -18,5 +18,6 @@ export declare class AsyncList<V> implements IAsyncList<V> {
     prev: (key: string | number) => Promise<string | number>;
     next: (key: string | number) => Promise<string | number>;
     static create<V>(list: IAsyncList<V>): AsyncList<V>;
+    static map<V, W>(list: IAsyncList<V>, mapFn: (value: V, key?: Key) => W): AsyncList<W>;
 }
 export default AsyncList;

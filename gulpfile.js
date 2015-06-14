@@ -27,11 +27,12 @@ gulp.task('typescript', function() {
 });
 
 gulp.task('browserify', ['typescript'], function() {
-  return browserify('dist/sonic.js', {standalone: 'Sonic', sourceType: 'module'})
+  return browserify(es6ify.runtime, {standalone: 'Sonic', sourceType: 'module'})
     .transform(es6ify)
+    .add('dist/sonic.js')
     .bundle()
     .pipe(source('sonic.browser.js'))
-    .pipe(buffer())
+    // .pipe(buffer())
     .pipe(gulp.dest('dist'))
 });
 

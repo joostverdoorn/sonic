@@ -28,4 +28,5 @@ module Sonic {
   export var fromIterator   = _fromIterator;
 }
 
-export default Sonic;
+declare var module: any;
+module['exports'] = Sonic;

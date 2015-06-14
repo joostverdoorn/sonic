@@ -38,6 +38,9 @@ export class MutableList extends ObservableList {
         this.remove = (value) => {
             return MutableList.remove(this, value);
         };
+        this.compose = (lens) => {
+            return MutableList.create(MutableList.compose(this, lens));
+        };
         if (list != null) {
             this.set = list.set;
             this.splice = list.splice;
@@ -96,6 +99,26 @@ export class MutableList extends ObservableList {
             return false;
         delete (list, key);
         return true;
+    }
+    static compose(list, lens) {
+        function get(key) {
+            return lens.get(list.get(key));
+        }
+        function set(key, value) {
+            list.set(key, lens.set(list.get(key), value));
+        }
+        function splice(prev, next, ...values) {
+            list.splice(prev, next, ...values.map((val) => lens.set(null, val)));
+        }
+        return {
+            has: list.has,
+            get,
+            set,
+            splice,
+            prev: list.prev,
+            next: list.next,
+            observe: list.observe
+        };
     }
 }
 export default MutableList;

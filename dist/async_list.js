@@ -40,5 +40,12 @@ export class AsyncList {
     static create(list) {
         return new AsyncList(list);
     }
+    static map(list, mapFn) {
+        var { has, prev, next } = list;
+        function get(key) {
+            return list.get(key).then(mapFn);
+        }
+        return new AsyncList({ has, get, prev, next });
+    }
 }
 export default AsyncList;

@@ -1,5 +1,9 @@
 import Key from './key';
 import { ObservableList, IObservableList } from './observable_list';
+export interface ILens<A, B> {
+    get(a: A): B;
+    set(a: A, b: B): A;
+}
 export interface IMutableList<V> extends IObservableList<V> {
     set(key: Key, value: V): void;
     splice(prev: Key, next: Key, ...values: V[]): void;
@@ -18,6 +22,7 @@ export declare class MutableList<V> extends ObservableList<V> implements IMutabl
     pop: () => V;
     shift: () => V;
     remove: (value: V) => boolean;
+    compose: <W>(lens: ILens<V, W>) => MutableList<W>;
     static isMutableList(obj: any): boolean;
     static create<V>(list: IMutableList<V>): MutableList<V>;
     static addBefore<V>(list: IMutableList<V>, key: Key, value: V): Key;
@@ -30,5 +35,6 @@ export declare class MutableList<V> extends ObservableList<V> implements IMutabl
     static pop<V>(list: IMutableList<V>): V;
     static shift<V>(list: IMutableList<V>): V;
     static remove<V>(list: IMutableList<V>, value: V): boolean;
+    static compose<V, W>(list: IMutableList<V>, lens: ILens<V, W>): IMutableList<W>;
 }
 export default MutableList;

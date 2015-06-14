@@ -1,6 +1,12 @@
 import Key from './key';
 import { ObservableList, IObservableList } from './observable_list';
 
+//TODO: Do this somewhere else (Tails I think) and import the type
+export interface ILens<A,B> {
+  get(a: A): B;
+  set(a: A, b: B): A;
+}
+
 export interface IMutableList<V> extends IObservableList<V> {
   set(key: Key, value: V): void;
   splice(prev: Key, next: Key, ...values: V[]): void;
@@ -63,6 +69,10 @@ export class MutableList<V> extends ObservableList<V> implements IMutableList<V>
 
   remove = (value: V) => {
     return MutableList.remove(this, value);
+  }
+
+  compose = <W>(lens: ILens<V,W>): MutableList<W>  => {
+    return MutableList.create<W>(MutableList.compose<V,W>(this, lens));
   }
 
   static isMutableList(obj: any): boolean {
@@ -129,6 +139,31 @@ export class MutableList<V> extends ObservableList<V> implements IMutableList<V>
     delete(list, key);
     return true;
   }
+
+  static compose<V,W>(list: IMutableList<V>, lens: ILens<V, W>): IMutableList<W> {
+      function get(key: Key): W {
+        return lens.get(list.get(key));
+      }
+
+      function set(key: Key, value: W): void {
+        list.set(key, lens.set(list.get(key), value))
+      }
+
+      function splice(prev: Key, next: Key, ...values: W[]): void {
+        list.splice(prev, next, ...values.map((val: W): V => lens.set(null, val)))
+      }
+
+      return {
+        has: list.has,
+        get,
+        set,
+        splice,
+        prev: list.prev,
+        next: list.next,
+        observe: list.observe
+      }
+    }
+
 }
 
 export default MutableList
