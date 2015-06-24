@@ -70,7 +70,7 @@ var ArrayList = (function (_MutableList) {
 exports['default'] = ArrayList;
 module.exports = exports['default'];
 
-},{"./mutable_list":9,"./observable_list":14}],2:[function(require,module,exports){
+},{"./mutable_list":8,"./observable_list":12}],2:[function(require,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -123,7 +123,6 @@ Object.defineProperty(exports, '__esModule', {
 });
 exports['default'] = factory;
 exports.fromPromise = fromPromise;
-exports.fromIterator = fromIterator;
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
 
@@ -157,25 +156,7 @@ function fromPromise(promise) {
     return _observable_list.ObservableList.create(unit);
 }
 
-function fromIterator(iterator) {
-    var list = {
-        has: function has(key) {
-            return null;
-        },
-        get: function get(key) {
-            return null;
-        },
-        prev: function prev(key) {
-            return null;
-        },
-        next: function next(key) {
-            return null;
-        }
-    };
-    return list;
-}
-
-},{"./array_list":1,"./list":8,"./mutable_list":9,"./observable_list":14,"./unit":16}],4:[function(require,module,exports){
+},{"./array_list":1,"./list":7,"./mutable_list":8,"./observable_list":12,"./unit":14}],4:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, '__esModule', {
@@ -229,7 +210,7 @@ var Index = function Index(list) {
 exports.Index = Index;
 exports['default'] = Index;
 
-},{"./list":8}],5:[function(require,module,exports){
+},{"./list":7}],5:[function(require,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -251,63 +232,6 @@ exports["default"] = Key;
 module.exports = exports["default"];
 
 },{}],6:[function(require,module,exports){
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-    value: true
-});
-
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-var KeyBy = function KeyBy(list, keyFn) {
-    var _this = this;
-
-    _classCallCheck(this, KeyBy);
-
-    this.has = function (key) {
-        if (key in _this._sourceKeyByKey) return true;
-        var last = null;
-        while ((last = _this.next(last)) != null) if (last == key) return true;
-        return false;
-    };
-    this.get = function (key) {
-        return _this.has(key) ? _this._list.get(_this._sourceKeyByKey[key]) : undefined;
-    };
-    this.prev = function (key) {
-        if (_this.has(key) || key == null) return _this._keyBySourceKey[_this._list.prev(_this._sourceKeyByKey[key])];
-    };
-    this.next = function () {
-        var key = arguments[0] === undefined ? null : arguments[0];
-
-        var sourceKey, sourceNext, res;
-        if (key in _this._sourceKeyByKey) sourceKey = _this._sourceKeyByKey[key];else sourceKey = null;
-        while (key != null && !(key in _this._sourceKeyByKey)) {
-            sourceKey = _this._list.next(sourceKey);
-            if (!(sourceKey in _this._keyBySourceKey)) {
-                if (sourceKey == null) return null;
-                res = _this._keyFn(_this._list.get(sourceKey), sourceKey);
-                _this._keyBySourceKey[sourceKey] = res;
-                _this._sourceKeyByKey[res] = sourceKey;
-                if (res == key) break;
-            }
-        }
-        sourceKey = _this._list.next(sourceKey);
-        if (sourceKey == null) return null;
-        res = _this._keyFn(_this._list.get(sourceKey), sourceKey);
-        _this._keyBySourceKey[sourceKey] = res;
-        _this._sourceKeyByKey[res] = sourceKey;
-        return res;
-    };
-    this._list = list;
-    this._keyFn = keyFn;
-    this._sourceKeyByKey = Object.create(null);
-    this._keyBySourceKey = Object.create(null);
-};
-
-exports.KeyBy = KeyBy;
-exports["default"] = KeyBy;
-
-},{}],7:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, '__esModule', {
@@ -434,7 +358,7 @@ var LinkedList = (function (_MutableList) {
 exports['default'] = LinkedList;
 module.exports = exports['default'];
 
-},{"./key":5,"./mutable_list":9,"./observable_list":14}],8:[function(require,module,exports){
+},{"./key":5,"./mutable_list":8,"./observable_list":12}],7:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, '__esModule', {
@@ -456,10 +380,6 @@ var _cache2 = _interopRequireDefault(_cache);
 var _index = require('./index');
 
 var _index2 = _interopRequireDefault(_index);
-
-var _key_by = require('./key_by');
-
-var _key_by2 = _interopRequireDefault(_key_by);
 
 var List = (function () {
     function List(list) {
@@ -538,9 +458,6 @@ var List = (function () {
         };
         this.index = function () {
             return List.create(List.index(_this));
-        };
-        this.keyBy = function (keyFn) {
-            return List.create(List.keyBy(_this, keyFn));
         };
         this.zip = function (other, zipFn) {
             return List.create(List.zip(_this, other, zipFn));
@@ -774,11 +691,6 @@ var List = (function () {
             return new _index2['default'](list);
         }
     }, {
-        key: 'keyBy',
-        value: function keyBy(list, keyFn) {
-            return new _key_by2['default'](list, keyFn);
-        }
-    }, {
         key: 'zip',
         value: function zip(list, other, zipFn) {
             list = List.index(list);
@@ -848,7 +760,7 @@ var List = (function () {
 exports.List = List;
 exports['default'] = List;
 
-},{"./cache":2,"./index":4,"./key_by":6,"./tree":15}],9:[function(require,module,exports){
+},{"./cache":2,"./index":4,"./tree":13}],8:[function(require,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -1021,7 +933,7 @@ var MutableList = (function (_ObservableList) {
 exports.MutableList = MutableList;
 exports["default"] = MutableList;
 
-},{"./observable_list":14}],10:[function(require,module,exports){
+},{"./observable_list":12}],9:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, '__esModule', {
@@ -1058,7 +970,7 @@ var Subject = function Subject() {
 
 exports.Subject = Subject;
 
-},{"./key":5}],11:[function(require,module,exports){
+},{"./key":5}],10:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, '__esModule', {
@@ -1115,7 +1027,7 @@ var ObservableCache = (function (_Cache) {
 exports.ObservableCache = ObservableCache;
 exports['default'] = ObservableCache;
 
-},{"./cache":2}],12:[function(require,module,exports){
+},{"./cache":2}],11:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, '__esModule', {
@@ -1171,55 +1083,7 @@ var ObservableIndex = (function (_Index) {
 exports.ObservableIndex = ObservableIndex;
 exports['default'] = ObservableIndex;
 
-},{"./index":4,"./observable_list":14}],13:[function(require,module,exports){
-'use strict';
-
-Object.defineProperty(exports, '__esModule', {
-    value: true
-});
-
-var _get = function get(_x, _x2, _x3) { var _again = true; _function: while (_again) { var object = _x, property = _x2, receiver = _x3; desc = parent = getter = undefined; _again = false; var desc = Object.getOwnPropertyDescriptor(object, property); if (desc === undefined) { var parent = Object.getPrototypeOf(object); if (parent === null) { return undefined; } else { _x = parent; _x2 = property; _x3 = receiver; _again = true; continue _function; } } else if ('value' in desc) { return desc.value; } else { var getter = desc.get; if (getter === undefined) { return undefined; } return getter.call(receiver); } } };
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
-
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError('Cannot call a class as a function'); } }
-
-function _inherits(subClass, superClass) { if (typeof superClass !== 'function' && superClass !== null) { throw new TypeError('Super expression must either be null or a function, not ' + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) subClass.__proto__ = superClass; }
-
-var _key_by = require('./key_by');
-
-var _key_by2 = _interopRequireDefault(_key_by);
-
-var _observable = require('./observable');
-
-var ObservableKeyBy = (function (_KeyBy) {
-    function ObservableKeyBy(list, keyFn) {
-        var _this = this;
-
-        _classCallCheck(this, ObservableKeyBy);
-
-        _get(Object.getPrototypeOf(ObservableKeyBy.prototype), 'constructor', this).call(this, list, keyFn);
-        this.observe = function (observer) {
-            return _this._subject.observe(observer);
-        };
-        this.onInvalidate = function (prev, next) {
-            _this._subject.notify(function (observer) {
-                observer.onInvalidate(this._keyBySourceKey[prev], this._keyBySourceKey[next]);
-            });
-        };
-        this._subject = new _observable.Subject();
-        list.observe(this);
-    }
-
-    _inherits(ObservableKeyBy, _KeyBy);
-
-    return ObservableKeyBy;
-})(_key_by2['default']);
-
-exports.ObservableKeyBy = ObservableKeyBy;
-exports['default'] = ObservableKeyBy;
-
-},{"./key_by":6,"./observable":10}],14:[function(require,module,exports){
+},{"./index":4,"./observable_list":12}],12:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, '__esModule', {
@@ -1251,10 +1115,6 @@ var _observable_cache2 = _interopRequireDefault(_observable_cache);
 var _observable_index = require('./observable_index');
 
 var _observable_index2 = _interopRequireDefault(_observable_index);
-
-var _observable_key_by = require('./observable_key_by');
-
-var _observable_key_by2 = _interopRequireDefault(_observable_key_by);
 
 var ListSubject = (function (_Subject) {
     function ListSubject() {
@@ -1313,9 +1173,6 @@ var ObservableList = (function (_List) {
         };
         this.index = function () {
             return ObservableList.create(ObservableList.index(_this2));
-        };
-        this.keyBy = function (keyFn) {
-            return ObservableList.create(ObservableList.keyBy(_this2, keyFn));
         };
         this.zip = function (other, zipFn) {
             return ObservableList.create(ObservableList.zip(_this2, other, zipFn));
@@ -1492,11 +1349,6 @@ var ObservableList = (function (_List) {
             return new _observable_index2['default'](list);
         }
     }, {
-        key: 'keyBy',
-        value: function keyBy(list, keyFn) {
-            return new _observable_key_by2['default'](list, keyFn);
-        }
-    }, {
         key: 'zip',
         value: function zip(list, other, zipFn) {
             list = ObservableList.index(list);
@@ -1576,7 +1428,7 @@ var ObservableList = (function (_List) {
 exports.ObservableList = ObservableList;
 exports['default'] = ObservableList;
 
-},{"./list":8,"./observable":10,"./observable_cache":11,"./observable_index":12,"./observable_key_by":13,"./tree":15}],15:[function(require,module,exports){
+},{"./list":7,"./observable":9,"./observable_cache":10,"./observable_index":11,"./tree":13}],13:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, '__esModule', {
@@ -1707,7 +1559,7 @@ exports.Tree = Tree;
 })(Tree || (exports.Tree = Tree = {}));
 exports['default'] = Tree;
 
-},{"./list":8}],16:[function(require,module,exports){
+},{"./list":7}],14:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, '__esModule', {
@@ -1783,7 +1635,7 @@ var Unit = (function (_MutableList) {
 exports['default'] = Unit;
 module.exports = exports['default'];
 
-},{"./key":5,"./mutable_list":9,"./observable_list":14}],17:[function(require,module,exports){
+},{"./key":5,"./mutable_list":8,"./observable_list":12}],15:[function(require,module,exports){
 'use strict';
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
@@ -1832,9 +1684,8 @@ var Sonic;
     Sonic.Tree = _tree.Tree;
     Sonic.Path = _tree.Path;
     Sonic.fromPromise = _factory.fromPromise;
-    Sonic.fromIterator = _factory.fromIterator;
 })(Sonic || (Sonic = {}));
 module.exports = Sonic;
 
-},{"./array_list":1,"./factory":3,"./linked_list":7,"./list":8,"./mutable_list":9,"./observable_list":14,"./tree":15,"./unit":16}]},{},[17])(17)
+},{"./array_list":1,"./factory":3,"./linked_list":6,"./list":7,"./mutable_list":8,"./observable_list":12,"./tree":13,"./unit":14}]},{},[15])(15)
 });

@@ -21,12 +21,3 @@ export function fromPromise(promise) {
     });
     return ObservableList.create(unit);
 }
-export function fromIterator(iterator) {
-    var list = {
-        has: function (key) { return null; },
-        get: function (key) { return null; },
-        prev: function (key) { return null; },
-        next: function (key) { return null; }
-    };
-    return list;
-}

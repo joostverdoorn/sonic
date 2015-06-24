@@ -1,4 +1,4 @@
-import { default as factory, fromPromise as _fromPromise, fromIterator as _fromIterator } from './factory';
+import { default as factory, fromPromise as _fromPromise } from './factory';
 import _List from './list';
 import _ObservableList from './observable_list';
 import _MutableList from './mutable_list';
@@ -20,6 +20,5 @@ var Sonic;
     Sonic.Tree = _Tree;
     Sonic.Path = _Path;
     Sonic.fromPromise = _fromPromise;
-    Sonic.fromIterator = _fromIterator;
 })(Sonic || (Sonic = {}));
 module.exports = Sonic;

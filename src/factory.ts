@@ -28,13 +28,3 @@ export function fromPromise<V>(promise: Promise<V>): IObservableList<V> {
 
   return ObservableList.create(unit);
 }
-
-export function fromIterator<V>(iterator: Iterator<V>): IList<V> {
-  var list = {
-    has: function(key: Key): boolean { return null; },
-    get: function(key: Key): V { return null; },
-    prev: function(key: Key): Key { return null; },
-    next: function(key: Key): Key { return null; }
-  }
-  return list;
-}

@@ -3,7 +3,6 @@ import { Tree, ITree, Path } from './tree';
 import ArrayList from './array_list';
 import Cache from './cache';
 import Index from './index';
-import KeyBy from './key_by';
 
 export interface IList<V> {
   get: (key: Key) => Promise<V>;
@@ -115,10 +114,6 @@ export class List<V> implements IList<V> {
 
   index = (): List<V> => {
     return List.create(List.index(this));
-  }
-
-  keyBy = (keyFn: (value: V, key?: Key) => Key): List<V> => {
-    return List.create(List.keyBy(this, keyFn));
   }
 
   zip = <W, U>(other: IList<W>, zipFn: (v: V, w: W) => U): List<U> => {
@@ -291,10 +286,6 @@ export class List<V> implements IList<V> {
 
   static index<V>(list: IList<V>): IList<V> {
     return new Index<V>(list);
-  }
-
-  static keyBy<V>(list: IList<V>, keyFn: (value: V, key?: Key) => Key): IList<V> {
-    return new KeyBy<V>(list, keyFn);
   }
 
   static zip<V, W, U>(list: IList<V>, other: IList<W>, zipFn: (v: V, w: W) => U): IList<U> {

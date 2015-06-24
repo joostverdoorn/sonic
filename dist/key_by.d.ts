@@ -10,7 +10,6 @@ export declare class KeyBy<V> implements IList<V> {
     protected _keyFn: (value: V, key?: Key) => Key;
     protected _list: IList<V>;
     constructor(list: IList<V>, keyFn: (value: V, key?: Key) => Key);
-    has: (key: string | number) => boolean;
     get: (key: string | number) => V;
     prev: (key: string | number) => string | number;
     next: (key?: string | number) => string | number;

@@ -3,7 +3,6 @@ import { Tree, Path } from './tree';
 import { Subject } from './observable';
 import ObservableCache from './observable_cache';
 import ObservableIndex from './observable_index';
-import ObservableKeyBy from './observable_key_by';
 export class ListSubject extends Subject {
     constructor(...args) {
         super(...args);
@@ -39,9 +38,6 @@ export class ObservableList extends List {
         };
         this.index = () => {
             return ObservableList.create(ObservableList.index(this));
-        };
-        this.keyBy = (keyFn) => {
-            return ObservableList.create(ObservableList.keyBy(this, keyFn));
         };
         this.zip = (other, zipFn) => {
             return ObservableList.create(ObservableList.zip(this, other, zipFn));
@@ -164,9 +160,6 @@ export class ObservableList extends List {
     }
     static index(list) {
         return new ObservableIndex(list);
-    }
-    static keyBy(list, keyFn) {
-        return new ObservableKeyBy(list, keyFn);
     }
     static zip(list, other, zipFn) {
         list = ObservableList.index(list);

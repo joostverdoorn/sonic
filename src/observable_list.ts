@@ -5,7 +5,6 @@ import { Subject, IObservable, ISubscription, INotifier } from './observable';
 import Cache from './cache';
 import ObservableCache from './observable_cache';
 import ObservableIndex from './observable_index';
-import ObservableKeyBy from './observable_key_by';
 
 export interface IListObserver {
   onInvalidate: (prev: Key, next: Key) => void;
@@ -56,10 +55,6 @@ export class ObservableList<V> extends List<V> implements IObservableList<V> {
 
   index = (): ObservableList<V> => {
     return ObservableList.create(ObservableList.index(this));
-  }
-
-  keyBy = (keyFn: (value: V, key?: Key) => Key): ObservableList<V> => {
-    return ObservableList.create(ObservableList.keyBy(this, keyFn));
   }
 
   zip = <W, U>(other: IObservableList<W>, zipFn: (v: V, w: W) => U): ObservableList<U> => {
@@ -213,10 +208,6 @@ export class ObservableList<V> extends List<V> implements IObservableList<V> {
 
   static index<V>(list: IObservableList<V>): IObservableList<V> {
     return new ObservableIndex<V>(list);
-  }
-
-  static keyBy<V>(list: IObservableList<V>, keyFn: (value: V, key?: Key) => Key): IObservableList<V> {
-    return new ObservableKeyBy<V>(list, keyFn);
   }
 
   static zip<V, W, U>(list: IObservableList<V>, other: IObservableList<W>, zipFn: (v: V, w: W) => U): IObservableList<U> {

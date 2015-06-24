@@ -1,6 +1,5 @@
 import { default      as factory,
-         fromPromise  as _fromPromise,
-         fromIterator as _fromIterator } from './factory';
+         fromPromise  as _fromPromise } from './factory';
 
 import _List           from './list';
 import _ObservableList from './observable_list';
@@ -25,7 +24,6 @@ module Sonic {
   export var Path           = _Path;
 
   export var fromPromise    = _fromPromise;
-  export var fromIterator   = _fromIterator;
 }
 
 declare var module: any;

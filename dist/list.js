@@ -1,7 +1,6 @@
 import { Tree, Path } from './tree';
 import Cache from './cache';
 import Index from './index';
-import KeyBy from './key_by';
 export class List {
     constructor(list) {
         this.get = (key) => {
@@ -75,9 +74,6 @@ export class List {
         };
         this.index = () => {
             return List.create(List.index(this));
-        };
-        this.keyBy = (keyFn) => {
-            return List.create(List.keyBy(this, keyFn));
         };
         this.zip = (other, zipFn) => {
             return List.create(List.zip(this, other, zipFn));
@@ -229,9 +225,6 @@ export class List {
     }
     static index(list) {
         return new Index(list);
-    }
-    static keyBy(list, keyFn) {
-        return new KeyBy(list, keyFn);
     }
     static zip(list, other, zipFn) {
         list = List.index(list);

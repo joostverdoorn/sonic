@@ -1,14 +1,5 @@
 export class KeyBy {
     constructor(list, keyFn) {
-        this.has = (key) => {
-            if (key in this._sourceKeyByKey)
-                return true;
-            var last = null;
-            while ((last = this.next(last)) != null)
-                if (last == key)
-                    return true;
-            return false;
-        };
         this.get = (key) => {
             return this.has(key) ? this._list.get(this._sourceKeyByKey[key]) : undefined;
         };
