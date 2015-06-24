@@ -2,12 +2,8 @@ import { Tree, Path } from './tree';
 import Cache from './cache';
 import Index from './index';
 import KeyBy from './key_by';
-import { AsyncList } from './async_list';
 export class List {
     constructor(list) {
-        this.has = (key) => {
-            throw new Error("Not implemented");
-        };
         this.get = (key) => {
             throw new Error("Not implemented");
         };
@@ -22,6 +18,12 @@ export class List {
         };
         this.last = () => {
             return List.last(this);
+        };
+        this.every = (predicate) => {
+            return List.every(this, predicate);
+        };
+        this.some = (predicate) => {
+            return List.some(this, predicate);
         };
         this.forEach = (fn) => {
             return List.forEach(this, fn);
@@ -49,12 +51,6 @@ export class List {
         };
         this.at = (index) => {
             return List.at(this, index);
-        };
-        this.every = (predicate) => {
-            return List.every(this, predicate);
-        };
-        this.some = (predicate) => {
-            return List.some(this, predicate);
         };
         this.contains = (value) => {
             return List.contains(this, value);
@@ -99,7 +95,6 @@ export class List {
             return List.create(List.scan(this, scanFn, memo));
         };
         if (list != null) {
-            this.has = list.has;
             this.get = list.get;
             this.prev = list.prev;
             this.next = list.next;
@@ -107,146 +102,134 @@ export class List {
     }
     ;
     static isList(obj) {
-        return obj != null && !!obj['has'] && !!obj['get'] && !!obj['prev'] && !!obj['next'];
+        return obj != null && !!obj['get'] && !!obj['prev'] && !!obj['next'];
     }
     static create(list) {
         return new List({
-            has: list.has,
             get: list.get,
             prev: list.prev,
             next: list.next
         });
     }
     static first(list) {
-        return list.get(list.next());
+        return list.next().then(list.get);
     }
     static last(list) {
-        return list.get(list.prev());
+        return list.prev().then(list.get);
     }
-    static forEach(list, fn) {
-        var key;
-        while ((key = list.next(key)) != null)
-            fn(list.get(key), key);
+    static every(list, predicate, prev, next) {
+        var loop = (key) => list.next(key).then(key => {
+            return key == next ? true : list.get(key).then(value => predicate(value, key) === true ? loop(key) : false);
+        });
+        return loop(prev);
+    }
+    static some(list, predicate, prev, next) {
+        var loop = (key) => list.next(key).then(key => {
+            return key == next ? false : list.get(key).then(value => predicate(value, key) === true ? true : loop(key));
+        });
+        return loop(prev);
+    }
+    static forEach(list, fn, prev, next) {
+        return List.every(list, (value, key) => { fn(value, key); return true; }, prev, next).then(() => { });
     }
     static reduce(list, fn, memo) {
-        var key;
-        while ((key = list.next(key)) != null)
-            memo = fn(memo, list.get(key), key);
-        return memo;
+        return List.forEach(list, (value, key) => memo = fn(memo, value, key)).then(() => memo);
     }
     static toArray(list) {
-        var key, index = 0, array = [];
-        while ((key = list.next(key)) != null)
-            array[index++] = list.get(key);
-        return array;
+        return List.reduce(list, (memo, value) => {
+            memo.push(value);
+            return memo;
+        }, []);
     }
-    static findKey(list, fn) {
+    static findKey(list, fn, prev, next) {
         var key;
-        while ((key = list.next(key)) != null)
-            if (fn(list.get(key), key))
-                return key;
-    }
-    static find(list, fn) {
-        return list.get(List.findKey(list, fn));
-    }
-    static keyOf(list, value) {
-        return List.findKey(list, v => v === value);
-    }
-    static indexOf(list, value) {
-        var key, i = 0;
-        while ((key = list.next(key)) != null) {
-            if (list.get(key) === value)
-                return i;
-            i++;
+        return List.some(list, (v, k) => fn(v, k) ? (!!(key = k) || true) : false, prev, next).then(found => { if (found) {
+            return key;
         }
+        else {
+            throw new Error;
+        } });
     }
-    static keyAt(list, index) {
-        var key, i = 0;
-        while ((key = list.next(key)) != null)
-            if (i++ == index)
+    static find(list, fn, prev, next) {
+        return List.findKey(list, fn, prev, next).then(list.get);
+    }
+    static keyOf(list, value, prev, next) {
+        return List.findKey(list, v => v === value, prev, next);
+    }
+    static indexOf(list, value, prev, next) {
+        var index = -1;
+        return List.some(list, (v, k) => value == v ? (!!(index++) || true) : false, prev, next).then((found) => { if (found) {
+            return index;
+        }
+        else {
+            throw new Error();
+        } });
+    }
+    static keyAt(list, index, prev, next) {
+        var loop = (key, index) => list.next(key).then(key => {
+            if (key == next)
+                return;
+            if (index == 0)
                 return key;
-        return null;
+            return list.next(key).then(key => loop(key, index - 1));
+        });
+        return loop(prev, index);
     }
     static at(list, index) {
-        return list.get(List.keyAt(list, index));
-    }
-    static every(list, predicate) {
-        var key;
-        while ((key = list.next(key)) != null)
-            if (!predicate(list.get(key), key))
-                return false;
-        return true;
-    }
-    static some(list, predicate) {
-        var key;
-        while ((key = list.next(key)) != null)
-            if (predicate(list.get(key), key))
-                return true;
-        return false;
+        return List.keyAt(list, index).then(list.get);
     }
     static contains(list, value) {
         return List.some(list, v => v === value);
     }
     static reverse(list) {
-        var { has, get } = list;
+        var { get } = list;
         function prev(key) {
             return list.next(key);
         }
         function next(key) {
             return list.prev(key);
         }
-        return { has, get, prev, next };
+        return { get, prev, next };
     }
     static map(list, mapFn) {
-        var { has, prev, next } = list;
+        var { prev, next } = list;
         function get(key) {
-            return has(key) ? mapFn(list.get(key), key) : undefined;
+            return list.get(key).then(mapFn);
         }
-        return { has, get, prev, next };
+        return { get, prev, next };
     }
     static filter(list, filterFn) {
-        function has(key) {
-            return list.has(key) && filterFn(list.get(key), key);
-        }
         function get(key) {
-            if (has(key))
-                return list.get(key);
-            return;
+            return list.get(key).then(value => {
+                if (filterFn(value))
+                    throw new Error();
+                return value;
+            });
         }
         function prev(key) {
-            var prev = key;
-            while ((prev = list.prev(prev)) != null)
-                if (has(prev))
-                    return prev;
-            return null;
+            return List.findKey(List.reverse(list), filterFn, key);
         }
         function next(key) {
-            var next = key;
-            while ((next = list.next(next)) != null)
-                if (has(next))
-                    return next;
-            return null;
+            return List.findKey(list, filterFn, key);
         }
-        return { has, get, prev, next };
+        return { get, prev, next };
     }
     static flatten(list) {
-        function has(key) {
-            var path = Path.create(key);
-            return Tree.has(list, path, 1);
-        }
         function get(key) {
-            var path = Path.create(key);
+            var path = Path.fromKey(key);
             return Tree.get(list, path, 1);
         }
         function prev(key) {
-            var path = Path.create(key);
-            return Path.key(Tree.prev(list, path, 1));
+            var path = Path.fromKey(key);
+            return Tree.prev(list, path, 1).then(Path.toKey).then(x => { console.log(key, x); return x; });
+            ;
         }
         function next(key) {
-            var path = Path.create(key);
-            return Path.key(Tree.next(list, path, 1));
+            var path = Path.fromKey(key);
+            return Tree.next(list, path, 1).then(Path.toKey).then(x => { console.log(key, x); return x; });
+            ;
         }
-        return { has, get, prev, next };
+        return { get, prev, next };
     }
     static flatMap(list, flatMapFn) {
         return List.flatten(List.map(list, flatMapFn));
@@ -263,21 +246,16 @@ export class List {
     static zip(list, other, zipFn) {
         list = List.index(list);
         other = List.index(other);
-        function has(key) {
-            return list.has(key) && other.has(key);
-        }
         function get(key) {
-            return has(key) ? zipFn(list.get(key), other.get(key)) : undefined;
+            return list.get(key).then(v => other.get(key).then(w => zipFn(v, w)));
         }
         function prev(key) {
-            var prev = list.prev(key);
-            return prev != null && prev == other.prev(key) ? prev : null;
+            return list.prev(key).then(() => other.prev(key));
         }
         function next(key) {
-            var next = list.next(key);
-            return next != null && next == other.next(key) ? next : null;
+            return list.next(key).then(() => other.next(key));
         }
-        return { has, get, prev, next };
+        return { get, prev, next };
     }
     static skip(list, k) {
         return List.filter(List.index(list), function (value, key) {
@@ -295,16 +273,12 @@ export class List {
         });
     }
     static scan(list, scanFn, memo) {
-        var { has, prev, next } = list, scanList;
+        var { prev, next } = list, scanList;
         function get(key) {
-            var prev = scanList.prev(key);
-            return scanFn(prev != null ? scanList.get(prev) : memo, list.get(key));
+            return scanList.prev(key).then(p => p == null ? memo : scanList.get(p)).then(memo => list.get(key).then(value => scanFn(memo, value)));
         }
-        scanList = List.cache({ has, get, prev, next });
+        scanList = List.cache({ get, prev, next });
         return scanList;
-    }
-    static async(list, scheduler) {
-        return new AsyncList(list);
     }
 }
 export default List;

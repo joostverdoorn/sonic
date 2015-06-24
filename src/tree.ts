@@ -9,8 +9,12 @@ export module Path {
     return JSON.stringify(path)
   }
 
-  export function create(key: Key): Path {
+  export function fromKey(key: Key): Path {
     return key == null ? null : JSON.parse(key.toString());
+  }
+
+  export function toKey(path: Path): Key {
+    return path == null ? null : JSON.stringify(path);
   }
 
   export function head(path: Path): Key {
@@ -31,64 +35,79 @@ export module Path {
 }
 
 export module Tree {
-  export function has<V>(list: ITree<any>, path: Path, depth: number = Infinity): boolean {
+  export function get<V>(list: ITree<V>, path: Path, depth: number = Infinity): Promise<ITree<V> | V> {
     var head = Path.head(path),
         tail = Path.tail(path);
 
-    return list.has(head) && (tail.length == 0 || depth == 0 || Tree.has(list.get(head), tail, depth))
+    return list.get(head).then(value => {
+      if(tail.length == 0 || depth == 0) return value;
+      return Tree.get(<ITree<V>> value, tail, depth)
+    });
+
   }
 
-  export function get<V>(list: ITree<V>, path: Path, depth: number = Infinity): ITree<V> | V {
+  export function prev(list: ITree<any>, path: Path = [], depth: number = Infinity): Promise<Path> {
     var head = Path.head(path),
         tail = Path.tail(path);
 
-    if(!list.has(head)) return;
-    var value = list.get(head);
+    if((head == null || !tail.length) && depth > 0) {
+      return list.prev(head).then(key => {
+        if (key == null) return null;
 
-    if(tail.length == 0 || depth == 0) return value;
-    return Tree.get(<ITree<V>> value, tail, depth)
+        return list.get(key).then(value => {
+          if(List.isList(value)) return Tree.prev(value, null, depth - 1).then(prev => {
+            return prev == null ? null : Path.append(key, prev);
+          });
+
+          return [key];
+        });
+      });
+    }
+
+    if(tail.length && depth > 0) {
+      return list.get(head)
+        .then(list => Tree.prev(list, tail, depth - 1))
+        .then(prev => {
+          if(prev != null) return Path.append(head, prev)
+          return list.prev(head).then(prev => {
+            return prev == null ? null : list.get(prev).then(list => Tree.prev(list, null, depth - 1)).then(tail => Path.append(prev, tail));
+          });
+        });
+    }
+
+    return list.prev(head).then(prev => prev != null ? [prev] : null);
   }
 
-  export function prev(list: ITree<any>, path: Path = [], depth: number = Infinity): Path {
+  export function next(list: ITree<any>, path: Path = [], depth: number = Infinity): Promise<Path> {
     var head = Path.head(path),
-        tail = Path.tail(path),
-        key = head,
-        value: any;
+        tail = Path.tail(path);
 
-    if(head != null && !list.has(head)) return;
+    if((head == null || !tail.length) && depth > 0) {
+      return list.next(head).then(key => {
+        if (key == null) return null;
 
-    do {
-      value = list.get(key);
+        return list.get(key).then(value => {
+          if(List.isList(value)) return Tree.next(value, null, depth - 1).then(next => {
+            return next == null ? null : Path.append(key, next);
+          });
 
-      if(!List.isList(value) || depth == 0) {
-        if(key != null && key != head) return [key];
-      } else {
-        var prevPath = Tree.prev(value, tail, depth - 1);
-        if(prevPath != null) return Path.append(key, prevPath);
-        tail = [];
-      }
-    } while((key = list.prev(key)) != null);
-  }
+          return [key];
+        });
+      });
+    }
 
-  export function next(list: ITree<any>, path: Path = [], depth: number = Infinity): Path {
-    var head = Path.head(path),
-        tail = Path.tail(path),
-        key = head,
-        value: any;
+    if(tail.length && depth > 0) {
+      return list.get(head)
+        .then(list => Tree.next(list, tail, depth - 1))
+        .then(next => {
+          if(next != null) return Path.append(head, next)
+          return list.next(head).then(next => {
+            return next == null ? null : list.get(next).then(list => Tree.next(list, null, depth - 1)).then(tail => Path.append(next, tail));
+          });
+        });
+    }
 
-    if(head != null && !list.has(head)) return;
-
-    do {
-      value = list.get(key);
-
-      if(!List.isList(value) || depth == 0) {
-        if(key != null && key != head) return [key];
-      } else {
-        var nextPath = Tree.next(value, tail, depth - 1);
-        if(nextPath != null) return Path.append(key, nextPath);
-        tail = [];
-      }
-    } while((key = list.next(key)) != null);
+    return list.next(head).then(next => next != null ? [next] : null);
   }
 }
 

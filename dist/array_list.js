@@ -1,61 +1,46 @@
-import { Subject } from './observable';
+import { ListSubject } from './observable_list';
 import { MutableList } from './mutable_list';
 export default class ArrayList extends MutableList {
     constructor(array = []) {
         super();
-        this.has = (key) => {
-            return key != null && -1 < key && key < this._array.length;
-        };
         this.get = (key) => {
-            if (this.has(key))
-                return this._array[key];
-            return;
+            if (key != null && 0 <= key && key < this._array.length)
+                return Promise.resolve(this._array[key]);
+            return Promise.reject(new Error);
         };
         this.prev = (key) => {
-            if (key == null && this._array.length)
-                return this._array.length - 1;
-            if (this._array.length > 0 && key != null && this.has(key) && this.has(key - 1))
-                return key - 1;
-            return null;
+            if (key == null)
+                return Promise.resolve(this._array.length ? this._array.length - 1 : null);
+            if (key == 0)
+                return Promise.resolve(null);
+            if (0 <= key - 1 && key < this._array.length)
+                return Promise.resolve(key - 1);
+            Promise.reject(new Error);
         };
         this.next = (key) => {
-            if (key == null && this._array.length)
-                return 0;
-            if (this._array.length > 0 && key != null && this.has(key) && this.has(key + 1))
-                return key + 1;
-            return null;
+            if (key == null)
+                return Promise.resolve(this._array.length ? 0 : null);
+            if (key == this._array.length - 1)
+                return Promise.resolve(null);
+            if (0 <= key && key + 1 < this._array.length)
+                return Promise.resolve(key + 1);
+            Promise.reject(new Error);
         };
         this.set = (key, value) => {
-            if (!this.has(key))
-                return null;
-            this._array[key] = value;
-            return key;
+            return this.splice(key > 0 ? key - 1 : null, key < this._array.length - 1 ? key + 1 : null, value);
         };
         this.splice = (prev, next, ...values) => {
-            if (prev == null)
-                prev = -1;
-            else if (!this.has(prev))
-                return;
-            if (next == null)
-                next = this._array.length;
-            else if (!this.has(next))
-                return;
-            this._array.splice(prev + 1, next - (prev + 1), ...values);
-            this._invalidate(prev, null);
+            if (prev != null && (0 > prev || prev >= this._array.length))
+                return Promise.reject(new Error);
+            if (prev != null && (0 > next || next >= this._array.length))
+                return Promise.reject(new Error);
+            this._array.splice(prev == null ? 0 : prev + 1, (next == null ? this._array.length : next) - (prev == null ? 0 : prev + 1), ...values);
+            this._subject.onInvalidate(prev, null);
         };
         this.observe = (observer) => {
             return this._subject.observe(observer);
         };
-        this._invalidate = (prev, next) => {
-            if (!this.has(prev))
-                prev = null;
-            if (!this.has(next))
-                next = null;
-            this._subject.notify(function (observer) {
-                observer.onInvalidate(prev, next);
-            });
-        };
-        this._subject = new Subject();
+        this._subject = new ListSubject();
         this._array = array;
     }
 }

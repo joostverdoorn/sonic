@@ -1,14 +1,20 @@
-import compose  from './compose'
 import Key       from './key';
 import { List, IList } from './list';
 import { Tree, Path }  from './tree';
 import { Subject, IObservable, ISubscription, INotifier } from './observable';
+import Cache from './cache';
 import ObservableCache from './observable_cache';
 import ObservableIndex from './observable_index';
 import ObservableKeyBy from './observable_key_by';
 
 export interface IListObserver {
   onInvalidate: (prev: Key, next: Key) => void;
+}
+
+export class ListSubject extends Subject<IListObserver> {
+  onInvalidate = (prev: Key, next: Key) => {
+    this.notify(observer => { observer.onInvalidate(prev, next) });
+  }
 }
 
 export interface IObservableList<V> extends IList<V>, IObservable<IListObserver> {};
@@ -82,16 +88,15 @@ export class ObservableList<V> extends List<V> implements IObservableList<V> {
 
   static create<V>(list: IObservableList<V>): ObservableList<V> {
     return new ObservableList<V>({
-      has:     list.has,
       get:     list.get,
       prev:    list.prev,
       next:    list.next,
       observe: list.observe
     });
   }
-  
+
   static reverse<V>(list: IObservableList<V>): IObservableList<V> {
-    var { has, get, prev, next } = List.reverse(list);
+    var { get, prev, next } = List.reverse(list);
 
     function observe(observer: IListObserver) {
       return list.observe({
@@ -101,94 +106,101 @@ export class ObservableList<V> extends List<V> implements IObservableList<V> {
       });
     }
 
-    return {has, get, prev, next, observe};
+    return { get, prev, next, observe };
   }
 
   static map<V, W>(list: IObservableList<V>, mapFn: (value: V, key?: Key) => W): IObservableList<W> {
-    var { has, get, prev, next } = List.map(list, mapFn);
-    return { has, get, prev, next, observe: list.observe };
+    var { get, prev, next } = List.map(list, mapFn);
+    return { get, prev, next, observe: list.observe };
   }
 
   static filter<V>(list: IObservableList<V>, filterFn: (value: V, key?: Key) => boolean): IObservableList<V> {
-    var { has, get, prev, next } = List.filter(list, filterFn);
+    var { get, prev, next } = List.filter(list, filterFn);
+    var subject = new ListSubject();
 
-    function observe(observer: IListObserver) {
-      return list.observe({
-        onInvalidate: function(p: Key, n: Key) {
-          p = has(p) ? p : prev(p);
-          n = has(n) ? n : next(n)
-          observer.onInvalidate(p, n)
-        }
-      });
-    }
+    list.observe({
+      onInvalidate: function(p: Key, n: Key) {
+        prev(p).then(p => next(n).then(n => subject.onInvalidate(p, n)));
+      }
+    });
 
-    return { has, get, prev, next, observe };
+    return { get, prev, next, observe: subject.observe };
   }
 
   static flatten<V>(list: IObservableList<IObservableList<V> | V | any>): IObservableList<V> {
-    var cache: IObservableList<any>;
-    var subscriptions = Object.create(null);
-    var subject = new Subject();
+    var flat = <List<V>> List.flatten(list),
+        subject = new ListSubject(),
+        subscriptions: {[key: string]: ISubscription} = Object.create(null);
 
-    list.observe({
-      onInvalidate: function(prev, next) {
-        var key: Key;
+    var cache = new ObservableCache({
+          get: list.get,
+          prev: list.prev,
+          next: list.next,
+          observe: (observer: IListObserver) => null
+        });
 
-        key = prev;
-        while((key = cache.next(key)) != null && key != next) {
-          var subscription = subscriptions[key];
-          if(subscription) {
-            subscription.unsubscribe();
-            delete subscriptions[key];
-          }
-        }
-
-        key = next;
-        while((key = cache.prev(key)) != null && key != prev) {
-          var subscription = subscriptions[key];
-          if(subscription) {
-            subscription.unsubscribe();
-            delete subscriptions[key];
-          }
-        }
-      }
-    });
-
-    cache = ObservableList.cache(ObservableList.map(list, function(value, key) {
-      subscriptions[key] = value.observe({
-        onInvalidate: function(prev: Key, next: Key) {
-          var prevKey: Key,
-              nextKey: Key,
-              prevPath = Path.append(key, prev),
-              nextPath = Path.append(key, next);
-
-          if(prev == null) prevPath = Tree.prev(list, Tree.next(list, prevPath));
-          if(next == null) nextPath = Tree.next(list, Tree.prev(list, nextPath));
-
-          prevKey = Path.key(prevPath);
-          nextKey = Path.key(nextPath);
-
-          subject.notify(function(observer: IListObserver) {
-            observer.onInvalidate(prevKey, nextKey);
-          });
-        }
-      });
-      return value;
-    }));
-
-    cache.observe({
-      onInvalidate: function(prev, next) {
-        var prevKey = Path.key(Tree.prev(list, [prev])),
-            nextKey = Path.key(Tree.next(list, [next]));
-
-        subject.notify(function(observer: IListObserver) {
-          observer.onInvalidate(prevKey, nextKey);
+    function createObserver(head: Key): IListObserver {
+      var onInvalidate = (prev: Key, next: Key) => {
+        Promise.all([
+          prev == null ? Tree.prev(list, [head]) : Path.append(head, prev),
+          next == null ? Tree.next(list, [head]) : Path.append(head, next)
+        ]).then(([prev, next]) => {
+          subject.onInvalidate(Path.toKey(prev), Path.toKey(next));
         })
       }
+
+      return { onInvalidate };
+    }
+
+    function prev(key: Key): Promise<Key> {
+      return flat.prev(key).then(prev => {
+        var path = Path.fromKey(prev),
+            head = Path.head(path);
+
+        if (head != null && !subscriptions[head]) {
+          list.get(head).then(list => subscriptions[head] = list.observe(createObserver(head)));
+        }
+
+        return prev;
+      });
+    }
+
+    function next(key: Key): Promise<Key> {
+      return flat.next(key).then(next => {
+        var path = Path.fromKey(next),
+            head = Path.head(path);
+
+        if (head != null && !subscriptions[head]) {
+          list.get(head).then(list => subscriptions[head] = list.observe(createObserver(head)));
+        }
+
+        return next;
+      });
+    }
+
+    list.observe({
+      onInvalidate: (prev, next) => {
+        // Unsubscribe from all lists in the range
+        List.forEach(cache, (value: V, key: Key) => {
+          if (!subscriptions[key]) return;
+          subscriptions[key].unsubscribe();
+          delete subscriptions[key];
+        }, prev, next);
+
+        // Find the prev and next paths, and invalidate
+        Promise.all([
+          prev == null ? null : Tree.prev(list, [prev, null], 1),
+          next == null ? null : Tree.next(list, [next, null], 1)
+        ]).then(([prev, next]) => {
+          subject.onInvalidate(Path.toKey(prev), Path.toKey(next));
+        })
+
+        // Invalidate cache
+        cache.onInvalidate(prev, next);
+      }
     });
 
-    var { has, get, next, prev } = <IList<V>> List.flatten<V>(cache)
-    return { has, get, next, prev, observe: subject.observe }
+    return { get: flat.get, prev, next, observe: subject.observe };
   }
 
   static flatMap<V, W>(list: IObservableList<V>, flatMapFn:(value: V, key?: Key) => IObservableList<W>): IObservableList<W> {
@@ -211,37 +223,23 @@ export class ObservableList<V> extends List<V> implements IObservableList<V> {
     list = ObservableList.index(list);
     other = ObservableList.index(other);
 
-    function has(key: number): boolean {
-      return list.has(key) && other.has(key);
+    function get(key: number): Promise<U> {
+      return list.get(key).then(v => other.get(key).then(w => zipFn(v, w)));
     }
 
-    function get(key: number): U {
-      return has(key) ? zipFn(list.get(key), other.get(key)): undefined;
+    function prev(key?: number): Promise<number> {
+      return list.prev(key).then(() => other.prev(key));
     }
 
-    function prev(key?: number): number {
-      var prev = list.prev(key);
-      return prev != null && prev == other.prev(key) ? <number> prev : null
+    function next(key?: number): Promise<number> {
+      return list.next(key).then(() => other.next(key));
     }
 
-    function next(key?: number): number {
-      var next = list.next(key);
-      return next != null && next == other.next(key) ? <number> next : null
-    }
+    var subject = new ListSubject();
+    list.observe(subject);
+    other.observe(subject);
 
-    var subject = new Subject<IListObserver>(),
-        observer = {
-          onInvalidate: function(prev: number, next: number) {
-            subject.notify(function(_observer: IListObserver) {
-              _observer.onInvalidate(prev, next);
-            });
-          }
-        };
-
-    list.observe(observer);
-    other.observe(observer);
-
-    return { has, get, prev, next, observe: subject.observe };
+    return { get, prev, next, observe: subject.observe };
   }
 
   static skip<V>(list: IObservableList<V>, k: number): IObservableList<V> {
@@ -263,12 +261,11 @@ export class ObservableList<V> extends List<V> implements IObservableList<V> {
   }
 
   static scan<V, W>(list: IObservableList<V>, scanFn: (memo: W, value: V) => W, memo?: W): IObservableList<W> {
-    var { has, prev, next } = list,
+    var { prev, next } = list,
         scanList: IObservableList<W>;
 
-    function get(key: Key): W {
-      var prev = scanList.prev(key);
-      return scanFn(prev != null ? scanList.get(prev) : memo, list.get(key));
+    function get(key: Key): Promise<W> {
+      return scanList.prev(key).then(p => p == null ? memo : scanList.get(p)).then(memo => list.get(key).then(value => scanFn(memo, value)));
     }
 
     function observe(observer: IListObserver) {
@@ -279,7 +276,7 @@ export class ObservableList<V> extends List<V> implements IObservableList<V> {
       });
     }
 
-    scanList = ObservableList.cache({has, get, prev, next, observe});
+    scanList = ObservableList.cache({ get, prev, next, observe });
     return scanList;
   }
 }

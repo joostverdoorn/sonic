@@ -15,6 +15,7 @@ export class ObservableCache extends Cache {
                     break;
                 delete this._byKey[key];
             }
+            key = next;
             while ((key = this._prev[key]) !== undefined) {
                 delete this._prev[this._next[key]];
                 delete this._next[key];

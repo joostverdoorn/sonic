@@ -4,6 +4,14 @@ import { Subject } from './observable';
 import ObservableCache from './observable_cache';
 import ObservableIndex from './observable_index';
 import ObservableKeyBy from './observable_key_by';
+export class ListSubject extends Subject {
+    constructor(...args) {
+        super(...args);
+        this.onInvalidate = (prev, next) => {
+            this.notify(observer => { observer.onInvalidate(prev, next); });
+        };
+    }
+}
 ;
 export class ObservableList extends List {
     constructor(list) {
@@ -58,7 +66,6 @@ export class ObservableList extends List {
     }
     static create(list) {
         return new ObservableList({
-            has: list.has,
             get: list.get,
             prev: list.prev,
             next: list.next,
@@ -66,7 +73,7 @@ export class ObservableList extends List {
         });
     }
     static reverse(list) {
-        var { has, get, prev, next } = List.reverse(list);
+        var { get, prev, next } = List.reverse(list);
         function observe(observer) {
             return list.observe({
                 onInvalidate: function (prev, next) {
@@ -74,77 +81,80 @@ export class ObservableList extends List {
                 }
             });
         }
-        return { has, get, prev, next, observe };
+        return { get, prev, next, observe };
     }
     static map(list, mapFn) {
-        var { has, get, prev, next } = List.map(list, mapFn);
-        return { has, get, prev, next, observe: list.observe };
+        var { get, prev, next } = List.map(list, mapFn);
+        return { get, prev, next, observe: list.observe };
     }
     static filter(list, filterFn) {
-        var { has, get, prev, next } = List.filter(list, filterFn);
-        function observe(observer) {
-            return list.observe({
-                onInvalidate: function (p, n) {
-                    p = has(p) ? p : prev(p);
-                    n = has(n) ? n : next(n);
-                    observer.onInvalidate(p, n);
-                }
-            });
-        }
-        return { has, get, prev, next, observe };
+        var { get, prev, next } = List.filter(list, filterFn);
+        var subject = new ListSubject();
+        list.observe({
+            onInvalidate: function (p, n) {
+                prev(p).then(p => next(n).then(n => subject.onInvalidate(p, n)));
+            }
+        });
+        return { get, prev, next, observe: subject.observe };
     }
     static flatten(list) {
-        var cache;
-        var subscriptions = Object.create(null);
-        var subject = new Subject();
-        list.observe({
-            onInvalidate: function (prev, next) {
-                var key;
-                key = prev;
-                while ((key = cache.next(key)) != null && key != next) {
-                    var subscription = subscriptions[key];
-                    if (subscription) {
-                        subscription.unsubscribe();
-                        delete subscriptions[key];
-                    }
-                }
-                key = next;
-                while ((key = cache.prev(key)) != null && key != prev) {
-                    var subscription = subscriptions[key];
-                    if (subscription) {
-                        subscription.unsubscribe();
-                        delete subscriptions[key];
-                    }
-                }
-            }
+        var flat = List.flatten(list), subject = new ListSubject(), subscriptions = Object.create(null);
+        var cache = new ObservableCache({
+            get: list.get,
+            prev: list.prev,
+            next: list.next,
+            observe: (observer) => null
         });
-        cache = ObservableList.cache(ObservableList.map(list, function (value, key) {
-            subscriptions[key] = value.observe({
-                onInvalidate: function (prev, next) {
-                    var prevKey, nextKey, prevPath = Path.append(key, prev), nextPath = Path.append(key, next);
-                    if (prev == null)
-                        prevPath = Tree.prev(list, Tree.next(list, prevPath));
-                    if (next == null)
-                        nextPath = Tree.next(list, Tree.prev(list, nextPath));
-                    prevKey = Path.key(prevPath);
-                    nextKey = Path.key(nextPath);
-                    subject.notify(function (observer) {
-                        observer.onInvalidate(prevKey, nextKey);
-                    });
-                }
-            });
-            return value;
-        }));
-        cache.observe({
-            onInvalidate: function (prev, next) {
-                var prevKey = Path.key(Tree.prev(list, [prev])), nextKey = Path.key(Tree.next(list, [next]));
-                subject.notify(function (observer) {
-                    observer.onInvalidate(prevKey, nextKey);
+        function createObserver(head) {
+            var onInvalidate = (prev, next) => {
+                Promise.all([
+                    prev == null ? Tree.prev(list, [head]) : Path.append(head, prev),
+                    next == null ? Tree.next(list, [head]) : Path.append(head, next)
+                ]).then(([prev, next]) => {
+                    subject.onInvalidate(Path.toKey(prev), Path.toKey(next));
                 });
+            };
+            return { onInvalidate };
+        }
+        function prev(key) {
+            return flat.prev(key).then(prev => {
+                var path = Path.fromKey(prev), head = Path.head(path);
+                if (head != null && !subscriptions[head]) {
+                    list.get(head).then(list => subscriptions[head] = list.observe(createObserver(head)));
+                }
+                return prev;
+            });
+        }
+        function next(key) {
+            return flat.next(key).then(next => {
+                var path = Path.fromKey(next), head = Path.head(path);
+                if (head != null && !subscriptions[head]) {
+                    list.get(head).then(list => subscriptions[head] = list.observe(createObserver(head)));
+                }
+                return next;
+            });
+        }
+        list.observe({
+            onInvalidate: (prev, next) => {
+                // Unsubscribe from all lists in the range
+                List.forEach(cache, (value, key) => {
+                    if (!subscriptions[key])
+                        return;
+                    subscriptions[key].unsubscribe();
+                    delete subscriptions[key];
+                }, prev, next);
+                // Find the prev and next paths, and invalidate
+                Promise.all([
+                    prev == null ? null : Tree.prev(list, [prev, null], 1),
+                    next == null ? null : Tree.next(list, [next, null], 1)
+                ]).then(([prev, next]) => {
+                    subject.onInvalidate(Path.toKey(prev), Path.toKey(next));
+                });
+                // Invalidate cache
+                cache.onInvalidate(prev, next);
             }
         });
-        var { has, get, next, prev } = List.flatten(cache);
-        return { has, get, next, prev, observe: subject.observe };
+        return { get: flat.get, prev, next, observe: subject.observe };
     }
     static flatMap(list, flatMapFn) {
         return ObservableList.flatten(ObservableList.map(list, flatMapFn));
@@ -161,30 +171,19 @@ export class ObservableList extends List {
     static zip(list, other, zipFn) {
         list = ObservableList.index(list);
         other = ObservableList.index(other);
-        function has(key) {
-            return list.has(key) && other.has(key);
-        }
         function get(key) {
-            return has(key) ? zipFn(list.get(key), other.get(key)) : undefined;
+            return list.get(key).then(v => other.get(key).then(w => zipFn(v, w)));
         }
         function prev(key) {
-            var prev = list.prev(key);
-            return prev != null && prev == other.prev(key) ? prev : null;
+            return list.prev(key).then(() => other.prev(key));
         }
         function next(key) {
-            var next = list.next(key);
-            return next != null && next == other.next(key) ? next : null;
+            return list.next(key).then(() => other.next(key));
         }
-        var subject = new Subject(), observer = {
-            onInvalidate: function (prev, next) {
-                subject.notify(function (_observer) {
-                    _observer.onInvalidate(prev, next);
-                });
-            }
-        };
-        list.observe(observer);
-        other.observe(observer);
-        return { has, get, prev, next, observe: subject.observe };
+        var subject = new ListSubject();
+        list.observe(subject);
+        other.observe(subject);
+        return { get, prev, next, observe: subject.observe };
     }
     static skip(list, k) {
         return ObservableList.filter(ObservableList.index(list), function (value, key) {
@@ -202,10 +201,9 @@ export class ObservableList extends List {
         });
     }
     static scan(list, scanFn, memo) {
-        var { has, prev, next } = list, scanList;
+        var { prev, next } = list, scanList;
         function get(key) {
-            var prev = scanList.prev(key);
-            return scanFn(prev != null ? scanList.get(prev) : memo, list.get(key));
+            return scanList.prev(key).then(p => p == null ? memo : scanList.get(p)).then(memo => list.get(key).then(value => scanFn(memo, value)));
         }
         function observe(observer) {
             return list.observe({
@@ -214,7 +212,7 @@ export class ObservableList extends List {
                 }
             });
         }
-        scanList = ObservableList.cache({ has, get, prev, next, observe });
+        scanList = ObservableList.cache({ get, prev, next, observe });
         return scanList;
     }
 }

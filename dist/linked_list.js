@@ -1,46 +1,38 @@
 import Key from './key';
-import { Subject } from './observable';
+import { ListSubject } from './observable_list';
 import { MutableList } from './mutable_list';
 export default class LinkedList extends MutableList {
     constructor(values, keyFn) {
         super();
         this._keyFn = Key.create;
-        this.has = (key) => {
-            return key in this._byKey;
-        };
         this.get = (key) => {
-            return this._byKey[key];
+            if (!(key in this._byKey))
+                return Promise.reject(new Error);
+            return Promise.resolve(this._byKey[key]);
         };
         this.prev = (key = null) => {
-            var prev = this._prev[key];
-            return prev == null ? null : prev;
+            if (!(key in this._prev))
+                return Promise.reject(new Error);
+            return Promise.resolve(this._prev[key]);
         };
         this.next = (key = null) => {
-            var next = this._next[key];
-            return next == null ? null : next;
+            if (!(key in this._next))
+                return Promise.reject(new Error);
+            return Promise.resolve(this._next[key]);
         };
         this.set = (key, value) => {
-            if (!this.has(key))
-                return null;
+            if (!(key in this._byKey))
+                return Promise.reject(new Error);
             this._byKey[key] = value;
-            this._invalidate(this._prev[key], this._next[key]);
-            return key;
+            this._subject.onInvalidate(this._prev[key], this._next[key]);
+            return Promise.resolve();
         };
         this.splice = (prev = null, next = null, ...values) => {
-            var key, value;
-            key = prev;
+            var key = prev, value;
             while ((key = this._next[key]) != null) {
                 delete this._next[this._prev[key]];
                 delete this._prev[key];
                 if (key == next)
-                    break;
-                delete this._byKey[key];
-            }
-            key = next;
-            while ((key = this._prev[key]) != null) {
-                delete this._prev[this._next[key]];
-                delete this._next[key];
-                if (key == prev)
                     break;
                 delete this._byKey[key];
             }
@@ -54,23 +46,15 @@ export default class LinkedList extends MutableList {
             }
             this._prev[next] = _key;
             this._next[_key] = next;
-            this._invalidate(prev, next);
+            this._subject.onInvalidate(prev, next);
+            return Promise.resolve();
         };
         this.observe = (observer) => {
             return this._subject.observe(observer);
         };
-        this._invalidate = (prev, next) => {
-            if (!this.has(prev))
-                prev = null;
-            if (!this.has(next))
-                next = null;
-            this._subject.notify(function (observer) {
-                observer.onInvalidate(prev, next);
-            });
-        };
         if (keyFn)
             this._keyFn = keyFn;
-        this._subject = new Subject();
+        this._subject = new ListSubject();
         this._byKey = Object.create(null);
         this._prev = Object.create(null);
         this._next = Object.create(null);

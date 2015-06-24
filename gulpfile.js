@@ -7,10 +7,10 @@ var gulp       = require('gulp'),
     jasmine    = require('gulp-jasmine'),
     benchmark  = require('gulp-bench'),
     browserify = require('browserify'),
+    babelify   = require('babelify'),
     source     = require('vinyl-source-stream'),
     buffer     = require('vinyl-buffer'),
-    merge      = require('merge2'),
-    es6ify     = require('es6ify');
+    merge      = require('merge2');
 
 
 var typescriptProject = typescript.createProject('tsconfig.json', { typescript: require('typescript') });
@@ -27,12 +27,10 @@ gulp.task('typescript', function() {
 });
 
 gulp.task('browserify', ['typescript'], function() {
-  return browserify(es6ify.runtime, {standalone: 'Sonic', sourceType: 'module'})
-    .transform(es6ify)
-    .add('dist/sonic.js')
+  return browserify('dist/sonic.js', {standalone: 'Sonic', sourceType: 'module'})
+    .transform(babelify)
     .bundle()
     .pipe(source('sonic.browser.js'))
-    // .pipe(buffer())
     .pipe(gulp.dest('dist'))
 });
 

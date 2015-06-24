@@ -1,14 +1,14 @@
 import Index from './index';
-import { Subject, ISubscription } from './observable';
-import { IObservableList, IListObserver } from './observable_list';
+import { ISubscription } from './observable';
+import { IObservableList, IListObserver, ListSubject } from './observable_list';
 export declare class ObservableIndex<V> extends Index<V> implements IObservableList<V>, IListObserver {
     protected _list: IObservableList<V>;
     protected _byKey: {
         [key: string]: number;
     };
-    protected _subject: Subject<IListObserver>;
+    protected _subject: ListSubject;
     constructor(list: IObservableList<V>);
-    has: (index: number) => boolean;
+    protected _add: (key: string | number, index: number) => void;
     observe: (observer: IListObserver) => ISubscription;
     onInvalidate: (prev: string | number, next: string | number) => void;
 }

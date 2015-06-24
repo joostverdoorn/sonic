@@ -5,7 +5,7 @@ import _MutableList from './mutable_list';
 import _Unit from './unit';
 import _ArrayList from './array_list';
 import _LinkedList from './linked_list';
-import _Tree from './tree';
+import { Path as _Path, Tree as _Tree } from './tree';
 function Sonic(obj) {
     return factory(obj);
 }
@@ -18,7 +18,8 @@ var Sonic;
     Sonic.ArrayList = _ArrayList;
     Sonic.LinkedList = _LinkedList;
     Sonic.Tree = _Tree;
+    Sonic.Path = _Path;
     Sonic.fromPromise = _fromPromise;
     Sonic.fromIterator = _fromIterator;
 })(Sonic || (Sonic = {}));
-module['exports'] = Sonic;
+module.exports = Sonic;

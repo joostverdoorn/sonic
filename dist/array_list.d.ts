@@ -5,12 +5,10 @@ export default class ArrayList<V> extends MutableList<V> {
     private _array;
     private _subject;
     constructor(array?: V[]);
-    has: (key: string | number) => boolean;
-    get: (key: number) => V;
-    prev: (key?: number) => number;
-    next: (key?: number) => number;
-    set: (key: number, value: V) => string | number;
-    splice: (prev: number, next: number, ...values: V[]) => void;
+    get: (key: number) => Promise<V>;
+    prev: (key?: number) => Promise<number>;
+    next: (key?: number) => Promise<number>;
+    set: (key: number, value: V) => Promise<void>;
+    splice: (prev: number, next: number, ...values: V[]) => Promise<void>;
     observe: (observer: IListObserver) => ISubscription;
-    private _invalidate;
 }

@@ -10,9 +10,7 @@
     ],
     "files": [
         "src/array_list.ts",
-        "src/async_list.ts",
         "src/cache.ts",
-        "src/compose.ts",
         "src/factory.ts",
         "src/index.ts",
         "src/key.ts",

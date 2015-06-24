@@ -4,9 +4,9 @@ export declare class Index<V> implements IList<V> {
     protected _byIndex: Key[];
     protected _list: IList<V>;
     constructor(list: IList<V>);
-    has: (index: number) => boolean;
-    get: (index: number) => V;
-    prev: (index: number) => number;
-    next: (index?: number) => number;
+    protected _add: (key: string | number, index: number) => void;
+    get: (index: number) => Promise<V>;
+    prev: (index: number) => Promise<number>;
+    next: (index: number) => Promise<number>;
 }
 export default Index;

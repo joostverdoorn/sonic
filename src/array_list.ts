@@ -1,66 +1,56 @@
 import Key from './key';
 import { Subject, ISubject, ISubscription } from './observable';
-import { IListObserver } from './observable_list';
+import { IListObserver, ListSubject } from './observable_list';
 import { IMutableList, MutableList } from './mutable_list';
 
 export default class ArrayList<V> extends MutableList<V> {
   private _array: V[];
-  private _subject: ISubject<IListObserver>;
+  private _subject: ListSubject;
 
   constructor(array: V[] = []) {
     super();
 
-    this._subject = new Subject();
+    this._subject = new ListSubject();
     this._array = array;
   }
 
-  has = (key: Key): boolean => {
-    return key != null && -1 < key && key < this._array.length;
+  get = (key: number): Promise<V> => {
+    if(key != null && 0 <= key && key < this._array.length) return Promise.resolve(this._array[key]);
+    return Promise.reject<V>(new Error);
   }
 
-  get = (key: number): V => {
-    if(this.has(key)) return this._array[key];
-    return;
+  prev = (key?: number): Promise<number> => {
+    if(key == null) return Promise.resolve(this._array.length ? this._array.length - 1 : null);
+    if(key == 0) return Promise.resolve(null);
+    if(0 <= key - 1 && key < this._array.length) return Promise.resolve(key - 1);
+    Promise.reject(new Error);
   }
 
-  prev = (key?: number): number => {
-    if(key == null && this._array.length) return this._array.length - 1;
-    if(this._array.length > 0 && key != null && this.has(key) && this.has(key - 1)) return key - 1;
-    return null;
+  next = (key?: number): Promise<number> => {
+    if(key == null) return Promise.resolve(this._array.length ? 0 : null);
+    if(key == this._array.length - 1) return Promise.resolve(null);
+    if(0 <= key && key + 1 < this._array.length) return Promise.resolve(key + 1);
+    Promise.reject(new Error);
   }
 
-  next = (key?: number): number => {
-    if(key == null && this._array.length) return 0;
-    if(this._array.length > 0 && key != null && this.has(key) && this.has(key + 1)) return key + 1;
-    return null;
+  set = (key: number, value: V): Promise<void> => {
+    return this.splice(key > 0 ? key - 1 : null, key < this._array.length - 1 ? key + 1 : null, value);
   }
 
-  set = (key: number, value: V): Key => {
-    if(!this.has(key)) return null;
-    this._array[key] = value;
-    return key;
-  }
+  splice = (prev: number, next: number, ...values: V[]): Promise<void> => {
+    if(prev != null && (0 > prev || prev >= this._array.length)) return Promise.reject(new Error);
+    if(prev != null && (0 > next || next >= this._array.length)) return Promise.reject(new Error);
 
-  splice = (prev: number, next: number, ...values: V[]): void => {
-    if(prev == null) prev = -1;
-    else if(!this.has(prev)) return;
+    this._array.splice(
+      prev == null ? 0 : prev + 1,
+      (next == null ? this._array.length : next) - (prev == null ? 0 : prev + 1),
+      ...values
+    );
 
-    if(next == null) next = this._array.length;
-    else if(!this.has(next)) return;
-
-    this._array.splice(prev + 1, next - (prev + 1), ...values);
-    this._invalidate(prev, null);
+    this._subject.onInvalidate(prev, null);
   }
 
   observe = (observer: IListObserver): ISubscription => {
     return this._subject.observe(observer);
-  }
-
-  private _invalidate = (prev?: Key, next?: Key) => {
-    if(!this.has(prev)) prev = null;
-    if(!this.has(next)) next = null;
-    this._subject.notify(function(observer: IListObserver) {
-      observer.onInvalidate(prev, next);
-    })
   }
 }

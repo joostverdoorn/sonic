@@ -38,9 +38,6 @@ export class MutableList extends ObservableList {
         this.remove = (value) => {
             return MutableList.remove(this, value);
         };
-        this.compose = (lens) => {
-            return MutableList.create(MutableList.compose(this, lens));
-        };
         if (list != null) {
             this.set = list.set;
             this.splice = list.splice;
@@ -51,7 +48,6 @@ export class MutableList extends ObservableList {
     }
     static create(list) {
         return new MutableList({
-            has: list.has,
             get: list.get,
             prev: list.prev,
             next: list.next,
@@ -61,12 +57,10 @@ export class MutableList extends ObservableList {
         });
     }
     static addBefore(list, key, value) {
-        list.splice(list.prev(key), key, value);
-        return list.prev(key);
+        return list.prev(key).then(prev => list.splice(prev, key, value)).then(() => list.prev(key));
     }
     static addAfter(list, key, value) {
-        list.splice(key, list.next(key), value);
-        return list.next(key);
+        return list.next(key).then(next => list.splice(key, next, value)).then(() => list.next(key));
     }
     static push(list, value) {
         return MutableList.addBefore(list, null, value);
@@ -75,17 +69,15 @@ export class MutableList extends ObservableList {
         return MutableList.addAfter(list, null, value);
     }
     static delete(list, key) {
-        if (!list.has(key))
-            return;
-        var value = list.get(key);
-        list.splice(list.prev(key), list.next(key));
-        return value;
+        return list.get(key).then(value => {
+            return Promise.all([list.prev(key), list.next(key)]).then(([prev, next]) => list.splice(prev, next)).then(() => value);
+        });
     }
     static deleteBefore(list, key) {
-        return MutableList.delete(list, list.prev(key));
+        return list.prev(key).then(prev => MutableList.delete(list, prev));
     }
     static deleteAfter(list, key) {
-        return MutableList.delete(list, list.next(key));
+        return list.next(key).then(next => MutableList.delete(list, next));
     }
     static pop(list) {
         return MutableList.deleteBefore(list, null);
@@ -94,31 +86,7 @@ export class MutableList extends ObservableList {
         return MutableList.deleteAfter(list, null);
     }
     static remove(list, value) {
-        var key = MutableList.keyOf(list, value);
-        if (key == null)
-            return false;
-        delete (list, key);
-        return true;
-    }
-    static compose(list, lens) {
-        function get(key) {
-            return lens.get(list.get(key));
-        }
-        function set(key, value) {
-            list.set(key, lens.set(list.get(key), value));
-        }
-        function splice(prev, next, ...values) {
-            list.splice(prev, next, ...values.map((val) => lens.set(null, val)));
-        }
-        return {
-            has: list.has,
-            get,
-            set,
-            splice,
-            prev: list.prev,
-            next: list.next,
-            observe: list.observe
-        };
+        return MutableList.keyOf(list, value).then(key => { MutableList.delete(list, key); });
     }
 }
 export default MutableList;

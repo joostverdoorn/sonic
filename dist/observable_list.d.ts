@@ -1,8 +1,11 @@
 import Key from './key';
 import { List, IList } from './list';
-import { IObservable, ISubscription } from './observable';
+import { Subject, IObservable, ISubscription } from './observable';
 export interface IListObserver {
     onInvalidate: (prev: Key, next: Key) => void;
+}
+export declare class ListSubject extends Subject<IListObserver> {
+    onInvalidate: (prev: string | number, next: string | number) => void;
 }
 export interface IObservableList<V> extends IList<V>, IObservable<IListObserver> {
 }
