@@ -186,10 +186,7 @@ export class List<V> implements IList<V> {
   }
 
   static toArray<V>(list: IList<V>): Promise<V[]> {
-    return List.reduce<V, V[]>(list, (memo: V[], value: V) => {
-      memo.push(value);
-      return memo;
-    }, []);
+    return List.reduce<V, V[]>(list, (memo: V[], value: V) => (memo.push(value), memo), []);
   }
 
   static findKey<V>(list: IList<V>, fn: (value: V, key?: Key) => boolean, prev?: Key, next?: Key): Promise<Key> {
@@ -211,13 +208,7 @@ export class List<V> implements IList<V> {
   }
 
   static keyAt<V>(list: IList<V>, index: number, prev?: Key, next?: Key): Promise<Key> {
-    var loop = (key: Key, index: number): Promise<Key> => list.next(key).then(key => {
-      if(key == next) return;
-      if(index == 0) return key;
-      return list.next(key).then(key => loop(key, index - 1));
-    });
-
-    return loop(prev, index);
+    return List.findKey(list, () => 0 === index--);
   }
 
   static at<V>(list: IList<V>, index: number): Promise<V> {

@@ -632,8 +632,7 @@ var List = (function () {
         key: 'toArray',
         value: function toArray(list) {
             return List.reduce(list, function (memo, value) {
-                memo.push(value);
-                return memo;
+                return (memo.push(value), memo);
             }, []);
         }
     }, {
@@ -679,16 +678,9 @@ var List = (function () {
     }, {
         key: 'keyAt',
         value: function keyAt(list, index, prev, next) {
-            var loop = function loop(key, index) {
-                return list.next(key).then(function (key) {
-                    if (key == next) return;
-                    if (index == 0) return key;
-                    return list.next(key).then(function (key) {
-                        return loop(key, index - 1);
-                    });
-                });
-            };
-            return loop(prev, index);
+            return List.findKey(list, function () {
+                return 0 === index--;
+            });
         }
     }, {
         key: 'at',

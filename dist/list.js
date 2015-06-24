@@ -136,10 +136,7 @@ export class List {
         return List.forEach(list, (value, key) => memo = fn(memo, value, key)).then(() => memo);
     }
     static toArray(list) {
-        return List.reduce(list, (memo, value) => {
-            memo.push(value);
-            return memo;
-        }, []);
+        return List.reduce(list, (memo, value) => (memo.push(value), memo), []);
     }
     static findKey(list, fn, prev, next) {
         var key;
@@ -166,14 +163,7 @@ export class List {
         } });
     }
     static keyAt(list, index, prev, next) {
-        var loop = (key, index) => list.next(key).then(key => {
-            if (key == next)
-                return;
-            if (index == 0)
-                return key;
-            return list.next(key).then(key => loop(key, index - 1));
-        });
-        return loop(prev, index);
+        return List.findKey(list, () => 0 === index--);
     }
     static at(list, index) {
         return List.keyAt(list, index).then(list.get);
