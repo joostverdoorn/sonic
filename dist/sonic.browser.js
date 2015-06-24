@@ -1726,7 +1726,7 @@ var _key2 = require('./key');
 
 var _key3 = _interopRequireDefault(_key2);
 
-var _observable = require('./observable');
+var _observable_list = require('./observable_list');
 
 var _mutable_list = require('./mutable_list');
 
@@ -1737,24 +1737,25 @@ var Unit = (function (_MutableList) {
         _classCallCheck(this, Unit);
 
         _get(Object.getPrototypeOf(Unit.prototype), 'constructor', this).call(this);
-        this.has = function (key) {
-            return _this._key == key;
-        };
         this.get = function (key) {
-            if (_this.has(key)) return _this._value;
+            if (key === _this._key) return Promise.resolve(_this._value);
+            Promise.reject(new Error());
         };
         this.prev = function (key) {
-            if (key == null) return _this._key;
-            return null;
+            if (key == null) return Promise.resolve(_this._key);
+            if (key === _this._key) return Promise.resolve(null);
+            return Promise.reject(new Error());
         };
         this.next = function (key) {
-            if (key == null) return _this._key;
-            return null;
+            if (key == null) return Promise.resolve(_this._key);
+            if (key === _this._key) return Promise.resolve(null);
+            return Promise.reject(new Error());
         };
         this.set = function (key, value) {
             _this._key = key;
             _this._value = value;
-            _this._invalidate();
+            _this._subject.onInvalidate(null, null);
+            return Promise.resolve();
         };
         this.splice = function (prev, next) {
             for (var _len = arguments.length, values = Array(_len > 2 ? _len - 2 : 0), _key = 2; _key < _len; _key++) {
@@ -1764,17 +1765,13 @@ var Unit = (function (_MutableList) {
             if (values.length) return _this.set(_key3['default'].create(), values[0]);
             delete _this._key;
             delete _this._value;
-            _this._invalidate();
+            _this._subject.onInvalidate(null, null);
+            return Promise.resolve();
         };
         this.observe = function (observer) {
             return _this._subject.observe(observer);
         };
-        this._invalidate = function (prev, next) {
-            _this._subject.notify(function (observer) {
-                observer.onInvalidate(prev, next);
-            });
-        };
-        this._subject = new _observable.Subject();
+        this._subject = new _observable_list.ListSubject();
         if (arguments.length) this.splice(null, null, value);
     }
 
@@ -1786,7 +1783,7 @@ var Unit = (function (_MutableList) {
 exports['default'] = Unit;
 module.exports = exports['default'];
 
-},{"./key":5,"./mutable_list":9,"./observable":10}],17:[function(require,module,exports){
+},{"./key":5,"./mutable_list":9,"./observable_list":14}],17:[function(require,module,exports){
 'use strict';
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }

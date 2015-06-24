@@ -6,12 +6,10 @@ export default class Unit<V> extends MutableList<V> {
     private _value;
     private _subject;
     constructor(value?: V);
-    has: (key: string | number) => boolean;
-    get: (key: string | number) => V;
-    prev: (key: string | number) => string | number;
-    next: (key: string | number) => string | number;
-    set: (key: string | number, value: V) => void;
-    splice: (prev: string | number, next: string | number, ...values: V[]) => void;
+    get: (key: string | number) => Promise<V>;
+    prev: (key: string | number) => Promise<string | number>;
+    next: (key: string | number) => Promise<string | number>;
+    set: (key: string | number, value: V) => Promise<void>;
+    splice: (prev: string | number, next: string | number, ...values: V[]) => Promise<void>;
     observe: (observer: IListObserver) => ISubscription;
-    private _invalidate;
 }
