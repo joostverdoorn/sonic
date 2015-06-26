@@ -661,17 +661,11 @@ var List = (function () {
             }
             function prev(key) {
                 var path = _tree.Path.fromKey(key);
-                return _tree.Tree.prev(list, path, 1).then(_tree.Path.toKey).then(function (x) {
-                    console.log(key, x);return x;
-                });
-                ;
+                return _tree.Tree.prev(list, path, 1).then(_tree.Path.toKey);
             }
             function next(key) {
                 var path = _tree.Path.fromKey(key);
-                return _tree.Tree.next(list, path, 1).then(_tree.Path.toKey).then(function (x) {
-                    console.log(key, x);return x;
-                });
-                ;
+                return _tree.Tree.next(list, path, 1).then(_tree.Path.toKey);
             }
             return { get: get, prev: prev, next: next };
         }
@@ -687,6 +681,96 @@ var List = (function () {
         }
     }, {
         key: 'index',
+
+        //
+        // static group<V>(list: IList<V>, groupFn: (value: V, key: Key) => Key): IList<IList<V>> {
+        //   var byKey: {[key: string]: IList<V>} = Object.create(null);
+        //   var cache: Cache<List<V>>;
+        //
+        //
+        //   function createGroup(groupKey: Key): IMutableList<V> {
+        //     function get(key: Key): Promise<V> {
+        //       return null;
+        //     }
+        //     function set(key: Key, value: V): Promise<void> {
+        //       return null;
+        //     }
+        //     function splice(prev: Key, next: Key, ...values: V[]): Promise<void> {
+        //       return null;
+        //     }
+        //     function prev(key: Key): Promise<Key> {
+        //       return null;
+        //     }
+        //     function next(key: Key): Promise<Key> {
+        //       return null;
+        //     }
+        //     function observe(observer: IListObserver): ISubscription {
+        //       return null;
+        //     }
+        //
+        //     return { get, set, splice, prev, next, observe };
+        //   }
+        //
+        // function get(key: Key): Promise<IList<V>> {
+        //   return Promise.resolve(createGroup(key));
+        // }
+        //
+        // function prev(key: Key): Promise<Key> {
+        //   return null;
+        // }
+        //
+        // function next(key: Key): Promise<Key> {
+        //   return list.get(key).then(value => {
+        //     var groupKey = groupFn(value, key);
+        //
+        //     cache.get(groupKey).then((list: IMutableList<V>) => list.set(key, value))
+        //
+        //     return list.next(key);
+        //   })
+        // }
+        //
+        // return {get, prev, next};
+        // function get(key: Key): Promise<List<V>> {
+        //   if (byKey[key] != undefined) return Promise.resolve(byKey[key]);
+        //   list.get(key).then(value => {
+        //     groupKey = groupFn(value, key);
+        //     cache.get(groupKey)
+        //     return new LinkedList([value]);
+        //   }));
+        //   return
+        // }
+        //
+        // function prev(key: Key): Promise<Key> {
+        //   return null;
+        // }
+        //
+        // function next(key: Key): Promise<Key> {
+        //   cache.get(key).then(sl => {
+        //     sl.prev().then(list.next).then(next => {
+        //       return next == null ? null : list.get(next)
+        //         .then(value => groupFn(value, next))
+        //         .then(groupKey => {
+        //           return cache.get(groupKey);
+        //         })
+        //     });
+        //   });
+        //
+        //   // if (groupKeyByKey[key] != null) return cache.get(groupKey);
+        // }
+        // // listFor
+        //
+        // // function get(key: Key): Promise<List<V>> {
+        // //   return null;
+        // // }
+        //
+        //
+        // // var x = new LinkedList([]);
+        //
+        //
+        //
+        // cache = new Cache({ get, prev, next });
+        // return cache;
+        // }
         value: function index(list) {
             return new _index2['default'](list);
         }
@@ -1438,6 +1522,7 @@ Object.defineProperty(exports, '__esModule', {
 var _list = require('./list');
 
 ;
+;
 var Path;
 exports.Path = Path;
 (function (Path) {
@@ -1556,6 +1641,28 @@ exports.Tree = Tree;
         });
     }
     Tree.next = next;
+    function set(list, path, value) {
+        var head = path.slice(0, path.length - 1);
+        var key = path[path.length - 1];
+        return get(list, head).then(function (list) {
+            return list.set(key, value);
+        });
+    }
+    Tree.set = set;
+    function splice(list, prev, next) {
+        for (var _len = arguments.length, values = Array(_len > 3 ? _len - 3 : 0), _key = 3; _key < _len; _key++) {
+            values[_key - 3] = arguments[_key];
+        }
+
+        var prevHead = prev.slice(0, prev.length - 1);
+        var prevKey = prev[prev.length - 1];
+        var nextHead = next.slice(0, next.length - 1);
+        var nextKey = next[next.length - 1];
+        return get(list, prevHead).then(function (list) {
+            return list.splice.apply(list, [prevKey, nextKey].concat(values));
+        });
+    }
+    Tree.splice = splice;
 })(Tree || (exports.Tree = Tree = {}));
 exports['default'] = Tree;
 
@@ -1638,6 +1745,11 @@ module.exports = exports['default'];
 },{"./key":5,"./mutable_list":8,"./observable_list":12}],15:[function(require,module,exports){
 'use strict';
 
+Object.defineProperty(exports, '__esModule', {
+    value: true
+});
+exports.Sonic = Sonic;
+
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
 
 var _factory = require('./factory');
@@ -1673,7 +1785,9 @@ var _tree = require('./tree');
 function Sonic(obj) {
     return (0, _factory2['default'])(obj);
 }
+
 var Sonic;
+exports.Sonic = Sonic;
 (function (Sonic) {
     Sonic.List = _list2['default'];
     Sonic.ObservableList = _observable_list2['default'];
@@ -1684,8 +1798,10 @@ var Sonic;
     Sonic.Tree = _tree.Tree;
     Sonic.Path = _tree.Path;
     Sonic.fromPromise = _factory.fromPromise;
-})(Sonic || (Sonic = {}));
+})(Sonic || (exports.Sonic = exports.Sonic = Sonic = {}));
+;
 module.exports = Sonic;
+// export Sonic;
 
 },{"./array_list":1,"./factory":3,"./linked_list":6,"./list":7,"./mutable_list":8,"./observable_list":12,"./tree":13,"./unit":14}]},{},[15])(15)
 });

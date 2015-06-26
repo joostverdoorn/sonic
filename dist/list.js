@@ -207,13 +207,11 @@ export class List {
         }
         function prev(key) {
             var path = Path.fromKey(key);
-            return Tree.prev(list, path, 1).then(Path.toKey).then(x => { console.log(key, x); return x; });
-            ;
+            return Tree.prev(list, path, 1).then(Path.toKey);
         }
         function next(key) {
             var path = Path.fromKey(key);
-            return Tree.next(list, path, 1).then(Path.toKey).then(x => { console.log(key, x); return x; });
-            ;
+            return Tree.next(list, path, 1).then(Path.toKey);
         }
         return { get, prev, next };
     }
@@ -223,6 +221,95 @@ export class List {
     static cache(list) {
         return new Cache(list);
     }
+    //
+    // static group<V>(list: IList<V>, groupFn: (value: V, key: Key) => Key): IList<IList<V>> {
+    //   var byKey: {[key: string]: IList<V>} = Object.create(null);
+    //   var cache: Cache<List<V>>;
+    //
+    //
+    //   function createGroup(groupKey: Key): IMutableList<V> {
+    //     function get(key: Key): Promise<V> {
+    //       return null;
+    //     }
+    //     function set(key: Key, value: V): Promise<void> {
+    //       return null;
+    //     }
+    //     function splice(prev: Key, next: Key, ...values: V[]): Promise<void> {
+    //       return null;
+    //     }
+    //     function prev(key: Key): Promise<Key> {
+    //       return null;
+    //     }
+    //     function next(key: Key): Promise<Key> {
+    //       return null;
+    //     }
+    //     function observe(observer: IListObserver): ISubscription {
+    //       return null;
+    //     }
+    //
+    //     return { get, set, splice, prev, next, observe };
+    //   }
+    //
+    // function get(key: Key): Promise<IList<V>> {
+    //   return Promise.resolve(createGroup(key));
+    // }
+    //
+    // function prev(key: Key): Promise<Key> {
+    //   return null;
+    // }
+    //
+    // function next(key: Key): Promise<Key> {
+    //   return list.get(key).then(value => {
+    //     var groupKey = groupFn(value, key);
+    //
+    //     cache.get(groupKey).then((list: IMutableList<V>) => list.set(key, value))
+    //
+    //     return list.next(key);
+    //   })
+    // }
+    //
+    // return {get, prev, next};
+    // function get(key: Key): Promise<List<V>> {
+    //   if (byKey[key] != undefined) return Promise.resolve(byKey[key]);
+    //   list.get(key).then(value => {
+    //     groupKey = groupFn(value, key);
+    //     cache.get(groupKey)
+    //     return new LinkedList([value]);
+    //   }));
+    //   return
+    // }
+    //
+    // function prev(key: Key): Promise<Key> {
+    //   return null;
+    // }
+    //
+    // function next(key: Key): Promise<Key> {
+    //   cache.get(key).then(sl => {
+    //     sl.prev().then(list.next).then(next => {
+    //       return next == null ? null : list.get(next)
+    //         .then(value => groupFn(value, next))
+    //         .then(groupKey => {
+    //           return cache.get(groupKey);
+    //         })
+    //     });
+    //   });
+    //
+    //   // if (groupKeyByKey[key] != null) return cache.get(groupKey);
+    // }
+    // // listFor
+    //
+    // // function get(key: Key): Promise<List<V>> {
+    // //   return null;
+    // // }
+    //
+    //
+    // // var x = new LinkedList([]);
+    //
+    //
+    //
+    // cache = new Cache({ get, prev, next });
+    // return cache;
+    // }
     static index(list) {
         return new Index(list);
     }

@@ -1,8 +1,10 @@
 import Key from './key';
 import { List, IList } from './list';
+import { MutableList, IMutableList } from './mutable_list';
 
 export type Path = Key[];
 export interface ITree<V> extends IList<ITree<V> | V> {};
+export interface IMutableTree<V> extends IMutableList<IMutableTree<V> | V> {};
 
 export module Path {
   export function key(path: Path): string {
@@ -108,6 +110,25 @@ export module Tree {
     }
 
     return list.next(head).then(next => next != null ? [next] : null);
+  }
+
+  export function set<V>(list: IMutableTree<V>, path: Path, value: V): Promise<void> {
+    var head = path.slice(0, path.length - 1);
+    var key = path[path.length - 1];
+
+    return get(list, head).then((list: MutableList<V>) => list.set(key, value));
+  }
+
+  export function splice<V>(list: IMutableTree<V>, prev: Path, next: Path, ...values: V[]): Promise<void> {
+    var prevHead = prev.slice(0, prev.length - 1);
+    var prevKey = prev[prev.length - 1];
+
+    var nextHead = next.slice(0, next.length - 1);
+    var nextKey = next[next.length - 1];
+
+    return get(list, prevHead)
+      .then((list: MutableList<V>) => list.splice(prevKey, nextKey, ...values))
+
   }
 }
 

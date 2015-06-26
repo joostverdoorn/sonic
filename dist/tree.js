@@ -1,5 +1,6 @@
 import { List } from './list';
 ;
+;
 export var Path;
 (function (Path) {
     function key(path) {
@@ -100,5 +101,20 @@ export var Tree;
         return list.next(head).then(next => next != null ? [next] : null);
     }
     Tree.next = next;
+    function set(list, path, value) {
+        var head = path.slice(0, path.length - 1);
+        var key = path[path.length - 1];
+        return get(list, head).then((list) => list.set(key, value));
+    }
+    Tree.set = set;
+    function splice(list, prev, next, ...values) {
+        var prevHead = prev.slice(0, prev.length - 1);
+        var prevKey = prev[prev.length - 1];
+        var nextHead = next.slice(0, next.length - 1);
+        var nextKey = next[next.length - 1];
+        return get(list, prevHead)
+            .then((list) => list.splice(prevKey, nextKey, ...values));
+    }
+    Tree.splice = splice;
 })(Tree || (Tree = {}));
 export default Tree;

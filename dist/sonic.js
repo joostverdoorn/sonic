@@ -6,10 +6,10 @@ import _Unit from './unit';
 import _ArrayList from './array_list';
 import _LinkedList from './linked_list';
 import { Path as _Path, Tree as _Tree } from './tree';
-function Sonic(obj) {
+export function Sonic(obj) {
     return factory(obj);
 }
-var Sonic;
+export var Sonic;
 (function (Sonic) {
     Sonic.List = _List;
     Sonic.ObservableList = _ObservableList;
@@ -21,4 +21,6 @@ var Sonic;
     Sonic.Path = _Path;
     Sonic.fromPromise = _fromPromise;
 })(Sonic || (Sonic = {}));
+;
 module.exports = Sonic;
+export default Sonic;

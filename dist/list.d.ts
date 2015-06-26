@@ -8,8 +8,8 @@ export interface IList<V> {
 export declare class List<V> implements IList<V> {
     constructor(list?: IList<V>);
     get: (key: string | number) => Promise<V>;
-    prev: (key: string | number) => Promise<string | number>;
-    next: (key: string | number) => Promise<string | number>;
+    prev: (key?: string | number) => Promise<string | number>;
+    next: (key?: string | number) => Promise<string | number>;
     first: () => Promise<V>;
     last: () => Promise<V>;
     every: (predicate: (value: V, key?: string | number) => boolean) => Promise<boolean>;
