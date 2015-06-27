@@ -54,6 +54,7 @@ var ArrayList = (function (_MutableList) {
             if (prev != null && (0 > next || next >= _this._array.length)) return Promise.reject(new Error());
             (_array = _this._array).splice.apply(_array, [prev == null ? 0 : prev + 1, (next == null ? _this._array.length : next) - (prev == null ? 0 : prev + 1)].concat(values));
             _this._subject.onInvalidate(prev, null);
+            return Promise.resolve();
         };
         this.observe = function (observer) {
             return _this._subject.observe(observer);
@@ -70,7 +71,7 @@ var ArrayList = (function (_MutableList) {
 exports['default'] = ArrayList;
 module.exports = exports['default'];
 
-},{"./mutable_list":8,"./observable_list":12}],2:[function(require,module,exports){
+},{"./mutable_list":9,"./observable_list":13}],2:[function(require,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -156,7 +157,7 @@ function fromPromise(promise) {
     return _observable_list.ObservableList.create(unit);
 }
 
-},{"./array_list":1,"./list":7,"./mutable_list":8,"./observable_list":12,"./unit":14}],4:[function(require,module,exports){
+},{"./array_list":1,"./list":7,"./mutable_list":9,"./observable_list":13,"./unit":15}],4:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, '__esModule', {
@@ -358,7 +359,7 @@ var LinkedList = (function (_MutableList) {
 exports['default'] = LinkedList;
 module.exports = exports['default'];
 
-},{"./key":5,"./mutable_list":8,"./observable_list":12}],7:[function(require,module,exports){
+},{"./key":5,"./mutable_list":9,"./observable_list":13}],7:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, '__esModule', {
@@ -844,24 +845,78 @@ var List = (function () {
 exports.List = List;
 exports['default'] = List;
 
-},{"./cache":2,"./index":4,"./tree":13}],8:[function(require,module,exports){
-"use strict";
+},{"./cache":2,"./index":4,"./tree":14}],8:[function(require,module,exports){
+'use strict';
 
-Object.defineProperty(exports, "__esModule", {
+Object.defineProperty(exports, '__esModule', {
     value: true
 });
 
-var _createClass = (function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
+var _get = function get(_x, _x2, _x3) { var _again = true; _function: while (_again) { var object = _x, property = _x2, receiver = _x3; desc = parent = getter = undefined; _again = false; var desc = Object.getOwnPropertyDescriptor(object, property); if (desc === undefined) { var parent = Object.getPrototypeOf(object); if (parent === null) { return undefined; } else { _x = parent; _x2 = property; _x3 = receiver; _again = true; continue _function; } } else if ('value' in desc) { return desc.value; } else { var getter = desc.get; if (getter === undefined) { return undefined; } return getter.call(receiver); } } };
 
-var _get = function get(_x, _x2, _x3) { var _again = true; _function: while (_again) { var object = _x, property = _x2, receiver = _x3; desc = parent = getter = undefined; _again = false; var desc = Object.getOwnPropertyDescriptor(object, property); if (desc === undefined) { var parent = Object.getPrototypeOf(object); if (parent === null) { return undefined; } else { _x = parent; _x2 = property; _x3 = receiver; _again = true; continue _function; } } else if ("value" in desc) { return desc.value; } else { var getter = desc.get; if (getter === undefined) { return undefined; } return getter.call(receiver); } } };
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
 
-function _slicedToArray(arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError('Cannot call a class as a function'); } }
 
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+function _inherits(subClass, superClass) { if (typeof superClass !== 'function' && superClass !== null) { throw new TypeError('Super expression must either be null or a function, not ' + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) subClass.__proto__ = superClass; }
 
-function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) subClass.__proto__ = superClass; }
+var _observable_cache = require('./observable_cache');
 
-var _observable_list = require("./observable_list");
+var _observable_cache2 = _interopRequireDefault(_observable_cache);
+
+var MutableCache = (function (_ObservableCache) {
+    function MutableCache(list) {
+        var _this = this;
+
+        _classCallCheck(this, MutableCache);
+
+        _get(Object.getPrototypeOf(MutableCache.prototype), 'constructor', this).call(this, list);
+        this.set = function (key, value) {
+            return _this._list.set(key, value);
+        };
+        this.splice = function (prev, next) {
+            for (var _len = arguments.length, values = Array(_len > 2 ? _len - 2 : 0), _key = 2; _key < _len; _key++) {
+                values[_key - 2] = arguments[_key];
+            }
+
+            var _list;
+
+            return (_list = _this._list).splice.apply(_list, [prev, next].concat(values));
+        };
+    }
+
+    _inherits(MutableCache, _ObservableCache);
+
+    return MutableCache;
+})(_observable_cache2['default']);
+
+exports.MutableCache = MutableCache;
+exports['default'] = MutableCache;
+
+},{"./observable_cache":11}],9:[function(require,module,exports){
+'use strict';
+
+Object.defineProperty(exports, '__esModule', {
+    value: true
+});
+
+var _createClass = (function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ('value' in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
+
+var _get = function get(_x, _x2, _x3) { var _again = true; _function: while (_again) { var object = _x, property = _x2, receiver = _x3; desc = parent = getter = undefined; _again = false; var desc = Object.getOwnPropertyDescriptor(object, property); if (desc === undefined) { var parent = Object.getPrototypeOf(object); if (parent === null) { return undefined; } else { _x = parent; _x2 = property; _x3 = receiver; _again = true; continue _function; } } else if ('value' in desc) { return desc.value; } else { var getter = desc.get; if (getter === undefined) { return undefined; } return getter.call(receiver); } } };
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
+
+function _slicedToArray(arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i['return']) _i['return'](); } finally { if (_d) throw _e; } } return _arr; } else { throw new TypeError('Invalid attempt to destructure non-iterable instance'); } }
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError('Cannot call a class as a function'); } }
+
+function _inherits(subClass, superClass) { if (typeof superClass !== 'function' && superClass !== null) { throw new TypeError('Super expression must either be null or a function, not ' + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) subClass.__proto__ = superClass; }
+
+var _observable_list = require('./observable_list');
+
+var _mutable_cache = require('./mutable_cache');
+
+var _mutable_cache2 = _interopRequireDefault(_mutable_cache);
 
 var MutableList = (function (_ObservableList) {
     function MutableList(list) {
@@ -869,16 +924,16 @@ var MutableList = (function (_ObservableList) {
 
         _classCallCheck(this, MutableList);
 
-        _get(Object.getPrototypeOf(MutableList.prototype), "constructor", this).call(this, list);
+        _get(Object.getPrototypeOf(MutableList.prototype), 'constructor', this).call(this, list);
         this.set = function (key, value) {
-            throw new Error("Not implemented");
+            throw new Error('Not implemented');
         };
         this.splice = function (prev, next) {
             for (var _len = arguments.length, values = Array(_len > 2 ? _len - 2 : 0), _key = 2; _key < _len; _key++) {
                 values[_key - 2] = arguments[_key];
             }
 
-            throw new Error("Not implemented");
+            throw new Error('Not implemented');
         };
         this.addBefore = function (key, value) {
             return MutableList.addBefore(_this, key, value);
@@ -892,8 +947,8 @@ var MutableList = (function (_ObservableList) {
         this.unshift = function (value) {
             return MutableList.unshift(_this, value);
         };
-        this["delete"] = function (key) {
-            return MutableList["delete"](_this, key);
+        this['delete'] = function (key) {
+            return MutableList['delete'](_this, key);
         };
         this.deleteBefore = function (key) {
             return MutableList.deleteBefore(_this, key);
@@ -910,6 +965,9 @@ var MutableList = (function (_ObservableList) {
         this.remove = function (value) {
             return MutableList.remove(_this, value);
         };
+        this.cache = function () {
+            return MutableList.create(MutableList.cache(_this));
+        };
         if (list != null) {
             this.set = list.set;
             this.splice = list.splice;
@@ -919,12 +977,12 @@ var MutableList = (function (_ObservableList) {
     _inherits(MutableList, _ObservableList);
 
     _createClass(MutableList, null, [{
-        key: "isMutableList",
+        key: 'isMutableList',
         value: function isMutableList(obj) {
-            return _observable_list.ObservableList.isObservableList(obj) && !!obj["set"] && !!obj["splice"];
+            return _observable_list.ObservableList.isObservableList(obj) && !!obj['set'] && !!obj['splice'];
         }
     }, {
-        key: "create",
+        key: 'create',
         value: function create(list) {
             return new MutableList({
                 get: list.get,
@@ -936,7 +994,7 @@ var MutableList = (function (_ObservableList) {
             });
         }
     }, {
-        key: "addBefore",
+        key: 'addBefore',
         value: function addBefore(list, key, value) {
             return list.prev(key).then(function (prev) {
                 return list.splice(prev, key, value);
@@ -945,7 +1003,7 @@ var MutableList = (function (_ObservableList) {
             });
         }
     }, {
-        key: "addAfter",
+        key: 'addAfter',
         value: function addAfter(list, key, value) {
             return list.next(key).then(function (next) {
                 return list.splice(key, next, value);
@@ -954,17 +1012,17 @@ var MutableList = (function (_ObservableList) {
             });
         }
     }, {
-        key: "push",
+        key: 'push',
         value: function push(list, value) {
             return MutableList.addBefore(list, null, value);
         }
     }, {
-        key: "unshift",
+        key: 'unshift',
         value: function unshift(list, value) {
             return MutableList.addAfter(list, null, value);
         }
     }, {
-        key: "delete",
+        key: 'delete',
         value: function _delete(list, key) {
             return list.get(key).then(function (value) {
                 return Promise.all([list.prev(key), list.next(key)]).then(function (_ref) {
@@ -979,35 +1037,40 @@ var MutableList = (function (_ObservableList) {
             });
         }
     }, {
-        key: "deleteBefore",
+        key: 'deleteBefore',
         value: function deleteBefore(list, key) {
             return list.prev(key).then(function (prev) {
-                return MutableList["delete"](list, prev);
+                return MutableList['delete'](list, prev);
             });
         }
     }, {
-        key: "deleteAfter",
+        key: 'deleteAfter',
         value: function deleteAfter(list, key) {
             return list.next(key).then(function (next) {
-                return MutableList["delete"](list, next);
+                return MutableList['delete'](list, next);
             });
         }
     }, {
-        key: "pop",
+        key: 'pop',
         value: function pop(list) {
             return MutableList.deleteBefore(list, null);
         }
     }, {
-        key: "shift",
+        key: 'shift',
         value: function shift(list) {
             return MutableList.deleteAfter(list, null);
         }
     }, {
-        key: "remove",
+        key: 'remove',
         value: function remove(list, value) {
             return MutableList.keyOf(list, value).then(function (key) {
-                MutableList["delete"](list, key);
+                MutableList['delete'](list, key);
             });
+        }
+    }, {
+        key: 'cache',
+        value: function cache(list) {
+            return new _mutable_cache2['default'](list);
         }
     }]);
 
@@ -1015,9 +1078,9 @@ var MutableList = (function (_ObservableList) {
 })(_observable_list.ObservableList);
 
 exports.MutableList = MutableList;
-exports["default"] = MutableList;
+exports['default'] = MutableList;
 
-},{"./observable_list":12}],9:[function(require,module,exports){
+},{"./mutable_cache":8,"./observable_list":13}],10:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, '__esModule', {
@@ -1054,7 +1117,7 @@ var Subject = function Subject() {
 
 exports.Subject = Subject;
 
-},{"./key":5}],10:[function(require,module,exports){
+},{"./key":5}],11:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, '__esModule', {
@@ -1111,7 +1174,7 @@ var ObservableCache = (function (_Cache) {
 exports.ObservableCache = ObservableCache;
 exports['default'] = ObservableCache;
 
-},{"./cache":2}],11:[function(require,module,exports){
+},{"./cache":2}],12:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, '__esModule', {
@@ -1167,7 +1230,7 @@ var ObservableIndex = (function (_Index) {
 exports.ObservableIndex = ObservableIndex;
 exports['default'] = ObservableIndex;
 
-},{"./index":4,"./observable_list":12}],12:[function(require,module,exports){
+},{"./index":4,"./observable_list":13}],13:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, '__esModule', {
@@ -1512,7 +1575,7 @@ var ObservableList = (function (_List) {
 exports.ObservableList = ObservableList;
 exports['default'] = ObservableList;
 
-},{"./list":7,"./observable":9,"./observable_cache":10,"./observable_index":11,"./tree":13}],13:[function(require,module,exports){
+},{"./list":7,"./observable":10,"./observable_cache":11,"./observable_index":12,"./tree":14}],14:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, '__esModule', {
@@ -1666,7 +1729,7 @@ exports.Tree = Tree;
 })(Tree || (exports.Tree = Tree = {}));
 exports['default'] = Tree;
 
-},{"./list":7}],14:[function(require,module,exports){
+},{"./list":7}],15:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, '__esModule', {
@@ -1742,7 +1805,7 @@ var Unit = (function (_MutableList) {
 exports['default'] = Unit;
 module.exports = exports['default'];
 
-},{"./key":5,"./mutable_list":8,"./observable_list":12}],15:[function(require,module,exports){
+},{"./key":5,"./mutable_list":9,"./observable_list":13}],16:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, '__esModule', {
@@ -1801,7 +1864,7 @@ exports.Sonic = Sonic;
 })(Sonic || (exports.Sonic = exports.Sonic = Sonic = {}));
 ;
 module.exports = Sonic;
-// export Sonic;
+exports['default'] = Sonic;
 
-},{"./array_list":1,"./factory":3,"./linked_list":6,"./list":7,"./mutable_list":8,"./observable_list":12,"./tree":13,"./unit":14}]},{},[15])(15)
+},{"./array_list":1,"./factory":3,"./linked_list":6,"./list":7,"./mutable_list":9,"./observable_list":13,"./tree":14,"./unit":15}]},{},[16])(16)
 });

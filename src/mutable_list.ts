@@ -1,9 +1,10 @@
 import Key from './key';
 import { ObservableList, IObservableList } from './observable_list';
+import MutableCache from './mutable_cache';
 
 export interface IMutableList<V> extends IObservableList<V> {
-  set(key: Key, value: V): void;
-  splice(prev: Key, next: Key, ...values: V[]): void;
+  set(key: Key, value: V): Promise<void>;
+  splice(prev: Key, next: Key, ...values: V[]): Promise<void>;
 }
 
 export class MutableList<V> extends ObservableList<V> implements IMutableList<V> {
@@ -17,11 +18,11 @@ export class MutableList<V> extends ObservableList<V> implements IMutableList<V>
     }
   }
 
-  set = (key: Key, value: V): void => {
+  set = (key: Key, value: V): Promise<void> => {
     throw new Error("Not implemented");
   }
 
-  splice = (prev: Key, next: Key, ...values: V[]): void => {
+  splice = (prev: Key, next: Key, ...values: V[]): Promise<void> => {
     throw new Error("Not implemented");
   }
 
@@ -63,6 +64,10 @@ export class MutableList<V> extends ObservableList<V> implements IMutableList<V>
 
   remove = (value: V) => {
     return MutableList.remove(this, value);
+  }
+
+  cache = () => {
+    return MutableList.create(MutableList.cache(this));
   }
 
   static isMutableList(obj: any): boolean {
@@ -120,6 +125,10 @@ export class MutableList<V> extends ObservableList<V> implements IMutableList<V>
 
   static remove<V>(list: IMutableList<V>, value: V): Promise<void> {
     return MutableList.keyOf(list, value).then(key => { MutableList.delete(list, key) });
+  }
+
+  static cache<V>(list: IMutableList<V>): IMutableList<V> {
+    return new MutableCache<V>(list);
   }
 }
 

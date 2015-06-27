@@ -1,4 +1,5 @@
 import { ObservableList } from './observable_list';
+import MutableCache from './mutable_cache';
 export class MutableList extends ObservableList {
     constructor(list) {
         super(list);
@@ -37,6 +38,9 @@ export class MutableList extends ObservableList {
         };
         this.remove = (value) => {
             return MutableList.remove(this, value);
+        };
+        this.cache = () => {
+            return MutableList.create(MutableList.cache(this));
         };
         if (list != null) {
             this.set = list.set;
@@ -87,6 +91,9 @@ export class MutableList extends ObservableList {
     }
     static remove(list, value) {
         return MutableList.keyOf(list, value).then(key => { MutableList.delete(list, key); });
+    }
+    static cache(list) {
+        return new MutableCache(list);
     }
 }
 export default MutableList;

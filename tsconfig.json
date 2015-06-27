@@ -16,6 +16,7 @@
         "src/key.ts",
         "src/linked_list.ts",
         "src/list.ts",
+        "src/mutable_cache.ts",
         "src/mutable_list.ts",
         "src/observable.ts",
         "src/observable_cache.ts",

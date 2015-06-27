@@ -36,6 +36,7 @@ export default class ArrayList extends MutableList {
                 return Promise.reject(new Error);
             this._array.splice(prev == null ? 0 : prev + 1, (next == null ? this._array.length : next) - (prev == null ? 0 : prev + 1), ...values);
             this._subject.onInvalidate(prev, null);
+            return Promise.resolve();
         };
         this.observe = (observer) => {
             return this._subject.observe(observer);

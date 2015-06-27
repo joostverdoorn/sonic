@@ -1,13 +1,13 @@
 import Key from './key';
 import { ObservableList, IObservableList } from './observable_list';
 export interface IMutableList<V> extends IObservableList<V> {
-    set(key: Key, value: V): void;
-    splice(prev: Key, next: Key, ...values: V[]): void;
+    set(key: Key, value: V): Promise<void>;
+    splice(prev: Key, next: Key, ...values: V[]): Promise<void>;
 }
 export declare class MutableList<V> extends ObservableList<V> implements IMutableList<V> {
     constructor(list?: IMutableList<V>);
-    set: (key: string | number, value: V) => void;
-    splice: (prev: string | number, next: string | number, ...values: V[]) => void;
+    set: (key: string | number, value: V) => Promise<void>;
+    splice: (prev: string | number, next: string | number, ...values: V[]) => Promise<void>;
     addBefore: (key: string | number, value: V) => Promise<string | number>;
     addAfter: (key: string | number, value: V) => Promise<string | number>;
     push: (value: V) => Promise<string | number>;
@@ -18,6 +18,7 @@ export declare class MutableList<V> extends ObservableList<V> implements IMutabl
     pop: () => Promise<V>;
     shift: () => Promise<V>;
     remove: (value: V) => Promise<void>;
+    cache: () => MutableList<V>;
     static isMutableList(obj: any): boolean;
     static create<V>(list: IMutableList<V>): MutableList<V>;
     static addBefore<V>(list: IMutableList<V>, key: Key, value: V): Promise<Key>;
@@ -30,5 +31,6 @@ export declare class MutableList<V> extends ObservableList<V> implements IMutabl
     static pop<V>(list: IMutableList<V>): Promise<V>;
     static shift<V>(list: IMutableList<V>): Promise<V>;
     static remove<V>(list: IMutableList<V>, value: V): Promise<void>;
+    static cache<V>(list: IMutableList<V>): IMutableList<V>;
 }
 export default MutableList;

@@ -48,6 +48,7 @@ export default class ArrayList<V> extends MutableList<V> {
     );
 
     this._subject.onInvalidate(prev, null);
+    return Promise.resolve();
   }
 
   observe = (observer: IListObserver): ISubscription => {
