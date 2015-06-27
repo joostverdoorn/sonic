@@ -59,9 +59,10 @@ export default class LinkedList<V> extends MutableList<V> {
       delete this._byKey[key];
     }
 
-    var _key = prev;
+    var _key = next;
     for(value of values) {
       key = this._keyFn(value);
+      if(key in this._byKey) this.splice(this._prev[key], this._next[key]);
       this._byKey[key] = value;
       this._prev[key] = _key;
       this._next[_key] = key;
