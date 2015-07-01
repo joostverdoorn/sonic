@@ -70,6 +70,10 @@ export class MutableList<V> extends ObservableList<V> implements IMutableList<V>
     return MutableList.create(MutableList.cache(this));
   }
 
+  map = <W>(getFn: (value: V, key: Key) => W, setFn?: (value: W, key?: Key) => V): MutableList<W> => {
+    return MutableList.create(MutableList.map(this, getFn, setFn));
+  }
+
   static isMutableList(obj: any): boolean {
     return ObservableList.isObservableList(obj) && !!obj['set'] && !!obj['splice'];
   }
@@ -129,6 +133,20 @@ export class MutableList<V> extends ObservableList<V> implements IMutableList<V>
 
   static cache<V>(list: IMutableList<V>): IMutableList<V> {
     return new MutableCache<V>(list);
+  }
+
+  static map<V,W>(list: IMutableList<V>, getFn: (value: V, key: Key) => W, setFn?: (value: W, key?: Key) => V): IMutableList<W> {
+    var { get, prev, next, observe } = ObservableList.map(list, getFn);
+
+    function set(key: Key, value: W): Promise<void> {
+      return list.set(key, setFn(value, key));
+    }
+
+    function splice(prev: Key, next: Key, ...values: W[]): Promise<void> {
+      return list.splice(prev, next, ...values.map(setFn));
+    }
+
+    return { get, prev, next, observe, set, splice };
   }
 }
 

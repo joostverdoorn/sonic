@@ -303,7 +303,7 @@ var LinkedList = (function (_MutableList) {
                 if (key == next) break;
                 delete _this._byKey[key];
             }
-            var _key = prev;
+            var _key = next;
             var _iteratorNormalCompletion = true;
             var _didIteratorError = false;
             var _iteratorError = undefined;
@@ -313,6 +313,7 @@ var LinkedList = (function (_MutableList) {
                     value = _step.value;
 
                     key = _this._keyFn(value);
+                    if (key in _this._byKey) _this.splice(_this._prev[key], _this._next[key]);
                     _this._byKey[key] = value;
                     _this._prev[key] = _key;
                     _this._next[_key] = key;
@@ -457,6 +458,9 @@ var List = (function () {
         this.cache = function () {
             return List.create(List.cache(_this));
         };
+        this.group = function (groupFn) {
+            return List.create(List.group(_this, groupFn)).map(List.create).cache();
+        };
         this.index = function () {
             return List.create(List.index(_this));
         };
@@ -524,7 +528,9 @@ var List = (function () {
             var loop = function loop(key) {
                 return list.next(key).then(function (key) {
                     return key == next ? false : list.get(key).then(function (value) {
-                        return predicate(value, key) === true ? true : loop(key);
+                        return Promise.resolve(predicate(value, key)).then(function (res) {
+                            return res === true ? true : loop(key);
+                        });
                     });
                 });
             };
@@ -558,13 +564,11 @@ var List = (function () {
         value: function findKey(list, fn, prev, next) {
             var key;
             return List.some(list, function (v, k) {
-                return fn(v, k) ? !!(key = k) || true : false;
+                return Promise.resolve(fn(v, k)).then(function (res) {
+                    return res ? !!(key = k) || true : false;
+                });
             }, prev, next).then(function (found) {
-                if (found) {
-                    return key;
-                } else {
-                    throw new Error();
-                }
+                return found ? key : null;
             });
         }
     }, {
@@ -641,8 +645,8 @@ var List = (function () {
         value: function filter(list, filterFn) {
             function get(key) {
                 return list.get(key).then(function (value) {
-                    if (filterFn(value)) throw new Error();
-                    return value;
+                    if (filterFn(value)) return value;
+                    throw new Error();
                 });
             }
             function prev(key) {
@@ -681,97 +685,42 @@ var List = (function () {
             return new _cache2['default'](list);
         }
     }, {
+        key: 'group',
+        value: function group(list, groupFn) {
+            var groups = Object.create(null);
+            function get(groupKey) {
+                return List.findKey(list, function (value, key) {
+                    return groupFn(value, key) === groupKey;
+                }).then(function () {
+                    return groups[groupKey] = List.filter(list, function (value, key) {
+                        return groupKey === groupFn(value, key);
+                    });
+                });
+            }
+            function prev(groupKey) {
+                return List.findKey(List.reverse(list), function (value, key) {
+                    var _groupKey = groupFn(value, key);
+                    return _groupKey !== groupKey && !groups[_groupKey];
+                }).then(function (key) {
+                    return key == null ? null : list.get(key).then(function (value) {
+                        return groupFn(value, key);
+                    });
+                });
+            }
+            function next(groupKey) {
+                return List.findKey(list, function (value, key) {
+                    var _groupKey = groupFn(value, key);
+                    return _groupKey !== groupKey && !groups[_groupKey];
+                }).then(function (key) {
+                    return key == null ? null : list.get(key).then(function (value) {
+                        return groupFn(value, key);
+                    });
+                });
+            }
+            return new _cache2['default']({ get: get, prev: prev, next: next });
+        }
+    }, {
         key: 'index',
-
-        //
-        // static group<V>(list: IList<V>, groupFn: (value: V, key: Key) => Key): IList<IList<V>> {
-        //   var byKey: {[key: string]: IList<V>} = Object.create(null);
-        //   var cache: Cache<List<V>>;
-        //
-        //
-        //   function createGroup(groupKey: Key): IMutableList<V> {
-        //     function get(key: Key): Promise<V> {
-        //       return null;
-        //     }
-        //     function set(key: Key, value: V): Promise<void> {
-        //       return null;
-        //     }
-        //     function splice(prev: Key, next: Key, ...values: V[]): Promise<void> {
-        //       return null;
-        //     }
-        //     function prev(key: Key): Promise<Key> {
-        //       return null;
-        //     }
-        //     function next(key: Key): Promise<Key> {
-        //       return null;
-        //     }
-        //     function observe(observer: IListObserver): ISubscription {
-        //       return null;
-        //     }
-        //
-        //     return { get, set, splice, prev, next, observe };
-        //   }
-        //
-        // function get(key: Key): Promise<IList<V>> {
-        //   return Promise.resolve(createGroup(key));
-        // }
-        //
-        // function prev(key: Key): Promise<Key> {
-        //   return null;
-        // }
-        //
-        // function next(key: Key): Promise<Key> {
-        //   return list.get(key).then(value => {
-        //     var groupKey = groupFn(value, key);
-        //
-        //     cache.get(groupKey).then((list: IMutableList<V>) => list.set(key, value))
-        //
-        //     return list.next(key);
-        //   })
-        // }
-        //
-        // return {get, prev, next};
-        // function get(key: Key): Promise<List<V>> {
-        //   if (byKey[key] != undefined) return Promise.resolve(byKey[key]);
-        //   list.get(key).then(value => {
-        //     groupKey = groupFn(value, key);
-        //     cache.get(groupKey)
-        //     return new LinkedList([value]);
-        //   }));
-        //   return
-        // }
-        //
-        // function prev(key: Key): Promise<Key> {
-        //   return null;
-        // }
-        //
-        // function next(key: Key): Promise<Key> {
-        //   cache.get(key).then(sl => {
-        //     sl.prev().then(list.next).then(next => {
-        //       return next == null ? null : list.get(next)
-        //         .then(value => groupFn(value, next))
-        //         .then(groupKey => {
-        //           return cache.get(groupKey);
-        //         })
-        //     });
-        //   });
-        //
-        //   // if (groupKeyByKey[key] != null) return cache.get(groupKey);
-        // }
-        // // listFor
-        //
-        // // function get(key: Key): Promise<List<V>> {
-        // //   return null;
-        // // }
-        //
-        //
-        // // var x = new LinkedList([]);
-        //
-        //
-        //
-        // cache = new Cache({ get, prev, next });
-        // return cache;
-        // }
         value: function index(list) {
             return new _index2['default'](list);
         }
@@ -908,6 +857,8 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'd
 
 function _slicedToArray(arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i['return']) _i['return'](); } finally { if (_d) throw _e; } } return _arr; } else { throw new TypeError('Invalid attempt to destructure non-iterable instance'); } }
 
+function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) arr2[i] = arr[i]; return arr2; } else { return Array.from(arr); } }
+
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError('Cannot call a class as a function'); } }
 
 function _inherits(subClass, superClass) { if (typeof superClass !== 'function' && superClass !== null) { throw new TypeError('Super expression must either be null or a function, not ' + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) subClass.__proto__ = superClass; }
@@ -967,6 +918,9 @@ var MutableList = (function (_ObservableList) {
         };
         this.cache = function () {
             return MutableList.create(MutableList.cache(_this));
+        };
+        this.map = function (getFn, setFn) {
+            return MutableList.create(MutableList.map(_this, getFn, setFn));
         };
         if (list != null) {
             this.set = list.set;
@@ -1071,6 +1025,28 @@ var MutableList = (function (_ObservableList) {
         key: 'cache',
         value: function cache(list) {
             return new _mutable_cache2['default'](list);
+        }
+    }, {
+        key: 'map',
+        value: function map(list, getFn, setFn) {
+            var _ObservableList$map = _observable_list.ObservableList.map(list, getFn);
+
+            var get = _ObservableList$map.get;
+            var prev = _ObservableList$map.prev;
+            var next = _ObservableList$map.next;
+            var observe = _ObservableList$map.observe;
+
+            function set(key, value) {
+                return list.set(key, setFn(value, key));
+            }
+            function splice(prev, next) {
+                for (var _len2 = arguments.length, values = Array(_len2 > 2 ? _len2 - 2 : 0), _key2 = 2; _key2 < _len2; _key2++) {
+                    values[_key2 - 2] = arguments[_key2];
+                }
+
+                return list.splice.apply(list, [prev, next].concat(_toConsumableArray(values.map(setFn))));
+            }
+            return { get: get, prev: prev, next: next, observe: observe, set: set, splice: splice };
         }
     }]);
 

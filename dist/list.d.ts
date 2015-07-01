@@ -13,11 +13,11 @@ export declare class List<V> implements IList<V> {
     first: () => Promise<V>;
     last: () => Promise<V>;
     every: (predicate: (value: V, key?: string | number) => boolean) => Promise<boolean>;
-    some: (predicate: (value: V, key?: string | number) => boolean) => Promise<boolean>;
+    some: (predicate: (value: V, key?: string | number) => boolean | Promise<boolean>) => Promise<boolean>;
     forEach: (fn: (value: V, key?: string | number) => void) => Promise<void>;
     reduce: <W>(fn: (memo: W, value: V, key?: string | number) => W, memo?: W) => Promise<W>;
     toArray: () => Promise<V[]>;
-    findKey: (fn: (value: V, key?: string | number) => boolean) => Promise<string | number>;
+    findKey: (fn: (value: V, key?: string | number) => boolean | Promise<boolean>) => Promise<string | number>;
     find: (fn: (value: V, key?: string | number) => boolean) => Promise<V>;
     keyOf: (value: V) => Promise<string | number>;
     indexOf: (value: V) => Promise<string | number>;
@@ -30,6 +30,7 @@ export declare class List<V> implements IList<V> {
     flatten: () => List<any>;
     flatMap: <W>(flatMapFn: (value: V, key?: string | number) => IList<W>) => List<W>;
     cache: () => List<V>;
+    group: (groupFn: (value: V, key: string | number) => string | number) => List<List<V>>;
     index: () => List<V>;
     zip: <W, U>(other: IList<W>, zipFn: (v: V, w: W) => U) => List<U>;
     skip: (k: number) => IList<V>;
@@ -41,11 +42,11 @@ export declare class List<V> implements IList<V> {
     static first<V>(list: IList<V>): Promise<V>;
     static last<V>(list: IList<V>): Promise<V>;
     static every<V>(list: IList<V>, predicate: (value: V, key?: Key) => boolean, prev?: Key, next?: Key): Promise<boolean>;
-    static some<V>(list: IList<V>, predicate: (value: V, key?: Key) => boolean, prev?: Key, next?: Key): Promise<boolean>;
+    static some<V>(list: IList<V>, predicate: (value: V, key?: Key) => boolean | Promise<boolean>, prev?: Key, next?: Key): Promise<boolean>;
     static forEach<V>(list: IList<V>, fn: (value: V, key?: Key) => void, prev?: Key, next?: Key): Promise<void>;
     static reduce<V, W>(list: IList<V>, fn: (memo: W, value: V, key?: Key) => W, memo?: W): Promise<W>;
     static toArray<V>(list: IList<V>): Promise<V[]>;
-    static findKey<V>(list: IList<V>, fn: (value: V, key?: Key) => boolean, prev?: Key, next?: Key): Promise<Key>;
+    static findKey<V>(list: IList<V>, fn: (value: V, key?: Key) => boolean | Promise<boolean>, prev?: Key, next?: Key): Promise<Key>;
     static find<V>(list: IList<V>, fn: (value: V, key?: Key) => boolean, prev?: Key, next?: Key): Promise<V>;
     static keyOf<V>(list: IList<V>, value: V, prev?: Key, next?: Key): Promise<Key>;
     static indexOf<V>(list: IList<V>, value: V, prev?: Key, next?: Key): Promise<number>;
@@ -58,6 +59,7 @@ export declare class List<V> implements IList<V> {
     static flatten<V>(list: ITree<V>): ITree<V>;
     static flatMap<V, W>(list: IList<V>, flatMapFn: (value: V, key?: Key) => IList<W>): IList<W>;
     static cache<V>(list: IList<V>): IList<V>;
+    static group<V>(list: IList<V>, groupFn: (value: V, key: Key) => Key): IList<IList<V>>;
     static index<V>(list: IList<V>): IList<V>;
     static zip<V, W, U>(list: IList<V>, other: IList<W>, zipFn: (v: V, w: W) => U): IList<U>;
     static skip<V>(list: IList<V>, k: number): IList<V>;

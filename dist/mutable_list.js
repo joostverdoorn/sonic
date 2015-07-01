@@ -42,6 +42,9 @@ export class MutableList extends ObservableList {
         this.cache = () => {
             return MutableList.create(MutableList.cache(this));
         };
+        this.map = (getFn, setFn) => {
+            return MutableList.create(MutableList.map(this, getFn, setFn));
+        };
         if (list != null) {
             this.set = list.set;
             this.splice = list.splice;
@@ -94,6 +97,16 @@ export class MutableList extends ObservableList {
     }
     static cache(list) {
         return new MutableCache(list);
+    }
+    static map(list, getFn, setFn) {
+        var { get, prev, next, observe } = ObservableList.map(list, getFn);
+        function set(key, value) {
+            return list.set(key, setFn(value, key));
+        }
+        function splice(prev, next, ...values) {
+            return list.splice(prev, next, ...values.map(setFn));
+        }
+        return { get, prev, next, observe, set, splice };
     }
 }
 export default MutableList;

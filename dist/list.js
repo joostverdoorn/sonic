@@ -72,6 +72,9 @@ export class List {
         this.cache = () => {
             return List.create(List.cache(this));
         };
+        this.group = (groupFn) => {
+            return List.create(List.group(this, groupFn)).map(List.create).cache();
+        };
         this.index = () => {
             return List.create(List.index(this));
         };
@@ -121,7 +124,7 @@ export class List {
     }
     static some(list, predicate, prev, next) {
         var loop = (key) => list.next(key).then(key => {
-            return key == next ? false : list.get(key).then(value => predicate(value, key) === true ? true : loop(key));
+            return key == next ? false : list.get(key).then(value => Promise.resolve(predicate(value, key)).then(res => res === true ? true : loop(key)));
         });
         return loop(prev);
     }
@@ -136,12 +139,7 @@ export class List {
     }
     static findKey(list, fn, prev, next) {
         var key;
-        return List.some(list, (v, k) => fn(v, k) ? (!!(key = k) || true) : false, prev, next).then(found => { if (found) {
-            return key;
-        }
-        else {
-            throw new Error;
-        } });
+        return List.some(list, (v, k) => Promise.resolve(fn(v, k)).then(res => res ? (!!(key = k) || true) : false), prev, next).then(found => found ? key : null);
     }
     static find(list, fn, prev, next) {
         return List.findKey(list, fn, prev, next).then(list.get);
@@ -188,8 +186,8 @@ export class List {
         function get(key) {
             return list.get(key).then(value => {
                 if (filterFn(value))
-                    throw new Error();
-                return value;
+                    return value;
+                throw new Error();
             });
         }
         function prev(key) {
@@ -221,95 +219,26 @@ export class List {
     static cache(list) {
         return new Cache(list);
     }
-    //
-    // static group<V>(list: IList<V>, groupFn: (value: V, key: Key) => Key): IList<IList<V>> {
-    //   var byKey: {[key: string]: IList<V>} = Object.create(null);
-    //   var cache: Cache<List<V>>;
-    //
-    //
-    //   function createGroup(groupKey: Key): IMutableList<V> {
-    //     function get(key: Key): Promise<V> {
-    //       return null;
-    //     }
-    //     function set(key: Key, value: V): Promise<void> {
-    //       return null;
-    //     }
-    //     function splice(prev: Key, next: Key, ...values: V[]): Promise<void> {
-    //       return null;
-    //     }
-    //     function prev(key: Key): Promise<Key> {
-    //       return null;
-    //     }
-    //     function next(key: Key): Promise<Key> {
-    //       return null;
-    //     }
-    //     function observe(observer: IListObserver): ISubscription {
-    //       return null;
-    //     }
-    //
-    //     return { get, set, splice, prev, next, observe };
-    //   }
-    //
-    // function get(key: Key): Promise<IList<V>> {
-    //   return Promise.resolve(createGroup(key));
-    // }
-    //
-    // function prev(key: Key): Promise<Key> {
-    //   return null;
-    // }
-    //
-    // function next(key: Key): Promise<Key> {
-    //   return list.get(key).then(value => {
-    //     var groupKey = groupFn(value, key);
-    //
-    //     cache.get(groupKey).then((list: IMutableList<V>) => list.set(key, value))
-    //
-    //     return list.next(key);
-    //   })
-    // }
-    //
-    // return {get, prev, next};
-    // function get(key: Key): Promise<List<V>> {
-    //   if (byKey[key] != undefined) return Promise.resolve(byKey[key]);
-    //   list.get(key).then(value => {
-    //     groupKey = groupFn(value, key);
-    //     cache.get(groupKey)
-    //     return new LinkedList([value]);
-    //   }));
-    //   return
-    // }
-    //
-    // function prev(key: Key): Promise<Key> {
-    //   return null;
-    // }
-    //
-    // function next(key: Key): Promise<Key> {
-    //   cache.get(key).then(sl => {
-    //     sl.prev().then(list.next).then(next => {
-    //       return next == null ? null : list.get(next)
-    //         .then(value => groupFn(value, next))
-    //         .then(groupKey => {
-    //           return cache.get(groupKey);
-    //         })
-    //     });
-    //   });
-    //
-    //   // if (groupKeyByKey[key] != null) return cache.get(groupKey);
-    // }
-    // // listFor
-    //
-    // // function get(key: Key): Promise<List<V>> {
-    // //   return null;
-    // // }
-    //
-    //
-    // // var x = new LinkedList([]);
-    //
-    //
-    //
-    // cache = new Cache({ get, prev, next });
-    // return cache;
-    // }
+    static group(list, groupFn) {
+        var groups = Object.create(null);
+        function get(groupKey) {
+            return List.findKey(list, (value, key) => groupFn(value, key) === groupKey)
+                .then(() => groups[groupKey] = List.filter(list, (value, key) => groupKey === groupFn(value, key)));
+        }
+        function prev(groupKey) {
+            return List.findKey(List.reverse(list), (value, key) => {
+                var _groupKey = groupFn(value, key);
+                return _groupKey !== groupKey && !groups[_groupKey];
+            }).then(key => key == null ? null : list.get(key).then(value => groupFn(value, key)));
+        }
+        function next(groupKey) {
+            return List.findKey(list, (value, key) => {
+                var _groupKey = groupFn(value, key);
+                return _groupKey !== groupKey && !groups[_groupKey];
+            }).then(key => key == null ? null : list.get(key).then(value => groupFn(value, key)));
+        }
+        return new Cache({ get, prev, next });
+    }
     static index(list) {
         return new Index(list);
     }

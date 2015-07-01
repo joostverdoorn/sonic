@@ -19,6 +19,7 @@ export declare class MutableList<V> extends ObservableList<V> implements IMutabl
     shift: () => Promise<V>;
     remove: (value: V) => Promise<void>;
     cache: () => MutableList<V>;
+    map: <W>(getFn: (value: V, key: string | number) => W, setFn?: (value: W, key?: string | number) => V) => MutableList<W>;
     static isMutableList(obj: any): boolean;
     static create<V>(list: IMutableList<V>): MutableList<V>;
     static addBefore<V>(list: IMutableList<V>, key: Key, value: V): Promise<Key>;
@@ -32,5 +33,6 @@ export declare class MutableList<V> extends ObservableList<V> implements IMutabl
     static shift<V>(list: IMutableList<V>): Promise<V>;
     static remove<V>(list: IMutableList<V>, value: V): Promise<void>;
     static cache<V>(list: IMutableList<V>): IMutableList<V>;
+    static map<V, W>(list: IMutableList<V>, getFn: (value: V, key: Key) => W, setFn?: (value: W, key?: Key) => V): IMutableList<W>;
 }
 export default MutableList;

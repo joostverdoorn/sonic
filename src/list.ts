@@ -7,6 +7,7 @@ import LinkedList from './linked_list';
 import { IMutableList } from './mutable_list';
 import { ISubscription } from './observable';
 import { IListObserver } from './observable_list';
+import MutableCache from './mutable_cache';
 // import ListIterator from './iterator';
 
 export interface IList<V> {
@@ -49,7 +50,7 @@ export class List<V> implements IList<V> {
     return List.every(this, predicate);
   }
 
-  some = (predicate: (value: V, key?: Key) => boolean): Promise<boolean> => {
+  some = (predicate: (value: V, key?: Key) => boolean | Promise<boolean>): Promise<boolean> => {
     return List.some(this, predicate);
   }
 
@@ -65,7 +66,7 @@ export class List<V> implements IList<V> {
     return List.toArray(this);
   }
 
-  findKey = (fn: (value: V, key?: Key) => boolean): Promise<Key> => {
+  findKey = (fn: (value: V, key?: Key) => boolean | Promise<boolean>): Promise<Key> => {
     return List.findKey(this, fn);
   }
 
@@ -115,6 +116,10 @@ export class List<V> implements IList<V> {
 
   cache = (): List<V> => {
     return List.create(List.cache(this));
+  }
+
+  group = (groupFn: (value: V, key: Key) => Key): List<List<V>> => {
+    return List.create(List.group(this, groupFn)).map(List.create).cache();
   }
 
   index = (): List<V> => {
@@ -169,9 +174,9 @@ export class List<V> implements IList<V> {
     return loop(prev);
   }
 
-  static some<V>(list: IList<V>, predicate: (value: V, key?: Key) => boolean, prev?: Key, next?: Key): Promise<boolean> {
+  static some<V>(list: IList<V>, predicate: (value: V, key?: Key) => boolean | Promise<boolean>, prev?: Key, next?: Key): Promise<boolean> {
     var loop = (key: Key): Promise<boolean> => list.next(key).then(key => {
-      return key == next ? false : list.get(key).then(value => predicate(value, key) === true ? true : loop(key))
+      return key == next ? false : list.get(key).then(value => Promise.resolve(predicate(value, key)).then(res => res === true ? true : loop(key)))
     });
 
     return loop(prev);
@@ -189,9 +194,9 @@ export class List<V> implements IList<V> {
     return List.reduce<V, V[]>(list, (memo: V[], value: V) => (memo.push(value), memo), []);
   }
 
-  static findKey<V>(list: IList<V>, fn: (value: V, key?: Key) => boolean, prev?: Key, next?: Key): Promise<Key> {
+  static findKey<V>(list: IList<V>, fn: (value: V, key?: Key) => boolean | Promise<boolean>, prev?: Key, next?: Key): Promise<Key> {
     var key: Key;
-    return List.some(list, (v: V, k: Key) => fn(v, k) ? (!!(key = k) || true) : false, prev, next).then(found => { if(found) { return key } else { throw new Error }});
+    return List.some(list, (v: V, k: Key) => Promise.resolve(fn(v, k)).then(res => res ? (!!(key = k) || true) : false), prev, next).then(found => found ? key : null);
   }
 
   static find<V>(list: IList<V>, fn: (value: V, key?: Key) => boolean, prev?: Key, next?: Key): Promise<V> {
@@ -246,8 +251,8 @@ export class List<V> implements IList<V> {
   static filter<V>(list: IList<V>, filterFn: (value: V, key?: Key) => boolean): IList<V> {
     function get(key: Key) {
       return list.get(key).then(value => {
-        if(filterFn(value)) throw new Error()
-        return value;
+        if(filterFn(value)) return value;
+        throw new Error();
       });
     }
 
@@ -289,99 +294,31 @@ export class List<V> implements IList<V> {
   static cache<V>(list: IList<V>): IList<V> {
     return new Cache<V>(list);
   }
-  //
-  // static group<V>(list: IList<V>, groupFn: (value: V, key: Key) => Key): IList<IList<V>> {
-  //   var byKey: {[key: string]: IList<V>} = Object.create(null);
-  //   var cache: Cache<List<V>>;
-  //
-  //
-  //   function createGroup(groupKey: Key): IMutableList<V> {
-  //     function get(key: Key): Promise<V> {
-  //       return null;
-  //     }
-  //     function set(key: Key, value: V): Promise<void> {
-  //       return null;
-  //     }
-  //     function splice(prev: Key, next: Key, ...values: V[]): Promise<void> {
-  //       return null;
-  //     }
-  //     function prev(key: Key): Promise<Key> {
-  //       return null;
-  //     }
-  //     function next(key: Key): Promise<Key> {
-  //       return null;
-  //     }
-  //     function observe(observer: IListObserver): ISubscription {
-  //       return null;
-  //     }
-  //
-  //     return { get, set, splice, prev, next, observe };
-  //   }
-    //
-    // function get(key: Key): Promise<IList<V>> {
-    //   return Promise.resolve(createGroup(key));
-    // }
-    //
-    // function prev(key: Key): Promise<Key> {
-    //   return null;
-    // }
-    //
-    // function next(key: Key): Promise<Key> {
-    //   return list.get(key).then(value => {
-    //     var groupKey = groupFn(value, key);
-    //
-    //     cache.get(groupKey).then((list: IMutableList<V>) => list.set(key, value))
-    //
-    //     return list.next(key);
-    //   })
-    // }
-    //
-    // return {get, prev, next};
 
-    // function get(key: Key): Promise<List<V>> {
-    //   if (byKey[key] != undefined) return Promise.resolve(byKey[key]);
-    //   list.get(key).then(value => {
-    //     groupKey = groupFn(value, key);
-    //     cache.get(groupKey)
-    //     return new LinkedList([value]);
-    //   }));
-    //   return
-    // }
-    //
-    // function prev(key: Key): Promise<Key> {
-    //   return null;
-    // }
-    //
-    // function next(key: Key): Promise<Key> {
-    //   cache.get(key).then(sl => {
-    //     sl.prev().then(list.next).then(next => {
-    //       return next == null ? null : list.get(next)
-    //         .then(value => groupFn(value, next))
-    //         .then(groupKey => {
-    //           return cache.get(groupKey);
-    //         })
-    //     });
-    //   });
-    //
-    //   // if (groupKeyByKey[key] != null) return cache.get(groupKey);
-    // }
+  static group<V>(list: IList<V>, groupFn: (value: V, key: Key) => Key): IList<IList<V>> {
+    var groups: {[key: string]: IList<V>} = Object.create(null);
 
+    function get(groupKey: Key): Promise<IList<V>> {
+      return List.findKey(list, (value: V, key: Key) => groupFn(value, key) === groupKey)
+                 .then(() => groups[groupKey] = List.filter(list, (value: V, key: Key) => groupKey === groupFn(value, key)));
+    }
 
+    function prev(groupKey: Key): Promise<Key> {
+      return List.findKey(List.reverse(list), (value, key) => {
+        var _groupKey = groupFn(value, key);
+        return _groupKey !== groupKey && !groups[_groupKey];
+      }).then(key => key == null ? null : list.get(key).then(value => groupFn(value, key)));
+    }
 
-    // // listFor
-    //
-    // // function get(key: Key): Promise<List<V>> {
-    // //   return null;
-    // // }
-    //
-    //
-    // // var x = new LinkedList([]);
-    //
-    //
-    //
-    // cache = new Cache({ get, prev, next });
-    // return cache;
-  // }
+    function next(groupKey: Key): Promise<Key> {
+      return List.findKey(list, (value, key) => {
+        var _groupKey = groupFn(value, key);
+        return _groupKey !== groupKey && !groups[_groupKey];
+      }).then(key => key == null ? null : list.get(key).then(value => groupFn(value, key)));
+    }
+
+    return new Cache({ get, prev, next });
+  }
 
   static index<V>(list: IList<V>): IList<V> {
     return new Index<V>(list);
