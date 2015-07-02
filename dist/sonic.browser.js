@@ -410,8 +410,8 @@ var List = (function () {
         this.some = function (predicate) {
             return List.some(_this, predicate);
         };
-        this.forEach = function (fn) {
-            return List.forEach(_this, fn);
+        this.forEach = function (fn, prev, next) {
+            return List.forEach(_this, fn, prev, next);
         };
         this.reduce = function (fn, memo) {
             return List.reduce(_this, fn);
@@ -636,7 +636,9 @@ var List = (function () {
             var next = list.next;
 
             function get(key) {
-                return list.get(key).then(mapFn);
+                return list.get(key).then(function (value) {
+                    return mapFn(value, key);
+                });
             }
             return { get: get, prev: prev, next: next };
         }

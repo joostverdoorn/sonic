@@ -24,8 +24,8 @@ export class List {
         this.some = (predicate) => {
             return List.some(this, predicate);
         };
-        this.forEach = (fn) => {
-            return List.forEach(this, fn);
+        this.forEach = (fn, prev, next) => {
+            return List.forEach(this, fn, prev, next);
         };
         this.reduce = (fn, memo) => {
             return List.reduce(this, fn);
@@ -178,7 +178,7 @@ export class List {
     static map(list, mapFn) {
         var { prev, next } = list;
         function get(key) {
-            return list.get(key).then(mapFn);
+            return list.get(key).then(value => mapFn(value, key));
         }
         return { get, prev, next };
     }

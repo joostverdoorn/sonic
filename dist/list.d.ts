@@ -14,7 +14,7 @@ export declare class List<V> implements IList<V> {
     last: () => Promise<V>;
     every: (predicate: (value: V, key?: string | number) => boolean) => Promise<boolean>;
     some: (predicate: (value: V, key?: string | number) => boolean | Promise<boolean>) => Promise<boolean>;
-    forEach: (fn: (value: V, key?: string | number) => void) => Promise<void>;
+    forEach: (fn: (value: V, key?: string | number) => void, prev?: string | number, next?: string | number) => Promise<void>;
     reduce: <W>(fn: (memo: W, value: V, key?: string | number) => W, memo?: W) => Promise<W>;
     toArray: () => Promise<V[]>;
     findKey: (fn: (value: V, key?: string | number) => boolean | Promise<boolean>) => Promise<string | number>;

@@ -54,8 +54,8 @@ export class List<V> implements IList<V> {
     return List.some(this, predicate);
   }
 
-  forEach = (fn: (value: V, key?: Key) => void): Promise<void> => {
-    return List.forEach(this, fn);
+  forEach = (fn: (value: V, key?: Key) => void, prev?: Key, next?: Key): Promise<void> => {
+    return List.forEach(this, fn, prev, next);
   }
 
   reduce = <W>(fn: (memo: W, value: V, key?: Key) => W, memo?: W): Promise<W> => {
@@ -242,7 +242,7 @@ export class List<V> implements IList<V> {
     var { prev, next } = list;
 
     function get(key: Key) {
-      return list.get(key).then(mapFn);
+      return list.get(key).then(value => mapFn(value, key));
     }
 
     return { get, prev, next };
