@@ -1,9 +1,10 @@
 import Cache from './cache';
+import { ListSubject } from './observable_list';
 export class ObservableCache extends Cache {
     constructor(list) {
         super(list);
         this.observe = (observer) => {
-            return this._list.observe(observer);
+            return this._subject.observe(observer);
         };
         this.onInvalidate = (prev, next) => {
             var key;
@@ -23,7 +24,9 @@ export class ObservableCache extends Cache {
                     break;
                 delete this._byKey[key];
             }
+            this._subject.onInvalidate(prev, next);
         };
+        this._subject = new ListSubject();
         list.observe(this);
     }
 }

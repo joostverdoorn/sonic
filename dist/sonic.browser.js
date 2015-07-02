@@ -1112,6 +1112,8 @@ var _cache = require('./cache');
 
 var _cache2 = _interopRequireDefault(_cache);
 
+var _observable_list = require('./observable_list');
+
 var ObservableCache = (function (_Cache) {
     function ObservableCache(list) {
         var _this = this;
@@ -1120,7 +1122,7 @@ var ObservableCache = (function (_Cache) {
 
         _get(Object.getPrototypeOf(ObservableCache.prototype), 'constructor', this).call(this, list);
         this.observe = function (observer) {
-            return _this._list.observe(observer);
+            return _this._subject.observe(observer);
         };
         this.onInvalidate = function (prev, next) {
             var key;
@@ -1138,7 +1140,9 @@ var ObservableCache = (function (_Cache) {
                 if (key == prev) break;
                 delete _this._byKey[key];
             }
+            _this._subject.onInvalidate(prev, next);
         };
+        this._subject = new _observable_list.ListSubject();
         list.observe(this);
     }
 
@@ -1150,7 +1154,7 @@ var ObservableCache = (function (_Cache) {
 exports.ObservableCache = ObservableCache;
 exports['default'] = ObservableCache;
 
-},{"./cache":2}],12:[function(require,module,exports){
+},{"./cache":2,"./observable_list":13}],12:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, '__esModule', {

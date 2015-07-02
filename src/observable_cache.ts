@@ -1,18 +1,20 @@
 import Key from './key';
 import Cache from './cache';
 import { ISubscription } from './observable';
-import { IObservableList, IListObserver } from './observable_list';
+import { IObservableList, IListObserver, ListSubject } from './observable_list';
 
 export class ObservableCache<V> extends Cache<V> implements IObservableList<V>, IListObserver {
   protected _list: IObservableList<V>;
+  protected _subject: ListSubject;
 
   constructor(list: IObservableList<V>) {
     super(list)
+    this._subject = new ListSubject();
     list.observe(this);
   }
 
   observe = (observer: IListObserver): ISubscription => {
-    return this._list.observe(observer);
+    return this._subject.observe(observer);
   }
 
   onInvalidate = (prev: Key, next: Key) => {
@@ -33,6 +35,8 @@ export class ObservableCache<V> extends Cache<V> implements IObservableList<V>, 
       if(key == prev) break;
       delete this._byKey[key];
     }
+
+    this._subject.onInvalidate(prev, next);
   }
 }
 
