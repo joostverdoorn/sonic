@@ -122,7 +122,11 @@ export class List {
             var loop = (key) => {
                 if (key == null)
                     return Promise.resolve(true);
-                return list.get(key).then(value => predicate(value, key) === false || key == last ? false : list.next(key).then(loop));
+                return list.get(key)
+                    .then(value => predicate(value, key))
+                    .then(res => {
+                    return res === false ? false : key == last ? true : list.next(key).then(loop);
+                });
             };
             return Range.first(list, range).then(loop);
         });
@@ -132,7 +136,11 @@ export class List {
             var loop = (key) => {
                 if (key == null)
                     return Promise.resolve(false);
-                return list.get(key).then(value => predicate(value, key) === true ? true : list.next(key).then(next => next === last ? false : loop(next)));
+                return list.get(key)
+                    .then(value => predicate(value, key))
+                    .then(res => {
+                    return res === true ? true : key == last ? false : list.next(key).then(loop);
+                });
             };
             return Range.first(list, range).then(loop);
         });
@@ -200,10 +208,10 @@ export class List {
             });
         }
         function prev(key) {
-            return List.findKey(List.reverse(list), filterFn, key);
+            return List.findKey(List.reverse(list), filterFn, [key, null]);
         }
         function next(key) {
-            return List.findKey(list, filterFn, key);
+            return List.findKey(list, filterFn, [key, null]);
         }
         return { get, prev, next };
     }

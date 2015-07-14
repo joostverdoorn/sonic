@@ -171,7 +171,11 @@ export class List<V> implements IList<V> {
     return Range.last(list, range).then(last => {
         var loop = (key: Key): Promise<boolean> => {
           if(key == null) return Promise.resolve(true);
-          return list.get(key).then(value => predicate(value, key) === false || key == last ? false : list.next(key).then(loop));
+          return list.get(key)
+            .then( value => predicate(value, key))
+            .then(res => {
+              return  res === false ? false : key == last ? true : list.next(key).then(loop);
+            });
         }
 
         return Range.first(list, range).then(loop);
@@ -180,13 +184,17 @@ export class List<V> implements IList<V> {
 
   static some<V>(list: IList<V>, predicate: (value: V, key?: Key) => boolean | Promise<boolean>, range?: Range): Promise<boolean> {
     return Range.last(list, range).then(last => {
-      var loop = (key: Key): Promise<boolean> => {
-        if(key == null) return Promise.resolve(false);
-        return list.get(key).then(value => predicate(value, key) === true ? true : list.next(key).then(next => next === last ? false : loop(next)));
-      }
+        var loop = (key: Key): Promise<boolean> => {
+          if(key == null) return Promise.resolve(false);
+          return list.get(key)
+          .then( value => predicate(value, key))
+          .then(res => {
+              return res === true ? true : key == last ? false : list.next(key).then(loop);
+            });
+        }
 
-      return Range.first(list, range).then(loop);
-    });
+        return Range.first(list, range).then(loop);
+      });
   }
 
   static forEach<V>(list: IList<V>, fn: (value: V, key?: Key) => void, range?: Range): Promise<void> {
@@ -264,11 +272,11 @@ export class List<V> implements IList<V> {
     }
 
     function prev(key: Key) {
-      return List.findKey(List.reverse(list), filterFn, key);
+      return List.findKey(List.reverse(list), filterFn, [key, null]);
     }
 
     function next(key: Key) {
-      return List.findKey(list, filterFn, key);
+      return List.findKey(list, filterFn, [key, null]);
     }
 
     return { get, prev, next };

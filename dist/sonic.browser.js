@@ -521,7 +521,9 @@ var List = (function () {
                 var loop = function loop(key) {
                     if (key == null) return Promise.resolve(true);
                     return list.get(key).then(function (value) {
-                        return predicate(value, key) === false || key == last ? false : list.next(key).then(loop);
+                        return predicate(value, key);
+                    }).then(function (res) {
+                        return res === false ? false : key == last ? true : list.next(key).then(loop);
                     });
                 };
                 return _range2['default'].first(list, range).then(loop);
@@ -534,9 +536,9 @@ var List = (function () {
                 var loop = function loop(key) {
                     if (key == null) return Promise.resolve(false);
                     return list.get(key).then(function (value) {
-                        return predicate(value, key) === true ? true : list.next(key).then(function (next) {
-                            return next === last ? false : loop(next);
-                        });
+                        return predicate(value, key);
+                    }).then(function (res) {
+                        return res === true ? true : key == last ? false : list.next(key).then(loop);
                     });
                 };
                 return _range2['default'].first(list, range).then(loop);
@@ -658,10 +660,10 @@ var List = (function () {
                 });
             }
             function prev(key) {
-                return List.findKey(List.reverse(list), filterFn, key);
+                return List.findKey(List.reverse(list), filterFn, [key, null]);
             }
             function next(key) {
-                return List.findKey(list, filterFn, key);
+                return List.findKey(list, filterFn, [key, null]);
             }
             return { get: get, prev: prev, next: next };
         }
