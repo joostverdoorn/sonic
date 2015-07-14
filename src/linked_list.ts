@@ -44,7 +44,7 @@ export default class LinkedList<V> extends MutableList<V> {
     if(!(key in this._byKey)) return Promise.reject(new Error);
 
     this._byKey[key] = value;
-    this._subject.onInvalidate(this._prev[key], this._next[key])
+    this._subject.onInvalidate([this._prev[key], this._next[key]])
     return Promise.resolve();
   }
 
@@ -72,7 +72,7 @@ export default class LinkedList<V> extends MutableList<V> {
     this._prev[next] = _key;
     this._next[_key] = next;
 
-    this._subject.onInvalidate(prev, next);
+    this._subject.onInvalidate([prev, next]);
     return Promise.resolve();
   }
 

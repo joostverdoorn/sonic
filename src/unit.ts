@@ -35,7 +35,7 @@ export default class Unit<V> extends MutableList<V> {
   set = (key: Key, value: V): Promise<void> => {
     this._key = key;
     this._value = value;
-    this._subject.onInvalidate(null, null);
+    this._subject.onInvalidate([null, null]);
 
     return Promise.resolve();
   }
@@ -45,7 +45,7 @@ export default class Unit<V> extends MutableList<V> {
 
     delete this._key;
     delete this._value;
-    this._subject.onInvalidate(null, null);
+    this._subject.onInvalidate([null, null]);
 
     return Promise.resolve();
   }

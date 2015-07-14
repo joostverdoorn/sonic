@@ -6,6 +6,6 @@ export declare class ObservableCache<V> extends Cache<V> implements IObservableL
     protected _subject: ListSubject;
     constructor(list: IObservableList<V>);
     observe: (observer: IListObserver) => ISubscription;
-    onInvalidate: (prev: string | number, next: string | number) => void;
+    onInvalidate: (range?: string | number | [string | number, string | number]) => void;
 }
 export default ObservableCache;

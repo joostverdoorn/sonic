@@ -1,4 +1,5 @@
 import Key       from './key';
+import Range     from './range';
 import { List, IList } from './list';
 import { Tree, Path }  from './tree';
 import { Subject, IObservable, ISubscription, INotifier } from './observable';
@@ -7,12 +8,12 @@ import ObservableCache from './observable_cache';
 import ObservableIndex from './observable_index';
 
 export interface IListObserver {
-  onInvalidate: (prev: Key, next: Key) => void;
+  onInvalidate: (range: Range) => void;
 }
 
 export class ListSubject extends Subject<IListObserver> {
-  onInvalidate = (prev: Key, next: Key) => {
-    this.notify(observer => { observer.onInvalidate(prev, next) });
+  onInvalidate = (range: Range) => {
+    this.notify(observer => { observer.onInvalidate(range) });
   }
 }
 
@@ -95,8 +96,8 @@ export class ObservableList<V> extends List<V> implements IObservableList<V> {
 
     function observe(observer: IListObserver) {
       return list.observe({
-        onInvalidate: function(prev, next) {
-          observer.onInvalidate(next, prev);
+        onInvalidate: function(range) {
+          observer.onInvalidate(range);
         }
       });
     }
@@ -111,15 +112,7 @@ export class ObservableList<V> extends List<V> implements IObservableList<V> {
 
   static filter<V>(list: IObservableList<V>, filterFn: (value: V, key?: Key) => boolean): IObservableList<V> {
     var { get, prev, next } = List.filter(list, filterFn);
-    var subject = new ListSubject();
-
-    list.observe({
-      onInvalidate: function(p: Key, n: Key) {
-        prev(p).then(p => next(n).then(n => subject.onInvalidate(p, n)));
-      }
-    });
-
-    return { get, prev, next, observe: subject.observe };
+    return { get, prev, next, observe: list.observe };
   }
 
   static flatten<V>(list: IObservableList<IObservableList<V> | V | any>): IObservableList<V> {
@@ -134,14 +127,11 @@ export class ObservableList<V> extends List<V> implements IObservableList<V> {
           observe: (observer: IListObserver) => null
         });
 
+
     function createObserver(head: Key): IListObserver {
-      var onInvalidate = (prev: Key, next: Key) => {
-        Promise.all([
-          prev == null ? Tree.prev(list, [head]) : Path.append(head, prev),
-          next == null ? Tree.next(list, [head]) : Path.append(head, next)
-        ]).then(([prev, next]) => {
-          subject.onInvalidate(Path.toKey(prev), Path.toKey(next));
-        })
+      var onInvalidate = (range: Range) => {
+        if(!Array.isArray(range)) return subject.onInvalidate(Path.toKey([head, range]));
+        else subject.onInvalidate([Path.toKey(range[0] != null ? [head, range[0]] : [head]), Path.toKey(range[1] != null ? [head, range[1]] : [head])]);
       }
 
       return { onInvalidate };
@@ -174,24 +164,17 @@ export class ObservableList<V> extends List<V> implements IObservableList<V> {
     }
 
     list.observe({
-      onInvalidate: (prev, next) => {
+      onInvalidate: (range) => {
         // Unsubscribe from all lists in the range
         List.forEach(cache, (value: V, key: Key) => {
           if (!subscriptions[key]) return;
           subscriptions[key].unsubscribe();
           delete subscriptions[key];
-        }, prev, next);
+        }, range);
 
-        // Find the prev and next paths, and invalidate
-        Promise.all([
-          prev == null ? null : Tree.prev(list, [prev, null], 1),
-          next == null ? null : Tree.next(list, [next, null], 1)
-        ]).then(([prev, next]) => {
-          subject.onInvalidate(Path.toKey(prev), Path.toKey(next));
-        })
-
-        // Invalidate cache
-        cache.onInvalidate(prev, next);
+        if(!Array.isArray(range)) subject.onInvalidate(Path.toKey([range]));
+        else subject.onInvalidate([Path.toKey([range[0]]), Path.toKey([range[1]])]);
+        cache.onInvalidate(range);
       }
     });
 
@@ -261,8 +244,8 @@ export class ObservableList<V> extends List<V> implements IObservableList<V> {
 
     function observe(observer: IListObserver) {
       return list.observe({
-        onInvalidate: function(prev, next) {
-          observer.onInvalidate(prev, null);
+        onInvalidate: (range) => {
+          Range.prev(list, range).then(prev => observer.onInvalidate([prev, null]));
         }
       });
     }

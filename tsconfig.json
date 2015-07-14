@@ -22,6 +22,7 @@
         "src/observable_cache.ts",
         "src/observable_index.ts",
         "src/observable_list.ts",
+        "src/range.ts",
         "src/sonic.ts",
         "src/tree.ts",
         "src/unit.ts"

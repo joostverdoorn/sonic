@@ -1,4 +1,5 @@
 import Key from './key';
+import Range from './range';
 import Index from './index';
 import { Subject, ISubscription } from './observable';
 import { IObservableList, IListObserver, ListSubject } from './observable_list';
@@ -25,15 +26,15 @@ export class ObservableIndex<V> extends Index<V> implements IObservableList<V>, 
     return this._subject.observe(observer);
   }
 
-  onInvalidate = (prev: Key, next: Key) => {
-    var prevIndex = this._byKey[prev],
-        length    = this._byIndex.length,
-        index     = prevIndex;
+  onInvalidate = (range: Range) => {
+    var index: number,
+        length = this._byIndex.length;
 
-    while(++index < length) delete this._byKey[this._byIndex[index]];
-    this._byIndex.splice(prevIndex + 1);
+    var index = Array.isArray(range) ? this._byKey[range[0]] : this._byKey[range];
 
-    this._subject.onInvalidate(prevIndex, null);
+    while(index++ < length) delete this._byKey[this._byIndex[index]];
+    this._byIndex.splice(index);
+    this._subject.onInvalidate([index == 0 ? null : index - 1, null]);
   }
 }
 

@@ -53,7 +53,7 @@ var ArrayList = (function (_MutableList) {
             if (prev != null && (0 > prev || prev >= _this._array.length)) return Promise.reject(new Error());
             if (prev != null && (0 > next || next >= _this._array.length)) return Promise.reject(new Error());
             (_array = _this._array).splice.apply(_array, [prev == null ? 0 : prev + 1, (next == null ? _this._array.length : next) - (prev == null ? 0 : prev + 1)].concat(values));
-            _this._subject.onInvalidate(prev, null);
+            _this._subject.onInvalidate([prev, null]);
             return Promise.resolve();
         };
         this.observe = function (observer) {
@@ -157,7 +157,7 @@ function fromPromise(promise) {
     return _observable_list.ObservableList.create(unit);
 }
 
-},{"./array_list":1,"./list":7,"./mutable_list":9,"./observable_list":13,"./unit":15}],4:[function(require,module,exports){
+},{"./array_list":1,"./list":7,"./mutable_list":9,"./observable_list":13,"./unit":17}],4:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, '__esModule', {
@@ -284,7 +284,7 @@ var LinkedList = (function (_MutableList) {
         this.set = function (key, value) {
             if (!(key in _this._byKey)) return Promise.reject(new Error());
             _this._byKey[key] = value;
-            _this._subject.onInvalidate(_this._prev[key], _this._next[key]);
+            _this._subject.onInvalidate([_this._prev[key], _this._next[key]]);
             return Promise.resolve();
         };
         this.splice = function () {
@@ -336,7 +336,7 @@ var LinkedList = (function (_MutableList) {
 
             _this._prev[next] = _key;
             _this._next[_key] = next;
-            _this._subject.onInvalidate(prev, next);
+            _this._subject.onInvalidate([prev, next]);
             return Promise.resolve();
         };
         this.observe = function (observer) {
@@ -372,6 +372,10 @@ var _createClass = (function () { function defineProperties(target, props) { for
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError('Cannot call a class as a function'); } }
+
+var _range = require('./range');
+
+var _range2 = _interopRequireDefault(_range);
 
 var _tree = require('./tree');
 
@@ -410,35 +414,35 @@ var List = (function () {
         this.some = function (predicate) {
             return List.some(_this, predicate);
         };
-        this.forEach = function (fn, prev, next) {
-            return List.forEach(_this, fn, prev, next);
+        this.forEach = function (fn, range) {
+            return List.forEach(_this, fn, range);
         };
-        this.reduce = function (fn, memo) {
-            return List.reduce(_this, fn);
+        this.reduce = function (fn, memo, range) {
+            return List.reduce(_this, fn, memo, range);
         };
-        this.toArray = function () {
-            return List.toArray(_this);
+        this.toArray = function (range) {
+            return List.toArray(_this, range);
         };
-        this.findKey = function (fn) {
-            return List.findKey(_this, fn);
+        this.findKey = function (fn, range) {
+            return List.findKey(_this, fn, range);
         };
-        this.find = function (fn) {
-            return List.find(_this, fn);
+        this.find = function (fn, range) {
+            return List.find(_this, fn, range);
         };
-        this.keyOf = function (value) {
-            return List.keyOf(_this, value);
+        this.keyOf = function (value, range) {
+            return List.keyOf(_this, value, range);
         };
-        this.indexOf = function (value) {
-            return List.indexOf(_this, value);
+        this.indexOf = function (value, range) {
+            return List.indexOf(_this, value, range);
         };
-        this.keyAt = function (index) {
-            return List.keyAt(_this, index);
+        this.keyAt = function (index, range) {
+            return List.keyAt(_this, index, range);
         };
-        this.at = function (index) {
-            return List.at(_this, index);
+        this.at = function (index, range) {
+            return List.at(_this, index, range);
         };
-        this.contains = function (value) {
-            return List.contains(_this, value);
+        this.contains = function (value, range) {
+            return List.contains(_this, value, range);
         };
         this.reverse = function () {
             return List.create(List.reverse(_this));
@@ -512,84 +516,86 @@ var List = (function () {
         }
     }, {
         key: 'every',
-        value: function every(list, predicate, prev, next) {
-            var loop = function loop(key) {
-                return list.next(key).then(function (key) {
-                    return key == next ? true : list.get(key).then(function (value) {
-                        return predicate(value, key) === true ? loop(key) : false;
+        value: function every(list, predicate, range) {
+            return _range2['default'].last(list, range).then(function (last) {
+                var loop = function loop(key) {
+                    if (key == null) return Promise.resolve(true);
+                    return list.get(key).then(function (value) {
+                        return predicate(value, key) === false || key == last ? false : list.next(key).then(loop);
                     });
-                });
-            };
-            return loop(prev);
+                };
+                return _range2['default'].first(list, range).then(loop);
+            });
         }
     }, {
         key: 'some',
-        value: function some(list, predicate, prev, next) {
-            var loop = function loop(key) {
-                return list.next(key).then(function (key) {
-                    return key == next ? false : list.get(key).then(function (value) {
-                        return Promise.resolve(predicate(value, key)).then(function (res) {
-                            return res === true ? true : loop(key);
+        value: function some(list, predicate, range) {
+            return _range2['default'].last(list, range).then(function (last) {
+                var loop = function loop(key) {
+                    if (key == null) return Promise.resolve(false);
+                    return list.get(key).then(function (value) {
+                        return predicate(value, key) === true ? true : list.next(key).then(function (next) {
+                            return next === last ? false : loop(next);
                         });
                     });
-                });
-            };
-            return loop(prev);
+                };
+                return _range2['default'].first(list, range).then(loop);
+            });
         }
     }, {
         key: 'forEach',
-        value: function forEach(list, fn, prev, next) {
+        value: function forEach(list, fn, range) {
             return List.every(list, function (value, key) {
                 fn(value, key);return true;
-            }, prev, next).then(function () {});
+            }, range).then(function () {});
         }
     }, {
         key: 'reduce',
-        value: function reduce(list, fn, memo) {
+        value: function reduce(list, fn, memo, range) {
             return List.forEach(list, function (value, key) {
                 return memo = fn(memo, value, key);
-            }).then(function () {
+            }, range).then(function () {
                 return memo;
             });
         }
     }, {
         key: 'toArray',
-        value: function toArray(list) {
+        value: function toArray(list, range) {
             return List.reduce(list, function (memo, value) {
                 return (memo.push(value), memo);
-            }, []);
+            }, [], range);
         }
     }, {
         key: 'findKey',
-        value: function findKey(list, fn, prev, next) {
+        value: function findKey(list, fn, range) {
             var key;
             return List.some(list, function (v, k) {
                 return Promise.resolve(fn(v, k)).then(function (res) {
                     return res ? !!(key = k) || true : false;
                 });
-            }, prev, next).then(function (found) {
+            }, range).then(function (found) {
                 return found ? key : null;
             });
         }
     }, {
         key: 'find',
-        value: function find(list, fn, prev, next) {
-            return List.findKey(list, fn, prev, next).then(list.get);
+        value: function find(list, fn, range) {
+            return List.findKey(list, fn, range).then(list.get);
         }
     }, {
         key: 'keyOf',
-        value: function keyOf(list, value, prev, next) {
+        value: function keyOf(list, value, range) {
             return List.findKey(list, function (v) {
                 return v === value;
-            }, prev, next);
+            }, range);
         }
     }, {
         key: 'indexOf',
-        value: function indexOf(list, value, prev, next) {
+        value: function indexOf(list, value, range) {
             var index = -1;
             return List.some(list, function (v, k) {
                 return value == v ? !! index++ || true : false;
-            }, prev, next).then(function (found) {
+            }, range).then(function (found) {
                 if (found) {
                     return index;
                 } else {
@@ -599,22 +605,22 @@ var List = (function () {
         }
     }, {
         key: 'keyAt',
-        value: function keyAt(list, index, prev, next) {
+        value: function keyAt(list, index, range) {
             return List.findKey(list, function () {
                 return 0 === index--;
             });
         }
     }, {
         key: 'at',
-        value: function at(list, index) {
-            return List.keyAt(list, index).then(list.get);
+        value: function at(list, index, range) {
+            return List.keyAt(list, index, range).then(list.get);
         }
     }, {
         key: 'contains',
-        value: function contains(list, value) {
+        value: function contains(list, value, range) {
             return List.some(list, function (v) {
                 return v === value;
-            });
+            }, range);
         }
     }, {
         key: 'reverse',
@@ -796,7 +802,7 @@ var List = (function () {
 exports.List = List;
 exports['default'] = List;
 
-},{"./cache":2,"./index":4,"./tree":14}],8:[function(require,module,exports){
+},{"./cache":2,"./index":4,"./range":14,"./tree":16}],8:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, '__esModule', {
@@ -1106,6 +1112,8 @@ var _get = function get(_x, _x2, _x3) { var _again = true; _function: while (_ag
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
 
+function _slicedToArray(arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i['return']) _i['return'](); } finally { if (_d) throw _e; } } return _arr; } else { throw new TypeError('Invalid attempt to destructure non-iterable instance'); } }
+
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError('Cannot call a class as a function'); } }
 
 function _inherits(subClass, superClass) { if (typeof superClass !== 'function' && superClass !== null) { throw new TypeError('Super expression must either be null or a function, not ' + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) subClass.__proto__ = superClass; }
@@ -1126,8 +1134,25 @@ var ObservableCache = (function (_Cache) {
         this.observe = function (observer) {
             return _this._subject.observe(observer);
         };
-        this.onInvalidate = function (prev, next) {
-            var key;
+        this.onInvalidate = function (range) {
+            if (!Array.isArray(range)) {
+                var prev = _this._prev[range],
+                    next = _this._next[range];
+                if (prev != null) {
+                    delete _this._next[prev];
+                    delete _this._prev[range];
+                }
+                if (next != null) {
+                    delete _this._prev[next];
+                    delete _this._next[range];
+                }
+                return _this._subject.onInvalidate(range);
+            }
+
+            var _range = _slicedToArray(range, 2);
+
+            var prev = _range[0];
+            var next = _range[1];var key;
             key = prev;
             while ((key = _this._next[key]) !== undefined) {
                 delete _this._next[_this._prev[key]];
@@ -1142,7 +1167,7 @@ var ObservableCache = (function (_Cache) {
                 if (key == prev) break;
                 delete _this._byKey[key];
             }
-            _this._subject.onInvalidate(prev, next);
+            _this._subject.onInvalidate(range);
         };
         this._subject = new _observable_list.ListSubject();
         list.observe(this);
@@ -1191,13 +1216,13 @@ var ObservableIndex = (function (_Index) {
         this.observe = function (observer) {
             return _this._subject.observe(observer);
         };
-        this.onInvalidate = function (prev, next) {
-            var prevIndex = _this._byKey[prev],
-                length = _this._byIndex.length,
-                index = prevIndex;
-            while (++index < length) delete _this._byKey[_this._byIndex[index]];
-            _this._byIndex.splice(prevIndex + 1);
-            _this._subject.onInvalidate(prevIndex, null);
+        this.onInvalidate = function (range) {
+            var index,
+                length = _this._byIndex.length;
+            var index = Array.isArray(range) ? _this._byKey[range[0]] : _this._byKey[range];
+            while (index++ < length) delete _this._byKey[_this._byIndex[index]];
+            _this._byIndex.splice(index);
+            _this._subject.onInvalidate([index == 0 ? null : index - 1, null]);
         };
         this._byKey = Object.create(null);
         this._subject = new _observable_list.ListSubject();
@@ -1225,11 +1250,13 @@ var _get = function get(_x, _x2, _x3) { var _again = true; _function: while (_ag
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
 
-function _slicedToArray(arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i['return']) _i['return'](); } finally { if (_d) throw _e; } } return _arr; } else { throw new TypeError('Invalid attempt to destructure non-iterable instance'); } }
-
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError('Cannot call a class as a function'); } }
 
 function _inherits(subClass, superClass) { if (typeof superClass !== 'function' && superClass !== null) { throw new TypeError('Super expression must either be null or a function, not ' + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) subClass.__proto__ = superClass; }
+
+var _range = require('./range');
+
+var _range2 = _interopRequireDefault(_range);
 
 var _list = require('./list');
 
@@ -1256,9 +1283,9 @@ var ListSubject = (function (_Subject) {
         _classCallCheck(this, ListSubject);
 
         _get(Object.getPrototypeOf(ListSubject.prototype), 'constructor', this).apply(this, args);
-        this.onInvalidate = function (prev, next) {
+        this.onInvalidate = function (range) {
             _this.notify(function (observer) {
-                observer.onInvalidate(prev, next);
+                observer.onInvalidate(range);
             });
         };
     }
@@ -1349,8 +1376,8 @@ var ObservableList = (function (_List) {
 
             function observe(observer) {
                 return list.observe({
-                    onInvalidate: function onInvalidate(prev, next) {
-                        observer.onInvalidate(next, prev);
+                    onInvalidate: function onInvalidate(range) {
+                        observer.onInvalidate(range);
                     }
                 });
             }
@@ -1376,17 +1403,7 @@ var ObservableList = (function (_List) {
             var prev = _List$filter.prev;
             var next = _List$filter.next;
 
-            var subject = new ListSubject();
-            list.observe({
-                onInvalidate: function onInvalidate(p, n) {
-                    prev(p).then(function (p) {
-                        return next(n).then(function (n) {
-                            return subject.onInvalidate(p, n);
-                        });
-                    });
-                }
-            });
-            return { get: get, prev: prev, next: next, observe: subject.observe };
+            return { get: get, prev: prev, next: next, observe: list.observe };
         }
     }, {
         key: 'flatten',
@@ -1403,15 +1420,8 @@ var ObservableList = (function (_List) {
                 }
             });
             function createObserver(head) {
-                var onInvalidate = function onInvalidate(prev, next) {
-                    Promise.all([prev == null ? _tree.Tree.prev(list, [head]) : _tree.Path.append(head, prev), next == null ? _tree.Tree.next(list, [head]) : _tree.Path.append(head, next)]).then(function (_ref) {
-                        var _ref2 = _slicedToArray(_ref, 2);
-
-                        var prev = _ref2[0];
-                        var next = _ref2[1];
-
-                        subject.onInvalidate(_tree.Path.toKey(prev), _tree.Path.toKey(next));
-                    });
+                var onInvalidate = function onInvalidate(range) {
+                    if (!Array.isArray(range)) return subject.onInvalidate(_tree.Path.toKey([head, range]));else subject.onInvalidate([_tree.Path.toKey(range[0] != null ? [head, range[0]] : [head]), _tree.Path.toKey(range[1] != null ? [head, range[1]] : [head])]);
                 };
                 return { onInvalidate: onInvalidate };
             }
@@ -1440,24 +1450,15 @@ var ObservableList = (function (_List) {
                 });
             }
             list.observe({
-                onInvalidate: function onInvalidate(prev, next) {
+                onInvalidate: function onInvalidate(range) {
                     // Unsubscribe from all lists in the range
                     _list.List.forEach(cache, function (value, key) {
                         if (!subscriptions[key]) return;
                         subscriptions[key].unsubscribe();
                         delete subscriptions[key];
-                    }, prev, next);
-                    // Find the prev and next paths, and invalidate
-                    Promise.all([prev == null ? null : _tree.Tree.prev(list, [prev, null], 1), next == null ? null : _tree.Tree.next(list, [next, null], 1)]).then(function (_ref3) {
-                        var _ref32 = _slicedToArray(_ref3, 2);
-
-                        var prev = _ref32[0];
-                        var next = _ref32[1];
-
-                        subject.onInvalidate(_tree.Path.toKey(prev), _tree.Path.toKey(next));
-                    });
-                    // Invalidate cache
-                    cache.onInvalidate(prev, next);
+                    }, range);
+                    if (!Array.isArray(range)) subject.onInvalidate(_tree.Path.toKey([range]));else subject.onInvalidate([_tree.Path.toKey([range[0]]), _tree.Path.toKey([range[1]])]);
+                    cache.onInvalidate(range);
                 }
             });
             return { get: flat.get, prev: prev, next: next, observe: subject.observe };
@@ -1541,8 +1542,10 @@ var ObservableList = (function (_List) {
             }
             function observe(observer) {
                 return list.observe({
-                    onInvalidate: function onInvalidate(prev, next) {
-                        observer.onInvalidate(prev, null);
+                    onInvalidate: function onInvalidate(range) {
+                        _range2['default'].prev(list, range).then(function (prev) {
+                            return observer.onInvalidate([prev, null]);
+                        });
                     }
                 });
             }
@@ -1557,7 +1560,106 @@ var ObservableList = (function (_List) {
 exports.ObservableList = ObservableList;
 exports['default'] = ObservableList;
 
-},{"./list":7,"./observable":10,"./observable_cache":11,"./observable_index":12,"./tree":14}],14:[function(require,module,exports){
+},{"./list":7,"./observable":10,"./observable_cache":11,"./observable_index":12,"./range":14,"./tree":16}],14:[function(require,module,exports){
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+    value: true
+});
+var Range;
+exports.Range = Range;
+(function (Range) {
+    function prev(list) {
+        var range = arguments[1] === undefined ? [null, null] : arguments[1];
+
+        if (Array.isArray(range)) return Promise.resolve(range[0]);else return list.prev(range);
+    }
+    Range.prev = prev;
+    function next(list) {
+        var range = arguments[1] === undefined ? [null, null] : arguments[1];
+
+        if (Array.isArray(range)) return Promise.resolve(range[1]);else return list.next(range);
+    }
+    Range.next = next;
+    function first(list) {
+        var range = arguments[1] === undefined ? [null, null] : arguments[1];
+
+        if (Array.isArray(range)) return list.next(range[0]);
+        return Promise.resolve(range);
+    }
+    Range.first = first;
+    function last(list) {
+        var range = arguments[1] === undefined ? [null, null] : arguments[1];
+
+        if (Array.isArray(range)) return list.prev(range[1]);
+        return Promise.resolve(range);
+    }
+    Range.last = last;
+})(Range || (exports.Range = Range = {}));
+exports["default"] = Range;
+
+},{}],15:[function(require,module,exports){
+'use strict';
+
+Object.defineProperty(exports, '__esModule', {
+    value: true
+});
+exports.Sonic = Sonic;
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
+
+var _factory = require('./factory');
+
+var _factory2 = _interopRequireDefault(_factory);
+
+var _list = require('./list');
+
+var _list2 = _interopRequireDefault(_list);
+
+var _observable_list = require('./observable_list');
+
+var _observable_list2 = _interopRequireDefault(_observable_list);
+
+var _mutable_list = require('./mutable_list');
+
+var _mutable_list2 = _interopRequireDefault(_mutable_list);
+
+var _unit = require('./unit');
+
+var _unit2 = _interopRequireDefault(_unit);
+
+var _array_list = require('./array_list');
+
+var _array_list2 = _interopRequireDefault(_array_list);
+
+var _linked_list = require('./linked_list');
+
+var _linked_list2 = _interopRequireDefault(_linked_list);
+
+var _tree = require('./tree');
+
+function Sonic(obj) {
+    return (0, _factory2['default'])(obj);
+}
+
+var Sonic;
+exports.Sonic = Sonic;
+(function (Sonic) {
+    Sonic.List = _list2['default'];
+    Sonic.ObservableList = _observable_list2['default'];
+    Sonic.MutableList = _mutable_list2['default'];
+    Sonic.Unit = _unit2['default'];
+    Sonic.ArrayList = _array_list2['default'];
+    Sonic.LinkedList = _linked_list2['default'];
+    Sonic.Tree = _tree.Tree;
+    Sonic.Path = _tree.Path;
+    Sonic.fromPromise = _factory.fromPromise;
+})(Sonic || (exports.Sonic = exports.Sonic = Sonic = {}));
+;
+module.exports = Sonic;
+exports['default'] = Sonic;
+
+},{"./array_list":1,"./factory":3,"./linked_list":6,"./list":7,"./mutable_list":9,"./observable_list":13,"./tree":16,"./unit":17}],16:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, '__esModule', {
@@ -1711,7 +1813,7 @@ exports.Tree = Tree;
 })(Tree || (exports.Tree = Tree = {}));
 exports['default'] = Tree;
 
-},{"./list":7}],15:[function(require,module,exports){
+},{"./list":7}],17:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, '__esModule', {
@@ -1758,7 +1860,7 @@ var Unit = (function (_MutableList) {
         this.set = function (key, value) {
             _this._key = key;
             _this._value = value;
-            _this._subject.onInvalidate(null, null);
+            _this._subject.onInvalidate([null, null]);
             return Promise.resolve();
         };
         this.splice = function (prev, next) {
@@ -1769,7 +1871,7 @@ var Unit = (function (_MutableList) {
             if (values.length) return _this.set(_key3['default'].create(), values[0]);
             delete _this._key;
             delete _this._value;
-            _this._subject.onInvalidate(null, null);
+            _this._subject.onInvalidate([null, null]);
             return Promise.resolve();
         };
         this.observe = function (observer) {
@@ -1787,66 +1889,5 @@ var Unit = (function (_MutableList) {
 exports['default'] = Unit;
 module.exports = exports['default'];
 
-},{"./key":5,"./mutable_list":9,"./observable_list":13}],16:[function(require,module,exports){
-'use strict';
-
-Object.defineProperty(exports, '__esModule', {
-    value: true
-});
-exports.Sonic = Sonic;
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
-
-var _factory = require('./factory');
-
-var _factory2 = _interopRequireDefault(_factory);
-
-var _list = require('./list');
-
-var _list2 = _interopRequireDefault(_list);
-
-var _observable_list = require('./observable_list');
-
-var _observable_list2 = _interopRequireDefault(_observable_list);
-
-var _mutable_list = require('./mutable_list');
-
-var _mutable_list2 = _interopRequireDefault(_mutable_list);
-
-var _unit = require('./unit');
-
-var _unit2 = _interopRequireDefault(_unit);
-
-var _array_list = require('./array_list');
-
-var _array_list2 = _interopRequireDefault(_array_list);
-
-var _linked_list = require('./linked_list');
-
-var _linked_list2 = _interopRequireDefault(_linked_list);
-
-var _tree = require('./tree');
-
-function Sonic(obj) {
-    return (0, _factory2['default'])(obj);
-}
-
-var Sonic;
-exports.Sonic = Sonic;
-(function (Sonic) {
-    Sonic.List = _list2['default'];
-    Sonic.ObservableList = _observable_list2['default'];
-    Sonic.MutableList = _mutable_list2['default'];
-    Sonic.Unit = _unit2['default'];
-    Sonic.ArrayList = _array_list2['default'];
-    Sonic.LinkedList = _linked_list2['default'];
-    Sonic.Tree = _tree.Tree;
-    Sonic.Path = _tree.Path;
-    Sonic.fromPromise = _factory.fromPromise;
-})(Sonic || (exports.Sonic = exports.Sonic = Sonic = {}));
-;
-module.exports = Sonic;
-exports['default'] = Sonic;
-
-},{"./array_list":1,"./factory":3,"./linked_list":6,"./list":7,"./mutable_list":9,"./observable_list":13,"./tree":14,"./unit":15}]},{},[16])(16)
+},{"./key":5,"./mutable_list":9,"./observable_list":13}]},{},[15])(15)
 });

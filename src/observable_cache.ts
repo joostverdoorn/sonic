@@ -1,4 +1,5 @@
 import Key from './key';
+import Range from './range';
 import Cache from './cache';
 import { ISubscription } from './observable';
 import { IObservableList, IListObserver, ListSubject } from './observable_list';
@@ -17,8 +18,26 @@ export class ObservableCache<V> extends Cache<V> implements IObservableList<V>, 
     return this._subject.observe(observer);
   }
 
-  onInvalidate = (prev: Key, next: Key) => {
-    var key: Key;
+  onInvalidate = (range?: Range) => {
+    if(!Array.isArray(range)) {
+      var prev = this._prev[range],
+          next = this._next[range];
+
+      if(prev != null) {
+        delete this._next[prev];
+        delete this._prev[range];
+      }
+
+      if(next != null) {
+        delete this._prev[next];
+        delete this._next[range];
+      }
+
+      return this._subject.onInvalidate(range)
+    }
+
+    var [prev, next] = <[Key, Key]> range,
+        key: Key;
 
     key = prev;
     while((key = this._next[key]) !== undefined) {
@@ -36,7 +55,7 @@ export class ObservableCache<V> extends Cache<V> implements IObservableList<V>, 
       delete this._byKey[key];
     }
 
-    this._subject.onInvalidate(prev, next);
+    this._subject.onInvalidate(range);
   }
 }
 

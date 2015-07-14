@@ -7,6 +7,7 @@ export interface ITree<V> extends IList<ITree<V> | V> {};
 export interface IMutableTree<V> extends IMutableList<IMutableTree<V> | V> {};
 
 export module Path {
+
   export function key(path: Path): string {
     return JSON.stringify(path)
   }

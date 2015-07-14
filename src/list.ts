@@ -1,4 +1,5 @@
 import Key from './key';
+import Range from './range';
 import { Tree, ITree, Path } from './tree';
 import ArrayList from './array_list';
 import Cache from './cache';
@@ -54,44 +55,44 @@ export class List<V> implements IList<V> {
     return List.some(this, predicate);
   }
 
-  forEach = (fn: (value: V, key?: Key) => void, prev?: Key, next?: Key): Promise<void> => {
-    return List.forEach(this, fn, prev, next);
+  forEach = (fn: (value: V, key?: Key) => void, range?: Range): Promise<void> => {
+    return List.forEach(this, fn, range);
   }
 
-  reduce = <W>(fn: (memo: W, value: V, key?: Key) => W, memo?: W): Promise<W> => {
-    return List.reduce(this, fn);
+  reduce = <W>(fn: (memo: W, value: V, key?: Key) => W, memo?: W, range?: Range): Promise<W> => {
+    return List.reduce(this, fn, memo, range);
   }
 
-  toArray = (): Promise<V[]> => {
-    return List.toArray(this);
+  toArray = (range?: Range): Promise<V[]> => {
+    return List.toArray(this, range);
   }
 
-  findKey = (fn: (value: V, key?: Key) => boolean | Promise<boolean>): Promise<Key> => {
-    return List.findKey(this, fn);
+  findKey = (fn: (value: V, key?: Key) => boolean | Promise<boolean>, range?: Range): Promise<Key> => {
+    return List.findKey(this, fn, range);
   }
 
-  find = (fn: (value: V, key?: Key) => boolean): Promise<V> => {
-    return List.find(this, fn);
+  find = (fn: (value: V, key?: Key) => boolean, range?: Range): Promise<V> => {
+    return List.find(this, fn, range);
   }
 
-  keyOf = (value: V): Promise<Key> => {
-    return List.keyOf(this, value);
+  keyOf = (value: V, range?: Range): Promise<Key> => {
+    return List.keyOf(this, value, range);
   }
 
-  indexOf = (value: V): Promise<Key> => {
-    return List.indexOf(this, value);
+  indexOf = (value: V, range?: Range): Promise<Key> => {
+    return List.indexOf(this, value, range);
   }
 
-  keyAt = (index: number): Promise<Key> => {
-    return List.keyAt(this, index);
+  keyAt = (index: number, range?: Range): Promise<Key> => {
+    return List.keyAt(this, index, range);
   }
 
-  at = (index: number): Promise<V> => {
-    return List.at(this, index);
+  at = (index: number, range?: Range): Promise<V> => {
+    return List.at(this, index, range);
   }
 
-  contains = (value: V): Promise<boolean> => {
-    return List.contains(this, value);
+  contains = (value: V, range?: Range): Promise<boolean> => {
+    return List.contains(this, value, range);
   }
 
   reverse = (): List<V> => {
@@ -166,62 +167,68 @@ export class List<V> implements IList<V> {
     return list.prev().then(list.get);
   }
 
-  static every<V>(list: IList<V>, predicate: (value: V, key?: Key) => boolean, prev?: Key, next?: Key): Promise<boolean> {
-    var loop = (key: Key): Promise<boolean> => list.next(key).then(key => {
-      return key == next ? true : list.get(key).then(value => predicate(value, key) === true ? loop(key) : false);
+  static every<V>(list: IList<V>, predicate: (value: V, key?: Key) => boolean, range?: Range): Promise<boolean> {
+    return Range.last(list, range).then(last => {
+        var loop = (key: Key): Promise<boolean> => {
+          if(key == null) return Promise.resolve(true);
+          return list.get(key).then(value => predicate(value, key) === false || key == last ? false : list.next(key).then(loop));
+        }
+
+        return Range.first(list, range).then(loop);
+      });
+  }
+
+  static some<V>(list: IList<V>, predicate: (value: V, key?: Key) => boolean | Promise<boolean>, range?: Range): Promise<boolean> {
+    return Range.last(list, range).then(last => {
+      var loop = (key: Key): Promise<boolean> => {
+        if(key == null) return Promise.resolve(false);
+        return list.get(key).then(value => predicate(value, key) === true ? true : list.next(key).then(next => next === last ? false : loop(next)));
+      }
+
+      return Range.first(list, range).then(loop);
     });
-
-    return loop(prev);
   }
 
-  static some<V>(list: IList<V>, predicate: (value: V, key?: Key) => boolean | Promise<boolean>, prev?: Key, next?: Key): Promise<boolean> {
-    var loop = (key: Key): Promise<boolean> => list.next(key).then(key => {
-      return key == next ? false : list.get(key).then(value => Promise.resolve(predicate(value, key)).then(res => res === true ? true : loop(key)))
-    });
-
-    return loop(prev);
+  static forEach<V>(list: IList<V>, fn: (value: V, key?: Key) => void, range?: Range): Promise<void> {
+    return List.every(list, (value: V, key: Key) => { fn(value, key); return true }, range).then(() => {})
   }
 
-  static forEach<V>(list: IList<V>, fn: (value: V, key?: Key) => void, prev?: Key, next?: Key): Promise<void> {
-    return List.every(list, (value: V, key: Key) => { fn(value, key); return true }, prev, next).then(() => {})
+  static reduce<V, W>(list: IList<V>, fn: (memo: W, value: V, key?: Key) => W, memo?: W, range?: Range): Promise<W> {
+    return List.forEach(list, (value: V, key: Key) => memo = fn(memo, value, key), range).then(() => memo);
   }
 
-  static reduce<V, W>(list: IList<V>, fn: (memo: W, value: V, key?: Key) => W, memo?: W): Promise<W> {
-    return List.forEach(list, (value: V, key: Key) => memo = fn(memo, value, key)).then(() => memo);
+  static toArray<V>(list: IList<V>, range?: Range): Promise<V[]> {
+    return List.reduce<V, V[]>(list, (memo: V[], value: V) => (memo.push(value), memo), [], range);
   }
 
-  static toArray<V>(list: IList<V>): Promise<V[]> {
-    return List.reduce<V, V[]>(list, (memo: V[], value: V) => (memo.push(value), memo), []);
-  }
-
-  static findKey<V>(list: IList<V>, fn: (value: V, key?: Key) => boolean | Promise<boolean>, prev?: Key, next?: Key): Promise<Key> {
+  static findKey<V>(list: IList<V>, fn: (value: V, key?: Key) => boolean | Promise<boolean>, range?: Range): Promise<Key> {
     var key: Key;
-    return List.some(list, (v: V, k: Key) => Promise.resolve(fn(v, k)).then(res => res ? (!!(key = k) || true) : false), prev, next).then(found => found ? key : null);
+    return List.some(list, (v: V, k: Key) => Promise.resolve(fn(v, k)).then(res => res ? (!!(key = k) || true) : false), range).then(found => found ? key : null);
   }
 
-  static find<V>(list: IList<V>, fn: (value: V, key?: Key) => boolean, prev?: Key, next?: Key): Promise<V> {
-    return List.findKey(list, fn, prev, next).then(list.get);
+  static find<V>(list: IList<V>, fn: (value: V, key?: Key) => boolean, range?: Range): Promise<V> {
+    return List.findKey(list, fn, range).then(list.get);
   }
 
-  static keyOf<V>(list: IList<V>, value: V, prev?: Key, next?: Key): Promise<Key> {
-    return List.findKey(list, v => v === value, prev, next);
+  static keyOf<V>(list: IList<V>, value: V, range?: Range): Promise<Key> {
+    return List.findKey(list, v => v === value, range);
   }
 
-  static indexOf<V>(list: IList<V>, value: V, prev?: Key, next?: Key): Promise<number> {
+  static indexOf<V>(list: IList<V>, value: V, range?: Range): Promise<number> {
     var index = -1;
-    return List.some(list, (v: V, k: Key) => value == v ? (!!(index++) || true) : false, prev, next).then((found) => {if (found) {return index} else {throw new Error()}});
+    return List.some(list, (v: V, k: Key) => value == v ? (!!(index++) || true) : false, range).then((found) => {if (found) {return index} else {throw new Error()}});
   }
 
-  static keyAt<V>(list: IList<V>, index: number, prev?: Key, next?: Key): Promise<Key> {
+  static keyAt<V>(list: IList<V>, index: number, range?: Range): Promise<Key> {
     return List.findKey(list, () => 0 === index--);
   }
 
-  static at<V>(list: IList<V>, index: number): Promise<V> {
-    return List.keyAt(list, index).then(list.get);
+  static at<V>(list: IList<V>, index: number, range?: Range): Promise<V> {
+    return List.keyAt(list, index, range).then(list.get);
   }
 
-  static contains<V>(list: IList<V>, value: V): Promise<boolean> {
-    return List.some(list, v => v === value);
+  static contains<V>(list: IList<V>, value: V, range?: Range): Promise<boolean> {
+    return List.some(list, v => v === value, range);
   }
 
   static reverse<V>(list: IList<V>): IList<V> {

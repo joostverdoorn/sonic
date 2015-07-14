@@ -26,7 +26,7 @@ export default class Unit extends MutableList {
         this.set = (key, value) => {
             this._key = key;
             this._value = value;
-            this._subject.onInvalidate(null, null);
+            this._subject.onInvalidate([null, null]);
             return Promise.resolve();
         };
         this.splice = (prev, next, ...values) => {
@@ -34,7 +34,7 @@ export default class Unit extends MutableList {
                 return this.set(Key.create(), values[0]);
             delete this._key;
             delete this._value;
-            this._subject.onInvalidate(null, null);
+            this._subject.onInvalidate([null, null]);
             return Promise.resolve();
         };
         this.observe = (observer) => {

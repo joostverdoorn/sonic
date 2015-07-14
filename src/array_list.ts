@@ -47,7 +47,7 @@ export default class ArrayList<V> extends MutableList<V> {
       ...values
     );
 
-    this._subject.onInvalidate(prev, null);
+    this._subject.onInvalidate([prev, null]);
     return Promise.resolve();
   }
 

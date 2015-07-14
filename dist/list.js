@@ -1,3 +1,4 @@
+import Range from './range';
 import { Tree, Path } from './tree';
 import Cache from './cache';
 import Index from './index';
@@ -24,35 +25,35 @@ export class List {
         this.some = (predicate) => {
             return List.some(this, predicate);
         };
-        this.forEach = (fn, prev, next) => {
-            return List.forEach(this, fn, prev, next);
+        this.forEach = (fn, range) => {
+            return List.forEach(this, fn, range);
         };
-        this.reduce = (fn, memo) => {
-            return List.reduce(this, fn);
+        this.reduce = (fn, memo, range) => {
+            return List.reduce(this, fn, memo, range);
         };
-        this.toArray = () => {
-            return List.toArray(this);
+        this.toArray = (range) => {
+            return List.toArray(this, range);
         };
-        this.findKey = (fn) => {
-            return List.findKey(this, fn);
+        this.findKey = (fn, range) => {
+            return List.findKey(this, fn, range);
         };
-        this.find = (fn) => {
-            return List.find(this, fn);
+        this.find = (fn, range) => {
+            return List.find(this, fn, range);
         };
-        this.keyOf = (value) => {
-            return List.keyOf(this, value);
+        this.keyOf = (value, range) => {
+            return List.keyOf(this, value, range);
         };
-        this.indexOf = (value) => {
-            return List.indexOf(this, value);
+        this.indexOf = (value, range) => {
+            return List.indexOf(this, value, range);
         };
-        this.keyAt = (index) => {
-            return List.keyAt(this, index);
+        this.keyAt = (index, range) => {
+            return List.keyAt(this, index, range);
         };
-        this.at = (index) => {
-            return List.at(this, index);
+        this.at = (index, range) => {
+            return List.at(this, index, range);
         };
-        this.contains = (value) => {
-            return List.contains(this, value);
+        this.contains = (value, range) => {
+            return List.contains(this, value, range);
         };
         this.reverse = () => {
             return List.create(List.reverse(this));
@@ -116,54 +117,62 @@ export class List {
     static last(list) {
         return list.prev().then(list.get);
     }
-    static every(list, predicate, prev, next) {
-        var loop = (key) => list.next(key).then(key => {
-            return key == next ? true : list.get(key).then(value => predicate(value, key) === true ? loop(key) : false);
+    static every(list, predicate, range) {
+        return Range.last(list, range).then(last => {
+            var loop = (key) => {
+                if (key == null)
+                    return Promise.resolve(true);
+                return list.get(key).then(value => predicate(value, key) === false || key == last ? false : list.next(key).then(loop));
+            };
+            return Range.first(list, range).then(loop);
         });
-        return loop(prev);
     }
-    static some(list, predicate, prev, next) {
-        var loop = (key) => list.next(key).then(key => {
-            return key == next ? false : list.get(key).then(value => Promise.resolve(predicate(value, key)).then(res => res === true ? true : loop(key)));
+    static some(list, predicate, range) {
+        return Range.last(list, range).then(last => {
+            var loop = (key) => {
+                if (key == null)
+                    return Promise.resolve(false);
+                return list.get(key).then(value => predicate(value, key) === true ? true : list.next(key).then(next => next === last ? false : loop(next)));
+            };
+            return Range.first(list, range).then(loop);
         });
-        return loop(prev);
     }
-    static forEach(list, fn, prev, next) {
-        return List.every(list, (value, key) => { fn(value, key); return true; }, prev, next).then(() => { });
+    static forEach(list, fn, range) {
+        return List.every(list, (value, key) => { fn(value, key); return true; }, range).then(() => { });
     }
-    static reduce(list, fn, memo) {
-        return List.forEach(list, (value, key) => memo = fn(memo, value, key)).then(() => memo);
+    static reduce(list, fn, memo, range) {
+        return List.forEach(list, (value, key) => memo = fn(memo, value, key), range).then(() => memo);
     }
-    static toArray(list) {
-        return List.reduce(list, (memo, value) => (memo.push(value), memo), []);
+    static toArray(list, range) {
+        return List.reduce(list, (memo, value) => (memo.push(value), memo), [], range);
     }
-    static findKey(list, fn, prev, next) {
+    static findKey(list, fn, range) {
         var key;
-        return List.some(list, (v, k) => Promise.resolve(fn(v, k)).then(res => res ? (!!(key = k) || true) : false), prev, next).then(found => found ? key : null);
+        return List.some(list, (v, k) => Promise.resolve(fn(v, k)).then(res => res ? (!!(key = k) || true) : false), range).then(found => found ? key : null);
     }
-    static find(list, fn, prev, next) {
-        return List.findKey(list, fn, prev, next).then(list.get);
+    static find(list, fn, range) {
+        return List.findKey(list, fn, range).then(list.get);
     }
-    static keyOf(list, value, prev, next) {
-        return List.findKey(list, v => v === value, prev, next);
+    static keyOf(list, value, range) {
+        return List.findKey(list, v => v === value, range);
     }
-    static indexOf(list, value, prev, next) {
+    static indexOf(list, value, range) {
         var index = -1;
-        return List.some(list, (v, k) => value == v ? (!!(index++) || true) : false, prev, next).then((found) => { if (found) {
+        return List.some(list, (v, k) => value == v ? (!!(index++) || true) : false, range).then((found) => { if (found) {
             return index;
         }
         else {
             throw new Error();
         } });
     }
-    static keyAt(list, index, prev, next) {
+    static keyAt(list, index, range) {
         return List.findKey(list, () => 0 === index--);
     }
-    static at(list, index) {
-        return List.keyAt(list, index).then(list.get);
+    static at(list, index, range) {
+        return List.keyAt(list, index, range).then(list.get);
     }
-    static contains(list, value) {
-        return List.some(list, v => v === value);
+    static contains(list, value, range) {
+        return List.some(list, v => v === value, range);
     }
     static reverse(list) {
         var { get } = list;

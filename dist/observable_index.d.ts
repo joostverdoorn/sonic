@@ -10,6 +10,6 @@ export declare class ObservableIndex<V> extends Index<V> implements IObservableL
     constructor(list: IObservableList<V>);
     protected _add: (key: string | number, index: number) => void;
     observe: (observer: IListObserver) => ISubscription;
-    onInvalidate: (prev: string | number, next: string | number) => void;
+    onInvalidate: (range: string | number | [string | number, string | number]) => void;
 }
 export default ObservableIndex;

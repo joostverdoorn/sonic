@@ -1,15 +1,25 @@
+global.Promise = require("bluebird")
 global.Sonic = require('../dist/sonic.browser')
 global.x = [];
 
-a = do ( ) ->
-  ->
-    y = [];
-    y.push(5) for i in [0...1000]
+global.arr = [1...100]
+global.list = Sonic arr
+global.mapFn = (x) -> x*2
 
-b = do ( ) ->
-  ->
-    y = [];
-    y[i] = 5 for i in [0...1000]
+
+a = (deferred)->
+    list.map(mapFn).toArray().then(() -> deferred.resolve())
+
+b = (deferred)->
+    arr.map(mapFn)
+    deferred.resolve()
+
+c = (deferred)->
+    arr.map(mapFn)
 
 module.exports =
-  tests: { a, b }
+  tests: {
+    a: { fn: a, defer: true }
+    b: { fn: b, defer: true }
+    c: { fn: c, defer: false }
+  }

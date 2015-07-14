@@ -1,13 +1,14 @@
+import Range from './range';
 import { List } from './list';
-import { Tree, Path } from './tree';
+import { Path } from './tree';
 import { Subject } from './observable';
 import ObservableCache from './observable_cache';
 import ObservableIndex from './observable_index';
 export class ListSubject extends Subject {
     constructor(...args) {
         super(...args);
-        this.onInvalidate = (prev, next) => {
-            this.notify(observer => { observer.onInvalidate(prev, next); });
+        this.onInvalidate = (range) => {
+            this.notify(observer => { observer.onInvalidate(range); });
         };
     }
 }
@@ -72,8 +73,8 @@ export class ObservableList extends List {
         var { get, prev, next } = List.reverse(list);
         function observe(observer) {
             return list.observe({
-                onInvalidate: function (prev, next) {
-                    observer.onInvalidate(next, prev);
+                onInvalidate: function (range) {
+                    observer.onInvalidate(range);
                 }
             });
         }
@@ -85,13 +86,7 @@ export class ObservableList extends List {
     }
     static filter(list, filterFn) {
         var { get, prev, next } = List.filter(list, filterFn);
-        var subject = new ListSubject();
-        list.observe({
-            onInvalidate: function (p, n) {
-                prev(p).then(p => next(n).then(n => subject.onInvalidate(p, n)));
-            }
-        });
-        return { get, prev, next, observe: subject.observe };
+        return { get, prev, next, observe: list.observe };
     }
     static flatten(list) {
         var flat = List.flatten(list), subject = new ListSubject(), subscriptions = Object.create(null);
@@ -102,13 +97,11 @@ export class ObservableList extends List {
             observe: (observer) => null
         });
         function createObserver(head) {
-            var onInvalidate = (prev, next) => {
-                Promise.all([
-                    prev == null ? Tree.prev(list, [head]) : Path.append(head, prev),
-                    next == null ? Tree.next(list, [head]) : Path.append(head, next)
-                ]).then(([prev, next]) => {
-                    subject.onInvalidate(Path.toKey(prev), Path.toKey(next));
-                });
+            var onInvalidate = (range) => {
+                if (!Array.isArray(range))
+                    return subject.onInvalidate(Path.toKey([head, range]));
+                else
+                    subject.onInvalidate([Path.toKey(range[0] != null ? [head, range[0]] : [head]), Path.toKey(range[1] != null ? [head, range[1]] : [head])]);
             };
             return { onInvalidate };
         }
@@ -131,23 +124,19 @@ export class ObservableList extends List {
             });
         }
         list.observe({
-            onInvalidate: (prev, next) => {
+            onInvalidate: (range) => {
                 // Unsubscribe from all lists in the range
                 List.forEach(cache, (value, key) => {
                     if (!subscriptions[key])
                         return;
                     subscriptions[key].unsubscribe();
                     delete subscriptions[key];
-                }, prev, next);
-                // Find the prev and next paths, and invalidate
-                Promise.all([
-                    prev == null ? null : Tree.prev(list, [prev, null], 1),
-                    next == null ? null : Tree.next(list, [next, null], 1)
-                ]).then(([prev, next]) => {
-                    subject.onInvalidate(Path.toKey(prev), Path.toKey(next));
-                });
-                // Invalidate cache
-                cache.onInvalidate(prev, next);
+                }, range);
+                if (!Array.isArray(range))
+                    subject.onInvalidate(Path.toKey([range]));
+                else
+                    subject.onInvalidate([Path.toKey([range[0]]), Path.toKey([range[1]])]);
+                cache.onInvalidate(range);
             }
         });
         return { get: flat.get, prev, next, observe: subject.observe };
@@ -200,8 +189,8 @@ export class ObservableList extends List {
         }
         function observe(observer) {
             return list.observe({
-                onInvalidate: function (prev, next) {
-                    observer.onInvalidate(prev, null);
+                onInvalidate: (range) => {
+                    Range.prev(list, range).then(prev => observer.onInvalidate([prev, null]));
                 }
             });
         }

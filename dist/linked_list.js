@@ -24,7 +24,7 @@ export default class LinkedList extends MutableList {
             if (!(key in this._byKey))
                 return Promise.reject(new Error);
             this._byKey[key] = value;
-            this._subject.onInvalidate(this._prev[key], this._next[key]);
+            this._subject.onInvalidate([this._prev[key], this._next[key]]);
             return Promise.resolve();
         };
         this.splice = (prev = null, next = null, ...values) => {
@@ -48,7 +48,7 @@ export default class LinkedList extends MutableList {
             }
             this._prev[next] = _key;
             this._next[_key] = next;
-            this._subject.onInvalidate(prev, next);
+            this._subject.onInvalidate([prev, next]);
             return Promise.resolve();
         };
         this.observe = (observer) => {

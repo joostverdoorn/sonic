@@ -10,12 +10,13 @@ export class ObservableIndex extends Index {
         this.observe = (observer) => {
             return this._subject.observe(observer);
         };
-        this.onInvalidate = (prev, next) => {
-            var prevIndex = this._byKey[prev], length = this._byIndex.length, index = prevIndex;
-            while (++index < length)
+        this.onInvalidate = (range) => {
+            var index, length = this._byIndex.length;
+            var index = Array.isArray(range) ? this._byKey[range[0]] : this._byKey[range];
+            while (index++ < length)
                 delete this._byKey[this._byIndex[index]];
-            this._byIndex.splice(prevIndex + 1);
-            this._subject.onInvalidate(prevIndex, null);
+            this._byIndex.splice(index);
+            this._subject.onInvalidate([index == 0 ? null : index - 1, null]);
         };
         this._byKey = Object.create(null);
         this._subject = new ListSubject();
