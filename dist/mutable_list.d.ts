@@ -4,24 +4,22 @@ export interface IMutableList<V> extends IObservableList<V> {
     set(key: Key, value: V): Promise<void>;
     splice(prev: Key, next: Key, ...values: V[]): Promise<void>;
 }
-export declare class MutableList<V> extends ObservableList<V> implements IMutableList<V> {
-    constructor(list?: IMutableList<V>);
-    set: (key: string | number, value: V) => Promise<void>;
-    splice: (prev: string | number, next: string | number, ...values: V[]) => Promise<void>;
-    addBefore: (key: string | number, value: V) => Promise<string | number>;
-    addAfter: (key: string | number, value: V) => Promise<string | number>;
-    push: (value: V) => Promise<string | number>;
-    unshift: (value: V) => Promise<string | number>;
-    delete: (key: string | number) => Promise<V>;
-    deleteBefore: (key: string | number) => Promise<V>;
-    deleteAfter: (key: string | number) => Promise<V>;
-    pop: () => Promise<V>;
-    shift: () => Promise<V>;
-    remove: (value: V) => Promise<void>;
-    cache: () => MutableList<V>;
-    map: <W>(getFn: (value: V, key: string | number) => W, setFn?: (value: W, key?: string | number) => V) => MutableList<W>;
-    static isMutableList(obj: any): boolean;
+export declare abstract class MutableList<V> extends ObservableList<V> implements IMutableList<V> {
+    abstract set(key: Key, value: V): Promise<void>;
+    abstract splice(prev: Key, next: Key, ...values: V[]): Promise<void>;
     static create<V>(list: IMutableList<V>): MutableList<V>;
+    addBefore(key: Key, value: V): Promise<number | string>;
+    addAfter(key: Key, value: V): Promise<number | string>;
+    push(value: V): Promise<number | string>;
+    unshift(value: V): Promise<number | string>;
+    delete(key: Key): Promise<V>;
+    deleteBefore(key: Key): Promise<V>;
+    deleteAfter(key: Key): Promise<V>;
+    pop(): Promise<V>;
+    shift(): Promise<V>;
+    remove(value: V): Promise<void>;
+    cache(): MutableList<V>;
+    static isMutableList(obj: any): boolean;
     static addBefore<V>(list: IMutableList<V>, key: Key, value: V): Promise<Key>;
     static addAfter<V>(list: IMutableList<V>, key: Key, value: V): Promise<Key>;
     static push<V>(list: IMutableList<V>, value: V): Promise<Key>;
@@ -33,6 +31,5 @@ export declare class MutableList<V> extends ObservableList<V> implements IMutabl
     static shift<V>(list: IMutableList<V>): Promise<V>;
     static remove<V>(list: IMutableList<V>, value: V): Promise<void>;
     static cache<V>(list: IMutableList<V>): IMutableList<V>;
-    static map<V, W>(list: IMutableList<V>, getFn: (value: V, key: Key) => W, setFn?: (value: W, key?: Key) => V): IMutableList<W>;
 }
 export default MutableList;

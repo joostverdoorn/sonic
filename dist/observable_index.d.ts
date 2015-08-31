@@ -8,8 +8,8 @@ export declare class ObservableIndex<V> extends Index<V> implements IObservableL
     };
     protected _subject: ListSubject;
     constructor(list: IObservableList<V>);
-    protected _add: (key: string | number, index: number) => void;
+    protected _add: (key: number | string, index: number) => void;
     observe: (observer: IListObserver) => ISubscription;
-    onInvalidate: (range: string | number | [string | number, string | number]) => void;
+    onInvalidate: (range: number | string | [number | string, number | string]) => void;
 }
 export default ObservableIndex;

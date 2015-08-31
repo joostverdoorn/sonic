@@ -14,30 +14,30 @@ export default class ArrayList<V> extends MutableList<V> {
     this._array = array;
   }
 
-  get = (key: number): Promise<V> => {
+  get(key: number): Promise<V> {
     if(key != null && 0 <= key && key < this._array.length) return Promise.resolve(this._array[key]);
     return Promise.reject<V>(new Error);
   }
 
-  prev = (key?: number): Promise<number> => {
+  prev(key?: number): Promise<number> {
     if(key == null) return Promise.resolve(this._array.length ? this._array.length - 1 : null);
     if(key == 0) return Promise.resolve(null);
     if(0 <= key - 1 && key < this._array.length) return Promise.resolve(key - 1);
     Promise.reject(new Error);
   }
 
-  next = (key?: number): Promise<number> => {
+  next(key?: number): Promise<number> {
     if(key == null) return Promise.resolve(this._array.length ? 0 : null);
     if(key == this._array.length - 1) return Promise.resolve(null);
     if(0 <= key && key + 1 < this._array.length) return Promise.resolve(key + 1);
     Promise.reject(new Error);
   }
 
-  set = (key: number, value: V): Promise<void> => {
+  set(key: number, value: V): Promise<void> {
     return this.splice(key > 0 ? key - 1 : null, key < this._array.length - 1 ? key + 1 : null, value);
   }
 
-  splice = (prev: number, next: number, ...values: V[]): Promise<void> => {
+  splice(prev: number, next: number, ...values: V[]): Promise<void> {
     if(prev != null && (0 > prev || prev >= this._array.length)) return Promise.reject(new Error);
     if(prev != null && (0 > next || next >= this._array.length)) return Promise.reject(new Error);
 
@@ -51,7 +51,7 @@ export default class ArrayList<V> extends MutableList<V> {
     return Promise.resolve();
   }
 
-  observe = (observer: IListObserver): ISubscription => {
+  observe(observer: IListObserver): ISubscription {
     return this._subject.observe(observer);
   }
 }

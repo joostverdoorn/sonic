@@ -1,3 +1,4 @@
+import bind from './bind';
 import Range from './range';
 import { List } from './list';
 import { Path } from './tree';
@@ -14,60 +15,53 @@ export class ListSubject extends Subject {
 }
 ;
 export class ObservableList extends List {
-    constructor(list) {
-        super(list);
-        this.observe = (observer) => {
-            throw new Error("Not implemented");
-        };
-        this.reverse = () => {
-            return ObservableList.create(ObservableList.reverse(this));
-        };
-        this.map = (mapFn) => {
-            return ObservableList.create(ObservableList.map(this, mapFn));
-        };
-        this.filter = (filterFn) => {
-            return ObservableList.create(ObservableList.filter(this, filterFn));
-        };
-        this.flatten = () => {
-            return ObservableList.create(ObservableList.flatten(this));
-        };
-        this.flatMap = (flatMapFn) => {
-            return ObservableList.create(ObservableList.flatMap(this, flatMapFn));
-        };
-        this.cache = () => {
-            return ObservableList.create(ObservableList.cache(this));
-        };
-        this.index = () => {
-            return ObservableList.create(ObservableList.index(this));
-        };
-        this.zip = (other, zipFn) => {
-            return ObservableList.create(ObservableList.zip(this, other, zipFn));
-        };
-        this.skip = (k) => {
-            return ObservableList.create(ObservableList.skip(this, k));
-        };
-        this.take = (n) => {
-            return ObservableList.create(ObservableList.take(this, n));
-        };
-        this.range = (k, n) => {
-            return ObservableList.create(ObservableList.range(this, k, n));
-        };
-        this.scan = (scanFn, memo) => {
-            return ObservableList.create(ObservableList.scan(this, scanFn, memo));
-        };
-        if (list != null)
-            this.observe = list.observe;
+    static create(list) {
+        return new class class_1 extends ObservableList {
+            get(key) { return list.get(key); }
+            prev(key) { return list.prev(key); }
+            next(key) { return list.next(key); }
+            observe(observer) { return list.observe(observer); }
+        }
+        ;
+    }
+    reverse() {
+        return ObservableList.create(ObservableList.reverse(this));
+    }
+    map(mapFn) {
+        return ObservableList.create(ObservableList.map(this, mapFn));
+    }
+    filter(filterFn) {
+        return ObservableList.create(ObservableList.filter(this, filterFn));
+    }
+    flatten() {
+        return ObservableList.create(ObservableList.flatten(this));
+    }
+    flatMap(flatMapFn) {
+        return ObservableList.create(ObservableList.flatMap(this, flatMapFn));
+    }
+    cache() {
+        return ObservableList.create(ObservableList.cache(this));
+    }
+    index() {
+        return ObservableList.create(ObservableList.index(this));
+    }
+    zip(other, zipFn) {
+        return ObservableList.create(ObservableList.zip(this, other, zipFn));
+    }
+    skip(k) {
+        return ObservableList.create(ObservableList.skip(this, k));
+    }
+    take(n) {
+        return ObservableList.create(ObservableList.take(this, n));
+    }
+    range(k, n) {
+        return ObservableList.create(ObservableList.range(this, k, n));
+    }
+    scan(scanFn, memo) {
+        return ObservableList.create(ObservableList.scan(this, scanFn, memo));
     }
     static isObservableList(obj) {
         return List.isList(obj) && !!obj['observe'];
-    }
-    static create(list) {
-        return new ObservableList({
-            get: list.get,
-            prev: list.prev,
-            next: list.next,
-            observe: list.observe
-        });
     }
     static reverse(list) {
         var { get, prev, next } = List.reverse(list);
@@ -82,18 +76,17 @@ export class ObservableList extends List {
     }
     static map(list, mapFn) {
         var { get, prev, next } = List.map(list, mapFn);
-        return { get, prev, next, observe: list.observe };
+        return { get, prev, next, observe: bind(list.observe, list) };
     }
     static filter(list, filterFn) {
-        var { get, prev, next } = List.filter(list, filterFn);
-        return { get, prev, next, observe: list.observe };
+        var { get, prev, next } = List.filter(list, filterFn), observe = bind(list.observe, list);
+        return { get, prev, next, observe };
     }
     static flatten(list) {
-        var flat = List.flatten(list), subject = new ListSubject(), subscriptions = Object.create(null);
-        var cache = new ObservableCache({
-            get: list.get,
-            prev: list.prev,
-            next: list.next,
+        var flat = List.flatten(list), subject = new ListSubject(), subscriptions = Object.create(null), cache = new ObservableCache({
+            get: bind(list.get, list),
+            prev: bind(list.prev, list),
+            next: bind(list.next, list),
             observe: (observer) => null
         });
         function createObserver(head) {
@@ -183,7 +176,7 @@ export class ObservableList extends List {
         });
     }
     static scan(list, scanFn, memo) {
-        var { prev, next } = list, scanList;
+        var prev = bind(list.prev, list), next = bind(list.next, list), scanList;
         function get(key) {
             return scanList.prev(key).then(p => p == null ? memo : scanList.get(p)).then(memo => list.get(key).then(value => scanFn(memo, value)));
         }

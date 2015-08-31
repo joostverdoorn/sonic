@@ -12,8 +12,8 @@ export declare class Cache<V> implements IList<V> {
     };
     protected _list: IList<V>;
     constructor(list: IList<V>);
-    get: (key: string | number) => Promise<V>;
-    prev: (key: string | number) => Promise<string | number>;
-    next: (key?: string | number) => Promise<string | number>;
+    get: (key: number | string) => Promise<V>;
+    prev: (key: number | string) => Promise<number | string>;
+    next: (key?: number | string) => Promise<number | string>;
 }
 export default Cache;

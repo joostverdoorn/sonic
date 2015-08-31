@@ -5,65 +5,80 @@ Object.defineProperty(exports, '__esModule', {
     value: true
 });
 
-var _get = function get(_x2, _x3, _x4) { var _again = true; _function: while (_again) { var object = _x2, property = _x3, receiver = _x4; desc = parent = getter = undefined; _again = false; var desc = Object.getOwnPropertyDescriptor(object, property); if (desc === undefined) { var parent = Object.getPrototypeOf(object); if (parent === null) { return undefined; } else { _x2 = parent; _x3 = property; _x4 = receiver; _again = true; continue _function; } } else if ('value' in desc) { return desc.value; } else { var getter = desc.get; if (getter === undefined) { return undefined; } return getter.call(receiver); } } };
+var _createClass = (function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ('value' in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
+
+var _get = function get(_x2, _x3, _x4) { var _again = true; _function: while (_again) { var object = _x2, property = _x3, receiver = _x4; desc = parent = getter = undefined; _again = false; if (object === null) object = Function.prototype; var desc = Object.getOwnPropertyDescriptor(object, property); if (desc === undefined) { var parent = Object.getPrototypeOf(object); if (parent === null) { return undefined; } else { _x2 = parent; _x3 = property; _x4 = receiver; _again = true; continue _function; } } else if ('value' in desc) { return desc.value; } else { var getter = desc.get; if (getter === undefined) { return undefined; } return getter.call(receiver); } } };
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError('Cannot call a class as a function'); } }
 
-function _inherits(subClass, superClass) { if (typeof superClass !== 'function' && superClass !== null) { throw new TypeError('Super expression must either be null or a function, not ' + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) subClass.__proto__ = superClass; }
+function _inherits(subClass, superClass) { if (typeof superClass !== 'function' && superClass !== null) { throw new TypeError('Super expression must either be null or a function, not ' + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
 
 var _observable_list = require('./observable_list');
 
 var _mutable_list = require('./mutable_list');
 
 var ArrayList = (function (_MutableList) {
-    function ArrayList() {
-        var _this = this;
+    _inherits(ArrayList, _MutableList);
 
-        var array = arguments[0] === undefined ? [] : arguments[0];
+    function ArrayList() {
+        var array = arguments.length <= 0 || arguments[0] === undefined ? [] : arguments[0];
 
         _classCallCheck(this, ArrayList);
 
         _get(Object.getPrototypeOf(ArrayList.prototype), 'constructor', this).call(this);
-        this.get = function (key) {
-            if (key != null && 0 <= key && key < _this._array.length) return Promise.resolve(_this._array[key]);
-            return Promise.reject(new Error());
-        };
-        this.prev = function (key) {
-            if (key == null) return Promise.resolve(_this._array.length ? _this._array.length - 1 : null);
-            if (key == 0) return Promise.resolve(null);
-            if (0 <= key - 1 && key < _this._array.length) return Promise.resolve(key - 1);
-            Promise.reject(new Error());
-        };
-        this.next = function (key) {
-            if (key == null) return Promise.resolve(_this._array.length ? 0 : null);
-            if (key == _this._array.length - 1) return Promise.resolve(null);
-            if (0 <= key && key + 1 < _this._array.length) return Promise.resolve(key + 1);
-            Promise.reject(new Error());
-        };
-        this.set = function (key, value) {
-            return _this.splice(key > 0 ? key - 1 : null, key < _this._array.length - 1 ? key + 1 : null, value);
-        };
-        this.splice = function (prev, next) {
-            for (var _len = arguments.length, values = Array(_len > 2 ? _len - 2 : 0), _key = 2; _key < _len; _key++) {
-                values[_key - 2] = arguments[_key];
-            }
-
-            var _array;
-
-            if (prev != null && (0 > prev || prev >= _this._array.length)) return Promise.reject(new Error());
-            if (prev != null && (0 > next || next >= _this._array.length)) return Promise.reject(new Error());
-            (_array = _this._array).splice.apply(_array, [prev == null ? 0 : prev + 1, (next == null ? _this._array.length : next) - (prev == null ? 0 : prev + 1)].concat(values));
-            _this._subject.onInvalidate([prev, null]);
-            return Promise.resolve();
-        };
-        this.observe = function (observer) {
-            return _this._subject.observe(observer);
-        };
         this._subject = new _observable_list.ListSubject();
         this._array = array;
     }
 
-    _inherits(ArrayList, _MutableList);
+    _createClass(ArrayList, [{
+        key: 'get',
+        value: function get(key) {
+            if (key != null && 0 <= key && key < this._array.length) return Promise.resolve(this._array[key]);
+            return Promise.reject(new Error());
+        }
+    }, {
+        key: 'prev',
+        value: function prev(key) {
+            if (key == null) return Promise.resolve(this._array.length ? this._array.length - 1 : null);
+            if (key == 0) return Promise.resolve(null);
+            if (0 <= key - 1 && key < this._array.length) return Promise.resolve(key - 1);
+            Promise.reject(new Error());
+        }
+    }, {
+        key: 'next',
+        value: function next(key) {
+            if (key == null) return Promise.resolve(this._array.length ? 0 : null);
+            if (key == this._array.length - 1) return Promise.resolve(null);
+            if (0 <= key && key + 1 < this._array.length) return Promise.resolve(key + 1);
+            Promise.reject(new Error());
+        }
+    }, {
+        key: 'set',
+        value: function set(key, value) {
+            return this.splice(key > 0 ? key - 1 : null, key < this._array.length - 1 ? key + 1 : null, value);
+        }
+    }, {
+        key: 'splice',
+        value: function splice(prev, next) {
+            var _array;
+
+            if (prev != null && (0 > prev || prev >= this._array.length)) return Promise.reject(new Error());
+            if (prev != null && (0 > next || next >= this._array.length)) return Promise.reject(new Error());
+
+            for (var _len = arguments.length, values = Array(_len > 2 ? _len - 2 : 0), _key = 2; _key < _len; _key++) {
+                values[_key - 2] = arguments[_key];
+            }
+
+            (_array = this._array).splice.apply(_array, [prev == null ? 0 : prev + 1, (next == null ? this._array.length : next) - (prev == null ? 0 : prev + 1)].concat(values));
+            this._subject.onInvalidate([prev, null]);
+            return Promise.resolve();
+        }
+    }, {
+        key: 'observe',
+        value: function observe(observer) {
+            return this._subject.observe(observer);
+        }
+    }]);
 
     return ArrayList;
 })(_mutable_list.MutableList);
@@ -71,7 +86,27 @@ var ArrayList = (function (_MutableList) {
 exports['default'] = ArrayList;
 module.exports = exports['default'];
 
-},{"./mutable_list":9,"./observable_list":13}],2:[function(require,module,exports){
+},{"./mutable_list":10,"./observable_list":14}],2:[function(require,module,exports){
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+    value: true
+});
+exports.bind = bind;
+
+function bind(fn, context) {
+    return function () {
+        for (var _len = arguments.length, args = Array(_len), _key = 0; _key < _len; _key++) {
+            args[_key] = arguments[_key];
+        }
+
+        return fn.apply(context, args);
+    };
+}
+
+exports["default"] = bind;
+
+},{}],3:[function(require,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -100,7 +135,7 @@ var Cache = function Cache(list) {
         });
     };
     this.next = function () {
-        var key = arguments[0] === undefined ? null : arguments[0];
+        var key = arguments.length <= 0 || arguments[0] === undefined ? null : arguments[0];
 
         if (key in _this._next) return Promise.resolve(_this._next[key]);
         return _this._list.next(key).then(function (next) {
@@ -116,7 +151,7 @@ var Cache = function Cache(list) {
 exports.Cache = Cache;
 exports["default"] = Cache;
 
-},{}],3:[function(require,module,exports){
+},{}],4:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, '__esModule', {
@@ -157,7 +192,7 @@ function fromPromise(promise) {
     return _observable_list.ObservableList.create(unit);
 }
 
-},{"./array_list":1,"./list":7,"./mutable_list":9,"./observable_list":13,"./unit":17}],4:[function(require,module,exports){
+},{"./array_list":1,"./list":8,"./mutable_list":10,"./observable_list":14,"./unit":18}],5:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, '__esModule', {
@@ -211,7 +246,7 @@ var Index = function Index(list) {
 exports.Index = Index;
 exports['default'] = Index;
 
-},{"./list":7}],5:[function(require,module,exports){
+},{"./list":8}],6:[function(require,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -232,14 +267,16 @@ var Key;
 exports["default"] = Key;
 module.exports = exports["default"];
 
-},{}],6:[function(require,module,exports){
+},{}],7:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, '__esModule', {
     value: true
 });
 
-var _get = function get(_x5, _x6, _x7) { var _again = true; _function: while (_again) { var object = _x5, property = _x6, receiver = _x7; desc = parent = getter = undefined; _again = false; var desc = Object.getOwnPropertyDescriptor(object, property); if (desc === undefined) { var parent = Object.getPrototypeOf(object); if (parent === null) { return undefined; } else { _x5 = parent; _x6 = property; _x7 = receiver; _again = true; continue _function; } } else if ('value' in desc) { return desc.value; } else { var getter = desc.get; if (getter === undefined) { return undefined; } return getter.call(receiver); } } };
+var _createClass = (function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ('value' in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
+
+var _get = function get(_x5, _x6, _x7) { var _again = true; _function: while (_again) { var object = _x5, property = _x6, receiver = _x7; desc = parent = getter = undefined; _again = false; if (object === null) object = Function.prototype; var desc = Object.getOwnPropertyDescriptor(object, property); if (desc === undefined) { var parent = Object.getPrototypeOf(object); if (parent === null) { return undefined; } else { _x5 = parent; _x6 = property; _x7 = receiver; _again = true; continue _function; } } else if ('value' in desc) { return desc.value; } else { var getter = desc.get; if (getter === undefined) { return undefined; } return getter.call(receiver); } } };
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
 
@@ -247,7 +284,7 @@ function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError('Cannot call a class as a function'); } }
 
-function _inherits(subClass, superClass) { if (typeof superClass !== 'function' && superClass !== null) { throw new TypeError('Super expression must either be null or a function, not ' + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) subClass.__proto__ = superClass; }
+function _inherits(subClass, superClass) { if (typeof superClass !== 'function' && superClass !== null) { throw new TypeError('Super expression must either be null or a function, not ' + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
 
 var _key3 = require('./key');
 
@@ -258,50 +295,66 @@ var _observable_list = require('./observable_list');
 var _mutable_list = require('./mutable_list');
 
 var LinkedList = (function (_MutableList) {
-    function LinkedList(values, keyFn) {
-        var _this = this;
+    _inherits(LinkedList, _MutableList);
 
+    function LinkedList(values, keyFn) {
         _classCallCheck(this, LinkedList);
 
         _get(Object.getPrototypeOf(LinkedList.prototype), 'constructor', this).call(this);
         this._keyFn = _key4['default'].create;
-        this.get = function (key) {
-            if (!(key in _this._byKey)) return Promise.reject(new Error());
-            return Promise.resolve(_this._byKey[key]);
-        };
-        this.prev = function () {
-            var key = arguments[0] === undefined ? null : arguments[0];
+        if (keyFn) this._keyFn = keyFn;
+        this._subject = new _observable_list.ListSubject();
+        this._byKey = Object.create(null);
+        this._prev = Object.create(null);
+        this._next = Object.create(null);
+        this._prev[null] = null;
+        this._next[null] = null;
+        this.splice.apply(this, [null, null].concat(_toConsumableArray(values)));
+    }
 
-            if (!(key in _this._prev)) return Promise.reject(new Error());
-            return Promise.resolve(_this._prev[key]);
-        };
-        this.next = function () {
-            var key = arguments[0] === undefined ? null : arguments[0];
+    _createClass(LinkedList, [{
+        key: 'get',
+        value: function get(key) {
+            if (!(key in this._byKey)) return Promise.reject(new Error());
+            return Promise.resolve(this._byKey[key]);
+        }
+    }, {
+        key: 'prev',
+        value: function prev() {
+            var key = arguments.length <= 0 || arguments[0] === undefined ? null : arguments[0];
 
-            if (!(key in _this._next)) return Promise.reject(new Error());
-            return Promise.resolve(_this._next[key]);
-        };
-        this.set = function (key, value) {
-            if (!(key in _this._byKey)) return Promise.reject(new Error());
-            _this._byKey[key] = value;
-            _this._subject.onInvalidate([_this._prev[key], _this._next[key]]);
+            if (!(key in this._prev)) return Promise.reject(new Error());
+            return Promise.resolve(this._prev[key]);
+        }
+    }, {
+        key: 'next',
+        value: function next() {
+            var key = arguments.length <= 0 || arguments[0] === undefined ? null : arguments[0];
+
+            if (!(key in this._next)) return Promise.reject(new Error());
+            return Promise.resolve(this._next[key]);
+        }
+    }, {
+        key: 'set',
+        value: function set(key, value) {
+            if (!(key in this._byKey)) return Promise.reject(new Error());
+            this._byKey[key] = value;
+            this._subject.onInvalidate([this._prev[key], this._next[key]]);
             return Promise.resolve();
-        };
-        this.splice = function () {
-            for (var _len = arguments.length, values = Array(_len > 2 ? _len - 2 : 0), _key2 = 2; _key2 < _len; _key2++) {
-                values[_key2 - 2] = arguments[_key2];
-            }
-
-            var prev = arguments[0] === undefined ? null : arguments[0];
-            var next = arguments[1] === undefined ? null : arguments[1];
+        }
+    }, {
+        key: 'splice',
+        value: function splice() {
+            var prev = arguments.length <= 0 || arguments[0] === undefined ? null : arguments[0];
+            var next = arguments.length <= 1 || arguments[1] === undefined ? null : arguments[1];
 
             var key = prev,
                 value;
-            while ((key = _this._next[key]) != null) {
-                delete _this._next[_this._prev[key]];
-                delete _this._prev[key];
+            while ((key = this._next[key]) != null) {
+                delete this._next[this._prev[key]];
+                delete this._prev[key];
                 if (key == next) break;
-                delete _this._byKey[key];
+                delete this._byKey[key];
             }
             var _key = next;
             var _iteratorNormalCompletion = true;
@@ -309,14 +362,18 @@ var LinkedList = (function (_MutableList) {
             var _iteratorError = undefined;
 
             try {
+                for (var _len = arguments.length, values = Array(_len > 2 ? _len - 2 : 0), _key2 = 2; _key2 < _len; _key2++) {
+                    values[_key2 - 2] = arguments[_key2];
+                }
+
                 for (var _iterator = values[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
                     value = _step.value;
 
-                    key = _this._keyFn(value);
-                    if (key in _this._byKey) _this.splice(_this._prev[key], _this._next[key]);
-                    _this._byKey[key] = value;
-                    _this._prev[key] = _key;
-                    _this._next[_key] = key;
+                    key = this._keyFn(value);
+                    if (key in this._byKey) this.splice(this._prev[key], this._next[key]);
+                    this._byKey[key] = value;
+                    this._prev[key] = _key;
+                    this._next[_key] = key;
                     _key = key;
                 }
             } catch (err) {
@@ -334,25 +391,17 @@ var LinkedList = (function (_MutableList) {
                 }
             }
 
-            _this._prev[next] = _key;
-            _this._next[_key] = next;
-            _this._subject.onInvalidate([prev, next]);
+            this._prev[next] = _key;
+            this._next[_key] = next;
+            this._subject.onInvalidate([prev, next]);
             return Promise.resolve();
-        };
-        this.observe = function (observer) {
-            return _this._subject.observe(observer);
-        };
-        if (keyFn) this._keyFn = keyFn;
-        this._subject = new _observable_list.ListSubject();
-        this._byKey = Object.create(null);
-        this._prev = Object.create(null);
-        this._next = Object.create(null);
-        this._prev[null] = null;
-        this._next[null] = null;
-        this.splice.apply(this, [null, null].concat(_toConsumableArray(values)));
-    }
-
-    _inherits(LinkedList, _MutableList);
+        }
+    }, {
+        key: 'observe',
+        value: function observe(observer) {
+            return this._subject.observe(observer);
+        }
+    }]);
 
     return LinkedList;
 })(_mutable_list.MutableList);
@@ -360,18 +409,26 @@ var LinkedList = (function (_MutableList) {
 exports['default'] = LinkedList;
 module.exports = exports['default'];
 
-},{"./key":5,"./mutable_list":9,"./observable_list":13}],7:[function(require,module,exports){
+},{"./key":6,"./mutable_list":10,"./observable_list":14}],8:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, '__esModule', {
     value: true
 });
 
+var _get = function get(_x, _x2, _x3) { var _again = true; _function: while (_again) { var object = _x, property = _x2, receiver = _x3; desc = parent = getter = undefined; _again = false; if (object === null) object = Function.prototype; var desc = Object.getOwnPropertyDescriptor(object, property); if (desc === undefined) { var parent = Object.getPrototypeOf(object); if (parent === null) { return undefined; } else { _x = parent; _x2 = property; _x3 = receiver; _again = true; continue _function; } } else if ('value' in desc) { return desc.value; } else { var getter = desc.get; if (getter === undefined) { return undefined; } return getter.call(receiver); } } };
+
 var _createClass = (function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ('value' in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
 
+function _inherits(subClass, superClass) { if (typeof superClass !== 'function' && superClass !== null) { throw new TypeError('Super expression must either be null or a function, not ' + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
+
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError('Cannot call a class as a function'); } }
+
+var _bind = require('./bind');
+
+var _bind2 = _interopRequireDefault(_bind);
 
 var _range = require('./range');
 
@@ -388,131 +445,193 @@ var _index = require('./index');
 var _index2 = _interopRequireDefault(_index);
 
 var List = (function () {
-    function List(list) {
-        var _this = this;
-
+    function List() {
         _classCallCheck(this, List);
-
-        this.get = function (key) {
-            throw new Error('Not implemented');
-        };
-        this.prev = function (key) {
-            throw new Error('Not implemented');
-        };
-        this.next = function (key) {
-            throw new Error('Not implemented');
-        };
-        this.first = function () {
-            return List.first(_this);
-        };
-        this.last = function () {
-            return List.last(_this);
-        };
-        this.every = function (predicate) {
-            return List.every(_this, predicate);
-        };
-        this.some = function (predicate) {
-            return List.some(_this, predicate);
-        };
-        this.forEach = function (fn, range) {
-            return List.forEach(_this, fn, range);
-        };
-        this.reduce = function (fn, memo, range) {
-            return List.reduce(_this, fn, memo, range);
-        };
-        this.toArray = function (range) {
-            return List.toArray(_this, range);
-        };
-        this.findKey = function (fn, range) {
-            return List.findKey(_this, fn, range);
-        };
-        this.find = function (fn, range) {
-            return List.find(_this, fn, range);
-        };
-        this.keyOf = function (value, range) {
-            return List.keyOf(_this, value, range);
-        };
-        this.indexOf = function (value, range) {
-            return List.indexOf(_this, value, range);
-        };
-        this.keyAt = function (index, range) {
-            return List.keyAt(_this, index, range);
-        };
-        this.at = function (index, range) {
-            return List.at(_this, index, range);
-        };
-        this.contains = function (value, range) {
-            return List.contains(_this, value, range);
-        };
-        this.reverse = function () {
-            return List.create(List.reverse(_this));
-        };
-        this.map = function (mapFn) {
-            return List.create(List.map(_this, mapFn));
-        };
-        this.filter = function (filterFn) {
-            return List.create(List.filter(_this, filterFn));
-        };
-        this.flatten = function () {
-            return List.create(List.flatten(_this));
-        };
-        this.flatMap = function (flatMapFn) {
-            return List.create(List.flatMap(_this, flatMapFn));
-        };
-        this.cache = function () {
-            return List.create(List.cache(_this));
-        };
-        this.group = function (groupFn) {
-            return List.create(List.group(_this, groupFn)).map(List.create).cache();
-        };
-        this.index = function () {
-            return List.create(List.index(_this));
-        };
-        this.zip = function (other, zipFn) {
-            return List.create(List.zip(_this, other, zipFn));
-        };
-        this.skip = function (k) {
-            return List.create(List.skip(_this, k));
-        };
-        this.take = function (n) {
-            return List.create(List.take(_this, n));
-        };
-        this.range = function (k, n) {
-            return List.create(List.range(_this, k, n));
-        };
-        this.scan = function (scanFn, memo) {
-            return List.create(List.scan(_this, scanFn, memo));
-        };
-        if (list != null) {
-            this.get = list.get;
-            this.prev = list.prev;
-            this.next = list.next;
-        }
     }
 
-    _createClass(List, null, [{
+    _createClass(List, [{
+        key: 'first',
+        value: function first() {
+            return List.first(this);
+        }
+    }, {
+        key: 'last',
+        value: function last() {
+            return List.last(this);
+        }
+    }, {
+        key: 'every',
+        value: function every(predicate) {
+            return List.every(this, predicate);
+        }
+    }, {
+        key: 'some',
+        value: function some(predicate) {
+            return List.some(this, predicate);
+        }
+    }, {
+        key: 'forEach',
+        value: function forEach(fn, range) {
+            return List.forEach(this, fn, range);
+        }
+    }, {
+        key: 'reduce',
+        value: function reduce(fn, memo, range) {
+            return List.reduce(this, fn, memo, range);
+        }
+    }, {
+        key: 'toArray',
+        value: function toArray(range) {
+            return List.toArray(this, range);
+        }
+    }, {
+        key: 'findKey',
+        value: function findKey(fn, range) {
+            return List.findKey(this, fn, range);
+        }
+    }, {
+        key: 'find',
+        value: function find(fn, range) {
+            return List.find(this, fn, range);
+        }
+    }, {
+        key: 'keyOf',
+        value: function keyOf(value, range) {
+            return List.keyOf(this, value, range);
+        }
+    }, {
+        key: 'indexOf',
+        value: function indexOf(value, range) {
+            return List.indexOf(this, value, range);
+        }
+    }, {
+        key: 'keyAt',
+        value: function keyAt(index, range) {
+            return List.keyAt(this, index, range);
+        }
+    }, {
+        key: 'at',
+        value: function at(index, range) {
+            return List.at(this, index, range);
+        }
+    }, {
+        key: 'contains',
+        value: function contains(value, range) {
+            return List.contains(this, value, range);
+        }
+    }, {
+        key: 'reverse',
+        value: function reverse() {
+            return List.create(List.reverse(this));
+        }
+    }, {
+        key: 'map',
+        value: function map(mapFn) {
+            return List.create(List.map(this, mapFn));
+        }
+    }, {
+        key: 'filter',
+        value: function filter(filterFn) {
+            return List.create(List.filter(this, filterFn));
+        }
+    }, {
+        key: 'flatten',
+        value: function flatten() {
+            return List.create(List.flatten(this));
+        }
+    }, {
+        key: 'flatMap',
+        value: function flatMap(flatMapFn) {
+            return List.create(List.flatMap(this, flatMapFn));
+        }
+    }, {
+        key: 'cache',
+        value: function cache() {
+            return List.create(List.cache(this));
+        }
+    }, {
+        key: 'group',
+        value: function group(groupFn) {
+            return List.create(List.group(this, groupFn)).map(List.create).cache();
+        }
+    }, {
+        key: 'index',
+        value: function index() {
+            return List.create(List.index(this));
+        }
+    }, {
+        key: 'zip',
+        value: function zip(other, zipFn) {
+            return List.create(List.zip(this, other, zipFn));
+        }
+    }, {
+        key: 'skip',
+        value: function skip(k) {
+            return List.create(List.skip(this, k));
+        }
+    }, {
+        key: 'take',
+        value: function take(n) {
+            return List.create(List.take(this, n));
+        }
+    }, {
+        key: 'range',
+        value: function range(k, n) {
+            return List.create(List.range(this, k, n));
+        }
+    }, {
+        key: 'scan',
+        value: function scan(scanFn, memo) {
+            return List.create(List.scan(this, scanFn, memo));
+        }
+    }], [{
+        key: 'create',
+        value: function create(list) {
+            return new ((function (_List) {
+                _inherits(class_1, _List);
+
+                function class_1() {
+                    _classCallCheck(this, class_1);
+
+                    _get(Object.getPrototypeOf(class_1.prototype), 'constructor', this).apply(this, arguments);
+                }
+
+                _createClass(class_1, [{
+                    key: 'get',
+                    value: function get(key) {
+                        return list.get(key);
+                    }
+                }, {
+                    key: 'prev',
+                    value: function prev(key) {
+                        return list.prev(key);
+                    }
+                }, {
+                    key: 'next',
+                    value: function next(key) {
+                        return list.next(key);
+                    }
+                }]);
+
+                return class_1;
+            })(List))();
+        }
+    }, {
         key: 'isList',
         value: function isList(obj) {
             return obj != null && !!obj['get'] && !!obj['prev'] && !!obj['next'];
         }
     }, {
-        key: 'create',
-        value: function create(list) {
-            return new List({
-                get: list.get,
-                prev: list.prev,
-                next: list.next
-            });
-        }
-    }, {
         key: 'first',
         value: function first(list) {
-            return list.next().then(list.get);
+            var get = (0, _bind2['default'])(list.get, list);
+            return list.next().then(get);
         }
     }, {
         key: 'last',
         value: function last(list) {
-            return list.prev().then(list.get);
+            var get = (0, _bind2['default'])(list.get, list);
+            return list.prev().then(get);
         }
     }, {
         key: 'every',
@@ -532,30 +651,30 @@ var List = (function () {
     }, {
         key: 'some',
         value: function some(list, predicate, range) {
-            return _range2['default'].last(list, range).then(function (last) {
-                var loop = function loop(key) {
-                    if (key == null) return Promise.resolve(false);
-                    return list.get(key).then(function (value) {
-                        return predicate(value, key);
-                    }).then(function (res) {
-                        return res === true ? true : key == last ? false : list.next(key).then(loop);
-                    });
-                };
-                return _range2['default'].first(list, range).then(loop);
+            return List.every(list, function (value, key) {
+                return Promise.resolve(predicate(value, key)).then(function (result) {
+                    return !result;
+                });
+            }, range).then(function (result) {
+                return !result;
             });
         }
     }, {
         key: 'forEach',
         value: function forEach(list, fn, range) {
             return List.every(list, function (value, key) {
-                fn(value, key);return true;
+                return Promise.resolve(fn(value, key)).then(function () {
+                    return true;
+                });
             }, range).then(function () {});
         }
     }, {
         key: 'reduce',
         value: function reduce(list, fn, memo, range) {
             return List.forEach(list, function (value, key) {
-                return memo = fn(memo, value, key);
+                return Promise.resolve(fn(memo, value, key)).then(function (value) {
+                    memo = value;
+                });
             }, range).then(function () {
                 return memo;
             });
@@ -627,22 +746,16 @@ var List = (function () {
     }, {
         key: 'reverse',
         value: function reverse(list) {
-            var get = list.get;
-
-            function prev(key) {
-                return list.next(key);
-            }
-            function next(key) {
-                return list.prev(key);
-            }
+            var get = (0, _bind2['default'])(list.get, list),
+                prev = (0, _bind2['default'])(list.next, list),
+                next = (0, _bind2['default'])(list.prev, list);
             return { get: get, prev: prev, next: next };
         }
     }, {
         key: 'map',
         value: function map(list, mapFn) {
-            var prev = list.prev;
-            var next = list.next;
-
+            var prev = (0, _bind2['default'])(list.prev, list),
+                next = (0, _bind2['default'])(list.next, list);
             function get(key) {
                 return list.get(key).then(function (value) {
                     return mapFn(value, key);
@@ -804,26 +917,28 @@ var List = (function () {
 exports.List = List;
 exports['default'] = List;
 
-},{"./cache":2,"./index":4,"./range":14,"./tree":16}],8:[function(require,module,exports){
+},{"./bind":2,"./cache":3,"./index":5,"./range":15,"./tree":17}],9:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, '__esModule', {
     value: true
 });
 
-var _get = function get(_x, _x2, _x3) { var _again = true; _function: while (_again) { var object = _x, property = _x2, receiver = _x3; desc = parent = getter = undefined; _again = false; var desc = Object.getOwnPropertyDescriptor(object, property); if (desc === undefined) { var parent = Object.getPrototypeOf(object); if (parent === null) { return undefined; } else { _x = parent; _x2 = property; _x3 = receiver; _again = true; continue _function; } } else if ('value' in desc) { return desc.value; } else { var getter = desc.get; if (getter === undefined) { return undefined; } return getter.call(receiver); } } };
+var _get = function get(_x, _x2, _x3) { var _again = true; _function: while (_again) { var object = _x, property = _x2, receiver = _x3; desc = parent = getter = undefined; _again = false; if (object === null) object = Function.prototype; var desc = Object.getOwnPropertyDescriptor(object, property); if (desc === undefined) { var parent = Object.getPrototypeOf(object); if (parent === null) { return undefined; } else { _x = parent; _x2 = property; _x3 = receiver; _again = true; continue _function; } } else if ('value' in desc) { return desc.value; } else { var getter = desc.get; if (getter === undefined) { return undefined; } return getter.call(receiver); } } };
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError('Cannot call a class as a function'); } }
 
-function _inherits(subClass, superClass) { if (typeof superClass !== 'function' && superClass !== null) { throw new TypeError('Super expression must either be null or a function, not ' + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) subClass.__proto__ = superClass; }
+function _inherits(subClass, superClass) { if (typeof superClass !== 'function' && superClass !== null) { throw new TypeError('Super expression must either be null or a function, not ' + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
 
 var _observable_cache = require('./observable_cache');
 
 var _observable_cache2 = _interopRequireDefault(_observable_cache);
 
 var MutableCache = (function (_ObservableCache) {
+    _inherits(MutableCache, _ObservableCache);
+
     function MutableCache(list) {
         var _this = this;
 
@@ -844,34 +959,30 @@ var MutableCache = (function (_ObservableCache) {
         };
     }
 
-    _inherits(MutableCache, _ObservableCache);
-
     return MutableCache;
 })(_observable_cache2['default']);
 
 exports.MutableCache = MutableCache;
 exports['default'] = MutableCache;
 
-},{"./observable_cache":11}],9:[function(require,module,exports){
+},{"./observable_cache":12}],10:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, '__esModule', {
     value: true
 });
 
+var _slicedToArray = (function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i['return']) _i['return'](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError('Invalid attempt to destructure non-iterable instance'); } }; })();
+
 var _createClass = (function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ('value' in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
 
-var _get = function get(_x, _x2, _x3) { var _again = true; _function: while (_again) { var object = _x, property = _x2, receiver = _x3; desc = parent = getter = undefined; _again = false; var desc = Object.getOwnPropertyDescriptor(object, property); if (desc === undefined) { var parent = Object.getPrototypeOf(object); if (parent === null) { return undefined; } else { _x = parent; _x2 = property; _x3 = receiver; _again = true; continue _function; } } else if ('value' in desc) { return desc.value; } else { var getter = desc.get; if (getter === undefined) { return undefined; } return getter.call(receiver); } } };
+var _get = function get(_x, _x2, _x3) { var _again = true; _function: while (_again) { var object = _x, property = _x2, receiver = _x3; desc = parent = getter = undefined; _again = false; if (object === null) object = Function.prototype; var desc = Object.getOwnPropertyDescriptor(object, property); if (desc === undefined) { var parent = Object.getPrototypeOf(object); if (parent === null) { return undefined; } else { _x = parent; _x2 = property; _x3 = receiver; _again = true; continue _function; } } else if ('value' in desc) { return desc.value; } else { var getter = desc.get; if (getter === undefined) { return undefined; } return getter.call(receiver); } } };
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
 
-function _slicedToArray(arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i['return']) _i['return'](); } finally { if (_d) throw _e; } } return _arr; } else { throw new TypeError('Invalid attempt to destructure non-iterable instance'); } }
-
-function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) arr2[i] = arr[i]; return arr2; } else { return Array.from(arr); } }
-
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError('Cannot call a class as a function'); } }
 
-function _inherits(subClass, superClass) { if (typeof superClass !== 'function' && superClass !== null) { throw new TypeError('Super expression must either be null or a function, not ' + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) subClass.__proto__ = superClass; }
+function _inherits(subClass, superClass) { if (typeof superClass !== 'function' && superClass !== null) { throw new TypeError('Super expression must either be null or a function, not ' + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
 
 var _observable_list = require('./observable_list');
 
@@ -880,82 +991,128 @@ var _mutable_cache = require('./mutable_cache');
 var _mutable_cache2 = _interopRequireDefault(_mutable_cache);
 
 var MutableList = (function (_ObservableList) {
-    function MutableList(list) {
-        var _this = this;
-
-        _classCallCheck(this, MutableList);
-
-        _get(Object.getPrototypeOf(MutableList.prototype), 'constructor', this).call(this, list);
-        this.set = function (key, value) {
-            throw new Error('Not implemented');
-        };
-        this.splice = function (prev, next) {
-            for (var _len = arguments.length, values = Array(_len > 2 ? _len - 2 : 0), _key = 2; _key < _len; _key++) {
-                values[_key - 2] = arguments[_key];
-            }
-
-            throw new Error('Not implemented');
-        };
-        this.addBefore = function (key, value) {
-            return MutableList.addBefore(_this, key, value);
-        };
-        this.addAfter = function (key, value) {
-            return MutableList.addAfter(_this, key, value);
-        };
-        this.push = function (value) {
-            return MutableList.push(_this, value);
-        };
-        this.unshift = function (value) {
-            return MutableList.unshift(_this, value);
-        };
-        this['delete'] = function (key) {
-            return MutableList['delete'](_this, key);
-        };
-        this.deleteBefore = function (key) {
-            return MutableList.deleteBefore(_this, key);
-        };
-        this.deleteAfter = function (key) {
-            return MutableList.deleteAfter(_this, key);
-        };
-        this.pop = function () {
-            return MutableList.pop(_this);
-        };
-        this.shift = function () {
-            return MutableList.shift(_this);
-        };
-        this.remove = function (value) {
-            return MutableList.remove(_this, value);
-        };
-        this.cache = function () {
-            return MutableList.create(MutableList.cache(_this));
-        };
-        this.map = function (getFn, setFn) {
-            return MutableList.create(MutableList.map(_this, getFn, setFn));
-        };
-        if (list != null) {
-            this.set = list.set;
-            this.splice = list.splice;
-        }
-    }
-
     _inherits(MutableList, _ObservableList);
 
-    _createClass(MutableList, null, [{
+    function MutableList() {
+        _classCallCheck(this, MutableList);
+
+        _get(Object.getPrototypeOf(MutableList.prototype), 'constructor', this).apply(this, arguments);
+    }
+
+    _createClass(MutableList, [{
+        key: 'addBefore',
+        value: function addBefore(key, value) {
+            return MutableList.addBefore(this, key, value);
+        }
+    }, {
+        key: 'addAfter',
+        value: function addAfter(key, value) {
+            return MutableList.addAfter(this, key, value);
+        }
+    }, {
+        key: 'push',
+        value: function push(value) {
+            return MutableList.push(this, value);
+        }
+    }, {
+        key: 'unshift',
+        value: function unshift(value) {
+            return MutableList.unshift(this, value);
+        }
+    }, {
+        key: 'delete',
+        value: function _delete(key) {
+            return MutableList['delete'](this, key);
+        }
+    }, {
+        key: 'deleteBefore',
+        value: function deleteBefore(key) {
+            return MutableList.deleteBefore(this, key);
+        }
+    }, {
+        key: 'deleteAfter',
+        value: function deleteAfter(key) {
+            return MutableList.deleteAfter(this, key);
+        }
+    }, {
+        key: 'pop',
+        value: function pop() {
+            return MutableList.pop(this);
+        }
+    }, {
+        key: 'shift',
+        value: function shift() {
+            return MutableList.shift(this);
+        }
+    }, {
+        key: 'remove',
+        value: function remove(value) {
+            return MutableList.remove(this, value);
+        }
+    }, {
+        key: 'cache',
+        value: function cache() {
+            return MutableList.create(MutableList.cache(this));
+        }
+
+        // map<W>(getFn: (value: V, key: Key) => W, setFn?: (value: W, key?: Key) => V): MutableList<W> {
+        //   return MutableList.create(MutableList.map(this, getFn, setFn));
+        // }
+    }], [{
+        key: 'create',
+        value: function create(list) {
+            return new ((function (_MutableList) {
+                _inherits(class_1, _MutableList);
+
+                function class_1() {
+                    _classCallCheck(this, class_1);
+
+                    _get(Object.getPrototypeOf(class_1.prototype), 'constructor', this).apply(this, arguments);
+                }
+
+                _createClass(class_1, [{
+                    key: 'get',
+                    value: function get(key) {
+                        return list.get(key);
+                    }
+                }, {
+                    key: 'prev',
+                    value: function prev(key) {
+                        return list.prev(key);
+                    }
+                }, {
+                    key: 'next',
+                    value: function next(key) {
+                        return list.next(key);
+                    }
+                }, {
+                    key: 'observe',
+                    value: function observe(observer) {
+                        return list.observe(observer);
+                    }
+                }, {
+                    key: 'set',
+                    value: function set(key, value) {
+                        return list.set(key, value);
+                    }
+                }, {
+                    key: 'splice',
+                    value: function splice(prev, next) {
+                        for (var _len = arguments.length, values = Array(_len > 2 ? _len - 2 : 0), _key = 2; _key < _len; _key++) {
+                            values[_key - 2] = arguments[_key];
+                        }
+
+                        return list.splice.apply(list, [prev, next].concat(values));
+                    }
+                }]);
+
+                return class_1;
+            })(MutableList))();
+        }
+    }, {
         key: 'isMutableList',
         value: function isMutableList(obj) {
             return _observable_list.ObservableList.isObservableList(obj) && !!obj['set'] && !!obj['splice'];
-        }
-    }, {
-        key: 'create',
-        value: function create(list) {
-            return new MutableList({
-                get: list.get,
-                prev: list.prev,
-                next: list.next,
-                observe: list.observe,
-                set: list.set,
-                splice: list.splice
-            });
         }
     }, {
         key: 'addBefore',
@@ -1036,28 +1193,6 @@ var MutableList = (function (_ObservableList) {
         value: function cache(list) {
             return new _mutable_cache2['default'](list);
         }
-    }, {
-        key: 'map',
-        value: function map(list, getFn, setFn) {
-            var _ObservableList$map = _observable_list.ObservableList.map(list, getFn);
-
-            var get = _ObservableList$map.get;
-            var prev = _ObservableList$map.prev;
-            var next = _ObservableList$map.next;
-            var observe = _ObservableList$map.observe;
-
-            function set(key, value) {
-                return list.set(key, setFn(value, key));
-            }
-            function splice(prev, next) {
-                for (var _len2 = arguments.length, values = Array(_len2 > 2 ? _len2 - 2 : 0), _key2 = 2; _key2 < _len2; _key2++) {
-                    values[_key2 - 2] = arguments[_key2];
-                }
-
-                return list.splice.apply(list, [prev, next].concat(_toConsumableArray(values.map(setFn))));
-            }
-            return { get: get, prev: prev, next: next, observe: observe, set: set, splice: splice };
-        }
     }]);
 
     return MutableList;
@@ -1066,7 +1201,7 @@ var MutableList = (function (_ObservableList) {
 exports.MutableList = MutableList;
 exports['default'] = MutableList;
 
-},{"./mutable_cache":8,"./observable_list":13}],10:[function(require,module,exports){
+},{"./mutable_cache":9,"./observable_list":14}],11:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, '__esModule', {
@@ -1103,22 +1238,22 @@ var Subject = function Subject() {
 
 exports.Subject = Subject;
 
-},{"./key":5}],11:[function(require,module,exports){
+},{"./key":6}],12:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, '__esModule', {
     value: true
 });
 
-var _get = function get(_x, _x2, _x3) { var _again = true; _function: while (_again) { var object = _x, property = _x2, receiver = _x3; desc = parent = getter = undefined; _again = false; var desc = Object.getOwnPropertyDescriptor(object, property); if (desc === undefined) { var parent = Object.getPrototypeOf(object); if (parent === null) { return undefined; } else { _x = parent; _x2 = property; _x3 = receiver; _again = true; continue _function; } } else if ('value' in desc) { return desc.value; } else { var getter = desc.get; if (getter === undefined) { return undefined; } return getter.call(receiver); } } };
+var _slicedToArray = (function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i['return']) _i['return'](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError('Invalid attempt to destructure non-iterable instance'); } }; })();
+
+var _get = function get(_x, _x2, _x3) { var _again = true; _function: while (_again) { var object = _x, property = _x2, receiver = _x3; desc = parent = getter = undefined; _again = false; if (object === null) object = Function.prototype; var desc = Object.getOwnPropertyDescriptor(object, property); if (desc === undefined) { var parent = Object.getPrototypeOf(object); if (parent === null) { return undefined; } else { _x = parent; _x2 = property; _x3 = receiver; _again = true; continue _function; } } else if ('value' in desc) { return desc.value; } else { var getter = desc.get; if (getter === undefined) { return undefined; } return getter.call(receiver); } } };
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
 
-function _slicedToArray(arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i['return']) _i['return'](); } finally { if (_d) throw _e; } } return _arr; } else { throw new TypeError('Invalid attempt to destructure non-iterable instance'); } }
-
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError('Cannot call a class as a function'); } }
 
-function _inherits(subClass, superClass) { if (typeof superClass !== 'function' && superClass !== null) { throw new TypeError('Super expression must either be null or a function, not ' + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) subClass.__proto__ = superClass; }
+function _inherits(subClass, superClass) { if (typeof superClass !== 'function' && superClass !== null) { throw new TypeError('Super expression must either be null or a function, not ' + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
 
 var _cache = require('./cache');
 
@@ -1127,6 +1262,8 @@ var _cache2 = _interopRequireDefault(_cache);
 var _observable_list = require('./observable_list');
 
 var ObservableCache = (function (_Cache) {
+    _inherits(ObservableCache, _Cache);
+
     function ObservableCache(list) {
         var _this = this;
 
@@ -1175,28 +1312,26 @@ var ObservableCache = (function (_Cache) {
         list.observe(this);
     }
 
-    _inherits(ObservableCache, _Cache);
-
     return ObservableCache;
 })(_cache2['default']);
 
 exports.ObservableCache = ObservableCache;
 exports['default'] = ObservableCache;
 
-},{"./cache":2,"./observable_list":13}],12:[function(require,module,exports){
+},{"./cache":3,"./observable_list":14}],13:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, '__esModule', {
     value: true
 });
 
-var _get = function get(_x, _x2, _x3) { var _again = true; _function: while (_again) { var object = _x, property = _x2, receiver = _x3; desc = parent = getter = undefined; _again = false; var desc = Object.getOwnPropertyDescriptor(object, property); if (desc === undefined) { var parent = Object.getPrototypeOf(object); if (parent === null) { return undefined; } else { _x = parent; _x2 = property; _x3 = receiver; _again = true; continue _function; } } else if ('value' in desc) { return desc.value; } else { var getter = desc.get; if (getter === undefined) { return undefined; } return getter.call(receiver); } } };
+var _get = function get(_x, _x2, _x3) { var _again = true; _function: while (_again) { var object = _x, property = _x2, receiver = _x3; desc = parent = getter = undefined; _again = false; if (object === null) object = Function.prototype; var desc = Object.getOwnPropertyDescriptor(object, property); if (desc === undefined) { var parent = Object.getPrototypeOf(object); if (parent === null) { return undefined; } else { _x = parent; _x2 = property; _x3 = receiver; _again = true; continue _function; } } else if ('value' in desc) { return desc.value; } else { var getter = desc.get; if (getter === undefined) { return undefined; } return getter.call(receiver); } } };
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError('Cannot call a class as a function'); } }
 
-function _inherits(subClass, superClass) { if (typeof superClass !== 'function' && superClass !== null) { throw new TypeError('Super expression must either be null or a function, not ' + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) subClass.__proto__ = superClass; }
+function _inherits(subClass, superClass) { if (typeof superClass !== 'function' && superClass !== null) { throw new TypeError('Super expression must either be null or a function, not ' + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
 
 var _index = require('./index');
 
@@ -1205,6 +1340,8 @@ var _index2 = _interopRequireDefault(_index);
 var _observable_list = require('./observable_list');
 
 var ObservableIndex = (function (_Index) {
+    _inherits(ObservableIndex, _Index);
+
     function ObservableIndex(list) {
         var _this = this;
 
@@ -1231,15 +1368,13 @@ var ObservableIndex = (function (_Index) {
         list.observe(this);
     }
 
-    _inherits(ObservableIndex, _Index);
-
     return ObservableIndex;
 })(_index2['default']);
 
 exports.ObservableIndex = ObservableIndex;
 exports['default'] = ObservableIndex;
 
-},{"./index":4,"./observable_list":13}],13:[function(require,module,exports){
+},{"./index":5,"./observable_list":14}],14:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, '__esModule', {
@@ -1248,13 +1383,17 @@ Object.defineProperty(exports, '__esModule', {
 
 var _createClass = (function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ('value' in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
 
-var _get = function get(_x, _x2, _x3) { var _again = true; _function: while (_again) { var object = _x, property = _x2, receiver = _x3; desc = parent = getter = undefined; _again = false; var desc = Object.getOwnPropertyDescriptor(object, property); if (desc === undefined) { var parent = Object.getPrototypeOf(object); if (parent === null) { return undefined; } else { _x = parent; _x2 = property; _x3 = receiver; _again = true; continue _function; } } else if ('value' in desc) { return desc.value; } else { var getter = desc.get; if (getter === undefined) { return undefined; } return getter.call(receiver); } } };
+var _get = function get(_x, _x2, _x3) { var _again = true; _function: while (_again) { var object = _x, property = _x2, receiver = _x3; desc = parent = getter = undefined; _again = false; if (object === null) object = Function.prototype; var desc = Object.getOwnPropertyDescriptor(object, property); if (desc === undefined) { var parent = Object.getPrototypeOf(object); if (parent === null) { return undefined; } else { _x = parent; _x2 = property; _x3 = receiver; _again = true; continue _function; } } else if ('value' in desc) { return desc.value; } else { var getter = desc.get; if (getter === undefined) { return undefined; } return getter.call(receiver); } } };
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError('Cannot call a class as a function'); } }
 
-function _inherits(subClass, superClass) { if (typeof superClass !== 'function' && superClass !== null) { throw new TypeError('Super expression must either be null or a function, not ' + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) subClass.__proto__ = superClass; }
+function _inherits(subClass, superClass) { if (typeof superClass !== 'function' && superClass !== null) { throw new TypeError('Super expression must either be null or a function, not ' + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
+
+var _bind = require('./bind');
+
+var _bind2 = _interopRequireDefault(_bind);
 
 var _range = require('./range');
 
@@ -1275,14 +1414,16 @@ var _observable_index = require('./observable_index');
 var _observable_index2 = _interopRequireDefault(_observable_index);
 
 var ListSubject = (function (_Subject) {
+    _inherits(ListSubject, _Subject);
+
     function ListSubject() {
         var _this = this;
+
+        _classCallCheck(this, ListSubject);
 
         for (var _len = arguments.length, args = Array(_len), _key = 0; _key < _len; _key++) {
             args[_key] = arguments[_key];
         }
-
-        _classCallCheck(this, ListSubject);
 
         _get(Object.getPrototypeOf(ListSubject.prototype), 'constructor', this).apply(this, args);
         this.onInvalidate = function (range) {
@@ -1292,8 +1433,6 @@ var ListSubject = (function (_Subject) {
         };
     }
 
-    _inherits(ListSubject, _Subject);
-
     return ListSubject;
 })(_observable.Subject);
 
@@ -1302,70 +1441,115 @@ exports.ListSubject = ListSubject;
 ;
 
 var ObservableList = (function (_List) {
-    function ObservableList(list) {
-        var _this2 = this;
-
-        _classCallCheck(this, ObservableList);
-
-        _get(Object.getPrototypeOf(ObservableList.prototype), 'constructor', this).call(this, list);
-        this.observe = function (observer) {
-            throw new Error('Not implemented');
-        };
-        this.reverse = function () {
-            return ObservableList.create(ObservableList.reverse(_this2));
-        };
-        this.map = function (mapFn) {
-            return ObservableList.create(ObservableList.map(_this2, mapFn));
-        };
-        this.filter = function (filterFn) {
-            return ObservableList.create(ObservableList.filter(_this2, filterFn));
-        };
-        this.flatten = function () {
-            return ObservableList.create(ObservableList.flatten(_this2));
-        };
-        this.flatMap = function (flatMapFn) {
-            return ObservableList.create(ObservableList.flatMap(_this2, flatMapFn));
-        };
-        this.cache = function () {
-            return ObservableList.create(ObservableList.cache(_this2));
-        };
-        this.index = function () {
-            return ObservableList.create(ObservableList.index(_this2));
-        };
-        this.zip = function (other, zipFn) {
-            return ObservableList.create(ObservableList.zip(_this2, other, zipFn));
-        };
-        this.skip = function (k) {
-            return ObservableList.create(ObservableList.skip(_this2, k));
-        };
-        this.take = function (n) {
-            return ObservableList.create(ObservableList.take(_this2, n));
-        };
-        this.range = function (k, n) {
-            return ObservableList.create(ObservableList.range(_this2, k, n));
-        };
-        this.scan = function (scanFn, memo) {
-            return ObservableList.create(ObservableList.scan(_this2, scanFn, memo));
-        };
-        if (list != null) this.observe = list.observe;
-    }
-
     _inherits(ObservableList, _List);
 
-    _createClass(ObservableList, null, [{
+    function ObservableList() {
+        _classCallCheck(this, ObservableList);
+
+        _get(Object.getPrototypeOf(ObservableList.prototype), 'constructor', this).apply(this, arguments);
+    }
+
+    _createClass(ObservableList, [{
+        key: 'reverse',
+        value: function reverse() {
+            return ObservableList.create(ObservableList.reverse(this));
+        }
+    }, {
+        key: 'map',
+        value: function map(mapFn) {
+            return ObservableList.create(ObservableList.map(this, mapFn));
+        }
+    }, {
+        key: 'filter',
+        value: function filter(filterFn) {
+            return ObservableList.create(ObservableList.filter(this, filterFn));
+        }
+    }, {
+        key: 'flatten',
+        value: function flatten() {
+            return ObservableList.create(ObservableList.flatten(this));
+        }
+    }, {
+        key: 'flatMap',
+        value: function flatMap(flatMapFn) {
+            return ObservableList.create(ObservableList.flatMap(this, flatMapFn));
+        }
+    }, {
+        key: 'cache',
+        value: function cache() {
+            return ObservableList.create(ObservableList.cache(this));
+        }
+    }, {
+        key: 'index',
+        value: function index() {
+            return ObservableList.create(ObservableList.index(this));
+        }
+    }, {
+        key: 'zip',
+        value: function zip(other, zipFn) {
+            return ObservableList.create(ObservableList.zip(this, other, zipFn));
+        }
+    }, {
+        key: 'skip',
+        value: function skip(k) {
+            return ObservableList.create(ObservableList.skip(this, k));
+        }
+    }, {
+        key: 'take',
+        value: function take(n) {
+            return ObservableList.create(ObservableList.take(this, n));
+        }
+    }, {
+        key: 'range',
+        value: function range(k, n) {
+            return ObservableList.create(ObservableList.range(this, k, n));
+        }
+    }, {
+        key: 'scan',
+        value: function scan(scanFn, memo) {
+            return ObservableList.create(ObservableList.scan(this, scanFn, memo));
+        }
+    }], [{
+        key: 'create',
+        value: function create(list) {
+            return new ((function (_ObservableList) {
+                _inherits(class_1, _ObservableList);
+
+                function class_1() {
+                    _classCallCheck(this, class_1);
+
+                    _get(Object.getPrototypeOf(class_1.prototype), 'constructor', this).apply(this, arguments);
+                }
+
+                _createClass(class_1, [{
+                    key: 'get',
+                    value: function get(key) {
+                        return list.get(key);
+                    }
+                }, {
+                    key: 'prev',
+                    value: function prev(key) {
+                        return list.prev(key);
+                    }
+                }, {
+                    key: 'next',
+                    value: function next(key) {
+                        return list.next(key);
+                    }
+                }, {
+                    key: 'observe',
+                    value: function observe(observer) {
+                        return list.observe(observer);
+                    }
+                }]);
+
+                return class_1;
+            })(ObservableList))();
+        }
+    }, {
         key: 'isObservableList',
         value: function isObservableList(obj) {
             return _list.List.isList(obj) && !!obj['observe'];
-        }
-    }, {
-        key: 'create',
-        value: function create(list) {
-            return new ObservableList({
-                get: list.get,
-                prev: list.prev,
-                next: list.next,
-                observe: list.observe
-            });
         }
     }, {
         key: 'reverse',
@@ -1394,7 +1578,7 @@ var ObservableList = (function (_List) {
             var prev = _List$map.prev;
             var next = _List$map.next;
 
-            return { get: get, prev: prev, next: next, observe: list.observe };
+            return { get: get, prev: prev, next: next, observe: (0, _bind2['default'])(list.observe, list) };
         }
     }, {
         key: 'filter',
@@ -1403,20 +1587,19 @@ var ObservableList = (function (_List) {
 
             var get = _List$filter.get;
             var prev = _List$filter.prev;
-            var next = _List$filter.next;
-
-            return { get: get, prev: prev, next: next, observe: list.observe };
+            var next = _List$filter.next;var observe = (0, _bind2['default'])(list.observe, list);
+            return { get: get, prev: prev, next: next, observe: observe };
         }
     }, {
         key: 'flatten',
         value: function flatten(list) {
             var flat = _list.List.flatten(list),
                 subject = new ListSubject(),
-                subscriptions = Object.create(null);
-            var cache = new _observable_cache2['default']({
-                get: list.get,
-                prev: list.prev,
-                next: list.next,
+                subscriptions = Object.create(null),
+                cache = new _observable_cache2['default']({
+                get: (0, _bind2['default'])(list.get, list),
+                prev: (0, _bind2['default'])(list.prev, list),
+                next: (0, _bind2['default'])(list.next, list),
                 observe: function observe(observer) {
                     return null;
                 }
@@ -1531,8 +1714,9 @@ var ObservableList = (function (_List) {
     }, {
         key: 'scan',
         value: function scan(list, scanFn, memo) {
-            var prev = list.prev;
-            var next = list.next;var scanList;
+            var prev = (0, _bind2['default'])(list.prev, list),
+                next = (0, _bind2['default'])(list.next, list),
+                scanList;
             function get(key) {
                 return scanList.prev(key).then(function (p) {
                     return p == null ? memo : scanList.get(p);
@@ -1562,7 +1746,7 @@ var ObservableList = (function (_List) {
 exports.ObservableList = ObservableList;
 exports['default'] = ObservableList;
 
-},{"./list":7,"./observable":10,"./observable_cache":11,"./observable_index":12,"./range":14,"./tree":16}],14:[function(require,module,exports){
+},{"./bind":2,"./list":8,"./observable":11,"./observable_cache":12,"./observable_index":13,"./range":15,"./tree":17}],15:[function(require,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -1572,26 +1756,26 @@ var Range;
 exports.Range = Range;
 (function (Range) {
     function prev(list) {
-        var range = arguments[1] === undefined ? [null, null] : arguments[1];
+        var range = arguments.length <= 1 || arguments[1] === undefined ? [null, null] : arguments[1];
 
         if (Array.isArray(range)) return Promise.resolve(range[0]);else return list.prev(range);
     }
     Range.prev = prev;
     function next(list) {
-        var range = arguments[1] === undefined ? [null, null] : arguments[1];
+        var range = arguments.length <= 1 || arguments[1] === undefined ? [null, null] : arguments[1];
 
         if (Array.isArray(range)) return Promise.resolve(range[1]);else return list.next(range);
     }
     Range.next = next;
     function first(list) {
-        var range = arguments[1] === undefined ? [null, null] : arguments[1];
+        var range = arguments.length <= 1 || arguments[1] === undefined ? [null, null] : arguments[1];
 
         if (Array.isArray(range)) return list.next(range[0]);
         return Promise.resolve(range);
     }
     Range.first = first;
     function last(list) {
-        var range = arguments[1] === undefined ? [null, null] : arguments[1];
+        var range = arguments.length <= 1 || arguments[1] === undefined ? [null, null] : arguments[1];
 
         if (Array.isArray(range)) return list.prev(range[1]);
         return Promise.resolve(range);
@@ -1600,7 +1784,7 @@ exports.Range = Range;
 })(Range || (exports.Range = Range = {}));
 exports["default"] = Range;
 
-},{}],15:[function(require,module,exports){
+},{}],16:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, '__esModule', {
@@ -1661,7 +1845,7 @@ exports.Sonic = Sonic;
 module.exports = Sonic;
 exports['default'] = Sonic;
 
-},{"./array_list":1,"./factory":3,"./linked_list":6,"./list":7,"./mutable_list":9,"./observable_list":13,"./tree":16,"./unit":17}],16:[function(require,module,exports){
+},{"./array_list":1,"./factory":4,"./linked_list":7,"./list":8,"./mutable_list":10,"./observable_list":14,"./tree":17,"./unit":18}],17:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, '__esModule', {
@@ -1708,7 +1892,7 @@ var Tree;
 exports.Tree = Tree;
 (function (Tree) {
     function get(list, path) {
-        var depth = arguments[2] === undefined ? Infinity : arguments[2];
+        var depth = arguments.length <= 2 || arguments[2] === undefined ? Infinity : arguments[2];
 
         var head = Path.head(path),
             tail = Path.tail(path);
@@ -1719,8 +1903,8 @@ exports.Tree = Tree;
     }
     Tree.get = get;
     function prev(list) {
-        var path = arguments[1] === undefined ? [] : arguments[1];
-        var depth = arguments[2] === undefined ? Infinity : arguments[2];
+        var path = arguments.length <= 1 || arguments[1] === undefined ? [] : arguments[1];
+        var depth = arguments.length <= 2 || arguments[2] === undefined ? Infinity : arguments[2];
 
         var head = Path.head(path),
             tail = Path.tail(path);
@@ -1755,8 +1939,8 @@ exports.Tree = Tree;
     }
     Tree.prev = prev;
     function next(list) {
-        var path = arguments[1] === undefined ? [] : arguments[1];
-        var depth = arguments[2] === undefined ? Infinity : arguments[2];
+        var path = arguments.length <= 1 || arguments[1] === undefined ? [] : arguments[1];
+        var depth = arguments.length <= 2 || arguments[2] === undefined ? Infinity : arguments[2];
 
         var head = Path.head(path),
             tail = Path.tail(path);
@@ -1815,20 +1999,22 @@ exports.Tree = Tree;
 })(Tree || (exports.Tree = Tree = {}));
 exports['default'] = Tree;
 
-},{"./list":7}],17:[function(require,module,exports){
+},{"./list":8}],18:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, '__esModule', {
     value: true
 });
 
-var _get = function get(_x, _x2, _x3) { var _again = true; _function: while (_again) { var object = _x, property = _x2, receiver = _x3; desc = parent = getter = undefined; _again = false; var desc = Object.getOwnPropertyDescriptor(object, property); if (desc === undefined) { var parent = Object.getPrototypeOf(object); if (parent === null) { return undefined; } else { _x = parent; _x2 = property; _x3 = receiver; _again = true; continue _function; } } else if ('value' in desc) { return desc.value; } else { var getter = desc.get; if (getter === undefined) { return undefined; } return getter.call(receiver); } } };
+var _createClass = (function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ('value' in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
+
+var _get = function get(_x, _x2, _x3) { var _again = true; _function: while (_again) { var object = _x, property = _x2, receiver = _x3; desc = parent = getter = undefined; _again = false; if (object === null) object = Function.prototype; var desc = Object.getOwnPropertyDescriptor(object, property); if (desc === undefined) { var parent = Object.getPrototypeOf(object); if (parent === null) { return undefined; } else { _x = parent; _x2 = property; _x3 = receiver; _again = true; continue _function; } } else if ('value' in desc) { return desc.value; } else { var getter = desc.get; if (getter === undefined) { return undefined; } return getter.call(receiver); } } };
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError('Cannot call a class as a function'); } }
 
-function _inherits(subClass, superClass) { if (typeof superClass !== 'function' && superClass !== null) { throw new TypeError('Super expression must either be null or a function, not ' + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) subClass.__proto__ = superClass; }
+function _inherits(subClass, superClass) { if (typeof superClass !== 'function' && superClass !== null) { throw new TypeError('Super expression must either be null or a function, not ' + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
 
 var _key2 = require('./key');
 
@@ -1839,51 +2025,63 @@ var _observable_list = require('./observable_list');
 var _mutable_list = require('./mutable_list');
 
 var Unit = (function (_MutableList) {
-    function Unit(value) {
-        var _this = this;
+    _inherits(Unit, _MutableList);
 
+    function Unit(value) {
         _classCallCheck(this, Unit);
 
         _get(Object.getPrototypeOf(Unit.prototype), 'constructor', this).call(this);
-        this.get = function (key) {
-            if (key === _this._key) return Promise.resolve(_this._value);
-            Promise.reject(new Error());
-        };
-        this.prev = function (key) {
-            if (key == null) return Promise.resolve(_this._key);
-            if (key === _this._key) return Promise.resolve(null);
-            return Promise.reject(new Error());
-        };
-        this.next = function (key) {
-            if (key == null) return Promise.resolve(_this._key);
-            if (key === _this._key) return Promise.resolve(null);
-            return Promise.reject(new Error());
-        };
-        this.set = function (key, value) {
-            _this._key = key;
-            _this._value = value;
-            _this._subject.onInvalidate([null, null]);
-            return Promise.resolve();
-        };
-        this.splice = function (prev, next) {
-            for (var _len = arguments.length, values = Array(_len > 2 ? _len - 2 : 0), _key = 2; _key < _len; _key++) {
-                values[_key - 2] = arguments[_key];
-            }
-
-            if (values.length) return _this.set(_key3['default'].create(), values[0]);
-            delete _this._key;
-            delete _this._value;
-            _this._subject.onInvalidate([null, null]);
-            return Promise.resolve();
-        };
-        this.observe = function (observer) {
-            return _this._subject.observe(observer);
-        };
         this._subject = new _observable_list.ListSubject();
         if (arguments.length) this.splice(null, null, value);
     }
 
-    _inherits(Unit, _MutableList);
+    _createClass(Unit, [{
+        key: 'get',
+        value: function get(key) {
+            if (key === this._key) return Promise.resolve(this._value);
+            Promise.reject(new Error());
+        }
+    }, {
+        key: 'prev',
+        value: function prev(key) {
+            if (key == null) return Promise.resolve(this._key);
+            if (key === this._key) return Promise.resolve(null);
+            return Promise.reject(new Error());
+        }
+    }, {
+        key: 'next',
+        value: function next(key) {
+            if (key == null) return Promise.resolve(this._key);
+            if (key === this._key) return Promise.resolve(null);
+            return Promise.reject(new Error());
+        }
+    }, {
+        key: 'set',
+        value: function set(key, value) {
+            this._key = key;
+            this._value = value;
+            this._subject.onInvalidate([null, null]);
+            return Promise.resolve();
+        }
+    }, {
+        key: 'splice',
+        value: function splice(prev, next) {
+            for (var _len = arguments.length, values = Array(_len > 2 ? _len - 2 : 0), _key = 2; _key < _len; _key++) {
+                values[_key - 2] = arguments[_key];
+            }
+
+            if (values.length) return this.set(_key3['default'].create(), values[0]);
+            delete this._key;
+            delete this._value;
+            this._subject.onInvalidate([null, null]);
+            return Promise.resolve();
+        }
+    }, {
+        key: 'observe',
+        value: function observe(observer) {
+            return this._subject.observe(observer);
+        }
+    }]);
 
     return Unit;
 })(_mutable_list.MutableList);
@@ -1891,5 +2089,5 @@ var Unit = (function (_MutableList) {
 exports['default'] = Unit;
 module.exports = exports['default'];
 
-},{"./key":5,"./mutable_list":9,"./observable_list":13}]},{},[15])(15)
+},{"./key":6,"./mutable_list":10,"./observable_list":14}]},{},[16])(16)
 });

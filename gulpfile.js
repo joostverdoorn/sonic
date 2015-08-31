@@ -1,16 +1,19 @@
 require('coffee-script').register();
 
 var gulp       = require('gulp'),
-    typescript = require('gulp-typescript'),
-    rename     = require('gulp-rename'),
-    uglify     = require('gulp-uglify'),
-    jasmine    = require('gulp-jasmine'),
-    benchmark  = require('gulp-bench'),
-    browserify = require('browserify'),
-    babelify   = require('babelify'),
-    source     = require('vinyl-source-stream'),
+    merge      = require('merge2'),
     buffer     = require('vinyl-buffer'),
-    merge      = require('merge2');
+    rename     = require('gulp-rename'),
+    foreach    = require('gulp-foreach'),
+    debug      = require('gulp-debug'),
+    uglify     = require('gulp-uglify'),
+    source     = require('vinyl-source-stream'),
+    jasmine    = require('gulp-jasmine'),
+    babelify   = require('babelify'),
+    babel      = require('gulp-babel'),
+    benchmark  = require('gulp-bench'),
+    typescript = require('gulp-typescript'),
+    browserify = require('browserify');
 
 
 var typescriptProject = typescript.createProject('tsconfig.json', { typescript: require('typescript') });
@@ -44,10 +47,8 @@ gulp.task('uglify', ['browserify'], function (){
 
 gulp.task('spec', function() {
   return gulp
-    .src('spec/**/*.coffee')
-    .pipe(jasmine({
-      includeStackTrace: true
-    }))
+    .src('spec/*.js')
+    .pipe(jasmine({ includeStackTrace: true }));
 });
 
 gulp.task('perf', function () {

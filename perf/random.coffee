@@ -2,24 +2,31 @@ global.Promise = require("bluebird")
 global.Sonic = require('../dist/sonic.browser')
 global.x = [];
 
-global.arr = [1...100]
+global.arr = [1...1000]
 global.list = Sonic arr
-global.mapFn = (x) -> x*2
+global.mapFn = (x) -> Math.sqrt(x)
+global.scanFn = (x, y) -> x + y
 
 
 a = (deferred)->
-    list.map(mapFn).toArray().then(() -> deferred.resolve())
+    mapped = list.scan(scanFn)
+    mapped.toArray().then(mapped.toArray).then(() -> deferred.resolve())
 
 b = (deferred)->
+    cache = list.scan(scanFn).cache()
+    cache.toArray().then(cache.toArray).then(() -> deferred.resolve())
+
+c = (deferred)->
     arr.map(mapFn)
     deferred.resolve()
 
-c = (deferred)->
+d = (deferred)->
     arr.map(mapFn)
 
 module.exports =
   tests: {
     a: { fn: a, defer: true }
     b: { fn: b, defer: true }
-    c: { fn: c, defer: false }
+    c: { fn: c, defer: true }
+    d: { fn: d, defer: false }
   }

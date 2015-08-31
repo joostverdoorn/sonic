@@ -1,121 +1,108 @@
+import bind from './bind';
 import Range from './range';
 import { Tree, Path } from './tree';
 import Cache from './cache';
 import Index from './index';
 export class List {
-    constructor(list) {
-        this.get = (key) => {
-            throw new Error("Not implemented");
-        };
-        this.prev = (key) => {
-            throw new Error("Not implemented");
-        };
-        this.next = (key) => {
-            throw new Error("Not implemented");
-        };
-        this.first = () => {
-            return List.first(this);
-        };
-        this.last = () => {
-            return List.last(this);
-        };
-        this.every = (predicate) => {
-            return List.every(this, predicate);
-        };
-        this.some = (predicate) => {
-            return List.some(this, predicate);
-        };
-        this.forEach = (fn, range) => {
-            return List.forEach(this, fn, range);
-        };
-        this.reduce = (fn, memo, range) => {
-            return List.reduce(this, fn, memo, range);
-        };
-        this.toArray = (range) => {
-            return List.toArray(this, range);
-        };
-        this.findKey = (fn, range) => {
-            return List.findKey(this, fn, range);
-        };
-        this.find = (fn, range) => {
-            return List.find(this, fn, range);
-        };
-        this.keyOf = (value, range) => {
-            return List.keyOf(this, value, range);
-        };
-        this.indexOf = (value, range) => {
-            return List.indexOf(this, value, range);
-        };
-        this.keyAt = (index, range) => {
-            return List.keyAt(this, index, range);
-        };
-        this.at = (index, range) => {
-            return List.at(this, index, range);
-        };
-        this.contains = (value, range) => {
-            return List.contains(this, value, range);
-        };
-        this.reverse = () => {
-            return List.create(List.reverse(this));
-        };
-        this.map = (mapFn) => {
-            return List.create(List.map(this, mapFn));
-        };
-        this.filter = (filterFn) => {
-            return List.create(List.filter(this, filterFn));
-        };
-        this.flatten = () => {
-            return List.create(List.flatten(this));
-        };
-        this.flatMap = (flatMapFn) => {
-            return List.create(List.flatMap(this, flatMapFn));
-        };
-        this.cache = () => {
-            return List.create(List.cache(this));
-        };
-        this.group = (groupFn) => {
-            return List.create(List.group(this, groupFn)).map(List.create).cache();
-        };
-        this.index = () => {
-            return List.create(List.index(this));
-        };
-        this.zip = (other, zipFn) => {
-            return List.create(List.zip(this, other, zipFn));
-        };
-        this.skip = (k) => {
-            return List.create(List.skip(this, k));
-        };
-        this.take = (n) => {
-            return List.create(List.take(this, n));
-        };
-        this.range = (k, n) => {
-            return List.create(List.range(this, k, n));
-        };
-        this.scan = (scanFn, memo) => {
-            return List.create(List.scan(this, scanFn, memo));
-        };
-        if (list != null) {
-            this.get = list.get;
-            this.prev = list.prev;
-            this.next = list.next;
+    static create(list) {
+        return new class class_1 extends List {
+            get(key) { return list.get(key); }
+            prev(key) { return list.prev(key); }
+            next(key) { return list.next(key); }
         }
+        ;
     }
-    ;
+    first() {
+        return List.first(this);
+    }
+    last() {
+        return List.last(this);
+    }
+    every(predicate) {
+        return List.every(this, predicate);
+    }
+    some(predicate) {
+        return List.some(this, predicate);
+    }
+    forEach(fn, range) {
+        return List.forEach(this, fn, range);
+    }
+    reduce(fn, memo, range) {
+        return List.reduce(this, fn, memo, range);
+    }
+    toArray(range) {
+        return List.toArray(this, range);
+    }
+    findKey(fn, range) {
+        return List.findKey(this, fn, range);
+    }
+    find(fn, range) {
+        return List.find(this, fn, range);
+    }
+    keyOf(value, range) {
+        return List.keyOf(this, value, range);
+    }
+    indexOf(value, range) {
+        return List.indexOf(this, value, range);
+    }
+    keyAt(index, range) {
+        return List.keyAt(this, index, range);
+    }
+    at(index, range) {
+        return List.at(this, index, range);
+    }
+    contains(value, range) {
+        return List.contains(this, value, range);
+    }
+    reverse() {
+        return List.create(List.reverse(this));
+    }
+    map(mapFn) {
+        return List.create(List.map(this, mapFn));
+    }
+    filter(filterFn) {
+        return List.create(List.filter(this, filterFn));
+    }
+    flatten() {
+        return List.create(List.flatten(this));
+    }
+    flatMap(flatMapFn) {
+        return List.create(List.flatMap(this, flatMapFn));
+    }
+    cache() {
+        return List.create(List.cache(this));
+    }
+    group(groupFn) {
+        return List.create(List.group(this, groupFn)).map(List.create).cache();
+    }
+    index() {
+        return List.create(List.index(this));
+    }
+    zip(other, zipFn) {
+        return List.create(List.zip(this, other, zipFn));
+    }
+    skip(k) {
+        return List.create(List.skip(this, k));
+    }
+    take(n) {
+        return List.create(List.take(this, n));
+    }
+    range(k, n) {
+        return List.create(List.range(this, k, n));
+    }
+    scan(scanFn, memo) {
+        return List.create(List.scan(this, scanFn, memo));
+    }
     static isList(obj) {
         return obj != null && !!obj['get'] && !!obj['prev'] && !!obj['next'];
     }
-    static create(list) {
-        return new List({
-            get: list.get,
-            prev: list.prev,
-            next: list.next
-        });
-    }
     static first(list) {
-        return list.next().then(list.get);
+        var get = bind(list.get, list);
+        return list.next().then(get);
     }
     static last(list) {
-        return list.prev().then(list.get);
+        var get = bind(list.get, list);
+        return list.prev().then(get);
     }
     static every(list, predicate, range) {
         return Range.last(list, range).then(last => {
@@ -124,32 +111,19 @@ export class List {
                     return Promise.resolve(true);
                 return list.get(key)
                     .then(value => predicate(value, key))
-                    .then(res => {
-                    return res === false ? false : key == last ? true : list.next(key).then(loop);
-                });
+                    .then(res => res === false ? false : key == last ? true : list.next(key).then(loop));
             };
             return Range.first(list, range).then(loop);
         });
     }
     static some(list, predicate, range) {
-        return Range.last(list, range).then(last => {
-            var loop = (key) => {
-                if (key == null)
-                    return Promise.resolve(false);
-                return list.get(key)
-                    .then(value => predicate(value, key))
-                    .then(res => {
-                    return res === true ? true : key == last ? false : list.next(key).then(loop);
-                });
-            };
-            return Range.first(list, range).then(loop);
-        });
+        return List.every(list, (value, key) => Promise.resolve(predicate(value, key)).then(result => !result), range).then(result => !result);
     }
     static forEach(list, fn, range) {
-        return List.every(list, (value, key) => { fn(value, key); return true; }, range).then(() => { });
+        return List.every(list, (value, key) => Promise.resolve(fn(value, key)).then(() => true), range).then(() => { });
     }
     static reduce(list, fn, memo, range) {
-        return List.forEach(list, (value, key) => memo = fn(memo, value, key), range).then(() => memo);
+        return List.forEach(list, (value, key) => Promise.resolve(fn(memo, value, key)).then(value => { memo = value; }), range).then(() => memo);
     }
     static toArray(list, range) {
         return List.reduce(list, (memo, value) => (memo.push(value), memo), [], range);
@@ -183,17 +157,11 @@ export class List {
         return List.some(list, v => v === value, range);
     }
     static reverse(list) {
-        var { get } = list;
-        function prev(key) {
-            return list.next(key);
-        }
-        function next(key) {
-            return list.prev(key);
-        }
+        var get = bind(list.get, list), prev = bind(list.next, list), next = bind(list.prev, list);
         return { get, prev, next };
     }
     static map(list, mapFn) {
-        var { prev, next } = list;
+        var prev = bind(list.prev, list), next = bind(list.next, list);
         function get(key) {
             return list.get(key).then(value => mapFn(value, key));
         }

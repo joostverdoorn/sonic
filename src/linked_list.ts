@@ -25,22 +25,22 @@ export default class LinkedList<V> extends MutableList<V> {
     this.splice(null, null, ...values);
   }
 
-  get = (key: Key): Promise<V> => {
+  get(key: Key): Promise<V> {
     if(!(key in this._byKey)) return Promise.reject<V>(new Error);
     return Promise.resolve(this._byKey[key]);
   }
 
-  prev = (key: Key = null): Promise<Key> => {
+  prev(key: Key = null): Promise<Key> {
     if(!(key in this._prev)) return Promise.reject<Key>(new Error);
     return Promise.resolve(this._prev[key]);
   }
 
-  next = (key: Key = null) => {
+  next(key: Key = null) {
     if(!(key in this._next)) return Promise.reject<Key>(new Error);
     return Promise.resolve(this._next[key]);
   }
 
-  set = (key: Key, value: V): Promise<void> => {
+  set(key: Key, value: V): Promise<void> {
     if(!(key in this._byKey)) return Promise.reject(new Error);
 
     this._byKey[key] = value;
@@ -48,7 +48,7 @@ export default class LinkedList<V> extends MutableList<V> {
     return Promise.resolve();
   }
 
-  splice = (prev: Key = null, next: Key = null, ...values: V[]): Promise<void> => {
+  splice(prev: Key = null, next: Key = null, ...values: V[]): Promise<void> {
     var key = prev,
         value: V;
 
@@ -76,7 +76,7 @@ export default class LinkedList<V> extends MutableList<V> {
     return Promise.resolve();
   }
 
-  observe = (observer: IListObserver): ISubscription => {
+  observe(observer: IListObserver): ISubscription {
     return this._subject.observe(observer);
   }
 }

@@ -1,11 +1,16 @@
-import Key       from './key';
-import Range     from './range';
-import { List, IList } from './list';
-import { Tree, Path }  from './tree';
-import { Subject, IObservable, ISubscription, INotifier } from './observable';
-import Cache from './cache';
-import ObservableCache from './observable_cache';
-import ObservableIndex from './observable_index';
+import   bind            from './bind'
+import   Key             from './key';
+import   Range           from './range';
+import { List,
+         IList }         from './list';
+import { Tree,
+         Path }          from './tree';
+import { Subject,
+         IObservable,
+         ISubscription,
+         INotifier }     from './observable';
+import   ObservableCache from './observable_cache';
+import   ObservableIndex from './observable_index';
 
 export interface IListObserver {
   onInvalidate: (range: Range) => void;
@@ -19,76 +24,69 @@ export class ListSubject extends Subject<IListObserver> {
 
 export interface IObservableList<V> extends IList<V>, IObservable<IListObserver> {};
 
-export class ObservableList<V> extends List<V> implements IObservableList<V> {
+export abstract class ObservableList<V> extends List<V> implements IObservableList<V> {
 
-  constructor(list?: IObservableList<V>) {
-    super(list);
-    if(list != null) this.observe = list.observe;
+  abstract observe(observer: IListObserver): ISubscription;
+
+  static create<V>(list: IObservableList<V>): ObservableList<V> {
+    return new class extends ObservableList<V> {
+      get(key: Key): Promise<V> { return list.get(key); }
+      prev(key?: Key): Promise<Key> { return list.prev(key); }
+      next(key?: Key): Promise<Key> { return list.next(key); }
+      observe(observer: IListObserver): ISubscription { return list.observe(observer); }
+    }
   }
 
-  observe = (observer: IListObserver): ISubscription => {
-    throw new Error("Not implemented");
-  }
-
-  reverse = (): ObservableList<V> => {
+  reverse(): ObservableList<V> {
     return ObservableList.create(ObservableList.reverse(this));
   }
 
-  map = <W>(mapFn: (value: V, key?: Key) => W): ObservableList<W> => {
+  map<W>(mapFn: (value: V, key?: Key) => W): ObservableList<W> {
     return ObservableList.create(ObservableList.map(this, mapFn));
   }
 
-  filter = (filterFn: (value: V, key?: Key) => boolean): ObservableList<V> => {
+  filter(filterFn: (value: V, key?: Key) => boolean): ObservableList<V> {
     return ObservableList.create(ObservableList.filter(this, filterFn));
   }
 
-  flatten = (): ObservableList<any> => {
+  flatten(): ObservableList<any> {
     return ObservableList.create(ObservableList.flatten(this));
   }
 
-  flatMap = <W>(flatMapFn:(value: V, key?: Key) => IObservableList<W>): ObservableList<W> => {
+  flatMap<W>(flatMapFn:(value: V, key?: Key) => IObservableList<W>): ObservableList<W> {
     return ObservableList.create(ObservableList.flatMap(this, flatMapFn));
   }
 
-  cache = (): ObservableList<V> => {
+  cache(): ObservableList<V> {
     return ObservableList.create(ObservableList.cache(this));
   }
 
-  index = (): ObservableList<V> => {
+  index(): ObservableList<V> {
     return ObservableList.create(ObservableList.index(this));
   }
 
-  zip = <W, U>(other: IObservableList<W>, zipFn: (v: V, w: W) => U): ObservableList<U> => {
+  zip<W, U>(other: IObservableList<W>, zipFn: (v: V, w: W) => U): ObservableList<U> {
     return ObservableList.create(ObservableList.zip(this, other, zipFn));
   }
 
-  skip = (k: number): IObservableList<V> => {
+  skip(k: number): IObservableList<V> {
     return ObservableList.create(ObservableList.skip(this, k));
   }
 
-  take = (n: number): IObservableList<V> => {
+  take(n: number): IObservableList<V> {
     return ObservableList.create(ObservableList.take(this, n));
   }
 
-  range = (k: number, n: number): IObservableList<V> => {
+  range(k: number, n: number): IObservableList<V> {
     return ObservableList.create(ObservableList.range(this, k, n));
   }
 
-  scan = <W>(scanFn: (memo: W, value: V) => W, memo?: W): ObservableList<W> => {
+  scan<W>(scanFn: (memo: W, value: V) => W, memo?: W): ObservableList<W> {
     return ObservableList.create(ObservableList.scan(this, scanFn, memo));
   }
 
   static isObservableList(obj: any): boolean {
     return List.isList(obj) && !!obj['observe'];
-  }
-
-  static create<V>(list: IObservableList<V>): ObservableList<V> {
-    return new ObservableList<V>({
-      get:     list.get,
-      prev:    list.prev,
-      next:    list.next,
-      observe: list.observe
-    });
   }
 
   static reverse<V>(list: IObservableList<V>): IObservableList<V> {
@@ -107,23 +105,24 @@ export class ObservableList<V> extends List<V> implements IObservableList<V> {
 
   static map<V, W>(list: IObservableList<V>, mapFn: (value: V, key?: Key) => W): IObservableList<W> {
     var { get, prev, next } = List.map(list, mapFn);
-    return { get, prev, next, observe: list.observe };
+    return { get, prev, next, observe: bind(list.observe, list) };
   }
 
   static filter<V>(list: IObservableList<V>, filterFn: (value: V, key?: Key) => boolean): IObservableList<V> {
-    var { get, prev, next } = List.filter(list, filterFn);
-    return { get, prev, next, observe: list.observe };
+    var { get, prev, next } = List.filter(list, filterFn),
+        observe = bind(list.observe, list);
+
+    return { get, prev, next, observe };
   }
 
   static flatten<V>(list: IObservableList<IObservableList<V> | V | any>): IObservableList<V> {
     var flat = <List<V>> List.flatten(list),
         subject = new ListSubject(),
-        subscriptions: {[key: string]: ISubscription} = Object.create(null);
-
-    var cache = new ObservableCache({
-          get: list.get,
-          prev: list.prev,
-          next: list.next,
+        subscriptions: {[key: string]: ISubscription} = Object.create(null),
+        cache = new ObservableCache({
+          get:  bind(list.get, list),
+          prev: bind(list.prev, list),
+          next: bind(list.next, list),
           observe: (observer: IListObserver) => null
         });
 
@@ -235,7 +234,8 @@ export class ObservableList<V> extends List<V> implements IObservableList<V> {
   }
 
   static scan<V, W>(list: IObservableList<V>, scanFn: (memo: W, value: V) => W, memo?: W): IObservableList<W> {
-    var { prev, next } = list,
+    var prev = bind(list.prev, list),
+        next = bind(list.next, list),
         scanList: IObservableList<W>;
 
     function get(key: Key): Promise<W> {
