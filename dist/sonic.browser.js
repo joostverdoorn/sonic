@@ -1213,14 +1213,20 @@ var MutableList = (function (_ObservableList) {
             var observe = _ObservableList$map.observe;
 
             function set(key, value) {
-                return list.set(key, setFn(value, key));
+                return Promise.resolve(setFn(value, key)).then(function (value) {
+                    return list.set(key, value);
+                });
             }
             function splice(prev, next) {
                 for (var _len2 = arguments.length, values = Array(_len2 > 2 ? _len2 - 2 : 0), _key2 = 2; _key2 < _len2; _key2++) {
                     values[_key2 - 2] = arguments[_key2];
                 }
 
-                return list.splice.apply(list, [prev, next].concat(_toConsumableArray(values.map(setFn))));
+                return Promise.all(values.map(function (value) {
+                    return setFn(value);
+                })).then(function (values) {
+                    return list.splice.apply(list, [prev, next].concat(_toConsumableArray(values)));
+                });
             }
             return { get: get, prev: prev, next: next, observe: observe, set: set, splice: splice };
         }

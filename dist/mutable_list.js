@@ -89,10 +89,10 @@ export class MutableList extends ObservableList {
     static map(list, getFn, setFn) {
         var { get, prev, next, observe } = ObservableList.map(list, getFn);
         function set(key, value) {
-            return list.set(key, setFn(value, key));
+            return Promise.resolve(setFn(value, key)).then(value => list.set(key, value));
         }
         function splice(prev, next, ...values) {
-            return list.splice(prev, next, ...values.map(setFn));
+            return Promise.all(values.map((value) => setFn(value))).then(values => list.splice(prev, next, ...values));
         }
         return { get, prev, next, observe, set, splice };
     }

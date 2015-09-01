@@ -32,6 +32,6 @@ export declare abstract class MutableList<V> extends ObservableList<V> implement
     static shift<V>(list: IMutableList<V>): Promise<V>;
     static remove<V>(list: IMutableList<V>, value: V): Promise<void>;
     static cache<V>(list: IMutableList<V>): IMutableList<V>;
-    static map<V, W>(list: IMutableList<V>, getFn: (value: V, key: Key) => W, setFn?: (value: W, key?: Key) => V): IMutableList<W>;
+    static map<V, W>(list: IMutableList<V>, getFn: (value: V, key?: Key) => W | Promise<W>, setFn?: (value: W, key?: Key) => V | Promise<V>): IMutableList<W>;
 }
 export default MutableList;

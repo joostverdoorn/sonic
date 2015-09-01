@@ -124,15 +124,15 @@ export abstract class MutableList<V> extends ObservableList<V> implements IMutab
     return new MutableCache<V>(list);
   }
 
-  static map<V,W>(list: IMutableList<V>, getFn: (value: V, key: Key) => W, setFn?: (value: W, key?: Key) => V): IMutableList<W> {
+  static map<V,W>(list: IMutableList<V>, getFn: (value: V, key?: Key) => W | Promise<W>, setFn?: (value: W, key?: Key) => V | Promise<V>): IMutableList<W> {
     var { get, prev, next, observe } = ObservableList.map(list, getFn);
 
     function set(key: Key, value: W): Promise<void> {
-      return list.set(key, setFn(value, key));
+      return Promise.resolve(setFn(value, key)).then(value => list.set(key, value))
     }
 
     function splice(prev: Key, next: Key, ...values: W[]): Promise<void> {
-      return list.splice(prev, next, ...values.map(setFn));
+      return Promise.all(values.map((value: W) => setFn(value))).then(values => list.splice(prev, next, ...values));
     }
 
     return { get, prev, next, observe, set, splice };
