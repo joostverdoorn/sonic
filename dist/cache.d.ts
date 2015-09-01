@@ -13,7 +13,7 @@ export declare class Cache<V> implements IList<V> {
     protected _list: IList<V>;
     constructor(list: IList<V>);
     get: (key: number | string) => Promise<V>;
-    prev: (key: number | string) => Promise<number | string>;
+    prev: (key?: number | string) => Promise<number | string>;
     next: (key?: number | string) => Promise<number | string>;
 }
 export default Cache;

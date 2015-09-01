@@ -5,7 +5,7 @@ export class Cache {
                 return Promise.resolve(this._byKey[key]);
             return this._list.get(key).then(value => this._byKey[key] = value);
         };
-        this.prev = (key) => {
+        this.prev = (key = null) => {
             if (key in this._prev)
                 return Promise.resolve(this._prev[key]);
             return this._list.prev(key).then(prev => {

@@ -19,7 +19,7 @@ export class Cache<V> implements IList<V> {
     return this._list.get(key).then(value => this._byKey[key] = value);
   }
 
-  prev = (key: Key): Promise<Key> => {
+  prev = (key: Key = null): Promise<Key> => {
     if(key in this._prev) return Promise.resolve(this._prev[key]);
     return this._list.prev(key).then(prev => {
       this._prev[key] = prev;

@@ -126,7 +126,9 @@ var Cache = function Cache(list) {
             return _this._byKey[key] = value;
         });
     };
-    this.prev = function (key) {
+    this.prev = function () {
+        var key = arguments.length <= 0 || arguments[0] === undefined ? null : arguments[0];
+
         if (key in _this._prev) return Promise.resolve(_this._prev[key]);
         return _this._list.prev(key).then(function (prev) {
             _this._prev[key] = prev;
