@@ -2,7 +2,6 @@
     "compilerOptions": {
         "outDir": "dist",
         "target": "es6",
-        "module": "amd",
         "noImplicitAny": true,
         "declaration": true
     },
