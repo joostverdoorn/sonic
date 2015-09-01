@@ -986,6 +986,8 @@ var _get = function get(_x, _x2, _x3) { var _again = true; _function: while (_ag
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
 
+function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) arr2[i] = arr[i]; return arr2; } else { return Array.from(arr); } }
+
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError('Cannot call a class as a function'); } }
 
 function _inherits(subClass, superClass) { if (typeof superClass !== 'function' && superClass !== null) { throw new TypeError('Super expression must either be null or a function, not ' + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
@@ -1060,10 +1062,11 @@ var MutableList = (function (_ObservableList) {
         value: function cache() {
             return MutableList.create(MutableList.cache(this));
         }
-
-        // map<W>(getFn: (value: V, key: Key) => W, setFn?: (value: W, key?: Key) => V): MutableList<W> {
-        //   return MutableList.create(MutableList.map(this, getFn, setFn));
-        // }
+    }, {
+        key: 'map',
+        value: function map(getFn, setFn) {
+            return MutableList.create(MutableList.map(this, getFn, setFn));
+        }
     }], [{
         key: 'create',
         value: function create(list) {
@@ -1198,6 +1201,28 @@ var MutableList = (function (_ObservableList) {
         key: 'cache',
         value: function cache(list) {
             return new _mutable_cache2['default'](list);
+        }
+    }, {
+        key: 'map',
+        value: function map(list, getFn, setFn) {
+            var _ObservableList$map = _observable_list.ObservableList.map(list, getFn);
+
+            var get = _ObservableList$map.get;
+            var prev = _ObservableList$map.prev;
+            var next = _ObservableList$map.next;
+            var observe = _ObservableList$map.observe;
+
+            function set(key, value) {
+                return list.set(key, setFn(value, key));
+            }
+            function splice(prev, next) {
+                for (var _len2 = arguments.length, values = Array(_len2 > 2 ? _len2 - 2 : 0), _key2 = 2; _key2 < _len2; _key2++) {
+                    values[_key2 - 2] = arguments[_key2];
+                }
+
+                return list.splice.apply(list, [prev, next].concat(_toConsumableArray(values.map(setFn))));
+            }
+            return { get: get, prev: prev, next: next, observe: observe, set: set, splice: splice };
         }
     }]);
 
