@@ -33,6 +33,8 @@ export class ObservableCache<V> extends Cache<V> implements IObservableList<V>, 
         delete this._next[range];
       }
 
+      delete this._byKey[range];
+
       return this._subject.onInvalidate(range)
     }
 

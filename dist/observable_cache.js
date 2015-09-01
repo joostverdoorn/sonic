@@ -17,6 +17,7 @@ export class ObservableCache extends Cache {
                     delete this._prev[next];
                     delete this._next[range];
                 }
+                delete this._byKey[range];
                 return this._subject.onInvalidate(range);
             }
             var [prev, next] = range, key;

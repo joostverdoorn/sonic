@@ -1316,6 +1316,7 @@ var ObservableCache = (function (_Cache) {
                     delete _this._prev[next];
                     delete _this._next[range];
                 }
+                delete _this._byKey[range];
                 return _this._subject.onInvalidate(range);
             }
 
