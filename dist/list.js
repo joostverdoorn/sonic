@@ -105,16 +105,21 @@ export class List {
         return list.prev().then(get);
     }
     static every(list, predicate, range) {
-        return Range.last(list, range).then(last => {
-            var loop = (key) => {
-                if (key == null)
-                    return Promise.resolve(true);
-                return list.get(key)
-                    .then(value => predicate(value, key))
-                    .then(res => res === false ? false : key == last ? true : list.next(key).then(loop));
-            };
-            return Range.first(list, range).then(loop);
-        });
+        var next, last;
+        if (Array.isArray(range)) {
+            next = range[1];
+        }
+        else {
+            last = range;
+        }
+        var loop = (key) => {
+            if (key == null)
+                return Promise.resolve(true);
+            return list.get(key)
+                .then(value => predicate(value, key))
+                .then(res => res === false ? false : key == last ? true : list.next(key).then(key => key == next ? true : loop(key)));
+        };
+        return Range.first(list, range).then(loop);
     }
     static some(list, predicate, range) {
         return List.every(list, (value, key) => Promise.resolve(predicate(value, key)).then(result => !result), range).then(result => !result);

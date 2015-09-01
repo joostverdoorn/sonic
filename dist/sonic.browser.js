@@ -636,17 +636,23 @@ var List = (function () {
     }, {
         key: 'every',
         value: function every(list, predicate, range) {
-            return _range2['default'].last(list, range).then(function (last) {
-                var loop = function loop(key) {
-                    if (key == null) return Promise.resolve(true);
-                    return list.get(key).then(function (value) {
-                        return predicate(value, key);
-                    }).then(function (res) {
-                        return res === false ? false : key == last ? true : list.next(key).then(loop);
+            var next, last;
+            if (Array.isArray(range)) {
+                next = range[1];
+            } else {
+                last = range;
+            }
+            var loop = function loop(key) {
+                if (key == null) return Promise.resolve(true);
+                return list.get(key).then(function (value) {
+                    return predicate(value, key);
+                }).then(function (res) {
+                    return res === false ? false : key == last ? true : list.next(key).then(function (key) {
+                        return key == next ? true : loop(key);
                     });
-                };
-                return _range2['default'].first(list, range).then(loop);
-            });
+                });
+            };
+            return _range2['default'].first(list, range).then(loop);
         }
     }, {
         key: 'some',

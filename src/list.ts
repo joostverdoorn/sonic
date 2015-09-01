@@ -150,16 +150,23 @@ export abstract class List<V> implements IList<V> {
   }
 
   static every<V>(list: IList<V>, predicate: (value: V, key?: Key) => boolean | Promise<boolean>, range?: Range): Promise<boolean> {
-    return Range.last(list, range).then(last => {
-      var loop = (key: Key): Promise<boolean> => {
-        if(key == null) return Promise.resolve(true);
-        return list.get(key)
-          .then(value => predicate(value, key))
-          .then(res => res === false ? false : key == last ? true : list.next(key).then(loop));
-      }
+    var next: Key,
+        last: Key;
 
-      return Range.first(list, range).then(loop);
-    });
+    if(Array.isArray(range)) {
+      next = range[1];
+    } else {
+      last = range;
+    }
+
+    var loop = (key: Key): Promise<boolean> => {
+      if(key == null) return Promise.resolve(true);
+      return list.get(key)
+        .then(value => predicate(value, key))
+        .then(res => res === false ? false : key == last ? true : list.next(key).then(key => key == next ? true : loop(key)));
+    }
+
+    return Range.first(list, range).then(loop);
   }
 
   static some<V>(list: IList<V>, predicate: (value: V, key?: Key) => boolean | Promise<boolean>, range?: Range): Promise<boolean> {
