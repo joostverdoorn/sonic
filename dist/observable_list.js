@@ -178,7 +178,7 @@ export class ObservableList extends List {
     static scan(list, scanFn, memo) {
         var prev = bind(list.prev, list), next = bind(list.next, list), scanList;
         function get(key) {
-            return scanList.prev(key).then(p => p == null ? memo : scanList.get(p)).then(memo => list.get(key).then(value => scanFn(memo, value)));
+            return scanList.prev(key).then(p => p == null ? memo : scanList.get(p)).then(memo => list.get(key).then(value => scanFn(memo, value, key)));
         }
         function observe(observer) {
             return list.observe({

@@ -233,13 +233,13 @@ export abstract class ObservableList<V> extends List<V> implements IObservableLi
     });
   }
 
-  static scan<V, W>(list: IObservableList<V>, scanFn: (memo: W, value: V) => W, memo?: W): IObservableList<W> {
+  static scan<V, W>(list: IObservableList<V>, scanFn: (memo: W, value: V, key?: Key) => W, memo?: W): IObservableList<W> {
     var prev = bind(list.prev, list),
         next = bind(list.next, list),
         scanList: IObservableList<W>;
 
     function get(key: Key): Promise<W> {
-      return scanList.prev(key).then(p => p == null ? memo : scanList.get(p)).then(memo => list.get(key).then(value => scanFn(memo, value)));
+      return scanList.prev(key).then(p => p == null ? memo : scanList.get(p)).then(memo => list.get(key).then(value => scanFn(memo, value, key)));
     }
 
     function observe(observer: IListObserver) {

@@ -910,7 +910,7 @@ var List = (function () {
                     return p == null ? memo : scanList.get(p);
                 }).then(function (memo) {
                     return list.get(key).then(function (value) {
-                        return scanFn(memo, value);
+                        return scanFn(memo, value, key);
                     });
                 });
             }
@@ -1762,7 +1762,7 @@ var ObservableList = (function (_List) {
                     return p == null ? memo : scanList.get(p);
                 }).then(function (memo) {
                     return list.get(key).then(function (value) {
-                        return scanFn(memo, value);
+                        return scanFn(memo, value, key);
                     });
                 });
             }

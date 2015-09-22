@@ -347,12 +347,12 @@ export abstract class List<V> implements IList<V> {
     });
   }
 
-  static scan<V, W>(list: IList<V>, scanFn: (memo: W, value: V) => W, memo?: W): IList<W> {
+  static scan<V, W>(list: IList<V>, scanFn: (memo: W, value: V, key?: Key) => W, memo?: W): IList<W> {
     var { prev, next } = list,
         scanList: IList<W>;
 
     function get(key: Key): Promise<W> {
-      return scanList.prev(key).then(p => p == null ? memo : scanList.get(p)).then(memo => list.get(key).then(value => scanFn(memo, value)));
+      return scanList.prev(key).then(p => p == null ? memo : scanList.get(p)).then(memo => list.get(key).then(value => scanFn(memo, value, key)));
     }
 
     scanList = List.cache({ get, prev, next });

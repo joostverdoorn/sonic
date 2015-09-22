@@ -65,6 +65,6 @@ export declare abstract class List<V> implements IList<V> {
     static skip<V>(list: IList<V>, k: number): IList<V>;
     static take<V>(list: IList<V>, n: number): IList<V>;
     static range<V>(list: IList<V>, k: number, n: number): IList<V>;
-    static scan<V, W>(list: IList<V>, scanFn: (memo: W, value: V) => W, memo?: W): IList<W>;
+    static scan<V, W>(list: IList<V>, scanFn: (memo: W, value: V, key?: Key) => W, memo?: W): IList<W>;
 }
 export default List;

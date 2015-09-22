@@ -37,6 +37,6 @@ export declare abstract class ObservableList<V> extends List<V> implements IObse
     static skip<V>(list: IObservableList<V>, k: number): IObservableList<V>;
     static take<V>(list: IObservableList<V>, n: number): IObservableList<V>;
     static range<V>(list: IObservableList<V>, k: number, n: number): IObservableList<V>;
-    static scan<V, W>(list: IObservableList<V>, scanFn: (memo: W, value: V) => W, memo?: W): IObservableList<W>;
+    static scan<V, W>(list: IObservableList<V>, scanFn: (memo: W, value: V, key?: Key) => W, memo?: W): IObservableList<W>;
 }
 export default ObservableList;
