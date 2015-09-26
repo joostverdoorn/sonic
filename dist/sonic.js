@@ -5,6 +5,7 @@ import _MutableList from './mutable_list';
 import _Unit from './unit';
 import _ArrayList from './array_list';
 import _LinkedList from './linked_list';
+import _AsyncIterator from './async_iterator';
 import { Path as _Path, Tree as _Tree } from './tree';
 export function Sonic(obj) {
     return factory(obj);
@@ -19,6 +20,7 @@ export var Sonic;
     Sonic.LinkedList = _LinkedList;
     Sonic.Tree = _Tree;
     Sonic.Path = _Path;
+    Sonic.AsyncIterator = _AsyncIterator;
     Sonic.fromPromise = _fromPromise;
 })(Sonic || (Sonic = {}));
 ;

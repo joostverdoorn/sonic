@@ -27,61 +27,66 @@ export abstract class List<V> implements IList<V> {
     }
   }
 
-  first(): Promise<V> {
-    return List.first(this);
+  static _add<V>(list: IList<V>, key: Key, value: V): IList<V> {
+    function get(k: Key): Promise<V> {
+      if(k == key) return Promise.resolve(value);
+      return list.get(k);
+    }
+
+    function prev(k: Key): Promise<Key> {
+      if(k == null) return Promise.resolve(key);
+      if(k == key) return list.prev();
+      return list.prev(k);
+    }
+
+    function next(k: Key): Promise<Key> {
+      if(k == key) return Promise.resolve(null);
+      return list.next(k).then(n => n == null ? key : n);
+    }
+
+    return { get, prev, next };
   }
 
-  last(): Promise<V> {
-    return List.last(this);
+  static _remove<V>(list: IList<V>, key: Key): IList<V> {
+    function get(k: Key): Promise<V> {
+      if(k == key) return Promise.reject<V>(new Error);
+      return list.get(k);
+    }
+
+    function prev(k: Key): Promise<Key> {
+      if(k == key) return Promise.reject<Key>(new Error);
+      return list.prev(k).then(p => p == key ? list.prev(p) : p);
+    }
+
+    function next(k: Key): Promise<Key> {
+      if(k == key) return Promise.reject<Key>(new Error);
+      return list.next(k).then(n => n == key ? list.next(n) : n);
+    }
+
+    return { get, prev, next };
   }
 
-  every(predicate: (value: V, key?: Key) => boolean): Promise<boolean> {
-    return List.every(this, predicate);
+  _add(key: Key, value: V): List<V> {
+    return List.create(List._add(this, key, value));
   }
 
-  some(predicate: (value: V, key?: Key) => boolean | Promise<boolean>): Promise<boolean> {
-    return List.some(this, predicate);
+  _remove(key: Key): List<V> {
+    return List.create(List._remove(this, key));
   }
 
-  forEach(fn: (value: V, key?: Key) => void, range?: Range): Promise<void> {
-    return List.forEach(this, fn, range);
-  }
 
-  reduce<W>(fn: (memo: W, value: V, key?: Key) => W, memo?: W, range?: Range): Promise<W> {
-    return List.reduce(this, fn, memo, range);
-  }
 
-  toArray(range?: Range): Promise<V[]> {
-    return List.toArray(this, range);
-  }
 
-  findKey(fn: (value: V, key?: Key) => boolean | Promise<boolean>, range?: Range): Promise<Key> {
-    return List.findKey(this, fn, range);
-  }
 
-  find(fn: (value: V, key?: Key) => boolean, range?: Range): Promise<V> {
-    return List.find(this, fn, range);
-  }
+  // 
+  // first(): Promise<V> {
+  //   return List.first(this);
+  // }
+  //
+  // last(): Promise<V> {
+  //   return List.last(this);
+  // }
 
-  keyOf(value: V, range?: Range): Promise<Key> {
-    return List.keyOf(this, value, range);
-  }
-
-  indexOf(value: V, range?: Range): Promise<Key> {
-    return List.indexOf(this, value, range);
-  }
-
-  keyAt(index: number, range?: Range): Promise<Key> {
-    return List.keyAt(this, index, range);
-  }
-
-  at(index: number, range?: Range): Promise<V> {
-    return List.at(this, index, range);
-  }
-
-  contains(value: V, range?: Range): Promise<boolean> {
-    return List.contains(this, value, range);
-  }
 
   reverse(): List<V> {
     return List.create(List.reverse(this));
@@ -147,72 +152,6 @@ export abstract class List<V> implements IList<V> {
   static last<V>(list: IList<V>): Promise<V> {
     var get = bind(list.get, list);
     return list.prev().then(get);
-  }
-
-  static every<V>(list: IList<V>, predicate: (value: V, key?: Key) => boolean | Promise<boolean>, range?: Range): Promise<boolean> {
-    var next: Key,
-        last: Key;
-
-    if(Array.isArray(range)) {
-      next = range[1];
-    } else {
-      last = range;
-    }
-
-    var loop = (key: Key): Promise<boolean> => {
-      if(key == null) return Promise.resolve(true);
-      return list.get(key)
-        .then(value => predicate(value, key))
-        .then(res => res === false ? false : key == last ? true : list.next(key).then(key => key == next ? true : loop(key)));
-    }
-
-    return Range.first(list, range).then(loop);
-  }
-
-  static some<V>(list: IList<V>, predicate: (value: V, key?: Key) => boolean | Promise<boolean>, range?: Range): Promise<boolean> {
-    return List.every(list, (value: V, key: Key) => Promise.resolve(predicate(value, key)).then(result => !result), range).then(result => !result);
-  }
-
-  static forEach<V>(list: IList<V>, fn: (value: V, key?: Key) => void | Promise<void>, range?: Range): Promise<void> {
-    return List.every(list, (value: V, key: Key) => Promise.resolve(fn(value, key)).then(() => true), range).then(() => {})
-  }
-
-  static reduce<V, W>(list: IList<V>, fn: (memo: W, value: V, key?: Key) => W | Promise<W>, memo?: W, range?: Range): Promise<W> {
-    return List.forEach(list, (value: V, key: Key) => Promise.resolve(fn(memo, value, key)).then(value => { memo = value }), range).then(() => memo);
-  }
-
-  static toArray<V>(list: IList<V>, range?: Range): Promise<V[]> {
-    return List.reduce<V, V[]>(list, (memo: V[], value: V) => (memo.push(value), memo), [], range);
-  }
-
-  static findKey<V>(list: IList<V>, fn: (value: V, key?: Key) => boolean | Promise<boolean>, range?: Range): Promise<Key> {
-    var key: Key;
-    return List.some(list, (v: V, k: Key) => Promise.resolve(fn(v, k)).then(res => res ? (!!(key = k) || true) : false), range).then(found => found ? key : null);
-  }
-
-  static find<V>(list: IList<V>, fn: (value: V, key?: Key) => boolean | Promise<boolean>, range?: Range): Promise<V> {
-    return List.findKey(list, fn, range).then(list.get);
-  }
-
-  static keyOf<V>(list: IList<V>, value: V, range?: Range): Promise<Key> {
-    return List.findKey(list, v => v === value, range);
-  }
-
-  static indexOf<V>(list: IList<V>, value: V, range?: Range): Promise<number> {
-    var index = -1;
-    return List.some(list, (v: V, k: Key) => value == v ? (!!(index++) || true) : false, range).then((found) => {if (found) {return index} else {throw new Error()}});
-  }
-
-  static keyAt<V>(list: IList<V>, index: number, range?: Range): Promise<Key> {
-    return List.findKey(list, () => 0 === index--);
-  }
-
-  static at<V>(list: IList<V>, index: number, range?: Range): Promise<V> {
-    return List.keyAt(list, index, range).then(list.get);
-  }
-
-  static contains<V>(list: IList<V>, value: V, range?: Range): Promise<boolean> {
-    return List.some(list, v => v === value, range);
   }
 
   static reverse<V>(list: IList<V>): IList<V> {

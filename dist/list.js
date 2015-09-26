@@ -1,5 +1,4 @@
 import bind from './bind';
-import Range from './range';
 import { Tree, Path } from './tree';
 import Cache from './cache';
 import Index from './index';
@@ -12,48 +11,58 @@ export class List {
         }
         ;
     }
-    first() {
-        return List.first(this);
+    static _add(list, key, value) {
+        function get(k) {
+            if (k == key)
+                return Promise.resolve(value);
+            return list.get(k);
+        }
+        function prev(k) {
+            if (k == null)
+                return Promise.resolve(key);
+            if (k == key)
+                return list.prev();
+            return list.prev(k);
+        }
+        function next(k) {
+            if (k == key)
+                return Promise.resolve(null);
+            return list.next(k).then(n => n == null ? key : n);
+        }
+        return { get, prev, next };
     }
-    last() {
-        return List.last(this);
+    static _remove(list, key) {
+        function get(k) {
+            if (k == key)
+                return Promise.reject(new Error);
+            return list.get(k);
+        }
+        function prev(k) {
+            if (k == key)
+                return Promise.reject(new Error);
+            return list.prev(k).then(p => p == key ? list.prev(p) : p);
+        }
+        function next(k) {
+            if (k == key)
+                return Promise.reject(new Error);
+            return list.next(k).then(n => n == key ? list.next(n) : n);
+        }
+        return { get, prev, next };
     }
-    every(predicate) {
-        return List.every(this, predicate);
+    _add(key, value) {
+        return List.create(List._add(this, key, value));
     }
-    some(predicate) {
-        return List.some(this, predicate);
+    _remove(key) {
+        return List.create(List._remove(this, key));
     }
-    forEach(fn, range) {
-        return List.forEach(this, fn, range);
-    }
-    reduce(fn, memo, range) {
-        return List.reduce(this, fn, memo, range);
-    }
-    toArray(range) {
-        return List.toArray(this, range);
-    }
-    findKey(fn, range) {
-        return List.findKey(this, fn, range);
-    }
-    find(fn, range) {
-        return List.find(this, fn, range);
-    }
-    keyOf(value, range) {
-        return List.keyOf(this, value, range);
-    }
-    indexOf(value, range) {
-        return List.indexOf(this, value, range);
-    }
-    keyAt(index, range) {
-        return List.keyAt(this, index, range);
-    }
-    at(index, range) {
-        return List.at(this, index, range);
-    }
-    contains(value, range) {
-        return List.contains(this, value, range);
-    }
+    // 
+    // first(): Promise<V> {
+    //   return List.first(this);
+    // }
+    //
+    // last(): Promise<V> {
+    //   return List.last(this);
+    // }
     reverse() {
         return List.create(List.reverse(this));
     }
@@ -103,63 +112,6 @@ export class List {
     static last(list) {
         var get = bind(list.get, list);
         return list.prev().then(get);
-    }
-    static every(list, predicate, range) {
-        var next, last;
-        if (Array.isArray(range)) {
-            next = range[1];
-        }
-        else {
-            last = range;
-        }
-        var loop = (key) => {
-            if (key == null)
-                return Promise.resolve(true);
-            return list.get(key)
-                .then(value => predicate(value, key))
-                .then(res => res === false ? false : key == last ? true : list.next(key).then(key => key == next ? true : loop(key)));
-        };
-        return Range.first(list, range).then(loop);
-    }
-    static some(list, predicate, range) {
-        return List.every(list, (value, key) => Promise.resolve(predicate(value, key)).then(result => !result), range).then(result => !result);
-    }
-    static forEach(list, fn, range) {
-        return List.every(list, (value, key) => Promise.resolve(fn(value, key)).then(() => true), range).then(() => { });
-    }
-    static reduce(list, fn, memo, range) {
-        return List.forEach(list, (value, key) => Promise.resolve(fn(memo, value, key)).then(value => { memo = value; }), range).then(() => memo);
-    }
-    static toArray(list, range) {
-        return List.reduce(list, (memo, value) => (memo.push(value), memo), [], range);
-    }
-    static findKey(list, fn, range) {
-        var key;
-        return List.some(list, (v, k) => Promise.resolve(fn(v, k)).then(res => res ? (!!(key = k) || true) : false), range).then(found => found ? key : null);
-    }
-    static find(list, fn, range) {
-        return List.findKey(list, fn, range).then(list.get);
-    }
-    static keyOf(list, value, range) {
-        return List.findKey(list, v => v === value, range);
-    }
-    static indexOf(list, value, range) {
-        var index = -1;
-        return List.some(list, (v, k) => value == v ? (!!(index++) || true) : false, range).then((found) => { if (found) {
-            return index;
-        }
-        else {
-            throw new Error();
-        } });
-    }
-    static keyAt(list, index, range) {
-        return List.findKey(list, () => 0 === index--);
-    }
-    static at(list, index, range) {
-        return List.keyAt(list, index, range).then(list.get);
-    }
-    static contains(list, value, range) {
-        return List.some(list, v => v === value, range);
     }
     static reverse(list) {
         var get = bind(list.get, list), prev = bind(list.next, list), next = bind(list.prev, list);

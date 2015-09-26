@@ -7,6 +7,7 @@ import _MutableList    from './mutable_list';
 import _Unit           from './unit';
 import _ArrayList      from './array_list';
 import _LinkedList     from './linked_list';
+import _AsyncIterator  from './async_iterator';
 import { Path as _Path, Tree as _Tree } from './tree';
 
 export function Sonic(obj: any) {
@@ -22,6 +23,7 @@ export module Sonic {
   export var LinkedList     = _LinkedList;
   export var Tree           = _Tree;
   export var Path           = _Path;
+  export var AsyncIterator  = _AsyncIterator;
 
   export var fromPromise    = _fromPromise;
 };

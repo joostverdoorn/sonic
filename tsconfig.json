@@ -10,6 +10,7 @@
     ],
     "files": [
         "src/array_list.ts",
+        "src/async_iterator.ts",
         "src/bind.ts",
         "src/cache.ts",
         "src/factory.ts",
@@ -26,6 +27,7 @@
         "src/range.ts",
         "src/sonic.ts",
         "src/tree.ts",
-        "src/unit.ts"
+        "src/unit.ts",
+        "src/x_list.ts"
     ]
 }

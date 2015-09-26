@@ -86,7 +86,173 @@ var ArrayList = (function (_MutableList) {
 exports['default'] = ArrayList;
 module.exports = exports['default'];
 
-},{"./mutable_list":10,"./observable_list":14}],2:[function(require,module,exports){
+},{"./mutable_list":11,"./observable_list":15}],2:[function(require,module,exports){
+'use strict';
+
+Object.defineProperty(exports, '__esModule', {
+    value: true
+});
+
+var _createClass = (function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ('value' in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError('Cannot call a class as a function'); } }
+
+var _bind = require('./bind');
+
+var _bind2 = _interopRequireDefault(_bind);
+
+var AsyncIterator = (function () {
+    function AsyncIterator(list) {
+        var range = arguments.length <= 1 || arguments[1] === undefined ? [null, null] : arguments[1];
+
+        _classCallCheck(this, AsyncIterator);
+
+        this._list = list;
+        this.range = range;
+    }
+
+    _createClass(AsyncIterator, [{
+        key: 'get',
+        value: function get() {
+            return this._list.get(this.current);
+        }
+    }, {
+        key: 'prev',
+        value: function prev() {
+            var _this = this;
+
+            return this._list.prev(this.current == null ? this.range[1] : this.current).then(function (prev) {
+                if (prev == _this.range[0]) return _this.current = null;
+                return _this.current = prev;
+            });
+        }
+    }, {
+        key: 'next',
+        value: function next() {
+            var _this2 = this;
+
+            return this._list.next(this.current == null ? this.range[0] : this.current).then(function (prev) {
+                if (prev == _this2.range[1]) return _this2.current = null;
+                return _this2.current = prev;
+            });
+        }
+    }], [{
+        key: 'every',
+        value: function every(iterator, predicate) {
+            return iterator.next().then(function (key) {
+                return key == null || iterator.get().then(function (value) {
+                    return predicate(value, key);
+                }).then(function (result) {
+                    return result ? AsyncIterator.every(iterator, predicate) : false;
+                });
+            });
+        }
+    }, {
+        key: 'some',
+        value: function some(iterator, predicate) {
+            return AsyncIterator.every(iterator, function (value, key) {
+                return Promise.resolve(predicate(value, key)).then(function (result) {
+                    return !result;
+                });
+            }).then(function (result) {
+                return !result;
+            });
+        }
+    }, {
+        key: 'forEach',
+        value: function forEach(iterator, fn) {
+            return AsyncIterator.every(iterator, function (value, key) {
+                return Promise.resolve(fn(value, key)).then(function () {
+                    return true;
+                });
+            }).then(function () {});
+        }
+    }, {
+        key: 'reduce',
+        value: function reduce(iterator, fn, memo) {
+            return AsyncIterator.forEach(iterator, function (value, key) {
+                return Promise.resolve(fn(memo, value, key)).then(function (value) {
+                    memo = value;
+                });
+            }).then(function () {
+                return memo;
+            });
+        }
+    }, {
+        key: 'toArray',
+        value: function toArray(iterator) {
+            return AsyncIterator.reduce(iterator, function (memo, value) {
+                return (memo.push(value), memo);
+            }, []);
+        }
+    }, {
+        key: 'findKey',
+        value: function findKey(iterator, fn) {
+            var key;
+            return AsyncIterator.some(iterator, function (v, k) {
+                return Promise.resolve(fn(v, k)).then(function (res) {
+                    return res ? !!(key = k) || true : false;
+                });
+            }).then(function (found) {
+                return found ? key : null;
+            });
+        }
+    }, {
+        key: 'find',
+        value: function find(iterator, fn) {
+            return AsyncIterator.findKey(iterator, fn).then((0, _bind2['default'])(iterator.get, iterator));
+        }
+    }, {
+        key: 'keyOf',
+        value: function keyOf(iterator, value) {
+            return AsyncIterator.findKey(iterator, function (v) {
+                return v === value;
+            });
+        }
+    }, {
+        key: 'indexOf',
+        value: function indexOf(iterator, value) {
+            var index = -1;
+            return AsyncIterator.some(iterator, function (v, k) {
+                return (index++, value == v);
+            }).then(function (found) {
+                if (found) {
+                    return index;
+                } else {
+                    throw new Error();
+                }
+            });
+        }
+    }, {
+        key: 'keyAt',
+        value: function keyAt(iterator, index) {
+            return AsyncIterator.findKey(iterator, function () {
+                return 0 === index--;
+            });
+        }
+    }, {
+        key: 'at',
+        value: function at(iterator, index) {
+            return AsyncIterator.keyAt(iterator, index).then((0, _bind2['default'])(iterator.get, iterator));
+        }
+    }, {
+        key: 'contains',
+        value: function contains(iterator, value) {
+            return AsyncIterator.some(iterator, function (v) {
+                return v === value;
+            });
+        }
+    }]);
+
+    return AsyncIterator;
+})();
+
+exports.AsyncIterator = AsyncIterator;
+exports['default'] = AsyncIterator;
+
+},{"./bind":3}],3:[function(require,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -106,7 +272,7 @@ function bind(fn, context) {
 
 exports["default"] = bind;
 
-},{}],3:[function(require,module,exports){
+},{}],4:[function(require,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -153,7 +319,7 @@ var Cache = function Cache(list) {
 exports.Cache = Cache;
 exports["default"] = Cache;
 
-},{}],4:[function(require,module,exports){
+},{}],5:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, '__esModule', {
@@ -194,7 +360,7 @@ function fromPromise(promise) {
     return _observable_list.ObservableList.create(unit);
 }
 
-},{"./array_list":1,"./list":8,"./mutable_list":10,"./observable_list":14,"./unit":18}],5:[function(require,module,exports){
+},{"./array_list":1,"./list":9,"./mutable_list":11,"./observable_list":15,"./unit":18}],6:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, '__esModule', {
@@ -248,7 +414,7 @@ var Index = function Index(list) {
 exports.Index = Index;
 exports['default'] = Index;
 
-},{"./list":8}],6:[function(require,module,exports){
+},{"./list":9}],7:[function(require,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -269,7 +435,7 @@ var Key;
 exports["default"] = Key;
 module.exports = exports["default"];
 
-},{}],7:[function(require,module,exports){
+},{}],8:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, '__esModule', {
@@ -411,7 +577,7 @@ var LinkedList = (function (_MutableList) {
 exports['default'] = LinkedList;
 module.exports = exports['default'];
 
-},{"./key":6,"./mutable_list":10,"./observable_list":14}],8:[function(require,module,exports){
+},{"./key":7,"./mutable_list":11,"./observable_list":15}],9:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, '__esModule', {
@@ -432,10 +598,6 @@ var _bind = require('./bind');
 
 var _bind2 = _interopRequireDefault(_bind);
 
-var _range = require('./range');
-
-var _range2 = _interopRequireDefault(_range);
-
 var _tree = require('./tree');
 
 var _cache = require('./cache');
@@ -452,75 +614,24 @@ var List = (function () {
     }
 
     _createClass(List, [{
-        key: 'first',
-        value: function first() {
-            return List.first(this);
+        key: '_add',
+        value: function _add(key, value) {
+            return List.create(List._add(this, key, value));
         }
     }, {
-        key: 'last',
-        value: function last() {
-            return List.last(this);
+        key: '_remove',
+        value: function _remove(key) {
+            return List.create(List._remove(this, key));
         }
-    }, {
-        key: 'every',
-        value: function every(predicate) {
-            return List.every(this, predicate);
-        }
-    }, {
-        key: 'some',
-        value: function some(predicate) {
-            return List.some(this, predicate);
-        }
-    }, {
-        key: 'forEach',
-        value: function forEach(fn, range) {
-            return List.forEach(this, fn, range);
-        }
-    }, {
-        key: 'reduce',
-        value: function reduce(fn, memo, range) {
-            return List.reduce(this, fn, memo, range);
-        }
-    }, {
-        key: 'toArray',
-        value: function toArray(range) {
-            return List.toArray(this, range);
-        }
-    }, {
-        key: 'findKey',
-        value: function findKey(fn, range) {
-            return List.findKey(this, fn, range);
-        }
-    }, {
-        key: 'find',
-        value: function find(fn, range) {
-            return List.find(this, fn, range);
-        }
-    }, {
-        key: 'keyOf',
-        value: function keyOf(value, range) {
-            return List.keyOf(this, value, range);
-        }
-    }, {
-        key: 'indexOf',
-        value: function indexOf(value, range) {
-            return List.indexOf(this, value, range);
-        }
-    }, {
-        key: 'keyAt',
-        value: function keyAt(index, range) {
-            return List.keyAt(this, index, range);
-        }
-    }, {
-        key: 'at',
-        value: function at(index, range) {
-            return List.at(this, index, range);
-        }
-    }, {
-        key: 'contains',
-        value: function contains(value, range) {
-            return List.contains(this, value, range);
-        }
+
+        //
+        // first(): Promise<V> {
+        //   return List.first(this);
+        // }
+        //
+        // last(): Promise<V> {
+        //   return List.last(this);
+        // }
     }, {
         key: 'reverse',
         value: function reverse() {
@@ -619,6 +730,47 @@ var List = (function () {
             })(List))();
         }
     }, {
+        key: '_add',
+        value: function _add(list, key, value) {
+            function get(k) {
+                if (k == key) return Promise.resolve(value);
+                return list.get(k);
+            }
+            function prev(k) {
+                if (k == null) return Promise.resolve(key);
+                if (k == key) return list.prev();
+                return list.prev(k);
+            }
+            function next(k) {
+                if (k == key) return Promise.resolve(null);
+                return list.next(k).then(function (n) {
+                    return n == null ? key : n;
+                });
+            }
+            return { get: get, prev: prev, next: next };
+        }
+    }, {
+        key: '_remove',
+        value: function _remove(list, key) {
+            function get(k) {
+                if (k == key) return Promise.reject(new Error());
+                return list.get(k);
+            }
+            function prev(k) {
+                if (k == key) return Promise.reject(new Error());
+                return list.prev(k).then(function (p) {
+                    return p == key ? list.prev(p) : p;
+                });
+            }
+            function next(k) {
+                if (k == key) return Promise.reject(new Error());
+                return list.next(k).then(function (n) {
+                    return n == key ? list.next(n) : n;
+                });
+            }
+            return { get: get, prev: prev, next: next };
+        }
+    }, {
         key: 'isList',
         value: function isList(obj) {
             return obj != null && !!obj['get'] && !!obj['prev'] && !!obj['next'];
@@ -634,122 +786,6 @@ var List = (function () {
         value: function last(list) {
             var get = (0, _bind2['default'])(list.get, list);
             return list.prev().then(get);
-        }
-    }, {
-        key: 'every',
-        value: function every(list, predicate, range) {
-            var next, last;
-            if (Array.isArray(range)) {
-                next = range[1];
-            } else {
-                last = range;
-            }
-            var loop = function loop(key) {
-                if (key == null) return Promise.resolve(true);
-                return list.get(key).then(function (value) {
-                    return predicate(value, key);
-                }).then(function (res) {
-                    return res === false ? false : key == last ? true : list.next(key).then(function (key) {
-                        return key == next ? true : loop(key);
-                    });
-                });
-            };
-            return _range2['default'].first(list, range).then(loop);
-        }
-    }, {
-        key: 'some',
-        value: function some(list, predicate, range) {
-            return List.every(list, function (value, key) {
-                return Promise.resolve(predicate(value, key)).then(function (result) {
-                    return !result;
-                });
-            }, range).then(function (result) {
-                return !result;
-            });
-        }
-    }, {
-        key: 'forEach',
-        value: function forEach(list, fn, range) {
-            return List.every(list, function (value, key) {
-                return Promise.resolve(fn(value, key)).then(function () {
-                    return true;
-                });
-            }, range).then(function () {});
-        }
-    }, {
-        key: 'reduce',
-        value: function reduce(list, fn, memo, range) {
-            return List.forEach(list, function (value, key) {
-                return Promise.resolve(fn(memo, value, key)).then(function (value) {
-                    memo = value;
-                });
-            }, range).then(function () {
-                return memo;
-            });
-        }
-    }, {
-        key: 'toArray',
-        value: function toArray(list, range) {
-            return List.reduce(list, function (memo, value) {
-                return (memo.push(value), memo);
-            }, [], range);
-        }
-    }, {
-        key: 'findKey',
-        value: function findKey(list, fn, range) {
-            var key;
-            return List.some(list, function (v, k) {
-                return Promise.resolve(fn(v, k)).then(function (res) {
-                    return res ? !!(key = k) || true : false;
-                });
-            }, range).then(function (found) {
-                return found ? key : null;
-            });
-        }
-    }, {
-        key: 'find',
-        value: function find(list, fn, range) {
-            return List.findKey(list, fn, range).then(list.get);
-        }
-    }, {
-        key: 'keyOf',
-        value: function keyOf(list, value, range) {
-            return List.findKey(list, function (v) {
-                return v === value;
-            }, range);
-        }
-    }, {
-        key: 'indexOf',
-        value: function indexOf(list, value, range) {
-            var index = -1;
-            return List.some(list, function (v, k) {
-                return value == v ? !! index++ || true : false;
-            }, range).then(function (found) {
-                if (found) {
-                    return index;
-                } else {
-                    throw new Error();
-                }
-            });
-        }
-    }, {
-        key: 'keyAt',
-        value: function keyAt(list, index, range) {
-            return List.findKey(list, function () {
-                return 0 === index--;
-            });
-        }
-    }, {
-        key: 'at',
-        value: function at(list, index, range) {
-            return List.keyAt(list, index, range).then(list.get);
-        }
-    }, {
-        key: 'contains',
-        value: function contains(list, value, range) {
-            return List.some(list, function (v) {
-                return v === value;
-            }, range);
         }
     }, {
         key: 'reverse',
@@ -925,7 +961,7 @@ var List = (function () {
 exports.List = List;
 exports['default'] = List;
 
-},{"./bind":2,"./cache":3,"./index":5,"./range":15,"./tree":17}],9:[function(require,module,exports){
+},{"./bind":3,"./cache":4,"./index":6,"./tree":17}],10:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, '__esModule', {
@@ -973,7 +1009,7 @@ var MutableCache = (function (_ObservableCache) {
 exports.MutableCache = MutableCache;
 exports['default'] = MutableCache;
 
-},{"./observable_cache":12}],10:[function(require,module,exports){
+},{"./observable_cache":13}],11:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, '__esModule', {
@@ -1240,7 +1276,7 @@ var MutableList = (function (_ObservableList) {
 exports.MutableList = MutableList;
 exports['default'] = MutableList;
 
-},{"./mutable_cache":9,"./observable_list":14}],11:[function(require,module,exports){
+},{"./mutable_cache":10,"./observable_list":15}],12:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, '__esModule', {
@@ -1277,7 +1313,7 @@ var Subject = function Subject() {
 
 exports.Subject = Subject;
 
-},{"./key":6}],12:[function(require,module,exports){
+},{"./key":7}],13:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, '__esModule', {
@@ -1358,7 +1394,7 @@ var ObservableCache = (function (_Cache) {
 exports.ObservableCache = ObservableCache;
 exports['default'] = ObservableCache;
 
-},{"./cache":3,"./observable_list":14}],13:[function(require,module,exports){
+},{"./cache":4,"./observable_list":15}],14:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, '__esModule', {
@@ -1414,7 +1450,7 @@ var ObservableIndex = (function (_Index) {
 exports.ObservableIndex = ObservableIndex;
 exports['default'] = ObservableIndex;
 
-},{"./index":5,"./observable_list":14}],14:[function(require,module,exports){
+},{"./index":6,"./observable_list":15}],15:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, '__esModule', {
@@ -1434,10 +1470,6 @@ function _inherits(subClass, superClass) { if (typeof superClass !== 'function' 
 var _bind = require('./bind');
 
 var _bind2 = _interopRequireDefault(_bind);
-
-var _range = require('./range');
-
-var _range2 = _interopRequireDefault(_range);
 
 var _list = require('./list');
 
@@ -1769,7 +1801,7 @@ var ObservableList = (function (_List) {
             function observe(observer) {
                 return list.observe({
                     onInvalidate: function onInvalidate(range) {
-                        _range2['default'].prev(list, range).then(function (prev) {
+                        Range.prev(list, range).then(function (prev) {
                             return observer.onInvalidate([prev, null]);
                         });
                     }
@@ -1786,45 +1818,7 @@ var ObservableList = (function (_List) {
 exports.ObservableList = ObservableList;
 exports['default'] = ObservableList;
 
-},{"./bind":2,"./list":8,"./observable":11,"./observable_cache":12,"./observable_index":13,"./range":15,"./tree":17}],15:[function(require,module,exports){
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-    value: true
-});
-var Range;
-exports.Range = Range;
-(function (Range) {
-    function prev(list) {
-        var range = arguments.length <= 1 || arguments[1] === undefined ? [null, null] : arguments[1];
-
-        if (Array.isArray(range)) return Promise.resolve(range[0]);else return list.prev(range);
-    }
-    Range.prev = prev;
-    function next(list) {
-        var range = arguments.length <= 1 || arguments[1] === undefined ? [null, null] : arguments[1];
-
-        if (Array.isArray(range)) return Promise.resolve(range[1]);else return list.next(range);
-    }
-    Range.next = next;
-    function first(list) {
-        var range = arguments.length <= 1 || arguments[1] === undefined ? [null, null] : arguments[1];
-
-        if (Array.isArray(range)) return list.next(range[0]);
-        return Promise.resolve(range);
-    }
-    Range.first = first;
-    function last(list) {
-        var range = arguments.length <= 1 || arguments[1] === undefined ? [null, null] : arguments[1];
-
-        if (Array.isArray(range)) return list.prev(range[1]);
-        return Promise.resolve(range);
-    }
-    Range.last = last;
-})(Range || (exports.Range = Range = {}));
-exports["default"] = Range;
-
-},{}],16:[function(require,module,exports){
+},{"./bind":3,"./list":9,"./observable":12,"./observable_cache":13,"./observable_index":14,"./tree":17}],16:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, '__esModule', {
@@ -1862,6 +1856,10 @@ var _linked_list = require('./linked_list');
 
 var _linked_list2 = _interopRequireDefault(_linked_list);
 
+var _async_iterator = require('./async_iterator');
+
+var _async_iterator2 = _interopRequireDefault(_async_iterator);
+
 var _tree = require('./tree');
 
 function Sonic(obj) {
@@ -1879,13 +1877,14 @@ exports.Sonic = Sonic;
     Sonic.LinkedList = _linked_list2['default'];
     Sonic.Tree = _tree.Tree;
     Sonic.Path = _tree.Path;
+    Sonic.AsyncIterator = _async_iterator2['default'];
     Sonic.fromPromise = _factory.fromPromise;
 })(Sonic || (exports.Sonic = exports.Sonic = Sonic = {}));
 ;
 module.exports = Sonic;
 exports['default'] = Sonic;
 
-},{"./array_list":1,"./factory":4,"./linked_list":7,"./list":8,"./mutable_list":10,"./observable_list":14,"./tree":17,"./unit":18}],17:[function(require,module,exports){
+},{"./array_list":1,"./async_iterator":2,"./factory":5,"./linked_list":8,"./list":9,"./mutable_list":11,"./observable_list":15,"./tree":17,"./unit":18}],17:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, '__esModule', {
@@ -2039,7 +2038,7 @@ exports.Tree = Tree;
 })(Tree || (exports.Tree = Tree = {}));
 exports['default'] = Tree;
 
-},{"./list":8}],18:[function(require,module,exports){
+},{"./list":9}],18:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, '__esModule', {
@@ -2129,5 +2128,5 @@ var Unit = (function (_MutableList) {
 exports['default'] = Unit;
 module.exports = exports['default'];
 
-},{"./key":6,"./mutable_list":10,"./observable_list":14}]},{},[16])(16)
+},{"./key":7,"./mutable_list":11,"./observable_list":15}]},{},[16])(16)
 });

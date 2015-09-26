@@ -1,5 +1,4 @@
 import bind from './bind';
-import Range from './range';
 import { List } from './list';
 import { Path } from './tree';
 import { Subject } from './observable';
