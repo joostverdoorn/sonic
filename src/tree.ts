@@ -1,9 +1,9 @@
 import Key from './key';
-import { List, IList } from './list';
-import { MutableList, IMutableList } from './mutable_list';
+import State from './state';
+// import { MutableList, IMutableList } from './mutable_state';
 
 export type Path = Key[];
-export interface ITree<V> extends IList<ITree<V> | V> {};
+export interface ITree<V> extends State<ITree<V> | V> {};
 export interface IMutableTree<V> extends IMutableList<IMutableTree<V> | V> {};
 
 export module Path {
@@ -38,26 +38,26 @@ export module Path {
 }
 
 export module Tree {
-  export function get<V>(list: ITree<V>, path: Path, depth: number = Infinity): Promise<ITree<V> | V> {
+  export function get<V>(state: ITree<V>, path: Path, depth: number = Infinity): Promise<ITree<V> | V> {
     var head = Path.head(path),
         tail = Path.tail(path);
 
-    return list.get(head).then(value => {
+    return state.get(head).then(value => {
       if(tail.length == 0 || depth == 0) return value;
       return Tree.get(<ITree<V>> value, tail, depth)
     });
 
   }
 
-  export function prev(list: ITree<any>, path: Path = [], depth: number = Infinity): Promise<Path> {
+  export function prev(state: ITree<any>, path: Path = [], depth: number = Infinity): Promise<Path> {
     var head = Path.head(path),
         tail = Path.tail(path);
 
     if((head == null || !tail.length) && depth > 0) {
-      return list.prev(head).then(key => {
+      return state.prev(head).then(key => {
         if (key == null) return null;
 
-        return list.get(key).then(value => {
+        return state.get(key).then(value => {
           if(List.isList(value)) return Tree.prev(value, null, depth - 1).then(prev => {
             return prev == null ? null : Path.append(key, prev);
           });
@@ -68,28 +68,28 @@ export module Tree {
     }
 
     if(tail.length && depth > 0) {
-      return list.get(head)
-        .then(list => Tree.prev(list, tail, depth - 1))
+      return state.get(head)
+        .then(state => Tree.prev(state, tail, depth - 1))
         .then(prev => {
           if(prev != null) return Path.append(head, prev)
-          return list.prev(head).then(prev => {
-            return prev == null ? null : list.get(prev).then(list => Tree.prev(list, null, depth - 1)).then(tail => Path.append(prev, tail));
+          return state.prev(head).then(prev => {
+            return prev == null ? null : state.get(prev).then(state => Tree.prev(state, null, depth - 1)).then(tail => Path.append(prev, tail));
           });
         });
     }
 
-    return list.prev(head).then(prev => prev != null ? [prev] : null);
+    return state.prev(head).then(prev => prev != null ? [prev] : null);
   }
 
-  export function next(list: ITree<any>, path: Path = [], depth: number = Infinity): Promise<Path> {
+  export function next(state: ITree<any>, path: Path = [], depth: number = Infinity): Promise<Path> {
     var head = Path.head(path),
         tail = Path.tail(path);
 
     if((head == null || !tail.length) && depth > 0) {
-      return list.next(head).then(key => {
+      return state.next(head).then(key => {
         if (key == null) return null;
 
-        return list.get(key).then(value => {
+        return state.get(key).then(value => {
           if(List.isList(value)) return Tree.next(value, null, depth - 1).then(next => {
             return next == null ? null : Path.append(key, next);
           });
@@ -100,35 +100,35 @@ export module Tree {
     }
 
     if(tail.length && depth > 0) {
-      return list.get(head)
-        .then(list => Tree.next(list, tail, depth - 1))
+      return state.get(head)
+        .then(state => Tree.next(state, tail, depth - 1))
         .then(next => {
           if(next != null) return Path.append(head, next)
-          return list.next(head).then(next => {
-            return next == null ? null : list.get(next).then(list => Tree.next(list, null, depth - 1)).then(tail => Path.append(next, tail));
+          return state.next(head).then(next => {
+            return next == null ? null : state.get(next).then(state => Tree.next(state, null, depth - 1)).then(tail => Path.append(next, tail));
           });
         });
     }
 
-    return list.next(head).then(next => next != null ? [next] : null);
+    return state.next(head).then(next => next != null ? [next] : null);
   }
 
-  export function set<V>(list: IMutableTree<V>, path: Path, value: V): Promise<void> {
+  export function set<V>(state: IMutableTree<V>, path: Path, value: V): Promise<void> {
     var head = path.slice(0, path.length - 1);
     var key = path[path.length - 1];
 
-    return get(list, head).then((list: MutableList<V>) => list.set(key, value));
+    return get(state, head).then((state: MutableList<V>) => state.set(key, value));
   }
 
-  export function splice<V>(list: IMutableTree<V>, prev: Path, next: Path, ...values: V[]): Promise<void> {
+  export function splice<V>(state: IMutableTree<V>, prev: Path, next: Path, ...values: V[]): Promise<void> {
     var prevHead = prev.slice(0, prev.length - 1);
     var prevKey = prev[prev.length - 1];
 
     var nextHead = next.slice(0, next.length - 1);
     var nextKey = next[next.length - 1];
 
-    return get(list, prevHead)
-      .then((list: MutableList<V>) => list.splice(prevKey, nextKey, ...values))
+    return get(state, prevHead)
+      .then((state: MutableList<V>) => state.splice(prevKey, nextKey, ...values))
 
   }
 }

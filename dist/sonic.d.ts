@@ -1,23 +1,10 @@
-import { fromPromise as _fromPromise } from './factory';
-import _List from './list';
-import _ObservableList from './observable_list';
-import _MutableList from './mutable_list';
-import _Unit from './unit';
-import _ArrayList from './array_list';
-import _LinkedList from './linked_list';
-import _AsyncIterator from './async_iterator';
-import { Path as _Path, Tree as _Tree } from './tree';
-export declare function Sonic(obj: any): _Unit<any>;
+import _State from './state';
+import _StateIterator from './state_iterator';
+import _KeyedList from './keyed_list';
+export declare function Sonic(obj: any): void;
 export declare module Sonic {
-    var List: typeof _List;
-    var ObservableList: typeof _ObservableList;
-    var MutableList: typeof _MutableList;
-    var Unit: typeof _Unit;
-    var ArrayList: typeof _ArrayList;
-    var LinkedList: typeof _LinkedList;
-    var Tree: typeof _Tree;
-    var Path: typeof _Path;
-    var AsyncIterator: typeof _AsyncIterator;
-    var fromPromise: typeof _fromPromise;
+    var State: typeof _State;
+    var StateIterator: typeof _StateIterator;
+    var KeyedList: typeof _KeyedList;
 }
 export default Sonic;

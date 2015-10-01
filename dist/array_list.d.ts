@@ -1,5 +1,5 @@
 import { ISubscription } from './observable';
-import { IListObserver } from './observable_list';
+import { ListObserver } from './observable_list';
 import { MutableList } from './mutable_list';
 export default class ArrayList<V> extends MutableList<V> {
     private _array;
@@ -10,5 +10,5 @@ export default class ArrayList<V> extends MutableList<V> {
     next(key?: number): Promise<number>;
     set(key: number, value: V): Promise<void>;
     splice(prev: number, next: number, ...values: V[]): Promise<void>;
-    observe(observer: IListObserver): ISubscription;
+    observe(observer: ListObserver): ISubscription;
 }

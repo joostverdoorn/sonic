@@ -1,6 +1,6 @@
 import Key from './key';
 import { Subject, ISubject, ISubscription } from './observable';
-import { IListObserver, ListSubject } from './observable_list';
+import { ListObserver, ListSubject } from './observable_list';
 import { IMutableList, MutableList } from './mutable_list';
 
 export default class ArrayList<V> extends MutableList<V> {
@@ -51,7 +51,7 @@ export default class ArrayList<V> extends MutableList<V> {
     return Promise.resolve();
   }
 
-  observe(observer: IListObserver): ISubscription {
+  observe(observer: ListObserver): ISubscription {
     return this._subject.observe(observer);
   }
 }

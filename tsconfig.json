@@ -10,24 +10,16 @@
     ],
     "files": [
         "src/array_list.ts",
-        "src/async_iterator.ts",
         "src/bind.ts",
-        "src/cache.ts",
         "src/factory.ts",
-        "src/index.ts",
         "src/key.ts",
-        "src/linked_list.ts",
+        "src/keyed_list.ts",
         "src/list.ts",
-        "src/mutable_cache.ts",
-        "src/mutable_list.ts",
         "src/observable.ts",
-        "src/observable_cache.ts",
-        "src/observable_index.ts",
-        "src/observable_list.ts",
         "src/range.ts",
         "src/sonic.ts",
-        "src/tree.ts",
-        "src/unit.ts",
-        "src/x_list.ts"
+        "src/state.ts",
+        "src/state_iterator.ts",
+        "src/tree.ts"
     ]
 }
