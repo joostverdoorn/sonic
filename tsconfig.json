@@ -11,6 +11,7 @@
     "files": [
         "src/array_list.ts",
         "src/bind.ts",
+        "src/cache.ts",
         "src/factory.ts",
         "src/key.ts",
         "src/keyed_list.ts",

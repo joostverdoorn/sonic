@@ -54,6 +54,10 @@ export class StateIterator {
         return reduce(state, (memo, value) => (memo.push(value), memo), []);
     }
     StateIterator.toArray = toArray;
+    function toObject(state, range) {
+        return reduce(state, (memo, value, key) => (memo[key] = value, memo), Object.create(null));
+    }
+    StateIterator.toObject = toObject;
     function findKey(state, fn, range) {
         var key;
         return some(state, (v, k) => Promise.resolve(fn(v, k)).then(res => res ? (!!(key = k) || true) : false)).then(found => found ? key : null);

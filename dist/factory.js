@@ -1,30 +1,53 @@
-// import Key from './key';
-// import { List,           List           } from './list';
-// import { ObservableList, IObservableList } from './observable_list';
-// import { MutableList,    IMutableList    } from './mutable_list';
-//
-// import Unit      from './unit';
-// import ArrayList from './array_list';
-//
-// export default function factory<V,I>(obj: IMutableList<V>): MutableList<V>;
-// export default function factory<V,I>(obj: IObservableList<V>): ObservableList<V>;
-// export default function factory<V,I>(obj: List<V>): List<V>;
-// export default function factory<V>(obj: V[]): ArrayList<V>;
-// export default function factory<V>(obj: V): Unit<V>;
-// export default function factory(obj: any): any {
-//   if(MutableList.isMutableList(obj)) return MutableList.create(obj);
-//   if(ObservableList.isObservableList(obj)) return ObservableList.create(obj);
-//   if(List.isList(obj)) return List.create(obj);
-//   if(Array.isArray(obj)) return new ArrayList(obj);
-//   return Unit.create(obj);
-// }
-//
-// export function fromPromise<V>(promise: Promise<V>): IObservableList<V> {
-//   var unit = new Unit<V>();
-//
-//   promise.then( (value: V) => {
-//     unit.push(value);
-//   });
-//
-//   return ObservableList.create(unit);
-// }
+export var factory;
+(function (factory) {
+    function fromArray(values) {
+        return {
+            get: (key) => {
+                if (key in values)
+                    return Promise.resolve(values[key]);
+                return Promise.reject(new Error);
+            },
+            prev: (key) => {
+                var index = key == null ? values.length - 1 : key - 1;
+                return Promise.resolve(index == -1 ? null : index);
+            },
+            next: (key) => {
+                var index = key == null ? 0 : key + 1;
+                return Promise.resolve(index == values.length ? null : index);
+            }
+        };
+    }
+    factory.fromArray = fromArray;
+    function fromObject(values) {
+        var keys = Object.keys(values), indexByKey = {
+            "null": -1,
+        };
+        return {
+            get: (key) => {
+                if (key in values)
+                    return Promise.resolve(values[key]);
+                return Promise.reject(new Error);
+            },
+            prev: (key) => {
+                var index = key == null ? keys.length - 1 : indexByKey[key] - 1;
+                indexByKey[keys[index]] = index;
+                if (key == null)
+                    return Promise.resolve(keys[keys.length - 1]);
+                if (!(key in values))
+                    return Promise.reject(new Error);
+                return Promise.resolve(index == -1 ? null : keys[index]);
+            },
+            next: (key) => {
+                var index = indexByKey[key] + 1;
+                indexByKey[keys[index]] = index;
+                if (key == null)
+                    return Promise.resolve(keys[0]);
+                if (!(key in values))
+                    return Promise.reject(new Error);
+                return Promise.resolve(index == keys.length ? null : keys[index]);
+            }
+        };
+    }
+    factory.fromObject = fromObject;
+})(factory || (factory = {}));
+export default factory;

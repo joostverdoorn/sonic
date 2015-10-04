@@ -1,4 +1,167 @@
 (function(f){if(typeof exports==="object"&&typeof module!=="undefined"){module.exports=f()}else if(typeof define==="function"&&define.amd){define([],f)}else{var g;if(typeof window!=="undefined"){g=window}else if(typeof global!=="undefined"){g=global}else if(typeof self!=="undefined"){g=self}else{g=this}g.Sonic = f()}})(function(){var define,module,exports;return (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
+'use strict';
+
+Object.defineProperty(exports, '__esModule', {
+    value: true
+});
+
+var _createClass = (function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ('value' in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
+
+var _get2 = function get(_x, _x2, _x3) { var _again = true; _function: while (_again) { var object = _x, property = _x2, receiver = _x3; desc = parent = getter = undefined; _again = false; if (object === null) object = Function.prototype; var desc = Object.getOwnPropertyDescriptor(object, property); if (desc === undefined) { var parent = Object.getPrototypeOf(object); if (parent === null) { return undefined; } else { _x = parent; _x2 = property; _x3 = receiver; _again = true; continue _function; } } else if ('value' in desc) { return desc.value; } else { var getter = desc.get; if (getter === undefined) { return undefined; } return getter.call(receiver); } } };
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError('Cannot call a class as a function'); } }
+
+function _inherits(subClass, superClass) { if (typeof superClass !== 'function' && superClass !== null) { throw new TypeError('Super expression must either be null or a function, not ' + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) subClass.__proto__ = superClass; }
+
+var _list = require('./list');
+
+var Cache = (function (_List) {
+    function Cache(list) {
+        _classCallCheck(this, Cache);
+
+        _get2(Object.getPrototypeOf(Cache.prototype), 'constructor', this).call(this);
+        this._list = list;
+        this._get = Object.create(null);
+        this._prev = Object.create(null);
+        this._next = Object.create(null);
+        list.observe(this);
+    }
+
+    _inherits(Cache, _List);
+
+    _createClass(Cache, [{
+        key: 'onInvalidate',
+        value: function onInvalidate() {
+            var _this = this;
+
+            this._get = Object.create(this._get);
+            this._prev = Object.create(this._prev);
+            this._next = Object.create(this._next);
+
+            for (var _len = arguments.length, events = Array(_len), _key = 0; _key < _len; _key++) {
+                events[_key] = arguments[_key];
+            }
+
+            events.forEach(function (event) {
+                var key = event.key,
+                    value = event.value;
+                switch (event.type) {
+                    case _list.EventType.add:
+                        _this._get[key] = value;
+                        var prev = _this._prev['null'],
+                            next = null;
+                        _this._prev[next] = key;
+                        _this._next[key] = next;
+                        _this._prev[key] = prev;
+                        _this._next[prev] = key;
+                        break;
+                    case _list.EventType.remove:
+                        _this._get[key] = Cache.DELETED;
+                        var prev = _this._prev[key],
+                            next = _this._next[key];
+                        _this._prev[next] = prev;
+                        _this._next[prev] = next;
+                        break;
+                    case _list.EventType.replace:
+                        _this._get[key] = value;
+                        break;
+                }
+            });
+        }
+    }, {
+        key: 'state',
+        get: function get() {
+            var _get = this._get,
+                _prev = this._prev,
+                _next = this._next,
+                old = this._list.state;
+            var state = {
+                get: function get(key) {
+                    if (_get[key] == Cache.DELETED) return Promise.reject(new Error());
+                    return _get[key] == null ? old.get(key).then(function (res) {
+                        return _get[key] = res;
+                    }) : Promise.resolve(_get[key]);
+                },
+                prev: function prev(key) {
+                    return _prev[key] == null ? old.prev(key).then(function (res) {
+                        return (_next[res] = key, _prev[key] = res);
+                    }) : Promise.resolve(_prev[key]);
+                },
+                next: function next(key) {
+                    return _next[key] == null ? old.next(key).then(function (res) {
+                        return (_prev[res] = key, _next[key] = res);
+                    }) : Promise.resolve(_next[key]);
+                }
+            };
+            return state;
+        }
+    }]);
+
+    return Cache;
+})(_list.List);
+
+exports.Cache = Cache;
+
+Cache.DELETED = {};
+exports['default'] = Cache;
+
+},{"./list":4}],2:[function(require,module,exports){
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+    value: true
+});
+var factory;
+exports.factory = factory;
+(function (factory) {
+    function fromArray(values) {
+        return {
+            get: function get(key) {
+                if (key in values) return Promise.resolve(values[key]);
+                return Promise.reject(new Error());
+            },
+            prev: function prev(key) {
+                var index = key == null ? values.length - 1 : key - 1;
+                return Promise.resolve(index == -1 ? null : index);
+            },
+            next: function next(key) {
+                var index = key == null ? 0 : key + 1;
+                return Promise.resolve(index == values.length ? null : index);
+            }
+        };
+    }
+    factory.fromArray = fromArray;
+    function fromObject(values) {
+        var keys = Object.keys(values),
+            indexByKey = {
+            "null": -1
+        };
+        return {
+            get: function get(key) {
+                if (key in values) return Promise.resolve(values[key]);
+                return Promise.reject(new Error());
+            },
+            prev: function prev(key) {
+                var index = key == null ? keys.length - 1 : indexByKey[key] - 1;
+                indexByKey[keys[index]] = index;
+                if (key == null) return Promise.resolve(keys[keys.length - 1]);
+                if (!(key in values)) return Promise.reject(new Error());
+                return Promise.resolve(index == -1 ? null : keys[index]);
+            },
+            next: function next(key) {
+                var index = indexByKey[key] + 1;
+                indexByKey[keys[index]] = index;
+                if (key == null) return Promise.resolve(keys[0]);
+                if (!(key in values)) return Promise.reject(new Error());
+                return Promise.resolve(index == keys.length ? null : keys[index]);
+            }
+        };
+    }
+    factory.fromObject = fromObject;
+})(factory || (exports.factory = factory = {}));
+exports["default"] = factory;
+
+},{}],3:[function(require,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -19,7 +182,7 @@ var Key;
 exports["default"] = Key;
 module.exports = exports["default"];
 
-},{}],2:[function(require,module,exports){
+},{}],4:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, '__esModule', {
@@ -28,140 +191,11 @@ Object.defineProperty(exports, '__esModule', {
 
 var _createClass = (function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ('value' in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
 
-var _get = function get(_x3, _x4, _x5) { var _again = true; _function: while (_again) { var object = _x3, property = _x4, receiver = _x5; desc = parent = getter = undefined; _again = false; if (object === null) object = Function.prototype; var desc = Object.getOwnPropertyDescriptor(object, property); if (desc === undefined) { var parent = Object.getPrototypeOf(object); if (parent === null) { return undefined; } else { _x3 = parent; _x4 = property; _x5 = receiver; _again = true; continue _function; } } else if ('value' in desc) { return desc.value; } else { var getter = desc.get; if (getter === undefined) { return undefined; } return getter.call(receiver); } } };
-
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
+
+function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) arr2[i] = arr[i]; return arr2; } else { return Array.from(arr); } }
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError('Cannot call a class as a function'); } }
-
-function _inherits(subClass, superClass) { if (typeof superClass !== 'function' && superClass !== null) { throw new TypeError('Super expression must either be null or a function, not ' + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
-
-var _key = require('./key');
-
-var _key2 = _interopRequireDefault(_key);
-
-var _list = require('./list');
-
-var _list2 = _interopRequireDefault(_list);
-
-var KeyedList = (function (_List) {
-    _inherits(KeyedList, _List);
-
-    function KeyedList(values, keyFn) {
-        _classCallCheck(this, KeyedList);
-
-        _get(Object.getPrototypeOf(KeyedList.prototype), 'constructor', this).call(this);
-        this._keyFn = keyFn || _key2['default'].create;
-        this._pseudoState = Object.keys(values).reduce(function (state, key, index, keys) {
-            state.get[key] = values[key];
-            if (index == 0) state.next['null'] = key;
-            if (index == keys.length - 1) state.prev['null'] = key;
-            state.prev[key] = keys[index - 1] != null ? keys[index - 1] : null;
-            state.next[key] = keys[index + 1] != null ? keys[index + 1] : null;
-            return state;
-        }, {
-            get: Object.create(null),
-            prev: Object.create(null),
-            next: Object.create(null)
-        });
-    }
-
-    _createClass(KeyedList, [{
-        key: 'getState',
-        value: function getState() {
-            var pseudoState = this._pseudoState;
-            return {
-                get: function get(key) {
-                    if (key in pseudoState.get && pseudoState.get[key] != KeyedList.DELETED) return Promise.resolve(pseudoState.get[key]);
-                    return Promise.reject(new Error());
-                },
-                prev: function prev() {
-                    var key = arguments.length <= 0 || arguments[0] === undefined ? null : arguments[0];
-
-                    if (key in pseudoState.prev) return Promise.resolve(pseudoState.prev[key]);
-                    return Promise.reject(new Error());
-                },
-                next: function next() {
-                    var key = arguments.length <= 0 || arguments[0] === undefined ? null : arguments[0];
-
-                    if (key in pseudoState.next) return Promise.resolve(pseudoState.next[key]);
-                    return Promise.reject(new Error());
-                }
-            };
-        }
-    }, {
-        key: 'add',
-        value: function add(value) {
-            var key = this._keyFn(value);
-            if (key in this._pseudoState.get) return this.replace(key, value);
-            var pseudoState = Object.create(this._pseudoState);
-            pseudoState.get[key] = value;
-            var prev = pseudoState.prev['null'],
-                next = null;
-            pseudoState.prev[next] = key;
-            pseudoState.next[key] = next;
-            pseudoState.prev[key] = prev;
-            pseudoState.next[prev] = key;
-            this._pseudoState = pseudoState;
-            return Promise.resolve();
-        }
-    }, {
-        key: 'replace',
-        value: function replace(key, value) {
-            if (!(key in this._pseudoState.get)) return Promise.reject(new Error());
-            var pseudoState = Object.create(this._pseudoState);
-            pseudoState.get[key] = value;
-            this._pseudoState = pseudoState;
-            return Promise.resolve();
-        }
-    }, {
-        key: 'remove',
-        value: function remove(key) {
-            if (!(key in this._pseudoState.get)) return Promise.reject(new Error());
-            var pseudoState = Object.create(this._pseudoState);
-            pseudoState.get[key] = KeyedList.DELETED;
-            var prev = pseudoState.prev[key],
-                next = pseudoState.next[key];
-            pseudoState.prev[next] = prev;
-            pseudoState.next[prev] = next;
-            this._pseudoState = pseudoState;
-            return Promise.resolve();
-        }
-    }]);
-
-    return KeyedList;
-})(_list2['default']);
-
-exports['default'] = KeyedList;
-
-KeyedList.DELETED = {};
-module.exports = exports['default'];
-
-},{"./key":1,"./list":3}],3:[function(require,module,exports){
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-var List = function List() {
-  _classCallCheck(this, List);
-};
-
-exports.List = List;
-exports["default"] = List;
-
-},{}],4:[function(require,module,exports){
-'use strict';
-
-Object.defineProperty(exports, '__esModule', {
-    value: true
-});
-exports.Sonic = Sonic;
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
 
 var _state = require('./state');
 
@@ -171,24 +205,144 @@ var _state_iterator = require('./state_iterator');
 
 var _state_iterator2 = _interopRequireDefault(_state_iterator);
 
-var _keyed_list = require('./keyed_list');
+var _observable = require('./observable');
 
-var _keyed_list2 = _interopRequireDefault(_keyed_list);
+var EventType;
+exports.EventType = EventType;
+(function (EventType) {
+    EventType[EventType['add'] = 0] = 'add';
+    EventType[EventType['remove'] = 1] = 'remove';
+    EventType[EventType['replace'] = 2] = 'replace';
+})(EventType || (exports.EventType = EventType = {}));
 
-function Sonic(obj) {}
+var List = (function () {
+    function List(initial) {
+        var _this = this;
 
-var Sonic;
-exports.Sonic = Sonic;
-(function (Sonic) {
-    Sonic.State = _state2['default'];
-    Sonic.StateIterator = _state_iterator2['default'];
-    Sonic.KeyedList = _keyed_list2['default'];
-})(Sonic || (exports.Sonic = exports.Sonic = Sonic = {}));
-;
-module.exports = Sonic;
-exports['default'] = Sonic;
+        _classCallCheck(this, List);
 
-},{"./keyed_list":2,"./state":5,"./state_iterator":6}],5:[function(require,module,exports){
+        Object.keys(_state_iterator2['default']).forEach(function (key) {
+            return _this[key] = function () {
+                for (var _len = arguments.length, args = Array(_len), _key = 0; _key < _len; _key++) {
+                    args[_key] = arguments[_key];
+                }
+
+                return _state_iterator2['default'][key].apply(_state_iterator2['default'], [_this.state].concat(args));
+            };
+        });
+        Object.keys(List).forEach(function (key) {
+            return _this[key] = function () {
+                for (var _len2 = arguments.length, args = Array(_len2), _key2 = 0; _key2 < _len2; _key2++) {
+                    args[_key2] = arguments[_key2];
+                }
+
+                return List[key].apply(List, [_this].concat(args));
+            };
+        });
+        if (initial != null) this.state = initial;
+        this._subject = new _observable.Subject();
+        this.observe(this);
+    }
+
+    _createClass(List, [{
+        key: 'add',
+        value: function add(key, value) {
+            this._subject.notify(function (observer) {
+                return observer.onInvalidate({ type: EventType.add, key: key, value: value });
+            });
+            return Promise.resolve();
+        }
+    }, {
+        key: 'replace',
+        value: function replace(key, value) {
+            this._subject.notify(function (observer) {
+                return observer.onInvalidate({ type: EventType.replace, key: key, value: value });
+            });
+            return Promise.resolve();
+        }
+    }, {
+        key: 'remove',
+        value: function remove(key) {
+            this._subject.notify(function (observer) {
+                return observer.onInvalidate({ type: EventType.remove, key: key });
+            });
+            return Promise.resolve();
+        }
+    }, {
+        key: 'observe',
+        value: function observe(observer) {
+            return this._subject.observe(observer);
+        }
+    }, {
+        key: 'onInvalidate',
+        value: function onInvalidate() {
+            var _this2 = this;
+
+            for (var _len3 = arguments.length, events = Array(_len3), _key3 = 0; _key3 < _len3; _key3++) {
+                events[_key3] = arguments[_key3];
+            }
+
+            events.forEach(function (event) {
+                switch (event.type) {
+                    case EventType.add:
+                        _this2.state = _state2['default'].add(_this2.state, event.key, event.value);
+                        break;
+                    case EventType.remove:
+                        _this2.state = _state2['default'].remove(_this2.state, event.key);
+                        break;
+                    case EventType.replace:
+                        _this2.state = _state2['default'].replace(_this2.state, event.key, event.value);
+                        break;
+                }
+            });
+        }
+    }, {
+        key: 'get',
+        get: function get() {
+            return this.state.get;
+        }
+    }, {
+        key: 'prev',
+        get: function get() {
+            return this.state.prev;
+        }
+    }, {
+        key: 'next',
+        get: function get() {
+            return this.state.next;
+        }
+    }]);
+
+    return List;
+})();
+
+exports.List = List;
+
+(function (List) {
+    function map(old, mapFn) {
+        var list = new List(_state2['default'].map(old.state, mapFn));
+        old.observe({
+            onInvalidate: function onInvalidate() {
+                for (var _len4 = arguments.length, events = Array(_len4), _key4 = 0; _key4 < _len4; _key4++) {
+                    events[_key4] = arguments[_key4];
+                }
+
+                Promise.all(events.map(function (event) {
+                    return Promise.resolve(mapFn(event.value, event.key)).then(function (value) {
+                        return { type: event.type, key: event.key, value: value };
+                    });
+                })).then(function (res) {
+                    return list.onInvalidate.apply(list, _toConsumableArray(res));
+                });
+            }
+        });
+        return list;
+    }
+    List.map = map;
+})(List || (exports.List = List = {}));
+exports['default'] = List;
+
+},{"./observable":5,"./state":6,"./state_iterator":7}],5:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, '__esModule', {
@@ -197,53 +351,175 @@ Object.defineProperty(exports, '__esModule', {
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
 
-var _state_iterator = require('./state_iterator');
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError('Cannot call a class as a function'); } }
+
+var _key = require('./key');
+
+var _key2 = _interopRequireDefault(_key);
+
+var Subject = function Subject() {
+    var _this = this;
+
+    _classCallCheck(this, Subject);
+
+    this.observe = function (observer) {
+        var observerKey = _key2['default'].create();
+        _this._observers[observerKey] = observer;
+        return {
+            unsubscribe: function unsubscribe() {
+                delete _this._observers[observerKey];
+            }
+        };
+    };
+    this.notify = function (notifier) {
+        for (var observerKey in _this._observers) notifier(_this._observers[observerKey]);
+    };
+    this._observers = Object.create(null);
+};
+
+exports.Subject = Subject;
+
+},{"./key":3}],6:[function(require,module,exports){
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+    value: true
+});
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { "default": obj }; }
+
+var _state_iterator = require("./state_iterator");
 
 var _state_iterator2 = _interopRequireDefault(_state_iterator);
 
 var State;
 exports.State = State;
 (function (State) {
-    function reverse(list) {
-        var get = list.get;
-        var prev = list.next;
-        var next = list.prev;
-
-        return { get: get, prev: prev, next: next };
+    function fromArray(values) {
+        return {
+            get: function get(key) {
+                if (key in values) return Promise.resolve(values[key]);
+                return Promise.reject(new Error());
+            },
+            prev: function prev(key) {
+                var index = key == null ? values.length - 1 : key - 1;
+                return Promise.resolve(index == -1 ? null : index);
+            },
+            next: function next(key) {
+                var index = key == null ? 0 : key + 1;
+                return Promise.resolve(index == values.length ? null : index);
+            }
+        };
+    }
+    State.fromArray = fromArray;
+    function fromObject(values) {
+        var keys = Object.keys(values),
+            indexByKey = {
+            "null": -1
+        };
+        return {
+            get: function get(key) {
+                if (key in values) return Promise.resolve(values[key]);
+                return Promise.reject(new Error());
+            },
+            prev: function prev(key) {
+                var index = key == null ? keys.length - 1 : indexByKey[key] - 1;
+                indexByKey[keys[index]] = index;
+                if (key == null) return Promise.resolve(keys[keys.length - 1]);
+                if (!(key in values)) return Promise.reject(new Error());
+                return Promise.resolve(index == -1 ? null : keys[index]);
+            },
+            next: function next(key) {
+                var index = indexByKey[key] + 1;
+                indexByKey[keys[index]] = index;
+                if (key == null) return Promise.resolve(keys[0]);
+                if (!(key in values)) return Promise.reject(new Error());
+                return Promise.resolve(index == keys.length ? null : keys[index]);
+            }
+        };
+    }
+    State.fromObject = fromObject;
+    function add(old, key, value) {
+        var state = Object.create(old);
+        state.prev = function (k) {
+            if (k == null) return Promise.resolve(key);else if (k == key) return old.prev(null);
+            return old.prev(k);
+        };
+        state.next = function (k) {
+            if (k == key) return Promise.resolve(null);
+            return old.next(k).then(function (n) {
+                return n == null ? key : n;
+            });
+        };
+        return State.replace(state, key, value);
+    }
+    State.add = add;
+    function replace(old, key, value) {
+        var state = Object.create(old);
+        state.get = function (k) {
+            if (k == key) return Promise.resolve(value);
+            return old.get(k);
+        };
+        return state;
+    }
+    State.replace = replace;
+    function remove(old, key) {
+        var state = Object.create(old);
+        state.get = function (k) {
+            if (k == key) return Promise.reject(new Error());
+            return old.get(k);
+        };
+        state.prev = function (k) {
+            return old.prev(k).then(function (p) {
+                return p == key ? old.prev(p) : p;
+            });
+        };
+        state.next = function (k) {
+            return old.next(k).then(function (n) {
+                return n == key ? old.next(n) : n;
+            });
+        };
+        return state;
+    }
+    State.remove = remove;
+    function reverse(old) {
+        var state = Object.create(old);
+        state.prev = old.next;
+        state.next = old.prev;
+        return state;
     }
     State.reverse = reverse;
-    function map(list, mapFn) {
-        var prev = list.prev;
-        var next = list.next;
-
-        function get(key) {
-            return list.get(key).then(function (value) {
+    function map(old, mapFn) {
+        var state = Object.create(old);
+        state.get = function (key) {
+            return old.get(key).then(function (value) {
                 return mapFn(value, key);
             });
-        }
-        return { get: get, prev: prev, next: next };
+        };
+        return state;
     }
     State.map = map;
-    function filter(list, filterFn) {
-        function get(key) {
-            return list.get(key).then(function (value) {
+    function filter(old, filterFn) {
+        var state = Object.create(old);
+        state.get = function (key) {
+            return old.get(key).then(function (value) {
                 if (filterFn(value)) return value;
                 throw new Error();
             });
-        }
-        function prev(key) {
-            return _state_iterator2['default'].findKey(State.reverse(list), filterFn, [key, null]);
-        }
-        function next(key) {
-            return _state_iterator2['default'].findKey(list, filterFn, [key, null]);
-        }
-        return { get: get, prev: prev, next: next };
+        };
+        state.prev = function (key) {
+            return _state_iterator2["default"].findKey(State.reverse(old), filterFn, [key, null]);
+        };
+        state.next = function (key) {
+            return _state_iterator2["default"].findKey(old, filterFn, [key, null]);
+        };
+        return state;
     }
     State.filter = filter;
 })(State || (exports.State = State = {}));
-exports['default'] = State;
+exports["default"] = State;
 
-},{"./state_iterator":6}],6:[function(require,module,exports){
+},{"./state_iterator":7}],7:[function(require,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -255,7 +531,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 var StateIterator = function StateIterator(state) {
     var _this = this;
 
-    var range = arguments.length <= 1 || arguments[1] === undefined ? [null, null] : arguments[1];
+    var range = arguments[1] === undefined ? [null, null] : arguments[1];
 
     _classCallCheck(this, StateIterator);
 
@@ -282,13 +558,13 @@ exports.StateIterator = StateIterator;
 
 (function (StateIterator) {
     function first(state) {
-        var range = arguments.length <= 1 || arguments[1] === undefined ? [null, null] : arguments[1];
+        var range = arguments[1] === undefined ? [null, null] : arguments[1];
 
         return state.next(range[0]).then(state.get);
     }
     StateIterator.first = first;
     function last(state) {
-        var range = arguments.length <= 1 || arguments[1] === undefined ? [null, null] : arguments[1];
+        var range = arguments[1] === undefined ? [null, null] : arguments[1];
 
         return state.prev(range[1]).then(state.get);
     }
@@ -341,6 +617,12 @@ exports.StateIterator = StateIterator;
         }, []);
     }
     StateIterator.toArray = toArray;
+    function toObject(state, range) {
+        return reduce(state, function (memo, value, key) {
+            return (memo[key] = value, memo);
+        }, Object.create(null));
+    }
+    StateIterator.toObject = toObject;
     function findKey(state, fn, range) {
         var key;
         return some(state, function (v, k) {
@@ -394,5 +676,54 @@ exports.StateIterator = StateIterator;
 })(StateIterator || (exports.StateIterator = StateIterator = {}));
 exports["default"] = StateIterator;
 
-},{}]},{},[4])(4)
+},{}],8:[function(require,module,exports){
+'use strict';
+
+Object.defineProperty(exports, '__esModule', {
+    value: true
+});
+exports.Sonic = Sonic;
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
+
+var _state = require('./state');
+
+var _state2 = _interopRequireDefault(_state);
+
+var _state_iterator = require('./state_iterator');
+
+var _state_iterator2 = _interopRequireDefault(_state_iterator);
+
+var _list = require('./list');
+
+var _list2 = _interopRequireDefault(_list);
+
+var _cache = require('./cache');
+
+var _cache2 = _interopRequireDefault(_cache);
+
+var _factory2 = require('./factory');
+
+var _factory3 = _interopRequireDefault(_factory2);
+
+function Sonic(obj) {
+    if (obj instanceof Array) return new _list2['default'](_factory3['default'].fromArray(obj));
+    if (obj instanceof Object) return new _list2['default'](_factory3['default'].fromObject(obj));
+}
+
+var Sonic;
+exports.Sonic = Sonic;
+(function (Sonic) {
+    Sonic.State = _state2['default'];
+    Sonic.StateIterator = _state_iterator2['default'];
+    Sonic.List = _list2['default'];
+    // export var KeyedList      = _KeyedList;
+    Sonic.Cache = _cache2['default'];
+    Sonic.factory = _factory3['default'];
+})(Sonic || (exports.Sonic = exports.Sonic = Sonic = {}));
+;
+module.exports = Sonic;
+exports['default'] = Sonic;
+
+},{"./cache":1,"./factory":2,"./list":4,"./state":6,"./state_iterator":7}]},{},[8])(8)
 });

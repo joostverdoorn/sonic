@@ -67,6 +67,10 @@ export module StateIterator {
     return reduce<V, V[]>(state, (memo: V[], value: V) => (memo.push(value), memo), []);
   }
 
+  export function toObject<V>(state: State<V>, range?: Range): Promise<V[]> {
+    return reduce<V, V[]>(state, (memo: V[], value: V, key: Key) => (memo[key] = value, memo), Object.create(null));
+  }
+
   export function findKey<V>(state: State<V>, fn: (value: V, key?: Key) => boolean | Promise<boolean>, range?: Range): Promise<Key> {
     var key: Key;
     return some(state, (v: V, k: Key) => Promise.resolve(fn(v, k)).then(res => res ? (!!(key = k) || true) : false)).then(found => found ? key : null);
