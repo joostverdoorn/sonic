@@ -45,7 +45,7 @@ export class Cache<V> extends List<V> implements ListObserver {
     list.observe(this);
   }
 
-  onInvalidate(...events: ListEvent<V>[]): void {
+  onInvalidate(...events: ListEvent<V>[]): Promise<void> {
     this._get = Object.create(this._get);
     this._prev = Object.create(this._prev);
     this._next = Object.create(this._next);
@@ -84,7 +84,7 @@ export class Cache<V> extends List<V> implements ListObserver {
         break;
       }
     });
-    this._subject.notify((observer) => observer.onInvalidate(...events));
+    return Promise.resolve(this._subject.notify((observer) => observer.onInvalidate(...events)));
   }
 }
 

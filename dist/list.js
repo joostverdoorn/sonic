@@ -25,16 +25,13 @@ export class List {
         return this.state.next;
     }
     add(key, value) {
-        this.onInvalidate({ type: EventType.add, key, value });
-        return Promise.resolve();
+        return this.onInvalidate({ type: EventType.add, key, value });
     }
     replace(key, value) {
-        this.onInvalidate({ type: EventType.replace, key, value });
-        return Promise.resolve();
+        return this.state.get(key).then(old => this.onInvalidate({ type: EventType.replace, key, value, oldValue: old }));
     }
     remove(key) {
-        this.onInvalidate({ type: EventType.remove, key });
-        return Promise.resolve();
+        return this.onInvalidate({ type: EventType.remove, key });
     }
     observe(observer) {
         return this._subject.observe(observer);
@@ -53,16 +50,19 @@ export class List {
                     break;
             }
         });
-        this._subject.notify((observer) => observer.onInvalidate(...events));
+        return Promise.resolve(this._subject.notify((observer) => observer.onInvalidate(...events)));
     }
     ;
 }
 (function (List) {
+    // export function cache<V>(old: List<V>): List<V> {
+    //   return new Cache(old);
+    // }
     function map(old, mapFn) {
         var list = new List(State.map(old.state, mapFn));
         old.observe({
             onInvalidate(...events) {
-                Promise.all(events.map((event) => {
+                return Promise.all(events.map((event) => {
                     return Promise.resolve(mapFn(event.value, event.key)).then((value) => {
                         return { type: event.type, key: event.key, value };
                     });
@@ -72,5 +72,35 @@ export class List {
         return list;
     }
     List.map = map;
+    function filter(old, filterFn) {
+        var state = State.filter(old.state, filterFn), list = new List(state);
+        old.observe({
+            onInvalidate(...events) {
+                return Promise.all(events
+                    .map((event) => {
+                    if (event.type == EventType.add && filterFn(event.value, event.key))
+                        return Promise.resolve(event);
+                    if (event.type == EventType.replace) {
+                        if (filterFn(event.oldValue, event.key) && (!filterFn(event.value, event.key))) {
+                            return Promise.resolve({ type: EventType.remove, key: event.key });
+                        }
+                        if ((!filterFn(event.oldValue, event.key)) && (filterFn(event.value, event.key))) {
+                            return Promise.resolve({ type: EventType.add, key: event.key, value: event.value });
+                        }
+                        if (filterFn(event.oldValue, event.key) && filterFn(event.value, event.key)) {
+                            return event;
+                        }
+                    }
+                    if (event.type == EventType.remove) {
+                        return state.get(event.key).then(value => filterFn(value, event.key) ? event : null, () => { });
+                    }
+                    return null;
+                }))
+                    .then((res) => list.onInvalidate(...res.filter(event => event != null)));
+            }
+        });
+        return list;
+    }
+    List.filter = filter;
 })(List || (List = {}));
 export default List;

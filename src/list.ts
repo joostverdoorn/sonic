@@ -3,9 +3,10 @@ import   Range                           from './range';
 import   State                           from './state';
 import   StateIterator                   from './state_iterator';
 import   { IObservable, ISubscription, Subject }   from './observable';
+// import   Cache                                     from './cache';
 
 export interface ListObserver {
-  onInvalidate<V>(...events: ListEvent<V>[]): void;
+  onInvalidate<V>(...events: ListEvent<V>[]): Promise<void>;
 }
 
 export enum EventType {
@@ -45,25 +46,22 @@ export class List<V> implements State<V>, IObservable<ListObserver> {
   }
 
   add(key: Key, value: V): Promise<void> {
-    this.onInvalidate({type: EventType.add, key, value});
-    return Promise.resolve();
+    return this.onInvalidate({type: EventType.add, key, value});
   }
 
   replace(key: Key, value: V): Promise<void> {
-    this.onInvalidate({type: EventType.replace, key, value});
-    return Promise.resolve();
+    return this.state.get(key).then(old => this.onInvalidate({type: EventType.replace, key, value, oldValue: old}));
   }
 
   remove(key: Key): Promise<void> {
-    this.onInvalidate({type: EventType.remove, key});
-    return Promise.resolve();
+    return this.onInvalidate({type: EventType.remove, key});
   }
 
   observe(observer: ListObserver): ISubscription {
     return this._subject.observe(observer);
   }
 
-  onInvalidate(...events: ListEvent<V>[]): void {
+  onInvalidate(...events: ListEvent<V>[]): Promise<void> {
     events.forEach( (event) => {
       switch(event.type) {
         case EventType.add:
@@ -77,22 +75,67 @@ export class List<V> implements State<V>, IObservable<ListObserver> {
         break;
       }
     });
-    this._subject.notify((observer) => observer.onInvalidate(...events));
+    return Promise.resolve(this._subject.notify((observer) => observer.onInvalidate(...events)));
   };
 }
 
 export module List {
 
+  // export function cache<V>(old: List<V>): List<V> {
+  //   return new Cache(old);
+  // }
+
   export function map<V, W>(old: List<V>, mapFn: (value: V, key?: Key) => W | Promise<W>): List<W> {
     var list = new List(State.map(old.state, mapFn));
 
     old.observe({
-      onInvalidate(...events: ListEvent<V>[]): void {
-        Promise.all(events.map( (event) => {
+      onInvalidate(...events: ListEvent<V>[]): Promise<void> {
+        return Promise.all(events.map( (event) => {
           return Promise.resolve(mapFn(event.value, event.key)).then( (value: W) => {
             return <ListEvent<W>>{type: event.type, key: event.key, value}
           })
         })).then((res) => list.onInvalidate(...res));
+      }
+    });
+
+    return list;
+  }
+
+  export function filter<V>(old: List<V>, filterFn: (value: V, key?: Key) => boolean): List<V> {
+    var state = State.filter(old.state, filterFn),
+      list = new List(state);
+
+    old.observe({
+      onInvalidate(...events: ListEvent<V>[]): Promise<void> {
+        return Promise.all(events
+          .map( (event) => {
+            if (event.type == EventType.add && filterFn(event.value, event.key)) return Promise.resolve(event);
+
+            if (event.type == EventType.replace) {
+              if (filterFn(event.oldValue, event.key) && (!filterFn(event.value, event.key))) {
+                return Promise.resolve({type: EventType.remove, key: event.key});
+              }
+
+              if ((!filterFn(event.oldValue, event.key)) && (filterFn(event.value, event.key))) {
+                return Promise.resolve({type: EventType.add, key: event.key, value: event.value});
+              }
+
+              if (filterFn(event.oldValue, event.key) && filterFn(event.value, event.key)) {
+                return event;
+              }
+
+            }
+
+
+            if (event.type == EventType.remove) {
+              return state.get(event.key).then(value => filterFn(value, event.key) ? event : null, () => {})
+            }
+
+            return null;
+
+
+        }))
+        .then( (res) => list.onInvalidate(...res.filter(event => event != null)));
       }
     });
 

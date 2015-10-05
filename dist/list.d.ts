@@ -2,7 +2,7 @@ import Key from './key';
 import State from './state';
 import { IObservable, ISubscription, Subject } from './observable';
 export interface ListObserver {
-    onInvalidate<V>(...events: ListEvent<V>[]): void;
+    onInvalidate<V>(...events: ListEvent<V>[]): Promise<void>;
 }
 export declare enum EventType {
     "add" = 0,
@@ -26,9 +26,10 @@ export declare class List<V> implements State<V>, IObservable<ListObserver> {
     replace(key: Key, value: V): Promise<void>;
     remove(key: Key): Promise<void>;
     observe(observer: ListObserver): ISubscription;
-    onInvalidate(...events: ListEvent<V>[]): void;
+    onInvalidate(...events: ListEvent<V>[]): Promise<void>;
 }
 export declare module List {
     function map<V, W>(old: List<V>, mapFn: (value: V, key?: Key) => W | Promise<W>): List<W>;
+    function filter<V>(old: List<V>, filterFn: (value: V, key?: Key) => boolean): List<V>;
 }
 export default List;

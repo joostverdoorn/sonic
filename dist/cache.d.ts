@@ -15,6 +15,6 @@ export declare class Cache<V> extends List<V> implements ListObserver {
     };
     state: State<V>;
     constructor(list: List<V>);
-    onInvalidate(...events: ListEvent<V>[]): void;
+    onInvalidate(...events: ListEvent<V>[]): Promise<void>;
 }
 export default Cache;

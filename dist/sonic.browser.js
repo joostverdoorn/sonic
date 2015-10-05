@@ -66,9 +66,9 @@ var Cache = (function (_List) {
                         break;
                 }
             });
-            this._subject.notify(function (observer) {
+            return Promise.resolve(this._subject.notify(function (observer) {
                 return observer.onInvalidate.apply(observer, events);
-            });
+            }));
         }
     }, {
         key: 'state',
@@ -248,20 +248,21 @@ var List = (function () {
     _createClass(List, [{
         key: 'add',
         value: function add(key, value) {
-            this.onInvalidate({ type: EventType.add, key: key, value: value });
-            return Promise.resolve();
+            return this.onInvalidate({ type: EventType.add, key: key, value: value });
         }
     }, {
         key: 'replace',
         value: function replace(key, value) {
-            this.onInvalidate({ type: EventType.replace, key: key, value: value });
-            return Promise.resolve();
+            var _this2 = this;
+
+            return this.state.get(key).then(function (old) {
+                return _this2.onInvalidate({ type: EventType.replace, key: key, value: value, oldValue: old });
+            });
         }
     }, {
         key: 'remove',
         value: function remove(key) {
-            this.onInvalidate({ type: EventType.remove, key: key });
-            return Promise.resolve();
+            return this.onInvalidate({ type: EventType.remove, key: key });
         }
     }, {
         key: 'observe',
@@ -271,7 +272,7 @@ var List = (function () {
     }, {
         key: 'onInvalidate',
         value: function onInvalidate() {
-            var _this2 = this;
+            var _this3 = this;
 
             for (var _len3 = arguments.length, events = Array(_len3), _key3 = 0; _key3 < _len3; _key3++) {
                 events[_key3] = arguments[_key3];
@@ -280,19 +281,19 @@ var List = (function () {
             events.forEach(function (event) {
                 switch (event.type) {
                     case EventType.add:
-                        _this2.state = _state2['default'].add(_this2.state, event.key, event.value);
+                        _this3.state = _state2['default'].add(_this3.state, event.key, event.value);
                         break;
                     case EventType.remove:
-                        _this2.state = _state2['default'].remove(_this2.state, event.key);
+                        _this3.state = _state2['default'].remove(_this3.state, event.key);
                         break;
                     case EventType.replace:
-                        _this2.state = _state2['default'].replace(_this2.state, event.key, event.value);
+                        _this3.state = _state2['default'].replace(_this3.state, event.key, event.value);
                         break;
                 }
             });
-            this._subject.notify(function (observer) {
+            return Promise.resolve(this._subject.notify(function (observer) {
                 return observer.onInvalidate.apply(observer, events);
-            });
+            }));
         }
     }, {
         key: 'get',
@@ -317,6 +318,9 @@ var List = (function () {
 exports.List = List;
 
 (function (List) {
+    // export function cache<V>(old: List<V>): List<V> {
+    //   return new Cache(old);
+    // }
     function map(old, mapFn) {
         var list = new List(_state2['default'].map(old.state, mapFn));
         old.observe({
@@ -325,7 +329,7 @@ exports.List = List;
                     events[_key4] = arguments[_key4];
                 }
 
-                Promise.all(events.map(function (event) {
+                return Promise.all(events.map(function (event) {
                     return Promise.resolve(mapFn(event.value, event.key)).then(function (value) {
                         return { type: event.type, key: event.key, value: value };
                     });
@@ -337,6 +341,44 @@ exports.List = List;
         return list;
     }
     List.map = map;
+    function filter(old, filterFn) {
+        var state = _state2['default'].filter(old.state, filterFn),
+            list = new List(state);
+        old.observe({
+            onInvalidate: function onInvalidate() {
+                for (var _len5 = arguments.length, events = Array(_len5), _key5 = 0; _key5 < _len5; _key5++) {
+                    events[_key5] = arguments[_key5];
+                }
+
+                return Promise.all(events.map(function (event) {
+                    if (event.type == EventType.add && filterFn(event.value, event.key)) return Promise.resolve(event);
+                    if (event.type == EventType.replace) {
+                        if (filterFn(event.oldValue, event.key) && !filterFn(event.value, event.key)) {
+                            return Promise.resolve({ type: EventType.remove, key: event.key });
+                        }
+                        if (!filterFn(event.oldValue, event.key) && filterFn(event.value, event.key)) {
+                            return Promise.resolve({ type: EventType.add, key: event.key, value: event.value });
+                        }
+                        if (filterFn(event.oldValue, event.key) && filterFn(event.value, event.key)) {
+                            return event;
+                        }
+                    }
+                    if (event.type == EventType.remove) {
+                        return state.get(event.key).then(function (value) {
+                            return filterFn(value, event.key) ? event : null;
+                        }, function () {});
+                    }
+                    return null;
+                })).then(function (res) {
+                    return list.onInvalidate.apply(list, _toConsumableArray(res.filter(function (event) {
+                        return event != null;
+                    })));
+                });
+            }
+        });
+        return list;
+    }
+    List.filter = filter;
 })(List || (exports.List = List = {}));
 exports['default'] = List;
 
@@ -370,7 +412,10 @@ var Subject = function Subject() {
         };
     };
     this.notify = function (notifier) {
-        for (var observerKey in _this._observers) notifier(_this._observers[observerKey]);
+        return Promise.all(Object.keys(_this._observers).map(function (key) {
+            return notifier(_this._observers[key]);
+        })).then(function () {});
+        // for(var observerKey in this._observers) notifier(this._observers[observerKey]);
     };
     this._observers = Object.create(null);
 };
@@ -550,6 +595,7 @@ var StateIterator = function StateIterator(state) {
     };
     this.state = state;
     this.range = range;
+    this.current = range[0];
 };
 
 exports.StateIterator = StateIterator;
@@ -574,7 +620,9 @@ exports.StateIterator = StateIterator;
                 return key == null || iterator.get().then(function (value) {
                     return predicate(value, key);
                 }).then(function (result) {
-                    return result ? loop() : false;
+                    return result ? loop().then(function () {
+                        return true;
+                    }) : false;
                 });
             });
         }
@@ -582,12 +630,13 @@ exports.StateIterator = StateIterator;
     }
     StateIterator.every = every;
     function some(state, predicate, range) {
+        var found = false;
         return every(state, function (value, key) {
             return Promise.resolve(predicate(value, key)).then(function (result) {
-                return !result;
+                found = !!result;return !found;
             });
-        }).then(function (result) {
-            return !result;
+        }, range).then(function (res) {
+            return found;
         });
     }
     StateIterator.some = some;
@@ -596,7 +645,7 @@ exports.StateIterator = StateIterator;
             return Promise.resolve(fn(value, key)).then(function () {
                 return true;
             });
-        }).then(function () {});
+        }, range).then(function () {});
     }
     StateIterator.forEach = forEach;
     function reduce(state, fn, memo, range) {
@@ -604,7 +653,7 @@ exports.StateIterator = StateIterator;
             return Promise.resolve(fn(memo, value, key)).then(function (value) {
                 memo = value;
             });
-        }).then(function () {
+        }, range).then(function () {
             return memo;
         });
     }
@@ -612,13 +661,13 @@ exports.StateIterator = StateIterator;
     function toArray(state, range) {
         return reduce(state, function (memo, value) {
             return (memo.push(value), memo);
-        }, []);
+        }, [], range);
     }
     StateIterator.toArray = toArray;
     function toObject(state, range) {
         return reduce(state, function (memo, value, key) {
             return (memo[key] = value, memo);
-        }, Object.create(null));
+        }, Object.create(null), range);
     }
     StateIterator.toObject = toObject;
     function findKey(state, fn, range) {
@@ -627,26 +676,26 @@ exports.StateIterator = StateIterator;
             return Promise.resolve(fn(v, k)).then(function (res) {
                 return res ? !!(key = k) || true : false;
             });
-        }).then(function (found) {
+        }, range).then(function (found) {
             return found ? key : null;
         });
     }
     StateIterator.findKey = findKey;
     function find(state, fn, range) {
-        return findKey(state, fn).then(state.get);
+        return findKey(state, fn, range).then(state.get);
     }
     StateIterator.find = find;
     function keyOf(state, value, range) {
         return findKey(state, function (v) {
             return v === value;
-        });
+        }, range);
     }
     StateIterator.keyOf = keyOf;
     function indexOf(state, value, range) {
         var index = -1;
         return some(state, function (v, k) {
             return (index++, value == v);
-        }).then(function (found) {
+        }, range).then(function (found) {
             if (found) {
                 return index;
             } else {
@@ -658,17 +707,17 @@ exports.StateIterator = StateIterator;
     function keyAt(state, index, range) {
         return findKey(state, function () {
             return 0 === index--;
-        });
+        }, range);
     }
     StateIterator.keyAt = keyAt;
     function at(state, index, range) {
-        return keyAt(state, index).then(state.get);
+        return keyAt(state, index, range).then(state.get);
     }
     StateIterator.at = at;
     function contains(state, value, range) {
         return some(state, function (v) {
             return v === value;
-        });
+        }, range);
     }
     StateIterator.contains = contains;
 })(StateIterator || (exports.StateIterator = StateIterator = {}));
