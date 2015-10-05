@@ -30,7 +30,6 @@ export class List<V> implements State<V>, IObservable<ListObserver> {
     Object.keys(List).forEach( (key: string) => this[key] = (...args: any[]) => List[key](this, ...args));
     if (initial != null) this.state = initial;
     this._subject = new Subject<ListObserver>();
-    this.observe(this);
   }
 
   get get(): (key: Key) => Promise<V> {
@@ -46,17 +45,17 @@ export class List<V> implements State<V>, IObservable<ListObserver> {
   }
 
   add(key: Key, value: V): Promise<void> {
-    this._subject.notify((observer) => observer.onInvalidate({type: EventType.add, key, value}));
+    this.onInvalidate({type: EventType.add, key, value});
     return Promise.resolve();
   }
 
   replace(key: Key, value: V): Promise<void> {
-    this._subject.notify((observer) => observer.onInvalidate({type: EventType.replace, key, value}));
+    this.onInvalidate({type: EventType.replace, key, value});
     return Promise.resolve();
   }
 
   remove(key: Key): Promise<void> {
-    this._subject.notify((observer) => observer.onInvalidate({type: EventType.remove, key}));
+    this.onInvalidate({type: EventType.remove, key});
     return Promise.resolve();
   }
 
@@ -77,7 +76,8 @@ export class List<V> implements State<V>, IObservable<ListObserver> {
           this.state = State.replace(this.state, event.key, event.value);
         break;
       }
-    })
+    });
+    this._subject.notify((observer) => observer.onInvalidate(...events));
   };
 }
 

@@ -51,6 +51,7 @@ export class Cache extends List {
                     break;
             }
         });
+        this._subject.notify((observer) => observer.onInvalidate(...events));
     }
 }
 Cache.DELETED = {};

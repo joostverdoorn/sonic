@@ -83,7 +83,8 @@ export class Cache<V> extends List<V> implements ListObserver {
           this._get[key] = value;
         break;
       }
-    })
+    });
+    this._subject.notify((observer) => observer.onInvalidate(...events));
   }
 }
 

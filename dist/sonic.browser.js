@@ -34,14 +34,13 @@ var Cache = (function (_List) {
         value: function onInvalidate() {
             var _this = this;
 
-            this._get = Object.create(this._get);
-            this._prev = Object.create(this._prev);
-            this._next = Object.create(this._next);
-
             for (var _len = arguments.length, events = Array(_len), _key = 0; _key < _len; _key++) {
                 events[_key] = arguments[_key];
             }
 
+            this._get = Object.create(this._get);
+            this._prev = Object.create(this._prev);
+            this._next = Object.create(this._next);
             events.forEach(function (event) {
                 var key = event.key,
                     value = event.value;
@@ -66,6 +65,9 @@ var Cache = (function (_List) {
                         _this._get[key] = value;
                         break;
                 }
+            });
+            this._subject.notify(function (observer) {
+                return observer.onInvalidate.apply(observer, events);
             });
         }
     }, {
@@ -241,31 +243,24 @@ var List = (function () {
         });
         if (initial != null) this.state = initial;
         this._subject = new _observable.Subject();
-        this.observe(this);
     }
 
     _createClass(List, [{
         key: 'add',
         value: function add(key, value) {
-            this._subject.notify(function (observer) {
-                return observer.onInvalidate({ type: EventType.add, key: key, value: value });
-            });
+            this.onInvalidate({ type: EventType.add, key: key, value: value });
             return Promise.resolve();
         }
     }, {
         key: 'replace',
         value: function replace(key, value) {
-            this._subject.notify(function (observer) {
-                return observer.onInvalidate({ type: EventType.replace, key: key, value: value });
-            });
+            this.onInvalidate({ type: EventType.replace, key: key, value: value });
             return Promise.resolve();
         }
     }, {
         key: 'remove',
         value: function remove(key) {
-            this._subject.notify(function (observer) {
-                return observer.onInvalidate({ type: EventType.remove, key: key });
-            });
+            this.onInvalidate({ type: EventType.remove, key: key });
             return Promise.resolve();
         }
     }, {
@@ -294,6 +289,9 @@ var List = (function () {
                         _this2.state = _state2['default'].replace(_this2.state, event.key, event.value);
                         break;
                 }
+            });
+            this._subject.notify(function (observer) {
+                return observer.onInvalidate.apply(observer, events);
             });
         }
     }, {

@@ -14,7 +14,6 @@ export class List {
         if (initial != null)
             this.state = initial;
         this._subject = new Subject();
-        this.observe(this);
     }
     get get() {
         return this.state.get;
@@ -26,15 +25,15 @@ export class List {
         return this.state.next;
     }
     add(key, value) {
-        this._subject.notify((observer) => observer.onInvalidate({ type: EventType.add, key, value }));
+        this.onInvalidate({ type: EventType.add, key, value });
         return Promise.resolve();
     }
     replace(key, value) {
-        this._subject.notify((observer) => observer.onInvalidate({ type: EventType.replace, key, value }));
+        this.onInvalidate({ type: EventType.replace, key, value });
         return Promise.resolve();
     }
     remove(key) {
-        this._subject.notify((observer) => observer.onInvalidate({ type: EventType.remove, key }));
+        this.onInvalidate({ type: EventType.remove, key });
         return Promise.resolve();
     }
     observe(observer) {
@@ -54,6 +53,7 @@ export class List {
                     break;
             }
         });
+        this._subject.notify((observer) => observer.onInvalidate(...events));
     }
     ;
 }
