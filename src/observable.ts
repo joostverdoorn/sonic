@@ -5,7 +5,7 @@ export interface ISubscription {
 }
 
 export interface INotifier<O> {
-  (observable: O): void;
+  (observable: O): Promise<void>;
 }
 
 export interface IObservable<O> {
@@ -32,7 +32,8 @@ export class Subject<O> {
     }
   }
 
-  notify = (notifier: INotifier<O>) => {
-    for(var observerKey in this._observers) notifier(this._observers[observerKey]);
+  notify = (notifier: INotifier<O>): Promise<void> => {
+    return Promise.all(Object.keys(this._observers).map( key => notifier(this._observers[key]))).then(() => {});
+    // for(var observerKey in this._observers) notifier(this._observers[observerKey]);
   }
 }

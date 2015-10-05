@@ -2,7 +2,7 @@ export interface ISubscription {
     unsubscribe(): void;
 }
 export interface INotifier<O> {
-    (observable: O): void;
+    (observable: O): Promise<void>;
 }
 export interface IObservable<O> {
     observe(observer: O): ISubscription;
@@ -15,5 +15,5 @@ export declare class Subject<O> {
     private _observers;
     constructor();
     observe: (observer: O) => ISubscription;
-    notify: (notifier: INotifier<O>) => void;
+    notify: (notifier: INotifier<O>) => Promise<void>;
 }

@@ -9,8 +9,8 @@ export class Subject {
             };
         };
         this.notify = (notifier) => {
-            for (var observerKey in this._observers)
-                notifier(this._observers[observerKey]);
+            return Promise.all(Object.keys(this._observers).map(key => notifier(this._observers[key]))).then(() => { });
+            // for(var observerKey in this._observers) notifier(this._observers[observerKey]);
         };
         this._observers = Object.create(null);
     }
