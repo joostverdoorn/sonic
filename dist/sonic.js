@@ -1,6 +1,7 @@
 import _State from './state';
 import _StateIterator from './state_iterator';
 import _List from './list';
+import _KeyedList from './keyed_list';
 import _Cache from './cache';
 import _factory from './factory';
 export function Sonic(obj) {
@@ -17,6 +18,8 @@ export var Sonic;
     // export var KeyedList      = _KeyedList;
     Sonic.Cache = _Cache;
     Sonic.factory = _factory;
+    Sonic.KeyedList = _KeyedList;
+    Sonic.Operation = _Operation;
 })(Sonic || (Sonic = {}));
 ;
 module.exports = Sonic;

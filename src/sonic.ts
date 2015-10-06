@@ -1,7 +1,7 @@
 import _State          from './state';
 import _StateIterator  from './state_iterator';
 import _List           from './list';
-// import _KeyedList      from './keyed_list';
+import _KeyedList      from './keyed_list';
 import _Cache          from './cache';
 import _factory         from './factory';
 
@@ -17,6 +17,8 @@ export module Sonic {
   // export var KeyedList      = _KeyedList;
   export var Cache          = _Cache;
   export var factory        = _factory
+  export var KeyedList      = _KeyedList;
+  export var Operation      = _Operation;
 };
 
 
