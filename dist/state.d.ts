@@ -5,10 +5,6 @@ export interface State<V> {
     next: (key?: Key) => Promise<Key>;
 }
 export declare module State {
-    function fromArray<V>(values: V[]): State<V>;
-    function fromObject<V>(values: {
-        [key: string]: V;
-    }): State<V>;
     function add<V>(old: State<V>, key: Key, value: V): State<V>;
     function replace<V>(old: State<V>, key: Key, value: V): State<V>;
     function remove<V>(old: State<V>, key: Key): State<V>;

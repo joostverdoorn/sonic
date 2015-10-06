@@ -1,30 +1,26 @@
 import Key from './key';
+import Patch from './patch';
 
-export interface ISubscription {
+export interface Subscription {
   unsubscribe(): void;
 }
 
-export interface INotifier<O> {
-  (observable: O): Promise<void>;
+export interface Observable<V> {
+  observe(observer: Observer<V>): Subscription;
 }
 
-export interface IObservable<O> {
-  observe(observer: O): ISubscription;
+export interface Observer<V> {
+  onInvalidate(patches: Patch<V>[]): Promise<void>;
 }
 
-export interface ISubject<O> {
-  observe(observer: O): ISubscription;
-  notify(notifier: INotifier<O>): void;
-}
-
-export class Subject<O> {
-  private _observers: {[key: number]: O};
+export class Subject<V> {
+  private _observers: {[key: number]: Observer<V>};
 
   constructor() {
     this._observers = Object.create(null);
   }
 
-  observe = (observer: O): ISubscription => {
+  observe = (observer: Observer<V>): Subscription => {
     var observerKey = Key.create();
     this._observers[observerKey] = observer;
     return {
@@ -32,8 +28,8 @@ export class Subject<O> {
     }
   }
 
-  notify = (notifier: INotifier<O>): Promise<void> => {
-    return Promise.all(Object.keys(this._observers).map( key => notifier(this._observers[key]))).then(() => {});
+  notify = (patches: Patch<V>[]): Promise<void> => {
+    return Promise.all(Object.keys(this._observers).map( key => this._observers[key].onInvalidate(patches))).then(() => {});
     // for(var observerKey in this._observers) notifier(this._observers[observerKey]);
   }
 }

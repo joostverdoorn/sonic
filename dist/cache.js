@@ -1,4 +1,5 @@
-import { List, EventType } from './list';
+import List from './list';
+import { Operation } from './patch';
 export class Cache extends List {
     constructor(list) {
         super();
@@ -25,14 +26,14 @@ export class Cache extends List {
         };
         return state;
     }
-    onInvalidate(...events) {
+    onInvalidate(patches) {
         this._get = Object.create(this._get);
         this._prev = Object.create(this._prev);
         this._next = Object.create(this._next);
-        events.forEach((event) => {
+        patches.forEach((event) => {
             var key = event.key, value = event.value;
             switch (event.type) {
-                case EventType.add:
+                case Operation[Operation.add]:
                     this._get[key] = value;
                     var prev = this._prev['null'], next = null;
                     this._prev[next] = key;
@@ -40,18 +41,18 @@ export class Cache extends List {
                     this._prev[key] = prev;
                     this._next[prev] = key;
                     break;
-                case EventType.remove:
+                case Operation[Operation.remove]:
                     this._get[key] = Cache.DELETED;
                     var prev = this._prev[key], next = this._next[key];
                     this._prev[next] = prev;
                     this._next[prev] = next;
                     break;
-                case EventType.replace:
+                case Operation[Operation.replace]:
                     this._get[key] = value;
                     break;
             }
         });
-        return Promise.resolve(this._subject.notify((observer) => observer.onInvalidate(...events)));
+        return this._subject.notify(patches);
     }
 }
 Cache.DELETED = {};

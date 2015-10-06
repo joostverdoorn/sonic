@@ -8,8 +8,8 @@ export class Subject {
                 unsubscribe: () => { delete this._observers[observerKey]; }
             };
         };
-        this.notify = (notifier) => {
-            return Promise.all(Object.keys(this._observers).map(key => notifier(this._observers[key]))).then(() => { });
+        this.notify = (patches) => {
+            return Promise.all(Object.keys(this._observers).map(key => this._observers[key].onInvalidate(patches))).then(() => { });
             // for(var observerKey in this._observers) notifier(this._observers[observerKey]);
         };
         this._observers = Object.create(null);

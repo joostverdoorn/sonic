@@ -1,9 +1,10 @@
 import Key   from './key';
 import State from './state';
-import { List, EventType, ListObserver, ListEvent }  from './list';
-import { Subject, ISubscription } from './observable';
+import List  from './list';
+import { Operation, Patch } from './patch';
+import { Observer, Subject, Subscription } from './observable';
 
-export class Cache<V> extends List<V> implements ListObserver {
+export class Cache<V> extends List<V> implements Observer<V> {
   static DELETED = {};
 
   protected _list: List<V>;
@@ -45,17 +46,17 @@ export class Cache<V> extends List<V> implements ListObserver {
     list.observe(this);
   }
 
-  onInvalidate(...events: ListEvent<V>[]): Promise<void> {
+  onInvalidate(patches: Patch<V>[]): Promise<void> {
     this._get = Object.create(this._get);
     this._prev = Object.create(this._prev);
     this._next = Object.create(this._next);
 
-    events.forEach( (event) => {
+    patches.forEach( (event) => {
       var key = event.key,
           value = event.value;
 
       switch(event.type) {
-        case EventType.add:
+        case Operation[Operation.add]:
           this._get[key] = value;
 
           var prev = this._prev['null'],
@@ -70,7 +71,7 @@ export class Cache<V> extends List<V> implements ListObserver {
 
 
         break;
-        case EventType.remove:
+        case Operation[Operation.remove]:
           this._get[key] = <V>Cache.DELETED;
 
           var prev = this._prev[key],
@@ -79,12 +80,12 @@ export class Cache<V> extends List<V> implements ListObserver {
           this._prev[next] = prev;
           this._next[prev] = next;
         break;
-        case EventType.replace:
+        case Operation[Operation.replace]:
           this._get[key] = value;
         break;
       }
     });
-    return Promise.resolve(this._subject.notify((observer) => observer.onInvalidate(...events)));
+    return this._subject.notify(patches);
   }
 }
 

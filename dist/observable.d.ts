@@ -1,19 +1,16 @@
-export interface ISubscription {
+import Patch from './patch';
+export interface Subscription {
     unsubscribe(): void;
 }
-export interface INotifier<O> {
-    (observable: O): Promise<void>;
+export interface Observable<V> {
+    observe(observer: Observer<V>): Subscription;
 }
-export interface IObservable<O> {
-    observe(observer: O): ISubscription;
+export interface Observer<V> {
+    onInvalidate(patches: Patch<V>[]): Promise<void>;
 }
-export interface ISubject<O> {
-    observe(observer: O): ISubscription;
-    notify(notifier: INotifier<O>): void;
-}
-export declare class Subject<O> {
+export declare class Subject<V> {
     private _observers;
     constructor();
-    observe: (observer: O) => ISubscription;
-    notify: (notifier: INotifier<O>) => Promise<void>;
+    observe: (observer: Observer<V>) => Subscription;
+    notify: (patches: Patch<V>[]) => Promise<void>;
 }

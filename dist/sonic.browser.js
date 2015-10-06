@@ -9,11 +9,17 @@ var _createClass = (function () { function defineProperties(target, props) { for
 
 var _get2 = function get(_x, _x2, _x3) { var _again = true; _function: while (_again) { var object = _x, property = _x2, receiver = _x3; desc = parent = getter = undefined; _again = false; if (object === null) object = Function.prototype; var desc = Object.getOwnPropertyDescriptor(object, property); if (desc === undefined) { var parent = Object.getPrototypeOf(object); if (parent === null) { return undefined; } else { _x = parent; _x2 = property; _x3 = receiver; _again = true; continue _function; } } else if ('value' in desc) { return desc.value; } else { var getter = desc.get; if (getter === undefined) { return undefined; } return getter.call(receiver); } } };
 
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
+
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError('Cannot call a class as a function'); } }
 
 function _inherits(subClass, superClass) { if (typeof superClass !== 'function' && superClass !== null) { throw new TypeError('Super expression must either be null or a function, not ' + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) subClass.__proto__ = superClass; }
 
 var _list = require('./list');
+
+var _list2 = _interopRequireDefault(_list);
+
+var _patch = require('./patch');
 
 var Cache = (function (_List) {
     function Cache(list) {
@@ -31,21 +37,17 @@ var Cache = (function (_List) {
 
     _createClass(Cache, [{
         key: 'onInvalidate',
-        value: function onInvalidate() {
+        value: function onInvalidate(patches) {
             var _this = this;
-
-            for (var _len = arguments.length, events = Array(_len), _key = 0; _key < _len; _key++) {
-                events[_key] = arguments[_key];
-            }
 
             this._get = Object.create(this._get);
             this._prev = Object.create(this._prev);
             this._next = Object.create(this._next);
-            events.forEach(function (event) {
+            patches.forEach(function (event) {
                 var key = event.key,
                     value = event.value;
                 switch (event.type) {
-                    case _list.EventType.add:
+                    case _patch.Operation[_patch.Operation.add]:
                         _this._get[key] = value;
                         var prev = _this._prev['null'],
                             next = null;
@@ -54,21 +56,19 @@ var Cache = (function (_List) {
                         _this._prev[key] = prev;
                         _this._next[prev] = key;
                         break;
-                    case _list.EventType.remove:
+                    case _patch.Operation[_patch.Operation.remove]:
                         _this._get[key] = Cache.DELETED;
                         var prev = _this._prev[key],
                             next = _this._next[key];
                         _this._prev[next] = prev;
                         _this._next[prev] = next;
                         break;
-                    case _list.EventType.replace:
+                    case _patch.Operation[_patch.Operation.replace]:
                         _this._get[key] = value;
                         break;
                 }
             });
-            return Promise.resolve(this._subject.notify(function (observer) {
-                return observer.onInvalidate.apply(observer, events);
-            }));
+            return this._subject.notify(patches);
         }
     }, {
         key: 'state',
@@ -100,14 +100,14 @@ var Cache = (function (_List) {
     }]);
 
     return Cache;
-})(_list.List);
+})(_list2['default']);
 
 exports.Cache = Cache;
 
 Cache.DELETED = {};
 exports['default'] = Cache;
 
-},{"./list":4}],2:[function(require,module,exports){
+},{"./list":4,"./patch":6}],2:[function(require,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -195,8 +195,6 @@ var _createClass = (function () { function defineProperties(target, props) { for
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
 
-function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) arr2[i] = arr[i]; return arr2; } else { return Array.from(arr); } }
-
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError('Cannot call a class as a function'); } }
 
 var _state = require('./state');
@@ -209,13 +207,7 @@ var _state_iterator2 = _interopRequireDefault(_state_iterator);
 
 var _observable = require('./observable');
 
-var EventType;
-exports.EventType = EventType;
-(function (EventType) {
-    EventType[EventType['add'] = 0] = 'add';
-    EventType[EventType['remove'] = 1] = 'remove';
-    EventType[EventType['replace'] = 2] = 'replace';
-})(EventType || (exports.EventType = EventType = {}));
+var _patch = require('./patch');
 
 var List = (function () {
     function List(initial) {
@@ -248,7 +240,7 @@ var List = (function () {
     _createClass(List, [{
         key: 'add',
         value: function add(key, value) {
-            return this.onInvalidate({ type: EventType.add, key: key, value: value });
+            return this.onInvalidate([{ type: _patch.Operation[_patch.Operation.add], key: key, value: value }]);
         }
     }, {
         key: 'replace',
@@ -256,13 +248,13 @@ var List = (function () {
             var _this2 = this;
 
             return this.state.get(key).then(function (old) {
-                return _this2.onInvalidate({ type: EventType.replace, key: key, value: value, oldValue: old });
+                return _this2.onInvalidate([{ type: _patch.Operation[_patch.Operation.replace], key: key, value: value, oldValue: old }]);
             });
         }
     }, {
         key: 'remove',
         value: function remove(key) {
-            return this.onInvalidate({ type: EventType.remove, key: key });
+            return this.onInvalidate([{ type: _patch.Operation[_patch.Operation.remove], key: key }]);
         }
     }, {
         key: 'observe',
@@ -271,29 +263,24 @@ var List = (function () {
         }
     }, {
         key: 'onInvalidate',
-        value: function onInvalidate() {
+        value: function onInvalidate(patches) {
             var _this3 = this;
 
-            for (var _len3 = arguments.length, events = Array(_len3), _key3 = 0; _key3 < _len3; _key3++) {
-                events[_key3] = arguments[_key3];
-            }
-
-            events.forEach(function (event) {
-                switch (event.type) {
-                    case EventType.add:
-                        _this3.state = _state2['default'].add(_this3.state, event.key, event.value);
+            console.log('Number of events received:', patches.length);
+            patches.forEach(function (patch) {
+                switch (patch.type) {
+                    case _patch.Operation[_patch.Operation.add]:
+                        _this3.state = _state2['default'].add(_this3.state, patch.key, patch.value);
                         break;
-                    case EventType.remove:
-                        _this3.state = _state2['default'].remove(_this3.state, event.key);
+                    case _patch.Operation[_patch.Operation.remove]:
+                        _this3.state = _state2['default'].remove(_this3.state, patch.key);
                         break;
-                    case EventType.replace:
-                        _this3.state = _state2['default'].replace(_this3.state, event.key, event.value);
+                    case _patch.Operation[_patch.Operation.replace]:
+                        _this3.state = _state2['default'].replace(_this3.state, patch.key, patch.value);
                         break;
                 }
             });
-            return Promise.resolve(this._subject.notify(function (observer) {
-                return observer.onInvalidate.apply(observer, events);
-            }));
+            return Promise.resolve(this._subject.notify(patches));
         }
     }, {
         key: 'get',
@@ -318,23 +305,29 @@ var List = (function () {
 exports.List = List;
 
 (function (List) {
-    // export function cache<V>(old: List<V>): List<V> {
-    //   return new Cache(old);
-    // }
+    function reverse(old) {
+        var state = old.state,
+            list = new List(_state2['default'].reverse(state));
+        old.observe({
+            onInvalidate: function onInvalidate(patches) {
+                return Promise.all(patches.map(function (patch) {
+                    return _patch.Patch.reverse(patch, state);
+                })).then(function (res) {
+                    return list.onInvalidate(res);
+                });
+            }
+        });
+        return list;
+    }
+    List.reverse = reverse;
     function map(old, mapFn) {
         var list = new List(_state2['default'].map(old.state, mapFn));
         old.observe({
-            onInvalidate: function onInvalidate() {
-                for (var _len4 = arguments.length, events = Array(_len4), _key4 = 0; _key4 < _len4; _key4++) {
-                    events[_key4] = arguments[_key4];
-                }
-
-                return Promise.all(events.map(function (event) {
-                    return Promise.resolve(mapFn(event.value, event.key)).then(function (value) {
-                        return { type: event.type, key: event.key, value: value };
-                    });
+            onInvalidate: function onInvalidate(patches) {
+                return Promise.all(patches.map(function (patch) {
+                    return _patch.Patch.map(patch, mapFn);
                 })).then(function (res) {
-                    return list.onInvalidate.apply(list, _toConsumableArray(res));
+                    return list.onInvalidate(res);
                 });
             }
         });
@@ -342,37 +335,18 @@ exports.List = List;
     }
     List.map = map;
     function filter(old, filterFn) {
-        var state = _state2['default'].filter(old.state, filterFn),
-            list = new List(state);
+        var state = old.state,
+            list = new List(_state2['default'].filter(old.state, filterFn));
         old.observe({
-            onInvalidate: function onInvalidate() {
-                for (var _len5 = arguments.length, events = Array(_len5), _key5 = 0; _key5 < _len5; _key5++) {
-                    events[_key5] = arguments[_key5];
-                }
-
-                return Promise.all(events.map(function (event) {
-                    if (event.type == EventType.add && filterFn(event.value, event.key)) return Promise.resolve(event);
-                    if (event.type == EventType.replace) {
-                        if (filterFn(event.oldValue, event.key) && !filterFn(event.value, event.key)) {
-                            return Promise.resolve({ type: EventType.remove, key: event.key });
-                        }
-                        if (!filterFn(event.oldValue, event.key) && filterFn(event.value, event.key)) {
-                            return Promise.resolve({ type: EventType.add, key: event.key, value: event.value });
-                        }
-                        if (filterFn(event.oldValue, event.key) && filterFn(event.value, event.key)) {
-                            return event;
-                        }
-                    }
-                    if (event.type == EventType.remove) {
-                        return state.get(event.key).then(function (value) {
-                            return filterFn(value, event.key) ? event : null;
-                        }, function () {});
-                    }
-                    return null;
+            onInvalidate: function onInvalidate(patches) {
+                return Promise.all(patches.map(function (patch) {
+                    return _patch.Patch.filter(patch, filterFn, state);
                 })).then(function (res) {
-                    return list.onInvalidate.apply(list, _toConsumableArray(res.filter(function (event) {
+                    return res.filter(function (event) {
                         return event != null;
-                    })));
+                    });
+                }).then(function (res) {
+                    return res.length ? list.onInvalidate(res) : undefined;
                 });
             }
         });
@@ -382,7 +356,7 @@ exports.List = List;
 })(List || (exports.List = List = {}));
 exports['default'] = List;
 
-},{"./observable":5,"./state":6,"./state_iterator":7}],5:[function(require,module,exports){
+},{"./observable":5,"./patch":6,"./state":7,"./state_iterator":8}],5:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, '__esModule', {
@@ -411,9 +385,9 @@ var Subject = function Subject() {
             }
         };
     };
-    this.notify = function (notifier) {
+    this.notify = function (patches) {
         return Promise.all(Object.keys(_this._observers).map(function (key) {
-            return notifier(_this._observers[key]);
+            return _this._observers[key].onInvalidate(patches);
         })).then(function () {});
         // for(var observerKey in this._observers) notifier(this._observers[observerKey]);
     };
@@ -428,60 +402,66 @@ exports.Subject = Subject;
 Object.defineProperty(exports, "__esModule", {
     value: true
 });
+var Operation;
+exports.Operation = Operation;
+(function (Operation) {
+    Operation[Operation["add"] = 0] = "add";
+    Operation[Operation["remove"] = 1] = "remove";
+    Operation[Operation["replace"] = 2] = "replace";
+})(Operation || (exports.Operation = Operation = {}));
+var Patch;
+exports.Patch = Patch;
+(function (Patch) {
+    function reverse(patch, original) {
+        return Promise.resolve(patch);
+    }
+    Patch.reverse = reverse;
+    function map(patch, mapFn) {
+        return Promise.resolve(mapFn(patch.value, patch.key)).then(function (value) {
+            return { type: patch.type, key: patch.key, value: value };
+        });
+    }
+    Patch.map = map;
+    function filter(patch, filterFn, old) {
+        if (patch.type == Operation[Operation.add] && filterFn(patch.value, patch.key)) return Promise.resolve(patch);
+        if (patch.type == Operation[Operation.replace]) {
+            if (filterFn(patch.oldValue, patch.key) && !filterFn(patch.value, patch.key)) {
+                return Promise.resolve({ type: Operation[Operation.remove], key: patch.key });
+            }
+            if (!filterFn(patch.oldValue, patch.key) && filterFn(patch.value, patch.key)) {
+                return Promise.resolve({ type: Operation[Operation.add], key: patch.key, value: patch.value });
+            }
+            if (filterFn(patch.oldValue, patch.key) && filterFn(patch.value, patch.key)) {
+                return Promise.resolve(patch);
+            }
+        }
+        if (patch.type == Operation[Operation.remove]) {
+            return old.get(patch.key).then(function (value) {
+                return filterFn(value, patch.key) ? patch : null;
+            });
+        }
+        return null;
+    }
+    Patch.filter = filter;
+})(Patch || (exports.Patch = Patch = {}));
+exports["default"] = Patch;
 
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { "default": obj }; }
+},{}],7:[function(require,module,exports){
+'use strict';
 
-var _state_iterator = require("./state_iterator");
+Object.defineProperty(exports, '__esModule', {
+    value: true
+});
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
+
+var _state_iterator = require('./state_iterator');
 
 var _state_iterator2 = _interopRequireDefault(_state_iterator);
 
 var State;
 exports.State = State;
 (function (State) {
-    function fromArray(values) {
-        return {
-            get: function get(key) {
-                if (key in values) return Promise.resolve(values[key]);
-                return Promise.reject(new Error());
-            },
-            prev: function prev(key) {
-                var index = key == null ? values.length - 1 : key - 1;
-                return Promise.resolve(index == -1 ? null : index);
-            },
-            next: function next(key) {
-                var index = key == null ? 0 : key + 1;
-                return Promise.resolve(index == values.length ? null : index);
-            }
-        };
-    }
-    State.fromArray = fromArray;
-    function fromObject(values) {
-        var keys = Object.keys(values),
-            indexByKey = {
-            "null": -1
-        };
-        return {
-            get: function get(key) {
-                if (key in values) return Promise.resolve(values[key]);
-                return Promise.reject(new Error());
-            },
-            prev: function prev(key) {
-                var index = key == null ? keys.length - 1 : indexByKey[key] - 1;
-                indexByKey[keys[index]] = index;
-                if (key == null) return Promise.resolve(keys[keys.length - 1]);
-                if (!(key in values)) return Promise.reject(new Error());
-                return Promise.resolve(index == -1 ? null : keys[index]);
-            },
-            next: function next(key) {
-                var index = indexByKey[key] + 1;
-                indexByKey[keys[index]] = index;
-                if (key == null) return Promise.resolve(keys[0]);
-                if (!(key in values)) return Promise.reject(new Error());
-                return Promise.resolve(index == keys.length ? null : keys[index]);
-            }
-        };
-    }
-    State.fromObject = fromObject;
     function add(old, key, value) {
         var state = Object.create(old);
         state.prev = function (k) {
@@ -527,8 +507,12 @@ exports.State = State;
     State.remove = remove;
     function reverse(old) {
         var state = Object.create(old);
-        state.prev = old.next;
-        state.next = old.prev;
+        state.prev = function (key) {
+            return old.next(key);
+        };
+        state.next = function (key) {
+            return old.prev(key);
+        };
         return state;
     }
     State.reverse = reverse;
@@ -551,18 +535,18 @@ exports.State = State;
             });
         };
         state.prev = function (key) {
-            return _state_iterator2["default"].findKey(State.reverse(old), filterFn, [key, null]);
+            return _state_iterator2['default'].findKey(State.reverse(old), filterFn, [key, null]);
         };
         state.next = function (key) {
-            return _state_iterator2["default"].findKey(old, filterFn, [key, null]);
+            return _state_iterator2['default'].findKey(old, filterFn, [key, null]);
         };
         return state;
     }
     State.filter = filter;
 })(State || (exports.State = State = {}));
-exports["default"] = State;
+exports['default'] = State;
 
-},{"./state_iterator":7}],7:[function(require,module,exports){
+},{"./state_iterator":8}],8:[function(require,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -723,7 +707,7 @@ exports.StateIterator = StateIterator;
 })(StateIterator || (exports.StateIterator = StateIterator = {}));
 exports["default"] = StateIterator;
 
-},{}],8:[function(require,module,exports){
+},{}],9:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, '__esModule', {
@@ -772,5 +756,5 @@ exports.Sonic = Sonic;
 module.exports = Sonic;
 exports['default'] = Sonic;
 
-},{"./cache":1,"./factory":2,"./list":4,"./state":6,"./state_iterator":7}]},{},[8])(8)
+},{"./cache":1,"./factory":2,"./list":4,"./state":7,"./state_iterator":8}]},{},[9])(9)
 });

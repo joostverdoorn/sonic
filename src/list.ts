@@ -2,35 +2,18 @@ import   Key                             from './key';
 import   Range                           from './range';
 import   State                           from './state';
 import   StateIterator                   from './state_iterator';
-import   { IObservable, ISubscription, Subject }   from './observable';
-// import   Cache                                     from './cache';
+import   { Observer, Observable, Subscription, Subject }   from './observable';
+import  { Patch, Operation }   from './patch';
 
-export interface ListObserver {
-  onInvalidate<V>(...events: ListEvent<V>[]): Promise<void>;
-}
-
-export enum EventType {
-  "add",
-  "remove",
-  "replace"
-}
-
-export interface ListEvent<V> {
-  type: EventType,
-  key: Key,
-  value?: V,
-  oldValue?: V
-}
-
-export class List<V> implements State<V>, IObservable<ListObserver> {
+export class List<V> implements State<V>, Observable<V> {
   state: State<V>;
-  protected _subject: Subject<ListObserver>;
+  protected _subject: Subject<V>;
 
   constructor(initial?: State<V>) {
     Object.keys(StateIterator).forEach( (key: string) => this[key] = (...args: any[]) => StateIterator[key](this.state, ...args));
     Object.keys(List).forEach( (key: string) => this[key] = (...args: any[]) => List[key](this, ...args));
     if (initial != null) this.state = initial;
-    this._subject = new Subject<ListObserver>();
+    this._subject = new Subject<V>();
   }
 
   get get(): (key: Key) => Promise<V> {
@@ -46,55 +29,59 @@ export class List<V> implements State<V>, IObservable<ListObserver> {
   }
 
   add(key: Key, value: V): Promise<void> {
-    return this.onInvalidate({type: EventType.add, key, value});
+    return this.onInvalidate([{type: Operation[Operation.add], key, value}]);
   }
 
   replace(key: Key, value: V): Promise<void> {
-    return this.state.get(key).then(old => this.onInvalidate({type: EventType.replace, key, value, oldValue: old}));
+    return this.state.get(key).then(old => this.onInvalidate([{type: Operation[Operation.replace], key, value, oldValue: old}]));
   }
 
   remove(key: Key): Promise<void> {
-    return this.onInvalidate({type: EventType.remove, key});
+    return this.onInvalidate([{type: Operation[Operation.remove], key}]);
   }
 
-  observe(observer: ListObserver): ISubscription {
+  observe(observer: Observer<V>): Subscription {
     return this._subject.observe(observer);
   }
 
-  onInvalidate(...events: ListEvent<V>[]): Promise<void> {
-    events.forEach( (event) => {
-      switch(event.type) {
-        case EventType.add:
-          this.state = State.add(this.state, event.key, event.value);
+  onInvalidate(patches: Patch<V>[]): Promise<void> {
+    console.log("Number of events received:", patches.length);
+    patches.forEach( (patch) => {
+      switch(patch.type) {
+        case Operation[Operation.add]:
+          this.state = State.add(this.state, patch.key, patch.value);
         break;
-        case EventType.remove:
-          this.state = State.remove(this.state, event.key);
+        case Operation[Operation.remove]:
+          this.state = State.remove(this.state, patch.key);
         break;
-        case EventType.replace:
-          this.state = State.replace(this.state, event.key, event.value);
+        case Operation[Operation.replace]:
+          this.state = State.replace(this.state, patch.key, patch.value);
         break;
       }
     });
-    return Promise.resolve(this._subject.notify((observer) => observer.onInvalidate(...events)));
+    return Promise.resolve(this._subject.notify(patches));
   };
 }
 
 export module List {
+  export function reverse<V>(old: List<V>): List<V> {
+    var state = old.state,
+        list = new List(State.reverse(state));
 
-  // export function cache<V>(old: List<V>): List<V> {
-  //   return new Cache(old);
-  // }
+    old.observe({
+      onInvalidate(patches: Patch<V>[]): Promise<void> {
+        return Promise.all(patches.map(patch => Patch.reverse(patch, state))).then((res) => list.onInvalidate(res));
+      }
+    });
 
+    return list;
+  }
   export function map<V, W>(old: List<V>, mapFn: (value: V, key?: Key) => W | Promise<W>): List<W> {
     var list = new List(State.map(old.state, mapFn));
 
     old.observe({
-      onInvalidate(...events: ListEvent<V>[]): Promise<void> {
-        return Promise.all(events.map( (event) => {
-          return Promise.resolve(mapFn(event.value, event.key)).then( (value: W) => {
-            return <ListEvent<W>>{type: event.type, key: event.key, value}
-          })
-        })).then((res) => list.onInvalidate(...res));
+      onInvalidate(patches: Patch<V>[]): Promise<void> {
+        return Promise.all(patches.map(patch => Patch.map(patch, mapFn))).then((res) => list.onInvalidate(res));
       }
     });
 
@@ -102,40 +89,14 @@ export module List {
   }
 
   export function filter<V>(old: List<V>, filterFn: (value: V, key?: Key) => boolean): List<V> {
-    var state = State.filter(old.state, filterFn),
-      list = new List(state);
+    var state = old.state,
+      list = new List(State.filter(old.state, filterFn));
 
     old.observe({
-      onInvalidate(...events: ListEvent<V>[]): Promise<void> {
-        return Promise.all(events
-          .map( (event) => {
-            if (event.type == EventType.add && filterFn(event.value, event.key)) return Promise.resolve(event);
-
-            if (event.type == EventType.replace) {
-              if (filterFn(event.oldValue, event.key) && (!filterFn(event.value, event.key))) {
-                return Promise.resolve({type: EventType.remove, key: event.key});
-              }
-
-              if ((!filterFn(event.oldValue, event.key)) && (filterFn(event.value, event.key))) {
-                return Promise.resolve({type: EventType.add, key: event.key, value: event.value});
-              }
-
-              if (filterFn(event.oldValue, event.key) && filterFn(event.value, event.key)) {
-                return event;
-              }
-
-            }
-
-
-            if (event.type == EventType.remove) {
-              return state.get(event.key).then(value => filterFn(value, event.key) ? event : null, () => {})
-            }
-
-            return null;
-
-
-        }))
-        .then( (res) => list.onInvalidate(...res.filter(event => event != null)));
+      onInvalidate(patches: Patch<V>[]): Promise<void> {
+        return Promise.all(patches.map( patch => Patch.filter(patch, filterFn, state)))
+          .then(res => res.filter(event => event != null))
+          .then( (res: Patch<V>[]) => res.length ? list.onInvalidate(res) : undefined);
       }
     });
 
