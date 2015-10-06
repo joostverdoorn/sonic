@@ -6,6 +6,9 @@ export interface Disposable {
   dispose(): void;
 }
 
+export function disposable(disposer: () => void): Disposable {
+  return { dispose: disposer }
+}
 
 export interface Observer<V> {
   onInvalidate(patches: Patch<V>[]): Promise<void>;
@@ -25,9 +28,7 @@ export class Subject<V> implements Observable<V>, Observer<V> {
   observe(observer: Observer<V>): Disposable {
     var observerKey = Key.create();
     this._observers[observerKey] = observer;
-    return {
-      dispose: () => delete this._observers[observerKey]
-    }
+    return disposable(() => delete this._observers[observerKey]);
   }
 
   onInvalidate(patches: Patch<V>[]): Promise<void> {

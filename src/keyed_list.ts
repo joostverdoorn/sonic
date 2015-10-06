@@ -4,7 +4,7 @@ import   List      from './list';
 import { Observer, Disposable, Subject } from './observable';
 import { Operation, Patch } from './patch';
 
-export default class KeyedList<V> extends List<V> {
+export default class KeyedList<V> implements List<V> {
   static DELETED = {};
 
   protected _keyFn: (value: V) => Key;
@@ -17,8 +17,6 @@ export default class KeyedList<V> extends List<V> {
   }
 
   constructor(values: {[key: string]: V}, keyFn?: (value: V) => Key) {
-    super();
-
     this._keyFn = keyFn || Key.create;
     this._subject = new Subject();
 
@@ -38,7 +36,7 @@ export default class KeyedList<V> extends List<V> {
     });
   }
 
-  getState(): State<V> {
+  get state(): State<V> {
     var pseudoState = this._pseudoState;
 
     return {

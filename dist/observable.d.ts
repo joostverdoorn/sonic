@@ -2,6 +2,7 @@ import Patch from './patch';
 export interface Disposable {
     dispose(): void;
 }
+export declare function disposable(disposer: () => void): Disposable;
 export interface Observer<V> {
     onInvalidate(patches: Patch<V>[]): Promise<void>;
 }
