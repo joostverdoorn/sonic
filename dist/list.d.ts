@@ -12,5 +12,6 @@ export declare module List {
     function map<V, W>(parent: List<V>, mapFn: (value: V, key: Key) => W): List<W>;
     function filter<V>(parent: List<V>, filterFn: (value: V, key: Key) => boolean): List<V>;
     function zoom<V>(parent: List<V>, key: Key): List<V>;
+    function reverse<V>(parent: List<V>): List<V>;
 }
 export default List;

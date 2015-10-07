@@ -217,6 +217,30 @@ exports.List = List;
         return create(state, observable);
     }
     List.zoom = zoom;
+    function reverse(parent) {
+        var list,
+            observable = _observable.Observable.map(parent, function (patch) {
+            if (!_patch.Patch.isSetPatch(patch)) return patch;else return patch.before === undefined ? patch : list.state.next(patch.before).then(function (prev) {
+                return {
+                    operation: _patch.Patch.SET,
+                    key: patch.key,
+                    value: patch.value,
+                    before: prev
+                };
+            });
+        });
+        list = {
+            state: _state2['default'].reverse(parent.state),
+            subscribe: observable.subscribe
+        };
+        observable.subscribe({
+            onNext: function onNext(patch) {
+                list.state = _state2['default'].patch(list.state, patch);
+            }
+        });
+        return list;
+    }
+    List.reverse = reverse;
 })(List || (exports.List = List = {}));
 exports['default'] = List;
 

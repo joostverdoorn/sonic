@@ -143,6 +143,32 @@ export module List {
 
     return create(state, observable);
   }
+
+  export function reverse<V>(parent: List<V>): List<V> {
+    var list: List<V>,
+        observable = Observable.map<Patch<V>, Patch<V>>(parent, patch => {
+          if (!Patch.isSetPatch(patch)) return patch;
+          else return patch.before === undefined ? patch : list.state.next(patch.before).then(prev => {
+            return {
+              operation: Patch.SET,
+              key: patch.key,
+              value: patch.value,
+              before: prev
+            }
+          });
+        });
+
+    list = {
+      state: State.reverse(parent.state),
+      subscribe: observable.subscribe
+    }
+
+    observable.subscribe({
+      onNext: patch => {list.state = State.patch(list.state, patch)}
+    });
+
+    return list;
+  }
 }
 
 export default List;
