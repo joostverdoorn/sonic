@@ -102,7 +102,7 @@ export var List;
     }
     List.zoom = zoom;
     function reverse(parent) {
-        var list, observable = Observable.map(parent, patch => {
+        var state = State.reverse(parent.state), list, observable = Observable.map(parent, patch => {
             if (!Patch.isSetPatch(patch))
                 return patch;
             else
@@ -115,14 +115,7 @@ export var List;
                     };
                 });
         });
-        list = {
-            state: State.reverse(parent.state),
-            subscribe: observable.subscribe
-        };
-        observable.subscribe({
-            onNext: patch => { list.state = State.patch(list.state, patch); }
-        });
-        return list;
+        return list = create(state, observable);
     }
     List.reverse = reverse;
 })(List || (List = {}));

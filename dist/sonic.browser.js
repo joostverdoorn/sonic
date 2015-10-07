@@ -171,7 +171,8 @@ exports.List = List;
     }
     List.zoom = zoom;
     function reverse(parent) {
-        var list,
+        var state = _state2['default'].reverse(parent.state),
+            list,
             observable = _observable.Observable.map(parent, function (patch) {
             if (!_patch.Patch.isSetPatch(patch)) return patch;else return patch.before === undefined ? patch : list.state.next(patch.before).then(function (prev) {
                 return {
@@ -182,16 +183,7 @@ exports.List = List;
                 };
             });
         });
-        list = {
-            state: _state2['default'].reverse(parent.state),
-            subscribe: observable.subscribe
-        };
-        observable.subscribe({
-            onNext: function onNext(patch) {
-                list.state = _state2['default'].patch(list.state, patch);
-            }
-        });
-        return list;
+        return list = create(state, observable);
     }
     List.reverse = reverse;
 })(List || (exports.List = List = {}));
