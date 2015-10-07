@@ -1,6 +1,4 @@
 import Key   from './key';
-import Patch from './patch';
-import State from './state';
 
 export interface Disposable {
   dispose(): void;

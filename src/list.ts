@@ -14,6 +14,83 @@ export interface List<V> extends Observable<Patch<V>> {
 }
 
 export module List {
+  var DELETED: any = Promise.resolve({});
+
+  export function cache<V>(parent: List<V>): List<V> {
+    function getState(_get: {[key: string]: Promise<V>}, _prev: {[key: string]: Key}, _next: {[key: string]: Key}) {
+      return {
+        get: (key: Key): Promise<V> => {
+          if (_get[key] == DELETED) return Promise.reject<V>(new Error);
+          return _get[key] === undefined ? (_get[key] = parent.state.get(key)): _get[key];
+        },
+        prev: (key: Key): Promise<Key> => {
+          return _prev[key] === undefined ? (parent.state.prev(key).then((res) => (_next[res] = key, _prev[key] = res))) : Promise.resolve(_prev[key]);
+        },
+        next: (key: Key): Promise<Key> => {
+          return _next[key] === undefined ? (parent.state.next(key).then((res) => (_prev[res] = key, _next[key] = res))) : Promise.resolve(_next[key]);
+        }
+      }
+    }
+
+    var subject = new Subject(),
+        pseudoState: {
+          get : {[key: string]: Promise<V>}
+          prev: {[key: string]: Key}
+          next: {[key: string]: Key}
+        } = {
+          get : Object.create(null),
+          prev: Object.create(null),
+          next: Object.create(null)
+        },
+        list = {
+          get state(): State<V> {
+            return getState(pseudoState.get, pseudoState.prev, pseudoState.next);
+          },
+          subscribe: subject.subscribe
+        }
+
+    parent.subscribe({
+      onNext: patch => {
+        return Promise.resolve().then((): Promise<any> => {
+            var state = list.state;
+            pseudoState = {
+              get: Object.create(pseudoState.get),
+              prev:Object.create(pseudoState.prev),
+              next:Object.create(pseudoState.next)
+            }
+
+            if (Patch.isSetPatch(patch)) {
+              pseudoState.get[patch.key] = Promise.resolve(patch.value);
+
+              if (patch.before !== undefined) return state.prev(patch.before).then( prev => {
+                var next = patch.before;
+
+                pseudoState.prev[next] = patch.key;
+                pseudoState.next[patch.key] = next;
+
+                pseudoState.prev[patch.key] = prev;
+                pseudoState.next[prev] = patch.key;
+
+              });
+            }
+
+            if (Patch.isDeletePatch(patch)) {
+              pseudoState.get[patch.key] = DELETED;
+
+              return state.prev(patch.key)
+                .then(prev => list.state.next(patch.key)
+                  .then(next =>
+                    (pseudoState.prev[next] = prev, pseudoState.next[prev] = next)
+                  )
+                );
+            }
+          }).then( () => subject.onNext(patch));
+      }
+    });
+
+    return list;
+  }
+
   export function create<V>(state: State<V>, observable: Observable<Patch<V>>): List<V> {
     var list = {
       state: state,

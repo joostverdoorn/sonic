@@ -1,5 +1,5 @@
 import StateIterator from './state_iterator';
-import Patch from './patch';
+import { Patch } from './patch';
 export var State;
 (function (State) {
     function extend(parent, { get, prev, next }) {

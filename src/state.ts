@@ -1,7 +1,7 @@
 import Key           from './key';
 import Range         from './range';
 import StateIterator from './state_iterator';
-import Patch         from './patch';
+import { Patch }         from './patch';
 
 export interface State<V> {
   get:  (key: Key)  => Promise<V>;

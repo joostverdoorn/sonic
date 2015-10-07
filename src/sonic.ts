@@ -20,7 +20,7 @@ export module Sonic {
   // export var KeyedList      = _KeyedList;
   // export var Cache          = _Cache;
   export var factory        = _factory
-  export var KeyedList      = _KeyedList;
+  // export var KeyedList      = _KeyedList;
   export var Subject        = _Subject;
 };
 

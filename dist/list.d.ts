@@ -7,6 +7,7 @@ export interface List<V> extends Observable<Patch<V>> {
     subscribe: (observer: Observer<Patch<V>>) => Disposable;
 }
 export declare module List {
+    function cache<V>(parent: List<V>): List<V>;
     function create<V>(state: State<V>, observable: Observable<Patch<V>>): List<V>;
     function map<V, W>(parent: List<V>, mapFn: (value: V, key: Key) => W): List<W>;
     function filter<V>(parent: List<V>, filterFn: (value: V, key: Key) => boolean): List<V>;

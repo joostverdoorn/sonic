@@ -82,126 +82,6 @@ Object.defineProperty(exports, '__esModule', {
     value: true
 });
 
-var _createClass = (function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ('value' in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
-
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError('Cannot call a class as a function'); } }
-
-var _key = require('./key');
-
-var _key2 = _interopRequireDefault(_key);
-
-var _observable = require('./observable');
-
-var _patch = require('./patch');
-
-var KeyedList = (function () {
-    function KeyedList(values, keyFn) {
-        _classCallCheck(this, KeyedList);
-
-        this._keyFn = keyFn || _key2['default'].create;
-        this._subject = new _observable.Subject();
-        this._pseudoState = Object.keys(values).reduce(function (state, key, index, keys) {
-            state.get[key] = values[key];
-            if (index == 0) state.next['null'] = key;
-            if (index == keys.length - 1) state.prev['null'] = key;
-            state.prev[key] = keys[index - 1] != null ? keys[index - 1] : null;
-            state.next[key] = keys[index + 1] != null ? keys[index + 1] : null;
-            return state;
-        }, {
-            get: Object.create(null),
-            prev: Object.create(null),
-            next: Object.create(null)
-        });
-    }
-
-    _createClass(KeyedList, [{
-        key: 'add',
-        value: function add(value) {
-            var key = this._keyFn(value);
-            if (key in this._pseudoState.get) return this.replace(key, value);
-            var pseudoState = Object.create(this._pseudoState);
-            pseudoState.get[key] = value;
-            var prev = pseudoState.prev['null'],
-                next = null;
-            pseudoState.prev[next] = key;
-            pseudoState.next[key] = next;
-            pseudoState.prev[key] = prev;
-            pseudoState.next[prev] = key;
-            this._pseudoState = pseudoState;
-            this._subject.onInvalidate([{ op: _patch.Operation[_patch.Operation.add], key: key, value: Promise.resolve(value) }]);
-            return Promise.resolve();
-        }
-    }, {
-        key: 'replace',
-        value: function replace(key, value) {
-            if (!(key in this._pseudoState.get)) return Promise.reject(new Error());
-            var pseudoState = Object.create(this._pseudoState);
-            pseudoState.get[key] = value;
-            this._pseudoState = pseudoState;
-            this._subject.onInvalidate([{ op: _patch.Operation[_patch.Operation.replace], key: key, value: Promise.resolve(value) }]);
-            return Promise.resolve();
-        }
-    }, {
-        key: 'remove',
-        value: function remove(key) {
-            if (!(key in this._pseudoState.get)) return Promise.reject(new Error());
-            var pseudoState = Object.create(this._pseudoState);
-            pseudoState.get[key] = KeyedList.DELETED;
-            var prev = pseudoState.prev[key],
-                next = pseudoState.next[key];
-            pseudoState.prev[next] = prev;
-            pseudoState.next[prev] = next;
-            this._pseudoState = pseudoState;
-            this._subject.onInvalidate([{ op: _patch.Operation[_patch.Operation.remove], key: key }]);
-            return Promise.resolve();
-        }
-    }, {
-        key: 'observe',
-        value: function observe(observer) {
-            return this._subject.observe(observer);
-        }
-    }, {
-        key: 'state',
-        get: function get() {
-            var pseudoState = this._pseudoState;
-            return {
-                get: function get(key) {
-                    if (key in pseudoState.get && pseudoState.get[key] != KeyedList.DELETED) return Promise.resolve(pseudoState.get[key]);
-                    return Promise.reject(new Error());
-                },
-                prev: function prev() {
-                    var key = arguments.length <= 0 || arguments[0] === undefined ? null : arguments[0];
-
-                    if (key in pseudoState.prev) return Promise.resolve(pseudoState.prev[key]);
-                    return Promise.reject(new Error());
-                },
-                next: function next() {
-                    var key = arguments.length <= 0 || arguments[0] === undefined ? null : arguments[0];
-
-                    if (key in pseudoState.next) return Promise.resolve(pseudoState.next[key]);
-                    return Promise.reject(new Error());
-                }
-            };
-        }
-    }]);
-
-    return KeyedList;
-})();
-
-exports['default'] = KeyedList;
-
-KeyedList.DELETED = {};
-module.exports = exports['default'];
-
-},{"./key":2,"./observable":5,"./patch":6}],4:[function(require,module,exports){
-'use strict';
-
-Object.defineProperty(exports, '__esModule', {
-    value: true
-});
-
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
 
 var _state = require('./state');
@@ -215,6 +95,78 @@ var _patch = require('./patch');
 var List;
 exports.List = List;
 (function (List) {
+    var DELETED = Promise.resolve({});
+    function cache(parent) {
+        function getState(_get, _prev, _next) {
+            return {
+                get: function get(key) {
+                    if (_get[key] == DELETED) return Promise.reject(new Error());
+                    return _get[key] === undefined ? _get[key] = parent.state.get(key) : _get[key];
+                },
+                prev: function prev(key) {
+                    return _prev[key] === undefined ? parent.state.prev(key).then(function (res) {
+                        return (_next[res] = key, _prev[key] = res);
+                    }) : Promise.resolve(_prev[key]);
+                },
+                next: function next(key) {
+                    return _next[key] === undefined ? parent.state.next(key).then(function (res) {
+                        return (_prev[res] = key, _next[key] = res);
+                    }) : Promise.resolve(_next[key]);
+                }
+            };
+        }
+        var subject = new _observable.Subject(),
+            pseudoState = {
+            get: Object.create(null),
+            prev: Object.create(null),
+            next: Object.create(null)
+        },
+            list = Object.defineProperties({
+            subscribe: subject.subscribe
+        }, {
+            state: {
+                get: function get() {
+                    return getState(pseudoState.get, pseudoState.prev, pseudoState.next);
+                },
+                configurable: true,
+                enumerable: true
+            }
+        });
+        parent.subscribe({
+            onNext: function onNext(patch) {
+                return Promise.resolve().then(function () {
+                    var state = list.state;
+                    pseudoState = {
+                        get: Object.create(pseudoState.get),
+                        prev: Object.create(pseudoState.prev),
+                        next: Object.create(pseudoState.next)
+                    };
+                    if (_patch.Patch.isSetPatch(patch)) {
+                        pseudoState.get[patch.key] = Promise.resolve(patch.value);
+                        if (patch.before !== undefined) return state.prev(patch.before).then(function (prev) {
+                            var next = patch.before;
+                            pseudoState.prev[next] = patch.key;
+                            pseudoState.next[patch.key] = next;
+                            pseudoState.prev[patch.key] = prev;
+                            pseudoState.next[prev] = patch.key;
+                        });
+                    }
+                    if (_patch.Patch.isDeletePatch(patch)) {
+                        pseudoState.get[patch.key] = DELETED;
+                        return state.prev(patch.key).then(function (prev) {
+                            return list.state.next(patch.key).then(function (next) {
+                                return (pseudoState.prev[next] = prev, pseudoState.next[prev] = next);
+                            });
+                        });
+                    }
+                }).then(function () {
+                    return subject.onNext(patch);
+                });
+            }
+        });
+        return list;
+    }
+    List.cache = cache;
     function create(state, observable) {
         var list = {
             state: state,
@@ -268,7 +220,7 @@ exports.List = List;
 })(List || (exports.List = List = {}));
 exports['default'] = List;
 
-},{"./observable":5,"./patch":6,"./state":8}],5:[function(require,module,exports){
+},{"./observable":4,"./patch":5,"./state":6}],4:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, '__esModule', {
@@ -343,7 +295,7 @@ exports.Observable = Observable;
     Observable.filter = filter;
 })(Observable || (exports.Observable = Observable = {}));
 
-},{"./key":2}],6:[function(require,module,exports){
+},{"./key":2}],5:[function(require,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -368,65 +320,7 @@ exports.Patch = Patch;
 })(Patch || (exports.Patch = Patch = {}));
 exports["default"] = Patch;
 
-},{}],7:[function(require,module,exports){
-'use strict';
-
-Object.defineProperty(exports, '__esModule', {
-    value: true
-});
-exports.Sonic = Sonic;
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
-
-var _patch = require('./patch');
-
-var _patch2 = _interopRequireDefault(_patch);
-
-var _state = require('./state');
-
-var _state2 = _interopRequireDefault(_state);
-
-var _state_iterator = require('./state_iterator');
-
-var _state_iterator2 = _interopRequireDefault(_state_iterator);
-
-var _list = require('./list');
-
-var _list2 = _interopRequireDefault(_list);
-
-var _keyed_list = require('./keyed_list');
-
-var _keyed_list2 = _interopRequireDefault(_keyed_list);
-
-var _factory2 = require('./factory');
-
-var _factory3 = _interopRequireDefault(_factory2);
-
-var _observable = require('./observable');
-
-function Sonic(obj) {
-    // if (obj instanceof Array) return new _List(_factory.fromArray(obj));
-    // if (obj instanceof Object) return new _List(_factory.fromObject(obj));
-}
-
-var Sonic;
-exports.Sonic = Sonic;
-(function (Sonic) {
-    Sonic.Patch = _patch2['default'];
-    Sonic.State = _state2['default'];
-    Sonic.StateIterator = _state_iterator2['default'];
-    Sonic.List = _list2['default'];
-    // export var KeyedList      = _KeyedList;
-    // export var Cache          = _Cache;
-    Sonic.factory = _factory3['default'];
-    Sonic.KeyedList = _keyed_list2['default'];
-    Sonic.Subject = _observable.Subject;
-})(Sonic || (exports.Sonic = exports.Sonic = Sonic = {}));
-;
-module.exports = Sonic;
-exports['default'] = Sonic;
-
-},{"./factory":1,"./keyed_list":3,"./list":4,"./observable":5,"./patch":6,"./state":8,"./state_iterator":9}],8:[function(require,module,exports){
+},{}],6:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, '__esModule', {
@@ -440,8 +334,6 @@ var _state_iterator = require('./state_iterator');
 var _state_iterator2 = _interopRequireDefault(_state_iterator);
 
 var _patch = require('./patch');
-
-var _patch2 = _interopRequireDefault(_patch);
 
 var State;
 exports.State = State;
@@ -460,8 +352,8 @@ exports.State = State;
     State.extend = extend;
     function patch(parent, patch) {
         var state = parent;
-        if (_patch2['default'].isSetPatch(patch)) state = extend(state, set(state, patch.key, patch.value, patch.before));
-        if (_patch2['default'].isDeletePatch(patch)) state = extend(state, del(state, patch.key));
+        if (_patch.Patch.isSetPatch(patch)) state = extend(state, set(state, patch.key, patch.value, patch.before));
+        if (_patch.Patch.isDeletePatch(patch)) state = extend(state, del(state, patch.key));
         return state;
     }
     State.patch = patch;
@@ -479,13 +371,13 @@ exports.State = State;
         };
         if (before !== undefined) {
             state.prev = function () {
-                var k = arguments.length <= 0 || arguments[0] === undefined ? null : arguments[0];
+                var k = arguments[0] === undefined ? null : arguments[0];
 
                 if (k === before) return Promise.resolve(key);else if (k == key) return parent.prev(before);
                 return parent.prev(k);
             };
             state.next = function () {
-                var k = arguments.length <= 0 || arguments[0] === undefined ? null : arguments[0];
+                var k = arguments[0] === undefined ? null : arguments[0];
 
                 if (k === key) return Promise.resolve(before);
                 return parent.next(k).then(function (n) {
@@ -502,13 +394,13 @@ exports.State = State;
                 return k !== key ? parent.get(k) : State.NOT_FOUND;
             },
             prev: function prev() {
-                var k = arguments.length <= 0 || arguments[0] === undefined ? null : arguments[0];
+                var k = arguments[0] === undefined ? null : arguments[0];
                 return parent.prev(k).then(function (p) {
                     return p === key ? parent.prev(p) : p;
                 });
             },
             next: function next() {
-                var k = arguments.length <= 0 || arguments[0] === undefined ? null : arguments[0];
+                var k = arguments[0] === undefined ? null : arguments[0];
                 return parent.next(k).then(function (n) {
                     return n === key ? parent.next(n) : n;
                 });
@@ -563,14 +455,14 @@ exports.State = State;
     }
     State.zoom = zoom;
 })(State || (exports.State = State = {}));
-Object.defineProperty(State, "NOT_FOUND", {
+Object.defineProperty(State, 'NOT_FOUND', {
     get: function get() {
-        return Promise.reject("No entry at the specified key");
+        return Promise.reject('No entry at the specified key');
     }
 });
 exports['default'] = State;
 
-},{"./patch":6,"./state_iterator":9}],9:[function(require,module,exports){
+},{"./patch":5,"./state_iterator":7}],7:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, '__esModule', {
@@ -588,7 +480,7 @@ var _state2 = _interopRequireDefault(_state);
 var StateIterator = function StateIterator(state) {
     var _this = this;
 
-    var range = arguments.length <= 1 || arguments[1] === undefined ? [null, null] : arguments[1];
+    var range = arguments[1] === undefined ? [null, null] : arguments[1];
 
     _classCallCheck(this, StateIterator);
 
@@ -615,13 +507,13 @@ exports.StateIterator = StateIterator;
 
 (function (StateIterator) {
     function first(state) {
-        var range = arguments.length <= 1 || arguments[1] === undefined ? [null, null] : arguments[1];
+        var range = arguments[1] === undefined ? [null, null] : arguments[1];
 
         return state.next(range[0]).then(state.get);
     }
     StateIterator.first = first;
     function last(state) {
-        var range = arguments.length <= 1 || arguments[1] === undefined ? [null, null] : arguments[1];
+        var range = arguments[1] === undefined ? [null, null] : arguments[1];
 
         return state.prev(range[1]).then(state.get);
     }
@@ -731,5 +623,59 @@ exports.StateIterator = StateIterator;
 })(StateIterator || (exports.StateIterator = StateIterator = {}));
 exports['default'] = StateIterator;
 
-},{"./state":8}]},{},[7])(7)
+},{"./state":6}],8:[function(require,module,exports){
+'use strict';
+
+Object.defineProperty(exports, '__esModule', {
+    value: true
+});
+exports.Sonic = Sonic;
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
+
+var _patch = require('./patch');
+
+var _patch2 = _interopRequireDefault(_patch);
+
+var _state = require('./state');
+
+var _state2 = _interopRequireDefault(_state);
+
+var _state_iterator = require('./state_iterator');
+
+var _state_iterator2 = _interopRequireDefault(_state_iterator);
+
+var _list = require('./list');
+
+var _list2 = _interopRequireDefault(_list);
+
+var _factory2 = require('./factory');
+
+var _factory3 = _interopRequireDefault(_factory2);
+
+var _observable = require('./observable');
+
+function Sonic(obj) {}
+
+var Sonic;
+exports.Sonic = Sonic;
+(function (Sonic) {
+    Sonic.Patch = _patch2['default'];
+    Sonic.State = _state2['default'];
+    Sonic.StateIterator = _state_iterator2['default'];
+    Sonic.List = _list2['default'];
+    // export var KeyedList      = _KeyedList;
+    // export var Cache          = _Cache;
+    Sonic.factory = _factory3['default'];
+    // export var KeyedList      = _KeyedList;
+    Sonic.Subject = _observable.Subject;
+})(Sonic || (exports.Sonic = exports.Sonic = Sonic = {}));
+;
+module.exports = Sonic;
+exports['default'] = Sonic;
+
+// if (obj instanceof Array) return new _List(_factory.fromArray(obj));
+// if (obj instanceof Object) return new _List(_factory.fromObject(obj));
+
+},{"./factory":1,"./list":3,"./observable":4,"./patch":5,"./state":6,"./state_iterator":7}]},{},[8])(8)
 });
