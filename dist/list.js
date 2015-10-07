@@ -1,14 +1,6 @@
 import State from './state';
 import { Observable } from './observable';
 import { Patch } from './patch';
-function lazyPromise(resolver) {
-    var value;
-    return {
-        then: (onfulfilled) => {
-            return Promise.resolve(value === undefined ? value = resolver() : value).then(onfulfilled);
-        }
-    };
-}
 export var List;
 (function (List) {
     function create(state, observable) {

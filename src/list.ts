@@ -8,17 +8,6 @@ import { Observer,
          Subject }     from './observable';
 import { Patch }       from './patch';
 
-
-function lazyPromise<T>(resolver: () => T | PromiseLike<T>): PromiseLike<T> {
-  var value: T | PromiseLike<T>;
-
-  return {
-    then: <U>(onfulfilled?: (value: T) => U | PromiseLike<U>): Promise<U> => {
-      return Promise.resolve(value === undefined ? value = resolver(): value).then(onfulfilled);
-    }
-  };
-}
-
 export interface List<V> extends Observable<Patch<V>> {
   state: State<V>
   subscribe: (observer: Observer<Patch<V>>) => Disposable

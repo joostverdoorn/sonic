@@ -212,14 +212,6 @@ var _observable = require('./observable');
 
 var _patch = require('./patch');
 
-function lazyPromise(resolver) {
-    var value;
-    return {
-        then: function then(onfulfilled) {
-            return Promise.resolve(value === undefined ? value = resolver() : value).then(onfulfilled);
-        }
-    };
-}
 var List;
 exports.List = List;
 (function (List) {
