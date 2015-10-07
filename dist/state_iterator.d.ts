@@ -18,7 +18,9 @@ export declare module StateIterator {
     function forEach<V>(state: State<V>, fn: (value: V, key?: Key) => void | Promise<void>, range?: Range): Promise<void>;
     function reduce<V, W>(state: State<V>, fn: (memo: W, value: V, key?: Key) => W | Promise<W>, memo?: W, range?: Range): Promise<W>;
     function toArray<V>(state: State<V>, range?: Range): Promise<V[]>;
-    function toObject<V>(state: State<V>, range?: Range): Promise<V[]>;
+    function toObject<V>(state: State<V>, range?: Range): Promise<{
+        [key: string]: V;
+    }>;
     function findKey<V>(state: State<V>, predicate: (value: V, key?: Key) => boolean | Promise<boolean>, range?: Range): Promise<Key>;
     function find<V>(state: State<V>, predicate: (value: V, key?: Key) => boolean | Promise<boolean>, range?: Range): Promise<V>;
     function keyOf<V>(state: State<V>, value: V, range?: Range): Promise<Key>;

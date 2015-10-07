@@ -1,4 +1,5 @@
 import StateIterator from './state_iterator';
+import Patch from './patch';
 export var State;
 (function (State) {
     function extend(parent, { get, prev, next }) {
@@ -14,10 +15,10 @@ export var State;
     State.extend = extend;
     function patch(parent, patch) {
         var state = parent;
-        if (patch.set)
-            state = extend(state, set(state, patch.set.key, patch.set.value, patch.set.before));
-        if (patch.delete)
-            state = extend(state, del(state, patch.delete.key));
+        if (Patch.isSetPatch(patch))
+            state = extend(state, set(state, patch.key, patch.value, patch.before));
+        if (Patch.isDeletePatch(patch))
+            state = extend(state, del(state, patch.key));
         return state;
     }
     State.patch = patch;
@@ -75,6 +76,15 @@ export var State;
         });
     }
     State.filter = filter;
+    function zoom(parent, key) {
+        const next = (k) => k == null ? Promise.resolve(key) : k === key ? Promise.resolve(null) : State.NOT_FOUND;
+        return extend(parent, {
+            get: k => k === key ? parent.get(key) : State.NOT_FOUND,
+            prev: next,
+            next: next
+        });
+    }
+    State.zoom = zoom;
 })(State || (State = {}));
 Object.defineProperty(State, "NOT_FOUND", {
     get: () => Promise.reject("No entry at the specified key")

@@ -19,58 +19,63 @@ function lazyPromise<T>(resolver: () => T | PromiseLike<T>): PromiseLike<T> {
   };
 }
 
-export interface List<V> extends Observable<V> {
+export interface List<V> extends Observable<Patch<V>> {
   state: State<V>
   subscribe: (observer: Observer<Patch<V>>) => Disposable
 }
 
 export module List {
-  export function map<V, W>(parent: List<V>, mapFn: (value: V, key: Key) => W): List<W> {
-    var state = State.map(parent.state, mapFn),
-        subject = new Subject(),
-        list = {
-          state: state,
-          subscribe: subject.subscribe
-        }
+  export function create<V>(state: State<V>, observable: Observable<Patch<V>>): List<V> {
+    var list = {
+      state: state,
+      subscribe: observable.subscribe
+    }
 
-    Observable.map(parent, patch => {
-      if (!patch.set) return Promise.resolve({delete: patch.delete});
-
-      var value = Promise.resolve(lazyPromise(() => patch.set.value.then(value => mapFn(value, patch.set.key))));
-
-      return {
-        delete: patch.delete,
-        set: {
-          key: patch.set.key,
-          value: value,
-          before: patch.set.before
-        }
-      };
-    }).subscribe({
-      onNext: patch => {
-        list.state = State.patch(list.state, patch)
-        return subject.onNext(patch)
-      }
+    observable.subscribe({
+      onNext: patch => {list.state = State.patch(list.state, patch)}
     });
 
     return list;
   }
 
+  export function map<V, W>(parent: List<V>, mapFn: (value: V, key: Key) => W): List<W> {
+    var state = State.map(parent.state, mapFn),
+        observable = Observable.map<Patch<V>, Patch<W>>(parent, patch => {
+          if (!Patch.isSetPatch(patch)) return patch;
+          else return Promise.resolve(mapFn(patch.value, patch.key)).then((result: W) => {
+            return {
+              operation: Patch.SET,
+              key: patch.key,
+              value: result,
+              before: patch.before
+            }
+          });
+        });
+
+    return create(state, observable);
+  }
+
   export function filter<V>(parent: List<V>, filterFn: (value: V, key: Key) => boolean): List<V> {
     var state = State.filter(parent.state, filterFn),
-        observable = Observable.filter(parent, patch => {
-          return patch.set ? patch.set.value.then(value => filterFn(value, patch.set.key)) : true;
-        }),
-        list = {
-          state: state,
-          subscribe: observable.subscribe
-        }
+        observable = Observable.map(parent, patch => {
+          if (!Patch.isSetPatch(patch)) return patch;
+          else return Promise.resolve(filterFn(patch.value, patch.key)).then(result => {
+            if(result) return patch;
+            return {
+              operation: Patch.DELETE,
+              key: patch.key
+            }
+          });
+        });
 
-      observable.subscribe({
-        onNext: patch => {list.state = State.patch(list.state, patch)}
-      });
+    return create(state, observable);
+  }
 
-      return list;
+  export function zoom<V>(parent: List<V>, key: Key): List<V> {
+    var state = State.zoom(parent.state, key),
+        observable = Observable.filter(parent, patch => patch.key === key);
+
+    return create(state, observable);
   }
 }
 

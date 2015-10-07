@@ -12,6 +12,7 @@ export interface Observable<T> {
 }
 export declare class Subject<T> implements Observable<T>, Observer<T> {
     private _observers;
+    private _count;
     constructor();
     subscribe: (observer: Observer<T>) => Disposable;
     onNext: (value: T) => Promise<void>;

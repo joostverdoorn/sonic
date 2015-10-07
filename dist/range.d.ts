@@ -1,3 +1,3 @@
 import Key from './key';
-export declare type Range = Key | [Key, Key];
+export declare type Range = [Key, Key];
 export default Range;

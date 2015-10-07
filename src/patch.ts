@@ -1,15 +1,20 @@
 import Key from './key';
 import State from './state';
 
-export type Patch<V> = {
-  set?: {
-    key: Key
-    value: Promise<V>
-    before?: Key
+export interface Patch<V> { operation: string, key: Key };
+export interface DeletePatch<V> extends Patch<V> {};
+export interface SetPatch<V> extends Patch<V> { key: Key, value: V, before?: Key };
+
+export module Patch {
+  export const SET = "set";
+  export const DELETE = "delete";
+
+  export function isSetPatch<V>(patch: Patch<V>): patch is SetPatch<V> {
+    return patch.operation === SET;
   }
 
-  delete?: {
-    key: Key
+  export function isDeletePatch<V>(patch: Patch<V>): patch is DeletePatch<V> {
+    return patch.operation === DELETE;
   }
 }
 

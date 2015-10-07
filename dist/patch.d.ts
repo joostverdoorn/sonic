@@ -1,12 +1,19 @@
 import Key from './key';
-export declare type Patch<V> = {
-    set?: {
-        key: Key;
-        value: Promise<V>;
-        before?: Key;
-    };
-    delete?: {
-        key: Key;
-    };
-};
+export interface Patch<V> {
+    operation: string;
+    key: Key;
+}
+export interface DeletePatch<V> extends Patch<V> {
+}
+export interface SetPatch<V> extends Patch<V> {
+    key: Key;
+    value: V;
+    before?: Key;
+}
+export declare module Patch {
+    const SET: string;
+    const DELETE: string;
+    function isSetPatch<V>(patch: Patch<V>): patch is SetPatch<V>;
+    function isDeletePatch<V>(patch: Patch<V>): patch is DeletePatch<V>;
+}
 export default Patch;

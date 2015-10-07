@@ -210,6 +210,8 @@ var _state2 = _interopRequireDefault(_state);
 
 var _observable = require('./observable');
 
+var _patch = require('./patch');
+
 function lazyPromise(resolver) {
     var value;
     return {
@@ -221,45 +223,8 @@ function lazyPromise(resolver) {
 var List;
 exports.List = List;
 (function (List) {
-    function map(parent, mapFn) {
-        var state = _state2['default'].map(parent.state, mapFn),
-            subject = new _observable.Subject(),
-            list = {
-            state: state,
-            subscribe: subject.subscribe
-        };
-        _observable.Observable.map(parent, function (patch) {
-            if (!patch.set) return Promise.resolve({ 'delete': patch['delete'] });
-            var value = Promise.resolve(lazyPromise(function () {
-                return patch.set.value.then(function (value) {
-                    return mapFn(value, patch.set.key);
-                });
-            }));
-            return {
-                'delete': patch['delete'],
-                set: {
-                    key: patch.set.key,
-                    value: value,
-                    before: patch.set.before
-                }
-            };
-        }).subscribe({
-            onNext: function onNext(patch) {
-                list.state = _state2['default'].patch(list.state, patch);
-                return subject.onNext(patch);
-            }
-        });
-        return list;
-    }
-    List.map = map;
-    function filter(parent, filterFn) {
-        var state = _state2['default'].filter(parent.state, filterFn),
-            observable = _observable.Observable.filter(parent, function (patch) {
-            return patch.set ? patch.set.value.then(function (value) {
-                return filterFn(value, patch.set.key);
-            }) : true;
-        }),
-            list = {
+    function create(state, observable) {
+        var list = {
             state: state,
             subscribe: observable.subscribe
         };
@@ -270,11 +235,48 @@ exports.List = List;
         });
         return list;
     }
+    List.create = create;
+    function map(parent, mapFn) {
+        var state = _state2['default'].map(parent.state, mapFn),
+            observable = _observable.Observable.map(parent, function (patch) {
+            if (!_patch.Patch.isSetPatch(patch)) return patch;else return Promise.resolve(mapFn(patch.value, patch.key)).then(function (result) {
+                return {
+                    operation: _patch.Patch.SET,
+                    key: patch.key,
+                    value: result,
+                    before: patch.before
+                };
+            });
+        });
+        return create(state, observable);
+    }
+    List.map = map;
+    function filter(parent, filterFn) {
+        var state = _state2['default'].filter(parent.state, filterFn),
+            observable = _observable.Observable.map(parent, function (patch) {
+            if (!_patch.Patch.isSetPatch(patch)) return patch;else return Promise.resolve(filterFn(patch.value, patch.key)).then(function (result) {
+                if (result) return patch;
+                return {
+                    operation: _patch.Patch.DELETE,
+                    key: patch.key
+                };
+            });
+        });
+        return create(state, observable);
+    }
     List.filter = filter;
+    function zoom(parent, key) {
+        var state = _state2['default'].zoom(parent.state, key),
+            observable = _observable.Observable.filter(parent, function (patch) {
+            return patch.key === key;
+        });
+        return create(state, observable);
+    }
+    List.zoom = zoom;
 })(List || (exports.List = List = {}));
 exports['default'] = List;
 
-},{"./observable":5,"./state":8}],5:[function(require,module,exports){
+},{"./observable":5,"./patch":6,"./state":8}],5:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, '__esModule', {
@@ -291,7 +293,13 @@ var _key = require('./key');
 var _key2 = _interopRequireDefault(_key);
 
 function disposable(disposer) {
-    return { dispose: disposer };
+    var done = false;
+    return {
+        dispose: function dispose() {
+            if (done) return;
+            done = true, disposer();
+        }
+    };
 }
 
 var Subject = function Subject() {
@@ -299,6 +307,7 @@ var Subject = function Subject() {
 
     _classCallCheck(this, Subject);
 
+    this._count = 0;
     this.subscribe = function (observer) {
         var observerKey = _key2['default'].create();
         _this._observers[observerKey] = observer;
@@ -345,6 +354,28 @@ exports.Observable = Observable;
 },{"./key":2}],6:[function(require,module,exports){
 "use strict";
 
+Object.defineProperty(exports, "__esModule", {
+    value: true
+});
+;
+;
+;
+var Patch;
+exports.Patch = Patch;
+(function (Patch) {
+    Patch.SET = "set";
+    Patch.DELETE = "delete";
+    function isSetPatch(patch) {
+        return patch.operation === Patch.SET;
+    }
+    Patch.isSetPatch = isSetPatch;
+    function isDeletePatch(patch) {
+        return patch.operation === Patch.DELETE;
+    }
+    Patch.isDeletePatch = isDeletePatch;
+})(Patch || (exports.Patch = Patch = {}));
+exports["default"] = Patch;
+
 },{}],7:[function(require,module,exports){
 'use strict';
 
@@ -354,6 +385,10 @@ Object.defineProperty(exports, '__esModule', {
 exports.Sonic = Sonic;
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
+
+var _patch = require('./patch');
+
+var _patch2 = _interopRequireDefault(_patch);
 
 var _state = require('./state');
 
@@ -385,6 +420,7 @@ function Sonic(obj) {
 var Sonic;
 exports.Sonic = Sonic;
 (function (Sonic) {
+    Sonic.Patch = _patch2['default'];
     Sonic.State = _state2['default'];
     Sonic.StateIterator = _state_iterator2['default'];
     Sonic.List = _list2['default'];
@@ -398,18 +434,22 @@ exports.Sonic = Sonic;
 module.exports = Sonic;
 exports['default'] = Sonic;
 
-},{"./factory":1,"./keyed_list":3,"./list":4,"./observable":5,"./state":8,"./state_iterator":9}],8:[function(require,module,exports){
-"use strict";
+},{"./factory":1,"./keyed_list":3,"./list":4,"./observable":5,"./patch":6,"./state":8,"./state_iterator":9}],8:[function(require,module,exports){
+'use strict';
 
-Object.defineProperty(exports, "__esModule", {
+Object.defineProperty(exports, '__esModule', {
     value: true
 });
 
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { "default": obj }; }
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
 
 var _state_iterator = require('./state_iterator');
 
 var _state_iterator2 = _interopRequireDefault(_state_iterator);
+
+var _patch = require('./patch');
+
+var _patch2 = _interopRequireDefault(_patch);
 
 var State;
 exports.State = State;
@@ -428,8 +468,8 @@ exports.State = State;
     State.extend = extend;
     function patch(parent, patch) {
         var state = parent;
-        if (patch.set) state = extend(state, set(state, patch.set.key, patch.set.value, patch.set.before));
-        if (patch["delete"]) state = extend(state, del(state, patch["delete"].key));
+        if (_patch2['default'].isSetPatch(patch)) state = extend(state, set(state, patch.key, patch.value, patch.before));
+        if (_patch2['default'].isDeletePatch(patch)) state = extend(state, del(state, patch.key));
         return state;
     }
     State.patch = patch;
@@ -509,23 +549,36 @@ exports.State = State;
                 });
             },
             prev: function prev(key) {
-                return _state_iterator2["default"].findKey(State.reverse(parent), filterFn, [key, null]);
+                return _state_iterator2['default'].findKey(State.reverse(parent), filterFn, [key, null]);
             },
             next: function next(key) {
-                return _state_iterator2["default"].findKey(parent, filterFn, [key, null]);
+                return _state_iterator2['default'].findKey(parent, filterFn, [key, null]);
             }
         });
     }
     State.filter = filter;
+    function zoom(parent, key) {
+        var next = function next(k) {
+            return k == null ? Promise.resolve(key) : k === key ? Promise.resolve(null) : State.NOT_FOUND;
+        };
+        return extend(parent, {
+            get: function get(k) {
+                return k === key ? parent.get(key) : State.NOT_FOUND;
+            },
+            prev: next,
+            next: next
+        });
+    }
+    State.zoom = zoom;
 })(State || (exports.State = State = {}));
 Object.defineProperty(State, "NOT_FOUND", {
     get: function get() {
         return Promise.reject("No entry at the specified key");
     }
 });
-exports["default"] = State;
+exports['default'] = State;
 
-},{"./state_iterator":9}],9:[function(require,module,exports){
+},{"./patch":6,"./state_iterator":9}],9:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, '__esModule', {

@@ -1,9 +1,10 @@
-import _State          from './state';
-import _StateIterator  from './state_iterator';
-import _List           from './list';
-import _KeyedList      from './keyed_list';
-// import _Cache          from './cache';
-import _factory         from './factory';
+import _Patch                from './patch'
+import _State                from './state';
+import _StateIterator        from './state_iterator';
+import _List                 from './list';
+import _KeyedList            from './keyed_list';
+// import _Cache             from './cache';
+import _factory              from './factory';
 import {Subject as _Subject} from './observable';
 
 export function Sonic(obj: any) {
@@ -12,6 +13,7 @@ export function Sonic(obj: any) {
 }
 
 export module Sonic {
+  export var Patch          = _Patch;
   export var State          = _State;
   export var StateIterator  = _StateIterator;
   export var List           = _List;

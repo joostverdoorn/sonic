@@ -7,7 +7,14 @@ export interface Disposable {
 }
 
 export function disposable(disposer: () => void): Disposable {
-  return { dispose: disposer }
+  var done = false;
+
+  return {
+    dispose: () => {
+      if (done) return;
+      done = true, disposer();
+    }
+  }
 }
 
 export interface Observer<T> {
@@ -22,6 +29,7 @@ export interface Observable<T> {
 
 export class Subject<T> implements Observable<T>, Observer<T> {
   private _observers: {[key: number]: Observer<T>};
+  private _count = 0;
 
   constructor() {
     this._observers = Object.create(null);
@@ -59,5 +67,4 @@ export module Observable {
 
     return { subscribe: subject.subscribe }
   }
-
 }

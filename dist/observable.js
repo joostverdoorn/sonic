@@ -1,9 +1,17 @@
 import Key from './key';
 export function disposable(disposer) {
-    return { dispose: disposer };
+    var done = false;
+    return {
+        dispose: () => {
+            if (done)
+                return;
+            done = true, disposer();
+        }
+    };
 }
 export class Subject {
     constructor() {
+        this._count = 0;
         this.subscribe = (observer) => {
             var observerKey = Key.create();
             this._observers[observerKey] = observer;

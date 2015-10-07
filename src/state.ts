@@ -29,8 +29,8 @@ export module State {
 
   export function patch<V>(parent: State<V>, patch: Patch<V>): State<V> {
     var state: State<V> = parent;
-    if (patch.set)    state = extend(state, set(state, patch.set.key, patch.set.value, patch.set.before));
-    if (patch.delete) state = extend(state, del(state, patch.delete.key));
+    if (Patch.isSetPatch(patch)) state = extend(state, set(state, patch.key, patch.value, patch.before));
+    if (Patch.isDeletePatch(patch)) state = extend(state, del(state, patch.key));
     return state;
   }
 
@@ -38,7 +38,7 @@ export module State {
     return patches.reduce((state, ptch) => patch(state, ptch), parent);
   }
 
-  export function set<V>(parent: State<V>, key: Key, value: V | Promise<V>, before?: Key): State<V> {
+  export function set<V>(parent: State<V>, key: Key, value: V, before?: Key): State<V> {
     var state: PartialState<V> = {
       get: k => k === key ? Promise.resolve(value) : parent.get(k)
     }
@@ -88,6 +88,15 @@ export module State {
     });
   }
 
+  export function zoom<V>(parent: State<V>, key: Key): State<V> {
+    const next = (k: Key) => k == null ? Promise.resolve(key) : k === key ? Promise.resolve(null) : NOT_FOUND;
+
+    return extend(parent, {
+      get:  k => k === key ? parent.get(key) : NOT_FOUND,
+      prev: next,
+      next: next
+    });
+  }
 }
 
 Object.defineProperty(State, "NOT_FOUND", {
