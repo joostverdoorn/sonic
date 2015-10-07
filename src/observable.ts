@@ -10,28 +10,54 @@ export function disposable(disposer: () => void): Disposable {
   return { dispose: disposer }
 }
 
-export interface Observer<V> {
-  onInvalidate(patches: Patch<V>[]): Promise<void>;
+export interface Observer<T> {
+  onNext(value: T): void | Promise<void>
+  onComplete?(): void | Promise<void>
+  onError?(): void | Promise<void>
 }
 
-export interface Observable<V> {
-  observe(observer: Observer<V>): Disposable;
+export interface Observable<T> {
+  subscribe(observer: Observer<T>): Disposable;
 }
 
-export class Subject<V> implements Observable<V>, Observer<V> {
-  private _observers: {[key: number]: Observer<V>};
+export class Subject<T> implements Observable<T>, Observer<T> {
+  private _observers: {[key: number]: Observer<T>};
 
   constructor() {
     this._observers = Object.create(null);
   }
 
-  observe(observer: Observer<V>): Disposable {
+  subscribe = (observer: Observer<T>): Disposable => {
     var observerKey = Key.create();
     this._observers[observerKey] = observer;
     return disposable(() => delete this._observers[observerKey]);
   }
 
-  onInvalidate(patches: Patch<V>[]): Promise<void> {
-    return Promise.all(Object.keys(this._observers).map(key => this._observers[key].onInvalidate(patches))).then(() => {});
+  onNext = (value: T): Promise<void> => {
+    return Promise.all(Object.keys(this._observers).map(key => this._observers[key].onNext(value))).then(() => {});
   }
+}
+
+export module Observable {
+  export function map<T, U>(observable: Observable<T>, mapFn: (value: T) => U | Promise<U>): Observable<U> {
+    const subject = new Subject;
+
+    observable.subscribe({
+      onNext: value => Promise.resolve(mapFn(value)).then(subject.onNext)
+    })
+
+    return { subscribe: subject.subscribe }
+  }
+
+  export function filter<T>(observable: Observable<T>, filterFn: (value: T) => boolean | Promise<boolean>): Observable<T>  {
+    const subject = new Subject<T>();
+
+    observable.subscribe({
+      onNext: value => Promise.resolve(filterFn(value)).then(result => result ? subject.onNext(value) : undefined)
+    });
+
+
+    return { subscribe: subject.subscribe }
+  }
+
 }

@@ -1,5 +1,4 @@
 import StateIterator from './state_iterator';
-export const KEY_NOT_FOUND = Promise.reject(new Error("No entry at the specified key"));
 export var State;
 (function (State) {
     function extend(parent, { get, prev, next }) {
@@ -49,7 +48,7 @@ export var State;
     State.set = set;
     function del(parent, key) {
         return extend(parent, {
-            get: k => k !== key ? parent.get(k) : KEY_NOT_FOUND,
+            get: k => k !== key ? parent.get(k) : State.NOT_FOUND,
             prev: (k = null) => parent.prev(k).then(p => p === key ? parent.prev(p) : p),
             next: (k = null) => parent.next(k).then(n => n === key ? parent.next(n) : n)
         });
@@ -70,11 +69,14 @@ export var State;
     State.map = map;
     function filter(parent, filterFn) {
         return extend(parent, {
-            get: key => parent.get(key).then(value => filterFn(value) ? value : KEY_NOT_FOUND),
+            get: key => parent.get(key).then(value => filterFn(value) ? value : State.NOT_FOUND),
             prev: key => StateIterator.findKey(State.reverse(parent), filterFn, [key, null]),
             next: key => StateIterator.findKey(parent, filterFn, [key, null])
         });
     }
     State.filter = filter;
 })(State || (State = {}));
+Object.defineProperty(State, "NOT_FOUND", {
+    get: () => Promise.reject("No entry at the specified key")
+});
 export default State;

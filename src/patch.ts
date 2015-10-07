@@ -1,4 +1,5 @@
 import Key from './key';
+import State from './state';
 
 export type Patch<V> = {
   set?: {

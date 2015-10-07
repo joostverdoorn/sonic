@@ -15,9 +15,9 @@ export interface PartialState<V> {
   next?: (key?: Key) => Promise<Key>;
 }
 
-export const KEY_NOT_FOUND = Promise.reject<any>(new Error("No entry at the specified key"));
-
 export module State {
+
+  export declare var NOT_FOUND: Promise<any>;
 
   export function extend<V, W>(parent: State<V>, { get, prev, next }: PartialState<W>): State<W> {
     var state = Object.create(parent);
@@ -61,7 +61,7 @@ export module State {
 
   export function del<V>(parent: State<V>, key: Key): State<V> {
     return extend(parent, {
-      get:  k => k !== key ? parent.get(k) : KEY_NOT_FOUND,
+      get:  k => k !== key ? parent.get(k) : NOT_FOUND,
       prev: (k = null) => parent.prev(k).then(p => p === key ? parent.prev(p) : p),
       next: (k = null) => parent.next(k).then(n => n === key ? parent.next(n) : n)
     });
@@ -82,12 +82,16 @@ export module State {
 
   export function filter<V>(parent: State<V>, filterFn: (value: V, key?: Key) => boolean): State<V> {
     return extend(parent, {
-      get:  key => parent.get(key).then(value => filterFn(value) ? value : KEY_NOT_FOUND),
+      get:  key => parent.get(key).then(value => filterFn(value) ? value : NOT_FOUND),
       prev: key => StateIterator.findKey(State.reverse(parent), filterFn, [key, null]),
       next: key => StateIterator.findKey(parent, filterFn, [key, null])
     });
   }
 
 }
+
+Object.defineProperty(State, "NOT_FOUND", {
+  get: () => Promise.reject<any>("No entry at the specified key")
+});
 
 export default State;

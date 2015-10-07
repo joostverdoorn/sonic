@@ -1,17 +1,22 @@
-import Patch from './patch';
 export interface Disposable {
     dispose(): void;
 }
 export declare function disposable(disposer: () => void): Disposable;
-export interface Observer<V> {
-    onInvalidate(patches: Patch<V>[]): Promise<void>;
+export interface Observer<T> {
+    onNext(value: T): void | Promise<void>;
+    onComplete?(): void | Promise<void>;
+    onError?(): void | Promise<void>;
 }
-export interface Observable<V> {
-    observe(observer: Observer<V>): Disposable;
+export interface Observable<T> {
+    subscribe(observer: Observer<T>): Disposable;
 }
-export declare class Subject<V> implements Observable<V>, Observer<V> {
+export declare class Subject<T> implements Observable<T>, Observer<T> {
     private _observers;
     constructor();
-    observe(observer: Observer<V>): Disposable;
-    onInvalidate(patches: Patch<V>[]): Promise<void>;
+    subscribe: (observer: Observer<T>) => Disposable;
+    onNext: (value: T) => Promise<void>;
+}
+export declare module Observable {
+    function map<T, U>(observable: Observable<T>, mapFn: (value: T) => U | Promise<U>): Observable<U>;
+    function filter<T>(observable: Observable<T>, filterFn: (value: T) => boolean | Promise<boolean>): Observable<T>;
 }

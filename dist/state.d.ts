@@ -10,8 +10,8 @@ export interface PartialState<V> {
     prev?: (key?: Key) => Promise<Key>;
     next?: (key?: Key) => Promise<Key>;
 }
-export declare const KEY_NOT_FOUND: Promise<any>;
 export declare module State {
+    var NOT_FOUND: Promise<any>;
     function extend<V, W>(parent: State<V>, {get, prev, next}: PartialState<W>): State<W>;
     function patch<V>(parent: State<V>, patch: Patch<V>): State<V>;
     function patches<V>(parent: State<V>, patches: Patch<V>[]): State<V>;
