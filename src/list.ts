@@ -91,19 +91,6 @@ export module List {
     return list;
   }
 
-  export function create<V>(state: State<V>, observable: Observable<Patch<V>>): List<V> {
-    var list = {
-      state: state,
-      subscribe: observable.subscribe
-    }
-
-    observable.subscribe({
-      onNext: patch => {list.state = State.patch(list.state, patch)}
-    });
-
-    return list;
-  }
-
   export function map<V, W>(parent: List<V>, mapFn: (value: V, key: Key) => W): List<W> {
     var state = State.map(parent.state, mapFn),
         observable = Observable.map<Patch<V>, Patch<W>>(parent, patch => {
@@ -118,7 +105,7 @@ export module List {
           });
         });
 
-    return create(state, observable);
+    return factory.create(state, observable);
   }
 
   export function filter<V>(parent: List<V>, filterFn: (value: V, key: Key) => boolean): List<V> {
@@ -134,14 +121,14 @@ export module List {
           });
         });
 
-    return create(state, observable);
+    return factory.create(state, observable);
   }
 
   export function zoom<V>(parent: List<V>, key: Key): List<V> {
     var state = State.zoom(parent.state, key),
         observable = Observable.filter(parent, patch => patch.key === key);
 
-    return create(state, observable);
+    return factory.create(state, observable);
   }
 
   export function reverse<V>(parent: List<V>): List<V> {
@@ -160,6 +147,21 @@ export module List {
 
     list = {
       state: State.reverse(parent.state),
+      subscribe: observable.subscribe
+    }
+
+    observable.subscribe({
+      onNext: patch => {list.state = State.patch(list.state, patch)}
+    });
+
+    return list;
+  }
+}
+
+export module factory {
+  export function create<V>(state: State<V>, observable: Observable<Patch<V>>): List<V> {
+    var list = {
+      state: state,
       subscribe: observable.subscribe
     }
 

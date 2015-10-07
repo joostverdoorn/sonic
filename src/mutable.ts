@@ -13,7 +13,7 @@ export interface Mutable<V> extends List<V> {
 export module Mutable {
 
   export function splice<V>(mutable: Mutable<V>, range: Range, values: State<V>): Promise<void> {
-    var reduceFn = (memo: Promise<void>, value: V, key: Key): Promise<void> => {
+    var reduceFn = (memo: void | Promise<void>, value: V, key: Key): Promise<void> => {
       return Promise.resolve(memo).then(() => set(mutable, key, value, range[1]));
     };
 

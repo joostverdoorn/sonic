@@ -62,17 +62,6 @@ export var List;
         return list;
     }
     List.cache = cache;
-    function create(state, observable) {
-        var list = {
-            state: state,
-            subscribe: observable.subscribe
-        };
-        observable.subscribe({
-            onNext: patch => { list.state = State.patch(list.state, patch); }
-        });
-        return list;
-    }
-    List.create = create;
     function map(parent, mapFn) {
         var state = State.map(parent.state, mapFn), observable = Observable.map(parent, patch => {
             if (!Patch.isSetPatch(patch))
@@ -87,7 +76,7 @@ export var List;
                     };
                 });
         });
-        return create(state, observable);
+        return factory.create(state, observable);
     }
     List.map = map;
     function filter(parent, filterFn) {
@@ -104,12 +93,12 @@ export var List;
                     };
                 });
         });
-        return create(state, observable);
+        return factory.create(state, observable);
     }
     List.filter = filter;
     function zoom(parent, key) {
         var state = State.zoom(parent.state, key), observable = Observable.filter(parent, patch => patch.key === key);
-        return create(state, observable);
+        return factory.create(state, observable);
     }
     List.zoom = zoom;
     function reverse(parent) {
@@ -137,4 +126,18 @@ export var List;
     }
     List.reverse = reverse;
 })(List || (List = {}));
+export var factory;
+(function (factory) {
+    function create(state, observable) {
+        var list = {
+            state: state,
+            subscribe: observable.subscribe
+        };
+        observable.subscribe({
+            onNext: patch => { list.state = State.patch(list.state, patch); }
+        });
+        return list;
+    }
+    factory.create = create;
+})(factory || (factory = {}));
 export default List;

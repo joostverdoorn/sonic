@@ -4,7 +4,8 @@ import _StateIterator from './state_iterator';
 import _List from './list';
 import _factory from './factory';
 import { Subject as _Subject } from './observable';
-export declare function Sonic(obj: any): void;
+import _Mutable from './mutable';
+export declare function Sonic(obj: any): _Mutable<{}>;
 export declare module Sonic {
     var Patch: typeof _Patch;
     var State: typeof _State;
@@ -12,5 +13,6 @@ export declare module Sonic {
     var List: typeof _List;
     var factory: typeof _factory;
     var Subject: typeof _Subject;
+    var Mutable: typeof _Mutable;
 }
 export default Sonic;

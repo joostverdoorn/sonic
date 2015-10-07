@@ -22,4 +22,10 @@ export declare module State {
     function filter<V>(parent: State<V>, filterFn: (value: V, key?: Key) => boolean): State<V>;
     function zoom<V>(parent: State<V>, key: Key): State<V>;
 }
+export declare module factory {
+    function fromArray<V>(values: V[]): State<V>;
+    function fromObject<V>(values: {
+        [key: string]: V;
+    }): State<V>;
+}
 export default State;

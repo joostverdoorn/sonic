@@ -1,60 +1,26 @@
 (function(f){if(typeof exports==="object"&&typeof module!=="undefined"){module.exports=f()}else if(typeof define==="function"&&define.amd){define([],f)}else{var g;if(typeof window!=="undefined"){g=window}else if(typeof global!=="undefined"){g=global}else if(typeof self!=="undefined"){g=self}else{g=this}g.Sonic = f()}})(function(){var define,module,exports;return (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
-"use strict";
+'use strict';
 
-Object.defineProperty(exports, "__esModule", {
+Object.defineProperty(exports, '__esModule', {
     value: true
 });
+
+var _state = require('./state');
+
+var _list = require('./list');
+
+var _mutable = require('./mutable');
+
 var factory;
 exports.factory = factory;
 (function (factory) {
-    function fromArray(values) {
-        return {
-            get: function get(key) {
-                if (key in values) return Promise.resolve(values[key]);
-                return Promise.reject(new Error());
-            },
-            prev: function prev(key) {
-                var index = key == null ? values.length - 1 : key - 1;
-                return Promise.resolve(index == -1 ? null : index);
-            },
-            next: function next(key) {
-                var index = key == null ? 0 : key + 1;
-                return Promise.resolve(index == values.length ? null : index);
-            }
-        };
-    }
-    factory.fromArray = fromArray;
-    function fromObject(values) {
-        var keys = Object.keys(values),
-            indexByKey = {
-            "null": -1
-        };
-        return {
-            get: function get(key) {
-                if (key in values) return Promise.resolve(values[key]);
-                return Promise.reject(new Error());
-            },
-            prev: function prev(key) {
-                var index = key == null ? keys.length - 1 : indexByKey[key] - 1;
-                indexByKey[keys[index]] = index;
-                if (key == null) return Promise.resolve(keys[keys.length - 1]);
-                if (!(key in values)) return Promise.reject(new Error());
-                return Promise.resolve(index == -1 ? null : keys[index]);
-            },
-            next: function next(key) {
-                var index = indexByKey[key] + 1;
-                indexByKey[keys[index]] = index;
-                if (key == null) return Promise.resolve(keys[0]);
-                if (!(key in values)) return Promise.reject(new Error());
-                return Promise.resolve(index == keys.length ? null : keys[index]);
-            }
-        };
-    }
-    factory.fromObject = fromObject;
+    factory.State = _state.factory;
+    factory.List = _list.factory;
+    factory.Mutable = _mutable.factory;
 })(factory || (exports.factory = factory = {}));
-exports["default"] = factory;
+exports['default'] = factory;
 
-},{}],2:[function(require,module,exports){
+},{"./list":3,"./mutable":4,"./state":7}],2:[function(require,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -167,19 +133,6 @@ exports.List = List;
         return list;
     }
     List.cache = cache;
-    function create(state, observable) {
-        var list = {
-            state: state,
-            subscribe: observable.subscribe
-        };
-        observable.subscribe({
-            onNext: function onNext(patch) {
-                list.state = _state2['default'].patch(list.state, patch);
-            }
-        });
-        return list;
-    }
-    List.create = create;
     function map(parent, mapFn) {
         var state = _state2['default'].map(parent.state, mapFn),
             observable = _observable.Observable.map(parent, function (patch) {
@@ -192,7 +145,7 @@ exports.List = List;
                 };
             });
         });
-        return create(state, observable);
+        return factory.create(state, observable);
     }
     List.map = map;
     function filter(parent, filterFn) {
@@ -206,7 +159,7 @@ exports.List = List;
                 };
             });
         });
-        return create(state, observable);
+        return factory.create(state, observable);
     }
     List.filter = filter;
     function zoom(parent, key) {
@@ -214,7 +167,7 @@ exports.List = List;
             observable = _observable.Observable.filter(parent, function (patch) {
             return patch.key === key;
         });
-        return create(state, observable);
+        return factory.create(state, observable);
     }
     List.zoom = zoom;
     function reverse(parent) {
@@ -242,9 +195,106 @@ exports.List = List;
     }
     List.reverse = reverse;
 })(List || (exports.List = List = {}));
+var factory;
+exports.factory = factory;
+(function (factory) {
+    function create(state, observable) {
+        var list = {
+            state: state,
+            subscribe: observable.subscribe
+        };
+        observable.subscribe({
+            onNext: function onNext(patch) {
+                list.state = _state2['default'].patch(list.state, patch);
+            }
+        });
+        return list;
+    }
+    factory.create = create;
+})(factory || (exports.factory = factory = {}));
 exports['default'] = List;
 
-},{"./observable":4,"./patch":5,"./state":6}],4:[function(require,module,exports){
+},{"./observable":5,"./patch":6,"./state":7}],4:[function(require,module,exports){
+'use strict';
+
+Object.defineProperty(exports, '__esModule', {
+    value: true
+});
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
+
+var _observable = require('./observable');
+
+var _patch = require('./patch');
+
+var _list = require('./list');
+
+var _state_iterator = require('./state_iterator');
+
+var _state_iterator2 = _interopRequireDefault(_state_iterator);
+
+var Mutable;
+exports.Mutable = Mutable;
+(function (Mutable) {
+    function splice(mutable, range, values) {
+        var reduceFn = function reduceFn(memo, value, key) {
+            return Promise.resolve(memo).then(function () {
+                return set(mutable, key, value, range[1]);
+            });
+        };
+        return _state_iterator2['default'].reduce(values, reduceFn, _state_iterator2['default'].every(mutable.state, function (value, key) {
+            return del(mutable, key).then(function () {
+                return true;
+            });
+        }).then(function () {}));
+    }
+    Mutable.splice = splice;
+    function set(mutable, key, value, before) {
+        var patch = {
+            operation: _patch.Patch.SET,
+            key: key,
+            value: value
+        };
+        if (before !== undefined) patch.before = before;
+        return mutable.modify(patch);
+    }
+    Mutable.set = set;
+    function del(mutable, key) {
+        var patch = {
+            operation: _patch.Patch.DELETE,
+            key: key
+        };
+        return mutable.modify(patch);
+    }
+    Mutable.del = del;
+})(Mutable || (exports.Mutable = Mutable = {}));
+var factory;
+exports.factory = factory;
+(function (factory) {
+    function create(state) {
+        var subject = new _observable.Subject(),
+            list = _list.factory.create(state, subject);
+        return Object.defineProperties({
+            subscribe: list.subscribe,
+            // onNext: subject.onNext,
+            modify: function modify(patch) {
+                return subject.onNext(patch);
+            }
+        }, {
+            state: {
+                get: function get() {
+                    return list.state;
+                },
+                configurable: true,
+                enumerable: true
+            }
+        });
+    }
+    factory.create = create;
+})(factory || (exports.factory = factory = {}));
+exports['default'] = Mutable;
+
+},{"./list":3,"./observable":5,"./patch":6,"./state_iterator":8}],5:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, '__esModule', {
@@ -319,7 +369,7 @@ exports.Observable = Observable;
     Observable.filter = filter;
 })(Observable || (exports.Observable = Observable = {}));
 
-},{"./key":2}],5:[function(require,module,exports){
+},{"./key":2}],6:[function(require,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -344,7 +394,7 @@ exports.Patch = Patch;
 })(Patch || (exports.Patch = Patch = {}));
 exports["default"] = Patch;
 
-},{}],6:[function(require,module,exports){
+},{}],7:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, '__esModule', {
@@ -484,9 +534,57 @@ Object.defineProperty(State, 'NOT_FOUND', {
         return Promise.reject('No entry at the specified key');
     }
 });
+var factory;
+exports.factory = factory;
+(function (factory) {
+    function fromArray(values) {
+        return {
+            get: function get(key) {
+                if (key in values) return Promise.resolve(values[key]);
+                return Promise.reject(new Error());
+            },
+            prev: function prev(key) {
+                var index = key == null ? values.length - 1 : key - 1;
+                return Promise.resolve(index == -1 ? null : index);
+            },
+            next: function next(key) {
+                var index = key == null ? 0 : key + 1;
+                return Promise.resolve(index == values.length ? null : index);
+            }
+        };
+    }
+    factory.fromArray = fromArray;
+    function fromObject(values) {
+        var keys = Object.keys(values),
+            indexByKey = {
+            'null': -1
+        };
+        return {
+            get: function get(key) {
+                if (key in values) return Promise.resolve(values[key]);
+                return Promise.reject(new Error());
+            },
+            prev: function prev(key) {
+                var index = key == null ? keys.length - 1 : indexByKey[key] - 1;
+                indexByKey[keys[index]] = index;
+                if (key == null) return Promise.resolve(keys[keys.length - 1]);
+                if (!(key in values)) return Promise.reject(new Error());
+                return Promise.resolve(index == -1 ? null : keys[index]);
+            },
+            next: function next(key) {
+                var index = indexByKey[key] + 1;
+                indexByKey[keys[index]] = index;
+                if (key == null) return Promise.resolve(keys[0]);
+                if (!(key in values)) return Promise.reject(new Error());
+                return Promise.resolve(index == keys.length ? null : keys[index]);
+            }
+        };
+    }
+    factory.fromObject = fromObject;
+})(factory || (exports.factory = factory = {}));
 exports['default'] = State;
 
-},{"./patch":5,"./state_iterator":7}],7:[function(require,module,exports){
+},{"./patch":6,"./state_iterator":8}],8:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, '__esModule', {
@@ -647,7 +745,7 @@ exports.StateIterator = StateIterator;
 })(StateIterator || (exports.StateIterator = StateIterator = {}));
 exports['default'] = StateIterator;
 
-},{"./state":6}],8:[function(require,module,exports){
+},{"./state":7}],9:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, '__esModule', {
@@ -679,7 +777,14 @@ var _factory3 = _interopRequireDefault(_factory2);
 
 var _observable = require('./observable');
 
-function Sonic(obj) {}
+var _mutable = require('./mutable');
+
+var _mutable2 = _interopRequireDefault(_mutable);
+
+function Sonic(obj) {
+    if (obj instanceof Array) return _factory3['default'].Mutable.create(_factory3['default'].State.fromArray(obj));
+    if (obj instanceof Object) return _factory3['default'].Mutable.create(_factory3['default'].State.fromObject(obj));
+}
 
 var Sonic;
 exports.Sonic = Sonic;
@@ -693,13 +798,11 @@ exports.Sonic = Sonic;
     Sonic.factory = _factory3['default'];
     // export var KeyedList      = _KeyedList;
     Sonic.Subject = _observable.Subject;
+    Sonic.Mutable = _mutable2['default'];
 })(Sonic || (exports.Sonic = exports.Sonic = Sonic = {}));
 ;
 module.exports = Sonic;
 exports['default'] = Sonic;
 
-// if (obj instanceof Array) return new _List(_factory.fromArray(obj));
-// if (obj instanceof Object) return new _List(_factory.fromObject(obj));
-
-},{"./factory":1,"./list":3,"./observable":4,"./patch":5,"./state":6,"./state_iterator":7}]},{},[8])(8)
+},{"./factory":1,"./list":3,"./mutable":4,"./observable":5,"./patch":6,"./state":7,"./state_iterator":8}]},{},[9])(9)
 });

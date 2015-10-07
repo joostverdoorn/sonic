@@ -1,8 +1,9 @@
-import State from './state';
+import { factory as _State } from './state';
+import { factory as _List } from './list';
+import { factory as _Mutable } from './mutable';
 export declare module factory {
-    function fromArray<V>(values: V[]): State<V>;
-    function fromObject<V>(values: {
-        [key: string]: V;
-    }): State<V>;
+    var State: typeof _State;
+    var List: typeof _List;
+    var Mutable: typeof _Mutable;
 }
 export default factory;
