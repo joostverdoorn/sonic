@@ -3,5 +3,3 @@ node_js:
   - "iojs"
 before_script:
   - npm install -g gulp
-after_script:
-  - cat stat/coverage/lcovonly/lcov.info | ./node_modules/coveralls/bin/coveralls.js
