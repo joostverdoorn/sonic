@@ -115,7 +115,7 @@ export var List;
                     };
                 });
         });
-        return list = create(state, observable);
+        return list = factory.create(state, observable);
     }
     List.reverse = reverse;
 })(List || (List = {}));

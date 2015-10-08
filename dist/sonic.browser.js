@@ -183,7 +183,7 @@ exports.List = List;
                 };
             });
         });
-        return list = create(state, observable);
+        return list = factory.create(state, observable);
     }
     List.reverse = reverse;
 })(List || (exports.List = List = {}));

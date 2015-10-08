@@ -146,7 +146,7 @@ export module List {
           });
         });
 
-    return list = create(state, observable);
+    return list = factory.create(state, observable);
   }
 }
 
