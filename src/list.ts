@@ -1,6 +1,6 @@
 import   Key           from './key';
 import   Range         from './range';
-import   State         from './state';
+import   State, { factory as StateFactory } from './state';
 import   StateIterator from './state_iterator';
 import { Observer,
          Observable,
@@ -163,6 +163,26 @@ export module factory {
 
     return list;
   }
+  //
+  // export function fromURL<V>(urlRoot: string, subject: Subject<Patch<V>>): List<V> {
+  //   var list: List<V>;
+  //
+  //   subject.subscribe({
+  //     onNext: (patch: Patch<V>) => new Promise( (resolve) => {
+  //       if (Patch.isSetPatch(patch)) {
+  //         if (patch.before !== undefined) return resolve(XHR.put(urlRoot, patch.value));
+  //         return resolve(XHR.post(urlRoot + "/" + patch.key, patch.value))
+  //       }
+  //
+  //       return XHR.delete(urlRoot + "/" + patch.key);
+  //     }).then(() => {list.state = State.patch(list.state, patch)})
+  //   });
+  //
+  //   return list = {
+  //     state: StateFactory.fromURL(urlRoot),
+  //     subscribe: subject.subscribe
+  //   }
+  // }
 }
 
 export default List;

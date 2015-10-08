@@ -219,11 +219,19 @@ var _observable = require('./observable');
 
 var _patch = require('./patch');
 
+var _state = require('./state');
+
 var _list = require('./list');
+
+var _list2 = _interopRequireDefault(_list);
 
 var _state_iterator = require('./state_iterator');
 
 var _state_iterator2 = _interopRequireDefault(_state_iterator);
+
+var _xhr = require('./xhr');
+
+var _xhr2 = _interopRequireDefault(_xhr);
 
 var Mutable;
 exports.Mutable = Mutable;
@@ -259,6 +267,44 @@ exports.Mutable = Mutable;
         return mutable.modify(patch);
     }
     Mutable.del = del;
+    function compose(parent, lens) {
+        var subject = new _observable.Subject(),
+            list = _list2['default'].map(_list.factory.create(parent.state, subject), lens.get);
+        return Object.defineProperties({
+            subscribe: list.subscribe,
+            modify: function modify(patch) {
+                if (_patch.Patch.isSetPatch(patch)) {
+                    if (patch.before !== undefined) return parent.modify({
+                        operation: patch.operation,
+                        key: patch.key,
+                        value: lens.set(undefined, patch.value),
+                        before: patch.before
+                    });
+                    return parent.state.get(patch.key).then(function (value) {
+                        return parent.modify({
+                            operation: patch.operation,
+                            key: patch.key,
+                            value: lens.set(value, patch.value)
+                        });
+                    }).then(function () {
+                        return subject.onNext(patch);
+                    });
+                }
+                return parent.modify(patch).then(function () {
+                    return subject.onNext(patch);
+                });
+            }
+        }, {
+            state: {
+                get: function get() {
+                    return list.state;
+                },
+                configurable: true,
+                enumerable: true
+            }
+        });
+    }
+    Mutable.compose = compose;
 })(Mutable || (exports.Mutable = Mutable = {}));
 var factory;
 exports.factory = factory;
@@ -283,10 +329,37 @@ exports.factory = factory;
         });
     }
     factory.create = create;
+    function fromURL(urlRoot) {
+        var subject = new _observable.Subject(),
+            list = _list.factory.create(_state.factory.fromURL(urlRoot), subject);
+        return Object.defineProperties({
+            subscribe: subject.subscribe,
+            modify: function modify(patch) {
+                return new Promise(function (resolve) {
+                    if (_patch.Patch.isSetPatch(patch)) {
+                        if (patch.before !== undefined) return resolve(_xhr2['default'].post(urlRoot, patch.value));
+                        return resolve(_xhr2['default'].put(urlRoot + '/' + patch.key, patch.value));
+                    }
+                    return resolve(_xhr2['default']['delete'](urlRoot + '/' + patch.key));
+                }).then(function () {
+                    return subject.onNext(patch);
+                });
+            }
+        }, {
+            state: {
+                get: function get() {
+                    return list.state;
+                },
+                configurable: true,
+                enumerable: true
+            }
+        });
+    }
+    factory.fromURL = fromURL;
 })(factory || (exports.factory = factory = {}));
 exports['default'] = Mutable;
 
-},{"./list":3,"./observable":5,"./patch":6,"./state_iterator":8}],5:[function(require,module,exports){
+},{"./list":3,"./observable":5,"./patch":6,"./state":7,"./state_iterator":8,"./xhr":9}],5:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, '__esModule', {

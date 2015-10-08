@@ -15,6 +15,7 @@
         "src/factory.ts",
         "src/key.ts",
         "src/keyed_list.ts",
+        "src/lens.ts",
         "src/list.ts",
         "src/mutable.ts",
         "src/observable.ts",

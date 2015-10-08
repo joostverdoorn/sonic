@@ -1,6 +1,4 @@
-import { IObservable } from '../node_modules/sonic/dist/observable';
-import { ISubscription, Subject } from '../node_modules/sonic/dist/observable';
-import Key from '../node_modules/sonic/dist/key';
+import Key from './key';
 
 export interface XHROptions {
   method?: string,
