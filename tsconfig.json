@@ -23,6 +23,7 @@
         "src/sonic.ts",
         "src/state.ts",
         "src/state_iterator.ts",
-        "src/tree.ts"
+        "src/tree.ts",
+        "src/xhr.ts"
     ]
 }

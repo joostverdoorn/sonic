@@ -27,5 +27,6 @@ export declare module factory {
     function fromObject<V>(values: {
         [key: string]: V;
     }): State<V>;
+    function fromURL<V>(urlRoot: string): State<V>;
 }
 export default State;

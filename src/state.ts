@@ -1,7 +1,8 @@
 import Key           from './key';
 import Range         from './range';
 import StateIterator from './state_iterator';
-import { Patch }         from './patch';
+import { Patch }     from './patch';
+import XHR           from './xhr';
 
 export interface State<V> {
   get:  (key: Key)  => Promise<V>;
@@ -150,6 +151,33 @@ export module factory {
         if (!(key in values)) return Promise.reject<Key>(new Error);
 
         return Promise.resolve(index == keys.length ? null : keys[index]);
+      }
+    }
+  }
+
+  export function fromURL<V>(urlRoot: string): State<V> {
+    var cache: State<V>;
+
+    function fetch() {
+      return XHR.get(urlRoot)
+        .then(xhr => xhr.responseText)
+        .then(JSON.parse)
+        .then(arr => cache = fromObject(arr.reduce((memo: Object, value: V) => {
+          memo[value["id"]] = value;
+          return memo;
+        },{})));
+    }
+
+
+    return {
+      get: (key: Key): Promise<V> => cache ? cache.get(key) : XHR.get(urlRoot + "/" + key)
+        .then(xhr => xhr.responseText)
+        .then(JSON.parse),
+      prev: (key: Key): Promise<Key> => {
+        return cache ? cache.prev(key) : fetch().then(cache => cache.prev(key));
+      },
+      next: (key: Key): Promise<Key> => {
+        return cache ? cache.next(key) : fetch().then(cache => cache.next(key));
       }
     }
   }

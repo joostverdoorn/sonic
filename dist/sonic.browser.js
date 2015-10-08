@@ -409,6 +409,10 @@ var _state_iterator2 = _interopRequireDefault(_state_iterator);
 
 var _patch = require('./patch');
 
+var _xhr = require('./xhr');
+
+var _xhr2 = _interopRequireDefault(_xhr);
+
 var State;
 exports.State = State;
 (function (State) {
@@ -581,10 +585,41 @@ exports.factory = factory;
         };
     }
     factory.fromObject = fromObject;
+    function fromURL(urlRoot) {
+        var cache;
+        function fetch() {
+            return _xhr2['default'].get(urlRoot).then(function (xhr) {
+                return xhr.responseText;
+            }).then(JSON.parse).then(function (arr) {
+                return cache = fromObject(arr.reduce(function (memo, value) {
+                    memo[value['id']] = value;
+                    return memo;
+                }, {}));
+            });
+        }
+        return {
+            get: function get(key) {
+                return cache ? cache.get(key) : _xhr2['default'].get(urlRoot + '/' + key).then(function (xhr) {
+                    return xhr.responseText;
+                }).then(JSON.parse);
+            },
+            prev: function prev(key) {
+                return cache ? cache.prev(key) : fetch().then(function (cache) {
+                    return cache.prev(key);
+                });
+            },
+            next: function next(key) {
+                return cache ? cache.next(key) : fetch().then(function (cache) {
+                    return cache.next(key);
+                });
+            }
+        };
+    }
+    factory.fromURL = fromURL;
 })(factory || (exports.factory = factory = {}));
 exports['default'] = State;
 
-},{"./patch":6,"./state_iterator":8}],8:[function(require,module,exports){
+},{"./patch":6,"./state_iterator":8,"./xhr":9}],8:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, '__esModule', {
@@ -751,6 +786,50 @@ exports['default'] = StateIterator;
 Object.defineProperty(exports, '__esModule', {
     value: true
 });
+var XHR = {
+    create: function create(key, options) {
+        return new Promise(function (resolve, reject) {
+            var xhr = new XMLHttpRequest();var url = key.toString();var method = options.method;
+            var body = options.body;
+
+            xhr.onload = function () {
+                if (xhr.status >= 200 && xhr.status < 400) {
+                    resolve(xhr);
+                } else {
+                    reject(xhr);
+                }
+            };
+            xhr.onerror = function () {
+                reject(xhr);
+            };
+            xhr.open(method, url, true);
+            xhr.setRequestHeader('Content-Type', 'application/json');
+            // xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded')
+            xhr.send(JSON.stringify(body));
+        });
+    },
+    get: function get(url) {
+        return XHR.create(url, { method: 'GET' });
+    },
+    put: function put(url, body) {
+        return XHR.create(url, { method: 'PUT', body: body });
+    },
+    post: function post(url, body) {
+        return XHR.create(url, { method: 'POST', body: body });
+    },
+    'delete': function _delete(url) {
+        return XHR.create(url, { method: 'DELETE' });
+    }
+};
+exports.XHR = XHR;
+exports['default'] = XHR;
+
+},{}],10:[function(require,module,exports){
+'use strict';
+
+Object.defineProperty(exports, '__esModule', {
+    value: true
+});
 exports.Sonic = Sonic;
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
@@ -804,5 +883,5 @@ exports.Sonic = Sonic;
 module.exports = Sonic;
 exports['default'] = Sonic;
 
-},{"./factory":1,"./list":3,"./mutable":4,"./observable":5,"./patch":6,"./state":7,"./state_iterator":8}]},{},[9])(9)
+},{"./factory":1,"./list":3,"./mutable":4,"./observable":5,"./patch":6,"./state":7,"./state_iterator":8}]},{},[10])(10)
 });
