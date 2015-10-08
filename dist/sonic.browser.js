@@ -597,6 +597,60 @@ exports.State = State;
         });
     }
     State.zoom = zoom;
+    var DELETED = Promise.resolve({});
+    function cache(parent) {
+        var _get = Object.create(null),
+            _prev = Object.create(null),
+            _next = Object.create(null);
+        return {
+            get: function get(key) {
+                if (_get[key] == DELETED) return Promise.reject(new Error());
+                return _get[key] === undefined ? _get[key] = parent.get(key) : _get[key];
+            },
+            prev: function prev(key) {
+                return _prev[key] === undefined ? parent.prev(key).then(function (res) {
+                    return (_next[res] = key, _prev[key] = res);
+                }) : Promise.resolve(_prev[key]);
+            },
+            next: function next(key) {
+                return _next[key] === undefined ? parent.next(key).then(function (res) {
+                    return (_prev[res] = key, _next[key] = res);
+                }) : Promise.resolve(_next[key]);
+            }
+        };
+    }
+    State.cache = cache;
+    function keyBy(parent, keyFn) {
+        var state;
+        return state = cache({
+            get: function get(k) {
+                return _state_iterator2['default'].find(parent, function (value, key) {
+                    return Promise.resolve(keyFn(value, key)).then(function (res) {
+                        return res == k;
+                    });
+                });
+            },
+            prev: function prev(k) {
+                return Promise.resolve(k == null ? parent.prev() : state.get(k).then(function (value) {
+                    return _state_iterator2['default'].keyOf(parent, value);
+                }).then(parent.prev)).then(function (p) {
+                    return p == null ? null : parent.get(p).then(function (value) {
+                        return keyFn(value, p);
+                    });
+                });
+            },
+            next: function next(k) {
+                return Promise.resolve(k == null ? parent.next() : state.get(k).then(function (value) {
+                    return _state_iterator2['default'].keyOf(parent, value);
+                }).then(parent.next)).then(function (n) {
+                    return n == null ? null : parent.get(n).then(function (value) {
+                        return keyFn(value, n);
+                    });
+                });
+            }
+        });
+    }
+    State.keyBy = keyBy;
 })(State || (exports.State = State = {}));
 Object.defineProperty(State, 'NOT_FOUND', {
     get: function get() {

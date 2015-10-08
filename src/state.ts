@@ -98,6 +98,38 @@ export module State {
       next: next
     });
   }
+  const DELETED: any = Promise.resolve({});
+
+  export function cache<V>(parent: State<V>): State<V> {
+    var _get:  {[key: string]: Promise<V>} = Object.create(null),
+        _prev: {[key: string]: Key}        = Object.create(null),
+        _next: {[key: string]: Key}        = Object.create(null);
+
+    return {
+      get: (key: Key): Promise<V> => {
+        if (_get[key] == DELETED) return Promise.reject<V>(new Error);
+        return _get[key] === undefined ? (_get[key] = parent.get(key)): _get[key];
+      },
+      prev: (key: Key): Promise<Key> => {
+        return _prev[key] === undefined ? (parent.prev(key).then((res) => (_next[res] = key, _prev[key] = res))) : Promise.resolve(_prev[key]);
+      },
+      next: (key: Key): Promise<Key> => {
+        return _next[key] === undefined ? (parent.next(key).then((res) => (_prev[res] = key, _next[key] = res))) : Promise.resolve(_next[key]);
+      }
+    }
+  }
+
+  export function keyBy<V>(parent: State<V>, keyFn: (value: V, key?: Key) => Key | Promise<Key>): State<V> {
+    var state: State<V>;
+    
+    return state = cache({
+      get: k => StateIterator.find(parent, (value, key) => Promise.resolve(keyFn(value, key)).then(res => res == k)),
+      prev: k => Promise.resolve(k == null ? parent.prev() : state.get(k).then(value => StateIterator.keyOf(parent, value)).then(parent.prev))
+        .then(p => p == null ? null : parent.get(p).then(value => keyFn(value, p))),
+      next: k => Promise.resolve(k == null ? parent.next() : state.get(k).then(value => StateIterator.keyOf(parent, value)).then(parent.next))
+        .then(n => n == null ? null : parent.get(n).then(value => keyFn(value, n)))
+    });
+  }
 }
 
 Object.defineProperty(State, "NOT_FOUND", {

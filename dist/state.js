@@ -86,6 +86,35 @@ export var State;
         });
     }
     State.zoom = zoom;
+    const DELETED = Promise.resolve({});
+    function cache(parent) {
+        var _get = Object.create(null), _prev = Object.create(null), _next = Object.create(null);
+        return {
+            get: (key) => {
+                if (_get[key] == DELETED)
+                    return Promise.reject(new Error);
+                return _get[key] === undefined ? (_get[key] = parent.get(key)) : _get[key];
+            },
+            prev: (key) => {
+                return _prev[key] === undefined ? (parent.prev(key).then((res) => (_next[res] = key, _prev[key] = res))) : Promise.resolve(_prev[key]);
+            },
+            next: (key) => {
+                return _next[key] === undefined ? (parent.next(key).then((res) => (_prev[res] = key, _next[key] = res))) : Promise.resolve(_next[key]);
+            }
+        };
+    }
+    State.cache = cache;
+    function keyBy(parent, keyFn) {
+        var state;
+        return state = cache({
+            get: k => StateIterator.find(parent, (value, key) => Promise.resolve(keyFn(value, key)).then(res => res == k)),
+            prev: k => Promise.resolve(k == null ? parent.prev() : state.get(k).then(value => StateIterator.keyOf(parent, value)).then(parent.prev))
+                .then(p => p == null ? null : parent.get(p).then(value => keyFn(value, p))),
+            next: k => Promise.resolve(k == null ? parent.next() : state.get(k).then(value => StateIterator.keyOf(parent, value)).then(parent.next))
+                .then(n => n == null ? null : parent.get(n).then(value => keyFn(value, n)))
+        });
+    }
+    State.keyBy = keyBy;
 })(State || (State = {}));
 Object.defineProperty(State, "NOT_FOUND", {
     get: () => Promise.reject("No entry at the specified key")
