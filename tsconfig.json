@@ -1,9 +1,11 @@
 {
     "compilerOptions": {
-        "outDir": "dist",
         "target": "es6",
+        "module": "commonjs",
+        "declaration": true,
         "noImplicitAny": true,
-        "declaration": true
+        "removeComments": true,
+        "outDir": "dist"
     },
     "filesGlob": [
         "src/**/*.ts"
@@ -11,10 +13,8 @@
     "files": [
         "src/bind.ts",
         "src/cache.ts",
-        "src/entry.ts",
         "src/factory.ts",
         "src/key.ts",
-        "src/keyed_list.ts",
         "src/lens.ts",
         "src/list.ts",
         "src/mutable.ts",
@@ -22,9 +22,8 @@
         "src/patch.ts",
         "src/range.ts",
         "src/sonic.ts",
-        "src/state.ts",
         "src/state_iterator.ts",
-        "src/tree.ts",
-        "src/xhr.ts"
-    ]
+        "src/state.ts"
+    ],
+    "exclude": []
 }

@@ -1,37 +1,26 @@
 import State from './state';
-import List from './list';
 import Patch from './patch';
-const DELETED = {};
-export function cache(parent, patches) {
-    function getState(cache) {
-        function get(key) {
-            if (cache.get[key] === DELETED)
-                return State.NOT_FOUND;
-            return key in cache.get ? Promise.resolve(cache.get[key]) : parent.get(key).then(res => cache.get[key] = res);
-        }
-        function prev(key) {
-            if (cache.prev[key] === DELETED)
-                return State.NOT_FOUND;
-            return key in cache.prev ? Promise.resolve(cache.prev[key]) : parent.prev(key).then(res => cache.prev[cache.next[res] = key] = res);
-        }
-        function next(key) {
-            if (cache.next[key] === DELETED)
-                return State.NOT_FOUND;
-            return key in cache.next ? Promise.resolve(cache.next[key]) : parent.next(key).then(res => cache.next[cache.prev[res] = key] = res);
-        }
-        return { get, prev, next };
+export var Cache;
+(function (Cache) {
+    Cache.DELETED = {};
+    function create() {
+        return {
+            get: Object.create(null),
+            prev: Object.create(null),
+            next: Object.create(null)
+        };
     }
-    var cache = {
-        get: Object.create(null),
-        prev: Object.create(null),
-        next: Object.create(null)
-    };
-    function reducer(state, patch) {
-        cache = {
+    Cache.create = create;
+    function extend(cache) {
+        return {
             get: Object.create(cache.get),
             prev: Object.create(cache.prev),
             next: Object.create(cache.next)
         };
+    }
+    Cache.extend = extend;
+    function patch(cache, patch) {
+        cache = extend(cache);
         if (Patch.isSetPatch(patch)) {
             cache.get[patch.key] = patch.value;
             var next = patch.before;
@@ -51,12 +40,31 @@ export function cache(parent, patches) {
                 cache.next[prev] = next;
             if (next !== undefined)
                 cache.prev[next] = prev;
-            cache.get[patch.key] = DELETED;
-            cache.prev[patch.key] = DELETED;
-            cache.next[patch.key] = DELETED;
+            cache.get[patch.key] = Cache.DELETED;
+            cache.prev[patch.key] = Cache.DELETED;
+            cache.next[patch.key] = Cache.DELETED;
         }
-        return getState(cache);
+        return cache;
     }
-    return List.create(getState(cache), patches, reducer);
-}
-export default cache;
+    Cache.patch = patch;
+    function apply(cache, state) {
+        function get(key) {
+            if (cache.get[key] === Cache.DELETED)
+                return State.NOT_FOUND;
+            return key in cache.get ? Promise.resolve(cache.get[key]) : state.get(key).then(res => cache.get[key] = res);
+        }
+        function prev(key) {
+            if (cache.prev[key] === Cache.DELETED)
+                return State.NOT_FOUND;
+            return key in cache.prev ? Promise.resolve(cache.prev[key]) : state.prev(key).then(res => cache.prev[cache.next[res] = key] = res);
+        }
+        function next(key) {
+            if (cache.next[key] === Cache.DELETED)
+                return State.NOT_FOUND;
+            return key in cache.next ? Promise.resolve(cache.next[key]) : state.next(key).then(res => cache.next[cache.prev[res] = key] = res);
+        }
+        return { get, prev, next };
+    }
+    Cache.apply = apply;
+})(Cache || (Cache = {}));
+export default Cache;

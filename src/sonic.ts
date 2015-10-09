@@ -2,7 +2,7 @@ import _Patch                from './patch'
 import _State                from './state';
 import _StateIterator        from './state_iterator';
 import _List                 from './list';
-import _cache                from './cache';
+import _Cache                from './cache';
 // import _factory              from './factory';
 import {Subject as _Subject} from './observable';
 import _Mutable              from './mutable';
@@ -19,7 +19,7 @@ export module Sonic {
   export var List           = _List;
   export var Subject        = _Subject;
   export var Mutable        = _Mutable;
-  export var cache          = _cache;
+  export var Cache          = _Cache;
 };
 
 declare var module: any;

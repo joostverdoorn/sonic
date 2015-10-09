@@ -1,6 +1,7 @@
 import   Key          from './key';
 import   Patch        from './patch';
 import   State        from './state';
+import   Cache        from './cache';
 import { Observable } from './observable';
 
 export interface List<V> {
@@ -35,6 +36,17 @@ export module List {
         patches = Observable.filter(parent.patches, patch => patch.key === key);
 
     return create(state, patches);
+  }
+
+  export function cache<V>(parent: List<V>): List<V> {
+    var cache = Cache.create(),
+        state = Cache.apply(cache, parent.state),
+        reducer = (state: State<V>, patch: Patch<V>): State<V> => {
+          cache = Cache.patch(cache, patch);
+          return Cache.apply(cache, parent.state);
+        }
+
+    return List.create(state, parent.patches, reducer);
   }
 
   export function create<V>(state: State<V>, patches: Observable<Patch<V>>, reducer: (state: State<V>, patch: Patch<V>) => State<V> = State.patch): List<V> {

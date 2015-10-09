@@ -1,49 +1,34 @@
 import   Key          from './key';
 import   State        from './state';
-import   List         from './list';
 import   Patch        from './patch';
-import { Observable } from './observable';
 
-const DELETED: any = {};
+export type Cache<V> = {
+  get : {[key: string]: V}
+  prev: {[key: string]: Key}
+  next: {[key: string]: Key}
+}
 
-export function cache<V>(parent: State<V>, patches: Observable<Patch<V>>): List<V> {
-  type Cache = {
-    get : {[key: string]: V}
-    prev: {[key: string]: Key}
-    next: {[key: string]: Key}
+export module Cache {
+  export const DELETED: any = {};
+
+  export function create<V>(): Cache<V> {
+    return {
+      get : Object.create(null),
+      prev: Object.create(null),
+      next: Object.create(null)
+    }
   }
 
-  function getState(cache: Cache): State<V>{
-    function get(key: Key): Promise<V> {
-      if (cache.get[key] === DELETED) return State.NOT_FOUND;
-      return key in cache.get ? Promise.resolve(cache.get[key]) : parent.get(key).then(res => cache.get[key] = res);
-    }
-
-    function prev(key: Key): Promise<Key> {
-      if (cache.prev[key] === DELETED) return State.NOT_FOUND;
-      return key in cache.prev ? Promise.resolve(cache.prev[key]) : parent.prev(key).then(res => cache.prev[cache.next[res] = key] = res);
-    }
-
-    function next(key: Key): Promise<Key> {
-      if (cache.next[key] === DELETED) return State.NOT_FOUND;
-      return key in cache.next ? Promise.resolve(cache.next[key]) : parent.next(key).then(res => cache.next[cache.prev[res] = key] = res);
-    }
-
-    return {get, prev, next}
-  }
-
-  var cache: Cache = {
-    get : Object.create(null),
-    prev: Object.create(null),
-    next: Object.create(null)
-  }
-
-  function reducer(state: State<V>, patch: Patch<V>): State<V> {
-    cache = {
+  export function extend<V>(cache: Cache<V>): Cache<V> {
+    return {
       get:  Object.create(cache.get),
       prev: Object.create(cache.prev),
       next: Object.create(cache.next)
     }
+  }
+
+  export function patch<V>(cache: Cache<V>, patch: Patch<V>): Cache<V> {
+    cache = extend(cache);
 
     if (Patch.isSetPatch(patch)) {
       cache.get[patch.key] = patch.value;
@@ -73,10 +58,27 @@ export function cache<V>(parent: State<V>, patches: Observable<Patch<V>>): List<
       cache.next[patch.key] = DELETED;
     }
 
-    return getState(cache);
+    return cache;
   }
 
-  return List.create(getState(cache), patches, reducer);
+  export function apply<V>(cache: Cache<V>, state: State<V>): State<V> {
+    function get(key: Key): Promise<V> {
+      if (cache.get[key] === DELETED) return State.NOT_FOUND;
+      return key in cache.get ? Promise.resolve(cache.get[key]) : state.get(key).then(res => cache.get[key] = res);
+    }
+
+    function prev(key: Key): Promise<Key> {
+      if (cache.prev[key] === DELETED) return State.NOT_FOUND;
+      return key in cache.prev ? Promise.resolve(cache.prev[key]) : state.prev(key).then(res => cache.prev[cache.next[res] = key] = res);
+    }
+
+    function next(key: Key): Promise<Key> {
+      if (cache.next[key] === DELETED) return State.NOT_FOUND;
+      return key in cache.next ? Promise.resolve(cache.next[key]) : state.next(key).then(res => cache.next[cache.prev[res] = key] = res);
+    }
+
+    return {get, prev, next};
+  }
 }
 
-export default cache;
+export default Cache;

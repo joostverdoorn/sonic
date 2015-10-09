@@ -4,7 +4,6 @@
 Object.defineProperty(exports, '__esModule', {
     value: true
 });
-exports.cache = cache;
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
 
@@ -12,49 +11,32 @@ var _state = require('./state');
 
 var _state2 = _interopRequireDefault(_state);
 
-var _list = require('./list');
-
-var _list2 = _interopRequireDefault(_list);
-
 var _patch = require('./patch');
 
 var _patch2 = _interopRequireDefault(_patch);
 
-var DELETED = {};
-
-function cache(parent, patches) {
-    function getState(cache) {
-        function get(key) {
-            if (cache.get[key] === DELETED) return _state2['default'].NOT_FOUND;
-            return key in cache.get ? Promise.resolve(cache.get[key]) : parent.get(key).then(function (res) {
-                return cache.get[key] = res;
-            });
-        }
-        function prev(key) {
-            if (cache.prev[key] === DELETED) return _state2['default'].NOT_FOUND;
-            return key in cache.prev ? Promise.resolve(cache.prev[key]) : parent.prev(key).then(function (res) {
-                return cache.prev[cache.next[res] = key] = res;
-            });
-        }
-        function next(key) {
-            if (cache.next[key] === DELETED) return _state2['default'].NOT_FOUND;
-            return key in cache.next ? Promise.resolve(cache.next[key]) : parent.next(key).then(function (res) {
-                return cache.next[cache.prev[res] = key] = res;
-            });
-        }
-        return { get: get, prev: prev, next: next };
+var Cache;
+exports.Cache = Cache;
+(function (Cache) {
+    Cache.DELETED = {};
+    function create() {
+        return {
+            get: Object.create(null),
+            prev: Object.create(null),
+            next: Object.create(null)
+        };
     }
-    var cache = {
-        get: Object.create(null),
-        prev: Object.create(null),
-        next: Object.create(null)
-    };
-    function reducer(state, patch) {
-        cache = {
+    Cache.create = create;
+    function extend(cache) {
+        return {
             get: Object.create(cache.get),
             prev: Object.create(cache.prev),
             next: Object.create(cache.next)
         };
+    }
+    Cache.extend = extend;
+    function patch(cache, patch) {
+        cache = extend(cache);
         if (_patch2['default'].isSetPatch(patch)) {
             cache.get[patch.key] = patch.value;
             var next = patch.before;
@@ -73,18 +55,39 @@ function cache(parent, patches) {
                 prev = cache.prev[patch.key];
             if (prev !== undefined) cache.next[prev] = next;
             if (next !== undefined) cache.prev[next] = prev;
-            cache.get[patch.key] = DELETED;
-            cache.prev[patch.key] = DELETED;
-            cache.next[patch.key] = DELETED;
+            cache.get[patch.key] = Cache.DELETED;
+            cache.prev[patch.key] = Cache.DELETED;
+            cache.next[patch.key] = Cache.DELETED;
         }
-        return getState(cache);
+        return cache;
     }
-    return _list2['default'].create(getState(cache), patches, reducer);
-}
+    Cache.patch = patch;
+    function apply(cache, state) {
+        function get(key) {
+            if (cache.get[key] === Cache.DELETED) return _state2['default'].NOT_FOUND;
+            return key in cache.get ? Promise.resolve(cache.get[key]) : state.get(key).then(function (res) {
+                return cache.get[key] = res;
+            });
+        }
+        function prev(key) {
+            if (cache.prev[key] === Cache.DELETED) return _state2['default'].NOT_FOUND;
+            return key in cache.prev ? Promise.resolve(cache.prev[key]) : state.prev(key).then(function (res) {
+                return cache.prev[cache.next[res] = key] = res;
+            });
+        }
+        function next(key) {
+            if (cache.next[key] === Cache.DELETED) return _state2['default'].NOT_FOUND;
+            return key in cache.next ? Promise.resolve(cache.next[key]) : state.next(key).then(function (res) {
+                return cache.next[cache.prev[res] = key] = res;
+            });
+        }
+        return { get: get, prev: prev, next: next };
+    }
+    Cache.apply = apply;
+})(Cache || (exports.Cache = Cache = {}));
+exports['default'] = Cache;
 
-exports['default'] = cache;
-
-},{"./list":3,"./patch":6,"./state":8}],2:[function(require,module,exports){
+},{"./patch":6,"./state":8}],2:[function(require,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -122,6 +125,10 @@ var _state = require('./state');
 
 var _state2 = _interopRequireDefault(_state);
 
+var _cache = require('./cache');
+
+var _cache2 = _interopRequireDefault(_cache);
+
 var _observable = require('./observable');
 
 var List;
@@ -157,6 +164,16 @@ exports.List = List;
         return create(state, patches);
     }
     List.zoom = zoom;
+    function cache(parent) {
+        var cache = _cache2['default'].create(),
+            state = _cache2['default'].apply(cache, parent.state),
+            reducer = function reducer(state, patch) {
+            cache = _cache2['default'].patch(cache, patch);
+            return _cache2['default'].apply(cache, parent.state);
+        };
+        return List.create(state, parent.patches, reducer);
+    }
+    List.cache = cache;
     function create(state, patches) {
         var reducer = arguments.length <= 2 || arguments[2] === undefined ? _state2['default'].patch : arguments[2];
 
@@ -172,7 +189,7 @@ exports.List = List;
 })(List || (exports.List = List = {}));
 exports['default'] = List;
 
-},{"./observable":5,"./patch":6,"./state":8}],4:[function(require,module,exports){
+},{"./cache":1,"./observable":5,"./patch":6,"./state":8}],4:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, '__esModule', {
@@ -359,9 +376,9 @@ var _list = require('./list');
 
 var _list2 = _interopRequireDefault(_list);
 
-var _cache2 = require('./cache');
+var _cache = require('./cache');
 
-var _cache3 = _interopRequireDefault(_cache2);
+var _cache2 = _interopRequireDefault(_cache);
 
 var _observable = require('./observable');
 
@@ -383,7 +400,7 @@ exports.Sonic = Sonic;
     Sonic.List = _list2['default'];
     Sonic.Subject = _observable.Subject;
     Sonic.Mutable = _mutable2['default'];
-    Sonic.cache = _cache3['default'];
+    Sonic.Cache = _cache2['default'];
 })(Sonic || (exports.Sonic = exports.Sonic = Sonic = {}));
 ;
 module.exports = Sonic;

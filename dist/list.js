@@ -1,5 +1,6 @@
 import Patch from './patch';
 import State from './state';
+import Cache from './cache';
 import { Observable } from './observable';
 export var List;
 (function (List) {
@@ -26,6 +27,14 @@ export var List;
         return create(state, patches);
     }
     List.zoom = zoom;
+    function cache(parent) {
+        var cache = Cache.create(), state = Cache.apply(cache, parent.state), reducer = (state, patch) => {
+            cache = Cache.patch(cache, patch);
+            return Cache.apply(cache, parent.state);
+        };
+        return List.create(state, parent.patches, reducer);
+    }
+    List.cache = cache;
     function create(state, patches, reducer = State.patch) {
         const list = { state, patches };
         Observable.scan(patches, reducer, state).subscribe({
