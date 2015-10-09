@@ -376,6 +376,10 @@ var _list = require('./list');
 
 var _list2 = _interopRequireDefault(_list);
 
+var _tree = require('./tree');
+
+var _tree2 = _interopRequireDefault(_tree);
+
 var _cache = require('./cache');
 
 var _cache2 = _interopRequireDefault(_cache);
@@ -398,6 +402,7 @@ exports.Sonic = Sonic;
     Sonic.State = _state2['default'];
     Sonic.StateIterator = _state_iterator2['default'];
     Sonic.List = _list2['default'];
+    Sonic.Tree = _tree2['default'];
     Sonic.Subject = _observable.Subject;
     Sonic.Mutable = _mutable2['default'];
     Sonic.Cache = _cache2['default'];
@@ -406,7 +411,7 @@ exports.Sonic = Sonic;
 module.exports = Sonic;
 exports['default'] = Sonic;
 
-},{"./cache":1,"./list":3,"./mutable":4,"./observable":5,"./patch":6,"./state":8,"./state_iterator":9}],8:[function(require,module,exports){
+},{"./cache":1,"./list":3,"./mutable":4,"./observable":5,"./patch":6,"./state":8,"./state_iterator":9,"./tree":10}],8:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, '__esModule', {
@@ -773,5 +778,84 @@ exports.StateIterator = StateIterator;
 })(StateIterator || (exports.StateIterator = StateIterator = {}));
 exports['default'] = StateIterator;
 
-},{"./state":8}]},{},[7])(7)
+},{"./state":8}],10:[function(require,module,exports){
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+    value: true
+});
+var Path;
+exports.Path = Path;
+(function (Path) {
+    function key(path) {
+        return JSON.stringify(path);
+    }
+    Path.key = key;
+    function fromKey(key) {
+        return key == null ? null : JSON.parse(key.toString());
+    }
+    Path.fromKey = fromKey;
+    function toKey(path) {
+        return path == null ? null : JSON.stringify(path);
+    }
+    Path.toKey = toKey;
+    function head(path) {
+        return path ? path[0] : null;
+    }
+    Path.head = head;
+    function get(path, index) {
+        return path[index];
+    }
+    Path.get = get;
+    function tail(path) {
+        return path == null ? [] : path.slice(1, path.length);
+    }
+    Path.tail = tail;
+    function append(a, b) {
+        return [].concat(a).concat(b);
+    }
+    Path.append = append;
+})(Path || (exports.Path = Path = {}));
+var Tree;
+exports.Tree = Tree;
+(function (Tree) {
+    function get(tree, path) {
+        var head = Path.get(path, 0),
+            tail = Path.get(path, 1);
+        return tree.get(head).then(function (state) {
+            return state.get(tail);
+        });
+    }
+    Tree.get = get;
+    function prev(state) {
+        var path = arguments.length <= 1 || arguments[1] === undefined ? [null, null] : arguments[1];
+
+        var head = Path.get(path, 0),
+            tail = Path.get(path, 1);
+        return null;
+    }
+    Tree.prev = prev;
+    function next(tree) {
+        var path = arguments.length <= 1 || arguments[1] === undefined ? [null, null] : arguments[1];
+
+        var head = Path.get(path, 0),
+            tail = Path.get(path, 1);
+        return tree.get(head).then(function (state) {
+            return state.next(tail);
+        }).then(function (next) {
+            if (next != null) return [head, next];
+            return tree.next(head).then(function (nextHead) {
+                return tree.get(nextHead).then(function (state) {
+                    return state.next().then(function (first) {
+                        return [nextHead, first];
+                    });
+                });
+            });
+        });
+    }
+    Tree.next = next;
+})(Tree || (exports.Tree = Tree = {}));
+exports["default"] = Tree;
+
+},{}]},{},[7])(7)
 });

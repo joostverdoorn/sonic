@@ -38,6 +38,15 @@ export module List {
     return create(state, patches);
   }
 
+  // export function keyBy<V>(parent: List<V>, keyFn: (value: V, key: Key) => Key): List<V> {
+  //   var state   = State.keyBy(parent.state, keyFn),
+  //       reducer = (state: State<V>, patch: Patch<V>) => {
+  //
+  //       };
+  //
+  //   return create(state, patches, reducer);
+  // }
+
   export function cache<V>(parent: List<V>): List<V> {
     var cache = Cache.create(),
         state = Cache.apply(cache, parent.state),
