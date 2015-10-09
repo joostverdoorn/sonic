@@ -76,7 +76,6 @@ export var State;
         });
     }
     State.zoom = zoom;
-    const DELETED = Promise.resolve({});
     function cache(parent) {
         return Cache.apply(Cache.create(), parent);
     }

@@ -537,7 +537,6 @@ exports.State = State;
         });
     }
     State.zoom = zoom;
-    var DELETED = Promise.resolve({});
     function cache(parent) {
         return _cache2['default'].apply(_cache2['default'].create(), parent);
     }

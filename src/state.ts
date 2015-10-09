@@ -91,8 +91,6 @@ export module State {
     });
   }
 
-  const DELETED: any = Promise.resolve({});
-
   export function cache<V>(parent: State<V>): State<V> {
     return Cache.apply(Cache.create(), parent);
   }
