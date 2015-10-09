@@ -122,13 +122,14 @@ export module State {
   export function keyBy<V>(parent: State<V>, keyFn: (value: V, key?: Key) => Key | Promise<Key>): State<V> {
     var state: State<V>;
 
-    return state = cache({
-      get: k => StateIterator.find(parent, (value, key) => Promise.resolve(keyFn(value, key)).then(res => res == k)),
-      prev: k => Promise.resolve(k == null ? parent.prev() : state.get(k).then(value => StateIterator.keyOf(parent, value)).then(parent.prev))
-        .then(p => p == null ? null : parent.get(p).then(value => keyFn(value, p))),
-      next: k => Promise.resolve(k == null ? parent.next() : state.get(k).then(value => StateIterator.keyOf(parent, value)).then(parent.next))
-        .then(n => n == null ? null : parent.get(n).then(value => keyFn(value, n)))
+    var keyMap: State<Key> = cache(State.map(parent, keyFn));
+    var reverseKeyMap: State<Key> = cache({
+      get:  key => StateIterator.keyOf(keyMap, key),
+      prev: key => reverseKeyMap.get(key).then(keyMap.prev).then(keyMap.get),
+      next: key => reverseKeyMap.get(key).then(keyMap.next).then(keyMap.get)
     });
+
+    return extend(reverseKeyMap, { get: key => reverseKeyMap.get(key).then(parent.get) });
   }
 
   export function fromArray<V>(values: V[]): State<V> {

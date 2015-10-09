@@ -565,33 +565,21 @@ exports.State = State;
     State.cache = cache;
     function keyBy(parent, keyFn) {
         var state;
-        return state = cache({
-            get: function get(k) {
-                return _state_iterator2['default'].find(parent, function (value, key) {
-                    return Promise.resolve(keyFn(value, key)).then(function (res) {
-                        return res == k;
-                    });
-                });
+        var keyMap = cache(State.map(parent, keyFn));
+        var reverseKeyMap = cache({
+            get: function get(key) {
+                return _state_iterator2['default'].keyOf(keyMap, key);
             },
-            prev: function prev(k) {
-                return Promise.resolve(k == null ? parent.prev() : state.get(k).then(function (value) {
-                    return _state_iterator2['default'].keyOf(parent, value);
-                }).then(parent.prev)).then(function (p) {
-                    return p == null ? null : parent.get(p).then(function (value) {
-                        return keyFn(value, p);
-                    });
-                });
+            prev: function prev(key) {
+                return reverseKeyMap.get(key).then(keyMap.prev).then(keyMap.get);
             },
-            next: function next(k) {
-                return Promise.resolve(k == null ? parent.next() : state.get(k).then(function (value) {
-                    return _state_iterator2['default'].keyOf(parent, value);
-                }).then(parent.next)).then(function (n) {
-                    return n == null ? null : parent.get(n).then(function (value) {
-                        return keyFn(value, n);
-                    });
-                });
+            next: function next(key) {
+                return reverseKeyMap.get(key).then(keyMap.next).then(keyMap.get);
             }
         });
+        return extend(reverseKeyMap, { get: function get(key) {
+                return reverseKeyMap.get(key).then(parent.get);
+            } });
     }
     State.keyBy = keyBy;
     function fromArray(values) {
