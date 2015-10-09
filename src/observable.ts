@@ -26,7 +26,7 @@ export interface Observable<T> {
 }
 
 export class Subject<T> implements Observable<T>, Observer<T> {
-  private _observers: {[key: number]: Observer<T>};
+  private _observers: {[key: string]: Observer<T>};
   private _count = 0;
 
   constructor() {
@@ -40,7 +40,7 @@ export class Subject<T> implements Observable<T>, Observer<T> {
   }
 
   onNext = (value: T): Promise<void> => {
-    return Promise.all(Object.keys(this._observers).map(key => this._observers[key].onNext(value))).then(() => {});
+    return Promise.all(Object.keys(this._observers).map(key => this._observers[key].onNext(value))).then((): void => {});
   }
 }
 
@@ -50,9 +50,9 @@ export module Observable {
 
     observable.subscribe({
       onNext: value => Promise.resolve(mapFn(value)).then(subject.onNext)
-    })
+    });
 
-    return { subscribe: subject.subscribe }
+    return { subscribe: subject.subscribe };
   }
 
   export function filter<T>(observable: Observable<T>, filterFn: (value: T) => boolean | Promise<boolean>): Observable<T>  {
@@ -62,7 +62,16 @@ export module Observable {
       onNext: value => Promise.resolve(filterFn(value)).then(result => result ? subject.onNext(value) : undefined)
     });
 
+    return { subscribe: subject.subscribe };
+  }
 
-    return { subscribe: subject.subscribe }
+  export function scan<T, U>(observable: Observable<T>, scanFn: (memo: U, value: T) => U, memo: U): Observable<U> {
+    const subject = new Subject<U>();
+
+    observable.subscribe({
+      onNext: value => Promise.resolve(scanFn(memo, value)).then(value => { memo = value; subject.onNext(value) })
+    });
+
+    return { subscribe: subject.subscribe };
   }
 }

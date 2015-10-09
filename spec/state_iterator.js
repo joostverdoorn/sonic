@@ -1,5 +1,6 @@
 require('./helpers/promise_matchers');
 
+global.Promise = require('bluebird');
 var Sonic = require('../dist/sonic.browser');
 
 var getError  = new Error(),
@@ -7,8 +8,8 @@ var getError  = new Error(),
     nextError = new Error();
 
 beforeEach(function() {
-  this.state = Sonic.factory.State.fromArray([1,2,3]);
-  this.emptyState = Sonic.factory.State.fromArray([]);
+  this.state = Sonic.State.fromArray([1,2,3]);
+  this.emptyState = Sonic.State.fromArray([]);
 
   this.errorState = {
     get: function() { return Promise.reject(getError); },

@@ -2,7 +2,6 @@ import Key           from './key';
 import Range         from './range';
 import StateIterator from './state_iterator';
 import { Patch }     from './patch';
-import XHR           from './xhr';
 
 export interface State<V> {
   get:  (key: Key)  => Promise<V>;
@@ -18,7 +17,7 @@ export interface PartialState<V> {
 
 export module State {
 
-  export declare var NOT_FOUND: Promise<any>;
+  export declare const NOT_FOUND: Promise<any>;
 
   export function extend<V, W>(parent: State<V>, { get, prev, next }: PartialState<W>): State<W> {
     var state = Object.create(parent);
@@ -98,6 +97,7 @@ export module State {
       next: next
     });
   }
+
   const DELETED: any = Promise.resolve({});
 
   export function cache<V>(parent: State<V>): State<V> {
@@ -121,7 +121,7 @@ export module State {
 
   export function keyBy<V>(parent: State<V>, keyFn: (value: V, key?: Key) => Key | Promise<Key>): State<V> {
     var state: State<V>;
-    
+
     return state = cache({
       get: k => StateIterator.find(parent, (value, key) => Promise.resolve(keyFn(value, key)).then(res => res == k)),
       prev: k => Promise.resolve(k == null ? parent.prev() : state.get(k).then(value => StateIterator.keyOf(parent, value)).then(parent.prev))
@@ -130,16 +130,10 @@ export module State {
         .then(n => n == null ? null : parent.get(n).then(value => keyFn(value, n)))
     });
   }
-}
 
-Object.defineProperty(State, "NOT_FOUND", {
-  get: () => Promise.reject<any>("No entry at the specified key")
-});
-
-export module factory {
   export function fromArray<V>(values: V[]): State<V> {
     return {
-      get: (key: Key): Promise<V> => {
+      get: (key: number): Promise<V> => {
         if (key in values) return Promise.resolve(values[key])
         return Promise.reject<V>(new Error);
       },
@@ -157,9 +151,9 @@ export module factory {
   }
   export function fromObject<V>(values: {[key: string]: V}): State<V> {
     var keys = Object.keys(values),
-      indexByKey = {
-        "null": -1,
-      };
+        indexByKey: {[key: string]: number} = {
+          "null": -1,
+        };
 
     return {
       get: (key: Key): Promise<V> => {
@@ -186,33 +180,10 @@ export module factory {
       }
     }
   }
-
-  export function fromURL<V>(urlRoot: string): State<V> {
-    var cache: State<V>;
-
-    function fetch() {
-      return XHR.get(urlRoot)
-        .then(xhr => xhr.responseText)
-        .then(JSON.parse)
-        .then(arr => cache = fromObject(arr.reduce((memo: Object, value: V) => {
-          memo[value["id"]] = value;
-          return memo;
-        },{})));
-    }
-
-
-    return {
-      get: (key: Key): Promise<V> => cache ? cache.get(key) : XHR.get(urlRoot + "/" + key)
-        .then(xhr => xhr.responseText)
-        .then(JSON.parse),
-      prev: (key: Key): Promise<Key> => {
-        return cache ? cache.prev(key) : fetch().then(cache => cache.prev(key));
-      },
-      next: (key: Key): Promise<Key> => {
-        return cache ? cache.next(key) : fetch().then(cache => cache.next(key));
-      }
-    }
-  }
 }
+
+Object.defineProperty(State, "NOT_FOUND", {
+  get: () => Promise.reject<any>("No entry at the specified key")
+});
 
 export default State;

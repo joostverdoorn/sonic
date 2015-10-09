@@ -2,7 +2,7 @@ import _Patch from './patch';
 import _State from './state';
 import _StateIterator from './state_iterator';
 import _List from './list';
-import _factory from './factory';
+import _cache from './cache';
 import { Subject as _Subject } from './observable';
 import _Mutable from './mutable';
 export declare function Sonic(obj: any): _Mutable<{}>;
@@ -11,8 +11,8 @@ export declare module Sonic {
     var State: typeof _State;
     var StateIterator: typeof _StateIterator;
     var List: typeof _List;
-    var factory: typeof _factory;
     var Subject: typeof _Subject;
     var Mutable: typeof _Mutable;
+    var cache: typeof _cache;
 }
 export default Sonic;

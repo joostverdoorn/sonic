@@ -1,6 +1,5 @@
 import StateIterator from './state_iterator';
 import { Patch } from './patch';
-import XHR from './xhr';
 export var State;
 (function (State) {
     function extend(parent, { get, prev, next }) {
@@ -115,12 +114,6 @@ export var State;
         });
     }
     State.keyBy = keyBy;
-})(State || (State = {}));
-Object.defineProperty(State, "NOT_FOUND", {
-    get: () => Promise.reject("No entry at the specified key")
-});
-export var factory;
-(function (factory) {
     function fromArray(values) {
         return {
             get: (key) => {
@@ -138,7 +131,7 @@ export var factory;
             }
         };
     }
-    factory.fromArray = fromArray;
+    State.fromArray = fromArray;
     function fromObject(values) {
         var keys = Object.keys(values), indexByKey = {
             "null": -1,
@@ -169,30 +162,9 @@ export var factory;
             }
         };
     }
-    factory.fromObject = fromObject;
-    function fromURL(urlRoot) {
-        var cache;
-        function fetch() {
-            return XHR.get(urlRoot)
-                .then(xhr => xhr.responseText)
-                .then(JSON.parse)
-                .then(arr => cache = fromObject(arr.reduce((memo, value) => {
-                memo[value["id"]] = value;
-                return memo;
-            }, {})));
-        }
-        return {
-            get: (key) => cache ? cache.get(key) : XHR.get(urlRoot + "/" + key)
-                .then(xhr => xhr.responseText)
-                .then(JSON.parse),
-            prev: (key) => {
-                return cache ? cache.prev(key) : fetch().then(cache => cache.prev(key));
-            },
-            next: (key) => {
-                return cache ? cache.next(key) : fetch().then(cache => cache.next(key));
-            }
-        };
-    }
-    factory.fromURL = fromURL;
-})(factory || (factory = {}));
+    State.fromObject = fromObject;
+})(State || (State = {}));
+Object.defineProperty(State, "NOT_FOUND", {
+    get: () => Promise.reject("No entry at the specified key")
+});
 export default State;

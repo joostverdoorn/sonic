@@ -4,23 +4,87 @@
 Object.defineProperty(exports, '__esModule', {
     value: true
 });
+exports.cache = cache;
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
 
 var _state = require('./state');
 
+var _state2 = _interopRequireDefault(_state);
+
 var _list = require('./list');
 
-var _mutable = require('./mutable');
+var _list2 = _interopRequireDefault(_list);
 
-var factory;
-exports.factory = factory;
-(function (factory) {
-    factory.State = _state.factory;
-    factory.List = _list.factory;
-    factory.Mutable = _mutable.factory;
-})(factory || (exports.factory = factory = {}));
-exports['default'] = factory;
+var _patch = require('./patch');
 
-},{"./list":3,"./mutable":4,"./state":7}],2:[function(require,module,exports){
+var _patch2 = _interopRequireDefault(_patch);
+
+var DELETED = {};
+
+function cache(parent, patches) {
+    function getState(cache) {
+        function get(key) {
+            if (cache.get[key] === DELETED) return _state2['default'].NOT_FOUND;
+            return key in cache.get ? Promise.resolve(cache.get[key]) : parent.get(key).then(function (res) {
+                return cache.get[key] = res;
+            });
+        }
+        function prev(key) {
+            if (cache.prev[key] === DELETED) return _state2['default'].NOT_FOUND;
+            return key in cache.prev ? Promise.resolve(cache.prev[key]) : parent.prev(key).then(function (res) {
+                return cache.prev[cache.next[res] = key] = res;
+            });
+        }
+        function next(key) {
+            if (cache.next[key] === DELETED) return _state2['default'].NOT_FOUND;
+            return key in cache.next ? Promise.resolve(cache.next[key]) : parent.next(key).then(function (res) {
+                return cache.next[cache.prev[res] = key] = res;
+            });
+        }
+        return { get: get, prev: prev, next: next };
+    }
+    var cache = {
+        get: Object.create(null),
+        prev: Object.create(null),
+        next: Object.create(null)
+    };
+    function reducer(state, patch) {
+        cache = {
+            get: Object.create(cache.get),
+            prev: Object.create(cache.prev),
+            next: Object.create(cache.next)
+        };
+        if (_patch2['default'].isSetPatch(patch)) {
+            cache.get[patch.key] = patch.value;
+            var next = patch.before;
+            if (next !== undefined) {
+                var prev = cache.prev[next];
+                if (prev !== undefined) {
+                    cache.prev[patch.key] = prev;
+                    cache.next[prev] = patch.key;
+                }
+                cache.prev[next] = patch.key;
+                cache.next[patch.key] = next;
+            }
+        }
+        if (_patch2['default'].isDeletePatch(patch)) {
+            var next = cache.next[patch.key],
+                prev = cache.prev[patch.key];
+            if (prev !== undefined) cache.next[prev] = next;
+            if (next !== undefined) cache.prev[next] = prev;
+            cache.get[patch.key] = DELETED;
+            cache.prev[patch.key] = DELETED;
+            cache.next[patch.key] = DELETED;
+        }
+        return getState(cache);
+    }
+    return _list2['default'].create(getState(cache), patches, reducer);
+}
+
+exports['default'] = cache;
+
+},{"./list":3,"./patch":6,"./state":8}],2:[function(require,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -50,163 +114,65 @@ Object.defineProperty(exports, '__esModule', {
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
 
+var _patch = require('./patch');
+
+var _patch2 = _interopRequireDefault(_patch);
+
 var _state = require('./state');
 
 var _state2 = _interopRequireDefault(_state);
 
 var _observable = require('./observable');
 
-var _patch = require('./patch');
-
 var List;
 exports.List = List;
 (function (List) {
-    var DELETED = Promise.resolve({});
-    function cache(parent) {
-        function getState(_get, _prev, _next) {
-            return {
-                get: function get(key) {
-                    if (_get[key] == DELETED) return Promise.reject(new Error());
-                    return _get[key] === undefined ? _get[key] = parent.state.get(key) : _get[key];
-                },
-                prev: function prev(key) {
-                    return _prev[key] === undefined ? parent.state.prev(key).then(function (res) {
-                        return (_next[res] = key, _prev[key] = res);
-                    }) : Promise.resolve(_prev[key]);
-                },
-                next: function next(key) {
-                    return _next[key] === undefined ? parent.state.next(key).then(function (res) {
-                        return (_prev[res] = key, _next[key] = res);
-                    }) : Promise.resolve(_next[key]);
-                }
-            };
-        }
-        var subject = new _observable.Subject(),
-            pseudoState = {
-            get: Object.create(null),
-            prev: Object.create(null),
-            next: Object.create(null)
-        },
-            list = Object.defineProperties({
-            subscribe: subject.subscribe
-        }, {
-            state: {
-                get: function get() {
-                    return getState(pseudoState.get, pseudoState.prev, pseudoState.next);
-                },
-                configurable: true,
-                enumerable: true
-            }
-        });
-        parent.subscribe({
-            onNext: function onNext(patch) {
-                return Promise.resolve().then(function () {
-                    var state = list.state;
-                    pseudoState = {
-                        get: Object.create(pseudoState.get),
-                        prev: Object.create(pseudoState.prev),
-                        next: Object.create(pseudoState.next)
-                    };
-                    if (_patch.Patch.isSetPatch(patch)) {
-                        pseudoState.get[patch.key] = Promise.resolve(patch.value);
-                        if (patch.before !== undefined) return state.prev(patch.before).then(function (prev) {
-                            var next = patch.before;
-                            pseudoState.prev[next] = patch.key;
-                            pseudoState.next[patch.key] = next;
-                            pseudoState.prev[patch.key] = prev;
-                            pseudoState.next[prev] = patch.key;
-                        });
-                    }
-                    if (_patch.Patch.isDeletePatch(patch)) {
-                        pseudoState.get[patch.key] = DELETED;
-                        return state.prev(patch.key).then(function (prev) {
-                            return list.state.next(patch.key).then(function (next) {
-                                return (pseudoState.prev[next] = prev, pseudoState.next[prev] = next);
-                            });
-                        });
-                    }
-                }).then(function () {
-                    return subject.onNext(patch);
-                });
-            }
-        });
-        return list;
-    }
-    List.cache = cache;
     function map(parent, mapFn) {
         var state = _state2['default'].map(parent.state, mapFn),
-            observable = _observable.Observable.map(parent, function (patch) {
-            if (!_patch.Patch.isSetPatch(patch)) return patch;else return Promise.resolve(mapFn(patch.value, patch.key)).then(function (result) {
-                return {
-                    operation: _patch.Patch.SET,
-                    key: patch.key,
-                    value: result,
-                    before: patch.before
-                };
+            patches = _observable.Observable.map(parent.patches, function (patch) {
+            if (_patch2['default'].isSetPatch(patch)) return Promise.resolve(mapFn(patch.value, patch.key)).then(function (result) {
+                return _patch2['default'].setPatch(patch.key, result, patch.before);
             });
+            return patch;
         });
-        return factory.create(state, observable);
+        return create(state, patches);
     }
     List.map = map;
     function filter(parent, filterFn) {
         var state = _state2['default'].filter(parent.state, filterFn),
-            observable = _observable.Observable.map(parent, function (patch) {
-            if (!_patch.Patch.isSetPatch(patch)) return patch;else return Promise.resolve(filterFn(patch.value, patch.key)).then(function (result) {
-                if (result) return patch;
-                return {
-                    operation: _patch.Patch.DELETE,
-                    key: patch.key
-                };
+            patches = _observable.Observable.map(parent.patches, function (patch) {
+            if (_patch2['default'].isSetPatch(patch)) return Promise.resolve(filterFn(patch.value, patch.key)).then(function (result) {
+                return result ? patch : _patch2['default'].deletePatch(patch.key);
             });
+            return patch;
         });
-        return factory.create(state, observable);
+        return create(state, patches);
     }
     List.filter = filter;
     function zoom(parent, key) {
         var state = _state2['default'].zoom(parent.state, key),
-            observable = _observable.Observable.filter(parent, function (patch) {
+            patches = _observable.Observable.filter(parent.patches, function (patch) {
             return patch.key === key;
         });
-        return factory.create(state, observable);
+        return create(state, patches);
     }
     List.zoom = zoom;
-    function reverse(parent) {
-        var state = _state2['default'].reverse(parent.state),
-            list,
-            observable = _observable.Observable.map(parent, function (patch) {
-            if (!_patch.Patch.isSetPatch(patch)) return patch;else return patch.before === undefined ? patch : list.state.next(patch.before).then(function (prev) {
-                return {
-                    operation: _patch.Patch.SET,
-                    key: patch.key,
-                    value: patch.value,
-                    before: prev
-                };
-            });
-        });
-        return list = factory.create(state, observable);
-    }
-    List.reverse = reverse;
-})(List || (exports.List = List = {}));
-var factory;
-exports.factory = factory;
-(function (factory) {
-    function create(state, observable) {
-        var list = {
-            state: state,
-            subscribe: observable.subscribe
-        };
-        observable.subscribe({
-            onNext: function onNext(patch) {
-                list.state = _state2['default'].patch(list.state, patch);
+    function create(state, patches) {
+        var reducer = arguments.length <= 2 || arguments[2] === undefined ? _state2['default'].patch : arguments[2];
+
+        var list = { state: state, patches: patches };
+        _observable.Observable.scan(patches, reducer, state).subscribe({
+            onNext: function onNext(state) {
+                list.state = state;
             }
         });
         return list;
     }
-    factory.create = create;
-})(factory || (exports.factory = factory = {}));
+    List.create = create;
+})(List || (exports.List = List = {}));
 exports['default'] = List;
 
-},{"./observable":5,"./patch":6,"./state":7}],4:[function(require,module,exports){
+},{"./observable":5,"./patch":6,"./state":8}],4:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, '__esModule', {
@@ -215,151 +181,31 @@ Object.defineProperty(exports, '__esModule', {
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
 
-var _observable = require('./observable');
-
-var _patch = require('./patch');
-
 var _state = require('./state');
 
-var _list = require('./list');
+var _state2 = _interopRequireDefault(_state);
 
-var _list2 = _interopRequireDefault(_list);
-
-var _state_iterator = require('./state_iterator');
-
-var _state_iterator2 = _interopRequireDefault(_state_iterator);
-
-var _xhr = require('./xhr');
-
-var _xhr2 = _interopRequireDefault(_xhr);
+var _observable = require('./observable');
 
 var Mutable;
 exports.Mutable = Mutable;
 (function (Mutable) {
-    function splice(mutable, range, values) {
-        var reduceFn = function reduceFn(memo, value, key) {
-            return Promise.resolve(memo).then(function () {
-                return set(mutable, key, value, range[1]);
-            });
-        };
-        return _state_iterator2['default'].reduce(values, reduceFn, _state_iterator2['default'].every(mutable.state, function (value, key) {
-            return del(mutable, key).then(function () {
-                return true;
-            });
-        }).then(function () {}));
-    }
-    Mutable.splice = splice;
-    function set(mutable, key, value, before) {
-        var patch = {
-            operation: _patch.Patch.SET,
-            key: key,
-            value: value
-        };
-        if (before !== undefined) patch.before = before;
-        return mutable.modify(patch);
-    }
-    Mutable.set = set;
-    function del(mutable, key) {
-        var patch = {
-            operation: _patch.Patch.DELETE,
-            key: key
-        };
-        return mutable.modify(patch);
-    }
-    Mutable.del = del;
-    function compose(parent, lens) {
-        var subject = new _observable.Subject(),
-            list = _list2['default'].map(_list.factory.create(parent.state, subject), lens.get);
-        return Object.defineProperties({
-            subscribe: list.subscribe,
-            modify: function modify(patch) {
-                if (_patch.Patch.isSetPatch(patch)) {
-                    if (patch.before !== undefined) return parent.modify({
-                        operation: patch.operation,
-                        key: patch.key,
-                        value: lens.set(undefined, patch.value),
-                        before: patch.before
-                    });
-                    return parent.state.get(patch.key).then(function (value) {
-                        return parent.modify({
-                            operation: patch.operation,
-                            key: patch.key,
-                            value: lens.set(value, patch.value)
-                        });
-                    }).then(function () {
-                        return subject.onNext(patch);
-                    });
-                }
-                return parent.modify(patch).then(function () {
-                    return subject.onNext(patch);
-                });
-            }
-        }, {
-            state: {
-                get: function get() {
-                    return list.state;
-                },
-                configurable: true,
-                enumerable: true
+    function create(state, patches) {
+        var reducer = arguments.length <= 2 || arguments[2] === undefined ? _state2['default'].patch : arguments[2];
+
+        var list = { state: state, patches: patches };
+        _observable.Observable.scan(patches, reducer, state).subscribe({
+            onNext: function onNext(state) {
+                list.state = state;
             }
         });
+        return list;
     }
-    Mutable.compose = compose;
+    Mutable.create = create;
 })(Mutable || (exports.Mutable = Mutable = {}));
-var factory;
-exports.factory = factory;
-(function (factory) {
-    function create(state) {
-        var subject = new _observable.Subject(),
-            list = _list.factory.create(state, subject);
-        return Object.defineProperties({
-            subscribe: list.subscribe,
-            // onNext: subject.onNext,
-            modify: function modify(patch) {
-                return subject.onNext(patch);
-            }
-        }, {
-            state: {
-                get: function get() {
-                    return list.state;
-                },
-                configurable: true,
-                enumerable: true
-            }
-        });
-    }
-    factory.create = create;
-    function fromURL(urlRoot) {
-        var subject = new _observable.Subject(),
-            list = _list.factory.create(_state.factory.fromURL(urlRoot), subject);
-        return Object.defineProperties({
-            subscribe: subject.subscribe,
-            modify: function modify(patch) {
-                return new Promise(function (resolve) {
-                    if (_patch.Patch.isSetPatch(patch)) {
-                        if (patch.before !== undefined) return resolve(_xhr2['default'].post(urlRoot, patch.value));
-                        return resolve(_xhr2['default'].put(urlRoot + '/' + patch.key, patch.value));
-                    }
-                    return resolve(_xhr2['default']['delete'](urlRoot + '/' + patch.key));
-                }).then(function () {
-                    return subject.onNext(patch);
-                });
-            }
-        }, {
-            state: {
-                get: function get() {
-                    return list.state;
-                },
-                configurable: true,
-                enumerable: true
-            }
-        });
-    }
-    factory.fromURL = fromURL;
-})(factory || (exports.factory = factory = {}));
 exports['default'] = Mutable;
 
-},{"./list":3,"./observable":5,"./patch":6,"./state":7,"./state_iterator":8,"./xhr":9}],5:[function(require,module,exports){
+},{"./observable":5,"./state":8}],5:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, '__esModule', {
@@ -432,6 +278,18 @@ exports.Observable = Observable;
         return { subscribe: subject.subscribe };
     }
     Observable.filter = filter;
+    function scan(observable, scanFn, memo) {
+        var subject = new Subject();
+        observable.subscribe({
+            onNext: function onNext(value) {
+                return Promise.resolve(scanFn(memo, value)).then(function (value) {
+                    memo = value;subject.onNext(value);
+                });
+            }
+        });
+        return { subscribe: subject.subscribe };
+    }
+    Observable.scan = scan;
 })(Observable || (exports.Observable = Observable = {}));
 
 },{"./key":2}],6:[function(require,module,exports){
@@ -448,6 +306,22 @@ exports.Patch = Patch;
 (function (Patch) {
     Patch.SET = "set";
     Patch.DELETE = "delete";
+    function setPatch(key, value, before) {
+        return {
+            operation: Patch.SET,
+            key: key,
+            value: value,
+            before: before
+        };
+    }
+    Patch.setPatch = setPatch;
+    function deletePatch(key) {
+        return {
+            operation: Patch.DELETE,
+            key: key
+        };
+    }
+    Patch.deletePatch = deletePatch;
     function isSetPatch(patch) {
         return patch.operation === Patch.SET;
     }
@@ -465,6 +339,62 @@ exports["default"] = Patch;
 Object.defineProperty(exports, '__esModule', {
     value: true
 });
+exports.Sonic = Sonic;
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
+
+var _patch = require('./patch');
+
+var _patch2 = _interopRequireDefault(_patch);
+
+var _state = require('./state');
+
+var _state2 = _interopRequireDefault(_state);
+
+var _state_iterator = require('./state_iterator');
+
+var _state_iterator2 = _interopRequireDefault(_state_iterator);
+
+var _list = require('./list');
+
+var _list2 = _interopRequireDefault(_list);
+
+var _cache2 = require('./cache');
+
+var _cache3 = _interopRequireDefault(_cache2);
+
+var _observable = require('./observable');
+
+var _mutable = require('./mutable');
+
+var _mutable2 = _interopRequireDefault(_mutable);
+
+function Sonic(obj) {
+    if (obj instanceof Array) return _mutable2['default'].create(_state2['default'].fromArray(obj), new _observable.Subject());
+    if (obj instanceof Object) return _mutable2['default'].create(_state2['default'].fromObject(obj), new _observable.Subject());
+}
+
+var Sonic;
+exports.Sonic = Sonic;
+(function (Sonic) {
+    Sonic.Patch = _patch2['default'];
+    Sonic.State = _state2['default'];
+    Sonic.StateIterator = _state_iterator2['default'];
+    Sonic.List = _list2['default'];
+    Sonic.Subject = _observable.Subject;
+    Sonic.Mutable = _mutable2['default'];
+    Sonic.cache = _cache3['default'];
+})(Sonic || (exports.Sonic = exports.Sonic = Sonic = {}));
+;
+module.exports = Sonic;
+exports['default'] = Sonic;
+
+},{"./cache":1,"./list":3,"./mutable":4,"./observable":5,"./patch":6,"./state":8,"./state_iterator":9}],8:[function(require,module,exports){
+'use strict';
+
+Object.defineProperty(exports, '__esModule', {
+    value: true
+});
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
 
@@ -473,10 +403,6 @@ var _state_iterator = require('./state_iterator');
 var _state_iterator2 = _interopRequireDefault(_state_iterator);
 
 var _patch = require('./patch');
-
-var _xhr = require('./xhr');
-
-var _xhr2 = _interopRequireDefault(_xhr);
 
 var State;
 exports.State = State;
@@ -514,13 +440,13 @@ exports.State = State;
         };
         if (before !== undefined) {
             state.prev = function () {
-                var k = arguments[0] === undefined ? null : arguments[0];
+                var k = arguments.length <= 0 || arguments[0] === undefined ? null : arguments[0];
 
                 if (k === before) return Promise.resolve(key);else if (k == key) return parent.prev(before);
                 return parent.prev(k);
             };
             state.next = function () {
-                var k = arguments[0] === undefined ? null : arguments[0];
+                var k = arguments.length <= 0 || arguments[0] === undefined ? null : arguments[0];
 
                 if (k === key) return Promise.resolve(before);
                 return parent.next(k).then(function (n) {
@@ -537,13 +463,13 @@ exports.State = State;
                 return k !== key ? parent.get(k) : State.NOT_FOUND;
             },
             prev: function prev() {
-                var k = arguments[0] === undefined ? null : arguments[0];
+                var k = arguments.length <= 0 || arguments[0] === undefined ? null : arguments[0];
                 return parent.prev(k).then(function (p) {
                     return p === key ? parent.prev(p) : p;
                 });
             },
             next: function next() {
-                var k = arguments[0] === undefined ? null : arguments[0];
+                var k = arguments.length <= 0 || arguments[0] === undefined ? null : arguments[0];
                 return parent.next(k).then(function (n) {
                     return n === key ? parent.next(n) : n;
                 });
@@ -651,15 +577,6 @@ exports.State = State;
         });
     }
     State.keyBy = keyBy;
-})(State || (exports.State = State = {}));
-Object.defineProperty(State, 'NOT_FOUND', {
-    get: function get() {
-        return Promise.reject('No entry at the specified key');
-    }
-});
-var factory;
-exports.factory = factory;
-(function (factory) {
     function fromArray(values) {
         return {
             get: function get(key) {
@@ -676,11 +593,11 @@ exports.factory = factory;
             }
         };
     }
-    factory.fromArray = fromArray;
+    State.fromArray = fromArray;
     function fromObject(values) {
         var keys = Object.keys(values),
             indexByKey = {
-            'null': -1
+            "null": -1
         };
         return {
             get: function get(key) {
@@ -703,42 +620,16 @@ exports.factory = factory;
             }
         };
     }
-    factory.fromObject = fromObject;
-    function fromURL(urlRoot) {
-        var cache;
-        function fetch() {
-            return _xhr2['default'].get(urlRoot).then(function (xhr) {
-                return xhr.responseText;
-            }).then(JSON.parse).then(function (arr) {
-                return cache = fromObject(arr.reduce(function (memo, value) {
-                    memo[value['id']] = value;
-                    return memo;
-                }, {}));
-            });
-        }
-        return {
-            get: function get(key) {
-                return cache ? cache.get(key) : _xhr2['default'].get(urlRoot + '/' + key).then(function (xhr) {
-                    return xhr.responseText;
-                }).then(JSON.parse);
-            },
-            prev: function prev(key) {
-                return cache ? cache.prev(key) : fetch().then(function (cache) {
-                    return cache.prev(key);
-                });
-            },
-            next: function next(key) {
-                return cache ? cache.next(key) : fetch().then(function (cache) {
-                    return cache.next(key);
-                });
-            }
-        };
+    State.fromObject = fromObject;
+})(State || (exports.State = State = {}));
+Object.defineProperty(State, "NOT_FOUND", {
+    get: function get() {
+        return Promise.reject("No entry at the specified key");
     }
-    factory.fromURL = fromURL;
-})(factory || (exports.factory = factory = {}));
+});
 exports['default'] = State;
 
-},{"./patch":6,"./state_iterator":8,"./xhr":9}],8:[function(require,module,exports){
+},{"./patch":6,"./state_iterator":9}],9:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, '__esModule', {
@@ -756,7 +647,7 @@ var _state2 = _interopRequireDefault(_state);
 var StateIterator = function StateIterator(state) {
     var _this = this;
 
-    var range = arguments[1] === undefined ? [null, null] : arguments[1];
+    var range = arguments.length <= 1 || arguments[1] === undefined ? [null, null] : arguments[1];
 
     _classCallCheck(this, StateIterator);
 
@@ -783,13 +674,13 @@ exports.StateIterator = StateIterator;
 
 (function (StateIterator) {
     function first(state) {
-        var range = arguments[1] === undefined ? [null, null] : arguments[1];
+        var range = arguments.length <= 1 || arguments[1] === undefined ? [null, null] : arguments[1];
 
         return state.next(range[0]).then(state.get);
     }
     StateIterator.first = first;
     function last(state) {
-        var range = arguments[1] === undefined ? [null, null] : arguments[1];
+        var range = arguments.length <= 1 || arguments[1] === undefined ? [null, null] : arguments[1];
 
         return state.prev(range[1]).then(state.get);
     }
@@ -899,108 +790,5 @@ exports.StateIterator = StateIterator;
 })(StateIterator || (exports.StateIterator = StateIterator = {}));
 exports['default'] = StateIterator;
 
-},{"./state":7}],9:[function(require,module,exports){
-'use strict';
-
-Object.defineProperty(exports, '__esModule', {
-    value: true
-});
-var XHR = {
-    create: function create(key, options) {
-        return new Promise(function (resolve, reject) {
-            var xhr = new XMLHttpRequest();var url = key.toString();var method = options.method;
-            var body = options.body;
-
-            xhr.onload = function () {
-                if (xhr.status >= 200 && xhr.status < 400) {
-                    resolve(xhr);
-                } else {
-                    reject(xhr);
-                }
-            };
-            xhr.onerror = function () {
-                reject(xhr);
-            };
-            xhr.open(method, url, true);
-            xhr.setRequestHeader('Content-Type', 'application/json');
-            // xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded')
-            xhr.send(JSON.stringify(body));
-        });
-    },
-    get: function get(url) {
-        return XHR.create(url, { method: 'GET' });
-    },
-    put: function put(url, body) {
-        return XHR.create(url, { method: 'PUT', body: body });
-    },
-    post: function post(url, body) {
-        return XHR.create(url, { method: 'POST', body: body });
-    },
-    'delete': function _delete(url) {
-        return XHR.create(url, { method: 'DELETE' });
-    }
-};
-exports.XHR = XHR;
-exports['default'] = XHR;
-
-},{}],10:[function(require,module,exports){
-'use strict';
-
-Object.defineProperty(exports, '__esModule', {
-    value: true
-});
-exports.Sonic = Sonic;
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
-
-var _patch = require('./patch');
-
-var _patch2 = _interopRequireDefault(_patch);
-
-var _state = require('./state');
-
-var _state2 = _interopRequireDefault(_state);
-
-var _state_iterator = require('./state_iterator');
-
-var _state_iterator2 = _interopRequireDefault(_state_iterator);
-
-var _list = require('./list');
-
-var _list2 = _interopRequireDefault(_list);
-
-var _factory2 = require('./factory');
-
-var _factory3 = _interopRequireDefault(_factory2);
-
-var _observable = require('./observable');
-
-var _mutable = require('./mutable');
-
-var _mutable2 = _interopRequireDefault(_mutable);
-
-function Sonic(obj) {
-    if (obj instanceof Array) return _factory3['default'].Mutable.create(_factory3['default'].State.fromArray(obj));
-    if (obj instanceof Object) return _factory3['default'].Mutable.create(_factory3['default'].State.fromObject(obj));
-}
-
-var Sonic;
-exports.Sonic = Sonic;
-(function (Sonic) {
-    Sonic.Patch = _patch2['default'];
-    Sonic.State = _state2['default'];
-    Sonic.StateIterator = _state_iterator2['default'];
-    Sonic.List = _list2['default'];
-    // export var KeyedList      = _KeyedList;
-    // export var Cache          = _Cache;
-    Sonic.factory = _factory3['default'];
-    // export var KeyedList      = _KeyedList;
-    Sonic.Subject = _observable.Subject;
-    Sonic.Mutable = _mutable2['default'];
-})(Sonic || (exports.Sonic = exports.Sonic = Sonic = {}));
-;
-module.exports = Sonic;
-exports['default'] = Sonic;
-
-},{"./factory":1,"./list":3,"./mutable":4,"./observable":5,"./patch":6,"./state":7,"./state_iterator":8}]},{},[10])(10)
+},{"./state":8}]},{},[7])(7)
 });

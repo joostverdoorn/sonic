@@ -11,7 +11,7 @@ export interface PartialState<V> {
     next?: (key?: Key) => Promise<Key>;
 }
 export declare module State {
-    var NOT_FOUND: Promise<any>;
+    const NOT_FOUND: Promise<any>;
     function extend<V, W>(parent: State<V>, {get, prev, next}: PartialState<W>): State<W>;
     function patch<V>(parent: State<V>, patch: Patch<V>): State<V>;
     function patches<V>(parent: State<V>, patches: Patch<V>[]): State<V>;
@@ -23,12 +23,9 @@ export declare module State {
     function zoom<V>(parent: State<V>, key: Key): State<V>;
     function cache<V>(parent: State<V>): State<V>;
     function keyBy<V>(parent: State<V>, keyFn: (value: V, key?: Key) => Key | Promise<Key>): State<V>;
-}
-export declare module factory {
     function fromArray<V>(values: V[]): State<V>;
     function fromObject<V>(values: {
         [key: string]: V;
     }): State<V>;
-    function fromURL<V>(urlRoot: string): State<V>;
 }
 export default State;

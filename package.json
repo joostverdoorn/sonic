@@ -24,7 +24,7 @@
   },
   "devDependencies": {
     "babelify": "~6.1.2",
-    "bluebird": "~2.9.33",
+    "bluebird": "^2.10.2",
     "browserify": "^10.2.0",
     "coffee-script": "^1.9.2",
     "gulp": "^3.9.0",

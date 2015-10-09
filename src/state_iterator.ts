@@ -63,11 +63,11 @@ export module StateIterator {
   }
 
   export function toArray<V>(state: State<V>, range?: Range): Promise<V[]> {
-    return reduce<V, V[]>(state, (memo: V[], value: V) => (memo.push(value), memo), [], range);
+    return reduce(state, (memo: V[], value: V) => (memo.push(value), memo), [], range);
   }
 
   export function toObject<V>(state: State<V>, range?: Range): Promise<{[key: string]: V}> {
-    return reduce(state, (memo: V[], value: V, key: Key) => (memo[key] = value, memo), Object.create(null), range);
+    return reduce(state, (memo: {[key: string]: V}, value: V, key: Key) => (memo[key] = value, memo), Object.create(null), range);
   }
 
   export function findKey<V>(state: State<V>, predicate: (value: V, key?: Key) => boolean | Promise<boolean>, range?: Range): Promise<Key> {

@@ -41,4 +41,12 @@ export var Observable;
         return { subscribe: subject.subscribe };
     }
     Observable.filter = filter;
+    function scan(observable, scanFn, memo) {
+        const subject = new Subject();
+        observable.subscribe({
+            onNext: value => Promise.resolve(scanFn(memo, value)).then(value => { memo = value; subject.onNext(value); })
+        });
+        return { subscribe: subject.subscribe };
+    }
+    Observable.scan = scan;
 })(Observable || (Observable = {}));
