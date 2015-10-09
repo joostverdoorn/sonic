@@ -24,14 +24,14 @@ export var State;
                 partial.prev = (key = null) => {
                     if (key === patch.before)
                         return Promise.resolve(key);
-                    if (key == key)
+                    if (key === patch.key)
                         return parent.prev(patch.before);
                     return parent.prev(key);
                 };
                 partial.next = (key = null) => {
-                    if (key === key)
+                    if (key === patch.key)
                         return Promise.resolve(patch.before);
-                    return parent.next(key).then(next => next == patch.before ? key : next);
+                    return parent.next(key).then(next => next == patch.before ? patch.key : next);
                 };
             }
         }
@@ -109,9 +109,10 @@ export var State;
     }
     State.fromArray = fromArray;
     function fromObject(values) {
-        var keys = Object.keys(values), indexByKey = {
-            "null": -1,
-        };
+        var keys = Object.keys(values), indexByKey = keys.reduce((memo, key, index) => {
+            memo[key] = index;
+            return memo;
+        }, Object.create(null));
         return {
             get: (key) => {
                 if (key in values)
@@ -119,22 +120,24 @@ export var State;
                 return Promise.reject(new Error);
             },
             prev: (key) => {
-                var index = key == null ? keys.length - 1 : indexByKey[key] - 1;
-                indexByKey[keys[index]] = index;
                 if (key == null)
                     return Promise.resolve(keys[keys.length - 1]);
-                if (!(key in values))
-                    return Promise.reject(new Error);
-                return Promise.resolve(index == -1 ? null : keys[index]);
+                if (!(key in indexByKey))
+                    return State.NOT_FOUND;
+                var index = indexByKey[key];
+                if (index === 0)
+                    return Promise.resolve(null);
+                return Promise.resolve(keys[index - 1]);
             },
             next: (key) => {
-                var index = indexByKey[key] + 1;
-                indexByKey[keys[index]] = index;
                 if (key == null)
                     return Promise.resolve(keys[0]);
-                if (!(key in values))
-                    return Promise.reject(new Error);
-                return Promise.resolve(index == keys.length ? null : keys[index]);
+                if (!(key in indexByKey))
+                    return State.NOT_FOUND;
+                var index = indexByKey[key];
+                if (index === keys.length - 1)
+                    return Promise.resolve(null);
+                return Promise.resolve(keys[index + 1]);
             }
         };
     }

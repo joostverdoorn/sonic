@@ -1,6 +1,6 @@
-import   Key          from './key';
-import   State        from './state';
-import   Patch        from './patch';
+import Key   from './key';
+import State from './state';
+import Patch from './patch';
 
 export type Cache<V> = {
   get : {[key: string]: V}
