@@ -415,11 +415,17 @@ Object.defineProperty(exports, '__esModule', {
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
 
+var _patch = require('./patch');
+
+var _patch2 = _interopRequireDefault(_patch);
+
+var _cache = require('./cache');
+
+var _cache2 = _interopRequireDefault(_cache);
+
 var _state_iterator = require('./state_iterator');
 
 var _state_iterator2 = _interopRequireDefault(_state_iterator);
-
-var _patch = require('./patch');
 
 var State;
 exports.State = State;
@@ -437,63 +443,54 @@ exports.State = State;
     }
     State.extend = extend;
     function patch(parent, patch) {
-        var state = parent;
-        if (_patch.Patch.isSetPatch(patch)) state = extend(state, set(state, patch.key, patch.value, patch.before));
-        if (_patch.Patch.isDeletePatch(patch)) state = extend(state, del(state, patch.key));
-        return state;
-    }
-    State.patch = patch;
-    function patches(parent, patches) {
-        return patches.reduce(function (state, ptch) {
-            return patch(state, ptch);
-        }, parent);
-    }
-    State.patches = patches;
-    function set(parent, key, value, before) {
-        var state = {
-            get: function get(k) {
-                return k === key ? Promise.resolve(value) : parent.get(k);
-            }
-        };
-        if (before !== undefined) {
-            state.prev = function () {
-                var k = arguments.length <= 0 || arguments[0] === undefined ? null : arguments[0];
-
-                if (k === before) return Promise.resolve(key);else if (k == key) return parent.prev(before);
-                return parent.prev(k);
+        var partial;
+        if (_patch2['default'].isSetPatch(patch)) {
+            partial = {
+                get: function get(key) {
+                    return key === patch.key ? Promise.resolve(patch.value) : parent.get(key);
+                }
             };
-            state.next = function () {
-                var k = arguments.length <= 0 || arguments[0] === undefined ? null : arguments[0];
+            if (patch.before !== undefined) {
+                partial.prev = function () {
+                    var key = arguments.length <= 0 || arguments[0] === undefined ? null : arguments[0];
 
-                if (k === key) return Promise.resolve(before);
-                return parent.next(k).then(function (n) {
-                    return n == before ? key : n;
-                });
+                    if (key === patch.before) return Promise.resolve(key);
+                    if (key == key) return parent.prev(patch.before);
+                    return parent.prev(key);
+                };
+                partial.next = function () {
+                    var key = arguments.length <= 0 || arguments[0] === undefined ? null : arguments[0];
+
+                    if (key === key) return Promise.resolve(patch.before);
+                    return parent.next(key).then(function (next) {
+                        return next == patch.before ? key : next;
+                    });
+                };
+            }
+        }
+        if (_patch2['default'].isDeletePatch(patch)) {
+            partial = {
+                get: function get(key) {
+                    return key !== patch.key ? parent.get(key) : State.NOT_FOUND;
+                },
+                prev: function prev() {
+                    var key = arguments.length <= 0 || arguments[0] === undefined ? null : arguments[0];
+                    return parent.prev(key).then(function (prev) {
+                        return prev === patch.key ? parent.prev(prev) : prev;
+                    });
+                },
+                next: function next() {
+                    var key = arguments.length <= 0 || arguments[0] === undefined ? null : arguments[0];
+                    return parent.next(key).then(function (next) {
+                        return next === patch.key ? parent.next(next) : next;
+                    });
+                }
             };
         }
-        return extend(parent, state);
+        return extend(parent, partial);
+        ;
     }
-    State.set = set;
-    function del(parent, key) {
-        return extend(parent, {
-            get: function get(k) {
-                return k !== key ? parent.get(k) : State.NOT_FOUND;
-            },
-            prev: function prev() {
-                var k = arguments.length <= 0 || arguments[0] === undefined ? null : arguments[0];
-                return parent.prev(k).then(function (p) {
-                    return p === key ? parent.prev(p) : p;
-                });
-            },
-            next: function next() {
-                var k = arguments.length <= 0 || arguments[0] === undefined ? null : arguments[0];
-                return parent.next(k).then(function (n) {
-                    return n === key ? parent.next(n) : n;
-                });
-            }
-        });
-    }
-    State.del = del;
+    State.patch = patch;
     function reverse(parent) {
         return extend(parent, {
             prev: parent.next,
@@ -542,29 +539,10 @@ exports.State = State;
     State.zoom = zoom;
     var DELETED = Promise.resolve({});
     function cache(parent) {
-        var _get = Object.create(null),
-            _prev = Object.create(null),
-            _next = Object.create(null);
-        return {
-            get: function get(key) {
-                if (_get[key] == DELETED) return Promise.reject(new Error());
-                return _get[key] === undefined ? _get[key] = parent.get(key) : _get[key];
-            },
-            prev: function prev(key) {
-                return _prev[key] === undefined ? parent.prev(key).then(function (res) {
-                    return (_next[res] = key, _prev[key] = res);
-                }) : Promise.resolve(_prev[key]);
-            },
-            next: function next(key) {
-                return _next[key] === undefined ? parent.next(key).then(function (res) {
-                    return (_prev[res] = key, _next[key] = res);
-                }) : Promise.resolve(_next[key]);
-            }
-        };
+        return _cache2['default'].apply(_cache2['default'].create(), parent);
     }
     State.cache = cache;
     function keyBy(parent, keyFn) {
-        var state;
         var keyMap = cache(State.map(parent, keyFn));
         var reverseKeyMap = cache({
             get: function get(key) {
@@ -590,11 +568,11 @@ exports.State = State;
             },
             prev: function prev(key) {
                 var index = key == null ? values.length - 1 : key - 1;
-                return Promise.resolve(index == -1 ? null : index);
+                return Promise.resolve(index === -1 ? null : index);
             },
             next: function next(key) {
                 var index = key == null ? 0 : key + 1;
-                return Promise.resolve(index == values.length ? null : index);
+                return Promise.resolve(index === values.length ? null : index);
             }
         };
     }
@@ -634,7 +612,7 @@ Object.defineProperty(State, "NOT_FOUND", {
 });
 exports['default'] = State;
 
-},{"./patch":6,"./state_iterator":9}],9:[function(require,module,exports){
+},{"./cache":1,"./patch":6,"./state_iterator":9}],9:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, '__esModule', {

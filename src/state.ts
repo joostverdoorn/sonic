@@ -1,7 +1,8 @@
 import Key           from './key';
 import Range         from './range';
+import Patch         from './patch';
+import Cache         from './cache';
 import StateIterator from './state_iterator';
-import { Patch }     from './patch';
 
 export interface State<V> {
   get:  (key: Key)  => Promise<V>;
@@ -28,43 +29,35 @@ export module State {
   }
 
   export function patch<V>(parent: State<V>, patch: Patch<V>): State<V> {
-    var state: State<V> = parent;
-    if (Patch.isSetPatch(patch)) state = extend(state, set(state, patch.key, patch.value, patch.before));
-    if (Patch.isDeletePatch(patch)) state = extend(state, del(state, patch.key));
-    return state;
-  }
+    var partial: PartialState<V>;
 
-  export function patches<V>(parent: State<V>, patches: Patch<V>[]): State<V> {
-    return patches.reduce((state, ptch) => patch(state, ptch), parent);
-  }
-
-  export function set<V>(parent: State<V>, key: Key, value: V, before?: Key): State<V> {
-    var state: PartialState<V> = {
-      get: k => k === key ? Promise.resolve(value) : parent.get(k)
-    }
-
-    if(before !== undefined) {
-      state.prev = (k: Key = null): Promise<Key> => {
-        if (k === before) return Promise.resolve(key);
-        else if (k == key) return parent.prev(before);
-        return parent.prev(k);
+    if (Patch.isSetPatch(patch)) {
+      partial = {
+        get: key => key === patch.key ? Promise.resolve(patch.value) : parent.get(key)
       };
 
-      state.next = (k: Key = null): Promise<Key> => {
-        if (k === key) return Promise.resolve(before);
-        return parent.next(k).then(n => n == before ? key : n);
-      };
+      if (patch.before !== undefined) {
+        partial.prev = (key: Key = null): Promise<Key> => {
+          if (key === patch.before) return Promise.resolve(key);
+          if (key == key) return parent.prev(patch.before);
+          return parent.prev(key);
+        };
+
+        partial.next = (key: Key = null): Promise<Key> => {
+          if (key === key) return Promise.resolve(patch.before);
+          return parent.next(key).then(next => next == patch.before ? key : next);
+        };
+      }
     }
 
-    return extend(parent, state);
-  }
-
-  export function del<V>(parent: State<V>, key: Key): State<V> {
-    return extend(parent, {
-      get:  k => k !== key ? parent.get(k) : NOT_FOUND,
-      prev: (k = null) => parent.prev(k).then(p => p === key ? parent.prev(p) : p),
-      next: (k = null) => parent.next(k).then(n => n === key ? parent.next(n) : n)
-    });
+    if (Patch.isDeletePatch(patch)) {
+      partial = {
+        get:  key => key !== patch.key ? parent.get(key) : NOT_FOUND,
+        prev: (key = null) => parent.prev(key).then(prev => prev === patch.key ? parent.prev(prev) : prev),
+        next: (key = null) => parent.next(key).then(next => next === patch.key ? parent.next(next) : next)
+      };
+    }
+    return extend(parent, partial);;
   }
 
   export function reverse<V>(parent: State<V>): State<V> {
@@ -101,27 +94,10 @@ export module State {
   const DELETED: any = Promise.resolve({});
 
   export function cache<V>(parent: State<V>): State<V> {
-    var _get:  {[key: string]: Promise<V>} = Object.create(null),
-        _prev: {[key: string]: Key}        = Object.create(null),
-        _next: {[key: string]: Key}        = Object.create(null);
-
-    return {
-      get: (key: Key): Promise<V> => {
-        if (_get[key] == DELETED) return Promise.reject<V>(new Error);
-        return _get[key] === undefined ? (_get[key] = parent.get(key)): _get[key];
-      },
-      prev: (key: Key): Promise<Key> => {
-        return _prev[key] === undefined ? (parent.prev(key).then((res) => (_next[res] = key, _prev[key] = res))) : Promise.resolve(_prev[key]);
-      },
-      next: (key: Key): Promise<Key> => {
-        return _next[key] === undefined ? (parent.next(key).then((res) => (_prev[res] = key, _next[key] = res))) : Promise.resolve(_next[key]);
-      }
-    }
+    return Cache.apply(Cache.create(), parent);
   }
 
   export function keyBy<V>(parent: State<V>, keyFn: (value: V, key?: Key) => Key | Promise<Key>): State<V> {
-    var state: State<V>;
-
     var keyMap: State<Key> = cache(State.map(parent, keyFn));
     var reverseKeyMap: State<Key> = cache({
       get:  key => StateIterator.keyOf(keyMap, key),
@@ -140,16 +116,15 @@ export module State {
       },
       prev: (key: number): Promise<Key> => {
         var index = key == null ? values.length - 1 : key - 1;
-
-        return Promise.resolve(index == -1 ? null : index);
+        return Promise.resolve(index === -1 ? null : index);
       },
       next: (key: number): Promise<Key> => {
         var index = key == null ? 0 : key + 1;
-
-        return Promise.resolve(index == values.length ? null : index);
+        return Promise.resolve(index === values.length ? null : index);
       }
     }
   }
+
   export function fromObject<V>(values: {[key: string]: V}): State<V> {
     var keys = Object.keys(values),
         indexByKey: {[key: string]: number} = {
