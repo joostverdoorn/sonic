@@ -1,5 +1,6 @@
 import Key from './key';
 import Patch from './patch';
+import { Tree } from './tree';
 export interface State<V> {
     get: (key: Key) => Promise<V>;
     prev: (key?: Key) => Promise<Key>;
@@ -18,6 +19,7 @@ export declare module State {
     function map<V, W>(parent: State<V>, mapFn: (value: V, key?: Key) => W | Promise<W>): State<W>;
     function filter<V>(parent: State<V>, filterFn: (value: V, key?: Key) => boolean): State<V>;
     function zoom<V>(parent: State<V>, key: Key): State<V>;
+    function flatten<V>(parent: Tree<V>): State<V>;
     function cache<V>(parent: State<V>): State<V>;
     function keyBy<V>(parent: State<V>, keyFn: (value: V, key?: Key) => Key | Promise<Key>): State<V>;
     function fromArray<V>(values: V[]): State<V>;

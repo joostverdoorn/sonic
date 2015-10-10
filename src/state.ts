@@ -1,8 +1,10 @@
-import Key           from './key';
-import Range         from './range';
-import Patch         from './patch';
-import Cache         from './cache';
-import StateIterator from './state_iterator';
+import   Key           from './key';
+import   Range         from './range';
+import   Patch         from './patch';
+import   Cache         from './cache';
+import   StateIterator from './state_iterator';
+import { Tree,
+         Path }        from './tree'
 
 export interface State<V> {
   get:  (key: Key)  => Promise<V>;
@@ -92,6 +94,14 @@ export module State {
     });
   }
 
+  export function flatten<V>(parent: Tree<V>): State<V> {
+    return extend(parent, {
+      get:  key => Tree.get(parent, Path.fromKey(key)),
+      prev: key => Tree.prev(parent, Path.fromKey(key)).then(Path.toKey),
+      next: key => Tree.next(parent, Path.fromKey(key)).then(Path.toKey)
+    });
+  }
+
   export function cache<V>(parent: State<V>): State<V> {
     return Cache.apply(Cache.create(), parent);
   }
@@ -109,10 +119,7 @@ export module State {
 
   export function fromArray<V>(values: V[]): State<V> {
     return {
-      get: (key: number): Promise<V> => {
-        if (key in values) return Promise.resolve(values[key])
-        return Promise.reject<V>(new Error);
-      },
+      get: (key: number): Promise<V> => key in values ? Promise.resolve(values[key]) : NOT_FOUND,
       prev: (key: number): Promise<Key> => {
         var index = key == null ? values.length - 1 : key - 1;
         return Promise.resolve(index === -1 ? null : index);
@@ -133,9 +140,9 @@ export module State {
 
     return {
       get: (key: Key): Promise<V> => {
-        if (key in values) return Promise.resolve(values[key])
-        return Promise.reject<V>(new Error);
+        return key in values ? Promise.resolve(values[key]) : NOT_FOUND;
       },
+
       prev: (key: Key): Promise<Key> => {
         if (key == null) return Promise.resolve(keys[keys.length - 1]);
         if (!(key in indexByKey)) return NOT_FOUND;
@@ -145,6 +152,7 @@ export module State {
 
         return Promise.resolve(keys[index - 1]);
       },
+
       next: (key: Key): Promise<Key> => {
         if (key == null) return Promise.resolve(keys[0]);
         if (!(key in indexByKey)) return NOT_FOUND;
@@ -159,7 +167,7 @@ export module State {
 }
 
 Object.defineProperty(State, "NOT_FOUND", {
-  get: () => Promise.reject<any>("No entry at the specified key")
+  get: () => Promise.reject("No entry at the specified key")
 });
 
 export default State;

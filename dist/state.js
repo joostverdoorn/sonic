@@ -1,6 +1,7 @@
 import Patch from './patch';
 import Cache from './cache';
 import StateIterator from './state_iterator';
+import { Tree, Path } from './tree';
 export var State;
 (function (State) {
     function extend(parent, { get, prev, next }) {
@@ -76,6 +77,14 @@ export var State;
         });
     }
     State.zoom = zoom;
+    function flatten(parent) {
+        return extend(parent, {
+            get: key => Tree.get(parent, Path.fromKey(key)),
+            prev: key => Tree.prev(parent, Path.fromKey(key)).then(Path.toKey),
+            next: key => Tree.next(parent, Path.fromKey(key)).then(Path.toKey)
+        });
+    }
+    State.flatten = flatten;
     function cache(parent) {
         return Cache.apply(Cache.create(), parent);
     }
@@ -92,11 +101,7 @@ export var State;
     State.keyBy = keyBy;
     function fromArray(values) {
         return {
-            get: (key) => {
-                if (key in values)
-                    return Promise.resolve(values[key]);
-                return Promise.reject(new Error);
-            },
+            get: (key) => key in values ? Promise.resolve(values[key]) : State.NOT_FOUND,
             prev: (key) => {
                 var index = key == null ? values.length - 1 : key - 1;
                 return Promise.resolve(index === -1 ? null : index);
@@ -115,9 +120,7 @@ export var State;
         }, Object.create(null));
         return {
             get: (key) => {
-                if (key in values)
-                    return Promise.resolve(values[key]);
-                return Promise.reject(new Error);
+                return key in values ? Promise.resolve(values[key]) : State.NOT_FOUND;
             },
             prev: (key) => {
                 if (key == null)

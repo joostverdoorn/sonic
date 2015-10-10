@@ -432,6 +432,8 @@ var _state_iterator = require('./state_iterator');
 
 var _state_iterator2 = _interopRequireDefault(_state_iterator);
 
+var _tree = require('./tree');
+
 var State;
 exports.State = State;
 (function (State) {
@@ -542,6 +544,20 @@ exports.State = State;
         });
     }
     State.zoom = zoom;
+    function flatten(parent) {
+        return extend(parent, {
+            get: function get(key) {
+                return _tree.Tree.get(parent, _tree.Path.fromKey(key));
+            },
+            prev: function prev(key) {
+                return _tree.Tree.prev(parent, _tree.Path.fromKey(key)).then(_tree.Path.toKey);
+            },
+            next: function next(key) {
+                return _tree.Tree.next(parent, _tree.Path.fromKey(key)).then(_tree.Path.toKey);
+            }
+        });
+    }
+    State.flatten = flatten;
     function cache(parent) {
         return _cache2['default'].apply(_cache2['default'].create(), parent);
     }
@@ -567,8 +583,7 @@ exports.State = State;
     function fromArray(values) {
         return {
             get: function get(key) {
-                if (key in values) return Promise.resolve(values[key]);
-                return Promise.reject(new Error());
+                return key in values ? Promise.resolve(values[key]) : State.NOT_FOUND;
             },
             prev: function prev(key) {
                 var index = key == null ? values.length - 1 : key - 1;
@@ -589,8 +604,7 @@ exports.State = State;
         }, Object.create(null));
         return {
             get: function get(key) {
-                if (key in values) return Promise.resolve(values[key]);
-                return Promise.reject(new Error());
+                return key in values ? Promise.resolve(values[key]) : State.NOT_FOUND;
             },
             prev: function prev(key) {
                 if (key == null) return Promise.resolve(keys[keys.length - 1]);
@@ -617,7 +631,7 @@ Object.defineProperty(State, "NOT_FOUND", {
 });
 exports['default'] = State;
 
-},{"./cache":1,"./patch":6,"./state_iterator":9}],9:[function(require,module,exports){
+},{"./cache":1,"./patch":6,"./state_iterator":9,"./tree":10}],9:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, '__esModule', {
@@ -779,16 +793,23 @@ exports.StateIterator = StateIterator;
 exports['default'] = StateIterator;
 
 },{"./state":8}],10:[function(require,module,exports){
-"use strict";
+'use strict';
 
-Object.defineProperty(exports, "__esModule", {
+Object.defineProperty(exports, '__esModule', {
     value: true
 });
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
+
+var _state = require('./state');
+
+var _state2 = _interopRequireDefault(_state);
+
 var Path;
 exports.Path = Path;
 (function (Path) {
     function key(path) {
-        return JSON.stringify(path);
+        return path == null ? null : JSON.stringify(path);
     }
     Path.key = key;
     function fromKey(key) {
@@ -804,7 +825,7 @@ exports.Path = Path;
     }
     Path.head = head;
     function get(path, index) {
-        return path[index];
+        return path ? path[index] : null;
     }
     Path.get = get;
     function tail(path) {
@@ -827,35 +848,54 @@ exports.Tree = Tree;
         });
     }
     Tree.get = get;
-    function prev(state) {
-        var path = arguments.length <= 1 || arguments[1] === undefined ? [null, null] : arguments[1];
-
+    function prev(tree, path) {
         var head = Path.get(path, 0),
-            tail = Path.get(path, 1);
-        return null;
+            tail = Path.get(path, 1),
+            prevs = _state2['default'].filter(_state2['default'].map(tree, function (state) {
+            return state.prev();
+        }), function (first) {
+            return first != null;
+        }),
+            paths = _state2['default'].map(prevs, function (first, key) {
+            return [key, first];
+        });
+        if (head == null) return paths.prev().then(function (prev) {
+            return prev != null ? paths.get(prev) : null;
+        });
+        return tree.get(head).then(function (state) {
+            return state.prev(tail);
+        }).then(function (prev) {
+            return prev != null ? [head, prev] : paths.prev(head).then(function (prev) {
+                return prev != null ? paths.get(prev) : null;
+            });
+        });
     }
     Tree.prev = prev;
-    function next(tree) {
-        var path = arguments.length <= 1 || arguments[1] === undefined ? [null, null] : arguments[1];
-
+    function next(tree, path) {
         var head = Path.get(path, 0),
-            tail = Path.get(path, 1);
+            tail = Path.get(path, 1),
+            nexts = _state2['default'].filter(_state2['default'].map(tree, function (state) {
+            return state.next();
+        }), function (first) {
+            return first != null;
+        }),
+            paths = _state2['default'].map(nexts, function (first, key) {
+            return [key, first];
+        });
+        if (head == null) return paths.next().then(function (next) {
+            return next != null ? paths.get(next) : null;
+        });
         return tree.get(head).then(function (state) {
             return state.next(tail);
         }).then(function (next) {
-            if (next != null) return [head, next];
-            return tree.next(head).then(function (nextHead) {
-                return tree.get(nextHead).then(function (state) {
-                    return state.next().then(function (first) {
-                        return [nextHead, first];
-                    });
-                });
+            return next != null ? [head, next] : paths.next(head).then(function (next) {
+                return next != null ? paths.get(next) : null;
             });
         });
     }
     Tree.next = next;
 })(Tree || (exports.Tree = Tree = {}));
-exports["default"] = Tree;
+exports['default'] = Tree;
 
-},{}]},{},[7])(7)
+},{"./state":8}]},{},[7])(7)
 });

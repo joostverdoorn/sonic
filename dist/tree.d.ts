@@ -13,7 +13,7 @@ export declare module Path {
 export declare type Tree<V> = State<State<V>>;
 export declare module Tree {
     function get<V>(tree: Tree<V>, path: Path): Promise<Tree<V> | V>;
-    function prev<V>(state: Tree<V>, path?: Path): Promise<Path>;
-    function next<V>(tree: Tree<V>, path?: Path): Promise<Path>;
+    function prev<V>(tree: Tree<V>, path: Path): Promise<Path>;
+    function next<V>(tree: Tree<V>, path: Path): Promise<Path>;
 }
 export default Tree;

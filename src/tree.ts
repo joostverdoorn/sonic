@@ -1,11 +1,12 @@
-import Key   from './key';
-import State from './state';
+import Key           from './key';
+import State         from './state';
+import StateIterator from './state_iterator';
 
 export type Path = Key[];
 
 export module Path {
   export function key(path: Path): string {
-    return JSON.stringify(path)
+    return path == null ? null : JSON.stringify(path);
   }
 
   export function fromKey(key: Key): Path {
@@ -21,7 +22,7 @@ export module Path {
   }
 
   export function get(path: Path, index: number): Key {
-    return path[index];
+    return path ? path[index] : null;
   }
 
   export function tail(path: Path): Path {
@@ -43,23 +44,30 @@ export module Tree {
     return tree.get(head).then(state => state.get(tail));
   }
 
-  export function prev<V>(state: Tree<V>, path: Path = [null, null]): Promise<Path> {
+  export function prev<V>(tree: Tree<V>, path: Path): Promise<Path> {
     var head = Path.get(path, 0),
-        tail = Path.get(path, 1);
+        tail = Path.get(path, 1),
+        prevs = State.filter(State.map(tree, state => state.prev()), first => first != null),
+        paths = State.map(prevs, (first, key) => [key, first]);
 
-    return null;
+    if (head == null) return paths.prev().then(prev => prev != null ? paths.get(prev) : null);
+
+    return tree.get(head)
+      .then(state => state.prev(tail))
+      .then(prev => prev != null ? [head, prev] : paths.prev(head).then(prev => prev != null ? paths.get(prev) : null));
   }
 
-  export function next<V>(tree: Tree<V>, path: Path = [null, null]): Promise<Path> {
+  export function next<V>(tree: Tree<V>, path: Path): Promise<Path> {
     var head = Path.get(path, 0),
-        tail = Path.get(path, 1);
+        tail = Path.get(path, 1),
+        nexts = State.filter(State.map(tree, state => state.next()), first => first != null),
+        paths = State.map(nexts, (first, key) => [key, first]);
+
+    if (head == null) return paths.next().then(next => next != null ? paths.get(next) : null);
 
     return tree.get(head)
       .then(state => state.next(tail))
-      .then(next => {
-        if (next != null) return [head, next];
-        return tree.next(head).then(nextHead => tree.get(nextHead).then(state => state.next().then(first => [nextHead, first])));
-      });
+      .then(next => next != null ? [head, next] : paths.next(head).then(next => next != null ? paths.get(next) : null));
   }
 }
 
