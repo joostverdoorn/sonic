@@ -1,20 +1,20 @@
-import _Patch from './patch';
 import _State from './state';
-import _StateIterator from './state_iterator';
+import _AsyncIterator from './async_iterator';
 import _List from './list';
 import _Tree from './tree';
 import _Cache from './cache';
 import { Subject as _Subject } from './observable';
 import _Mutable from './mutable';
+import _PromiseUtils from './promise_utils';
 export declare function Sonic(obj: any): _Mutable<{}>;
 export declare module Sonic {
-    var Patch: typeof _Patch;
-    var State: typeof _State;
-    var StateIterator: typeof _StateIterator;
-    var List: typeof _List;
-    var Tree: typeof _Tree;
-    var Subject: typeof _Subject;
-    var Mutable: typeof _Mutable;
-    var Cache: typeof _Cache;
+    const State: typeof _State;
+    const AsyncIterator: typeof _AsyncIterator;
+    const List: typeof _List;
+    const Tree: typeof _Tree;
+    const Subject: typeof _Subject;
+    const Mutable: typeof _Mutable;
+    const Cache: typeof _Cache;
+    const PromiseUtils: typeof _PromiseUtils;
 }
 export default Sonic;

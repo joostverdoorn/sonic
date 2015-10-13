@@ -1,6 +1,5 @@
 import Key           from './key';
 import State         from './state';
-import StateIterator from './state_iterator';
 
 export type Path = Key[];
 

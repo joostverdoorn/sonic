@@ -1,9 +1,23 @@
-import Patch from './patch';
+import Key from './key';
+import Range from './range';
 import Cache from './cache';
-import StateIterator from './state_iterator';
+import AsyncIterator from './async_iterator';
 import { Tree, Path } from './tree';
 export var State;
 (function (State) {
+    State.Empty = {
+        get: (key) => Key.NOT_FOUND,
+        prev: (key) => key == null ? Promise.resolve(Key.None) : Key.NOT_FOUND,
+        next: (key) => key == null ? Promise.resolve(Key.None) : Key.NOT_FOUND
+    };
+    function first(state) {
+        return state.next().then(key => state.get(key));
+    }
+    State.first = first;
+    function last(state) {
+        return state.prev().then(key => state.get(key));
+    }
+    State.last = last;
     function extend(parent, { get, prev, next }) {
         var state = Object.create(parent);
         if (get)
@@ -15,38 +29,51 @@ export var State;
         return state;
     }
     State.extend = extend;
+    function slice(parent, range = [null, null]) {
+        return fromIterator(toIterator(parent, range));
+    }
+    State.slice = slice;
+    function splice(parent, range, child = State.Empty) {
+        if (range[0] === range[1] && range[0] != null)
+            return parent;
+        const deleted = slice(parent, range), filtered = filter(parent, (value, key) => deleted.get(key).then(() => false, () => true));
+        if (child === State.Empty)
+            return filtered;
+        function get(key) {
+            return child.get(key).catch(reason => reason === Key.NOT_FOUND_ERROR ? parent.get(key) : Promise.reject(reason));
+        }
+        function prev(key = null) {
+            if (key == range[0])
+                return child.prev();
+            if (key == null)
+                return filtered.prev();
+            return child.prev(key).then(prev => prev == null ? range[1] : prev, reason => reason === Key.NOT_FOUND_ERROR ? filtered.next(key) : Promise.reject(reason));
+        }
+        function next(key = null) {
+            if (key == range[0])
+                return child.next();
+            if (key == null)
+                return filtered.next();
+            return child.next(key).then(next => next == null ? range[1] : next, reason => reason === Key.NOT_FOUND_ERROR ? filtered.next(key) : Promise.reject(reason));
+        }
+        return { get, prev, next };
+    }
+    State.splice = splice;
     function patch(parent, patch) {
-        var partial;
-        if (Patch.isSetPatch(patch)) {
-            partial = {
-                get: key => key === patch.key ? Promise.resolve(patch.value) : parent.get(key)
-            };
-            if (patch.before !== undefined) {
-                partial.prev = (key = null) => {
-                    if (key === patch.before)
-                        return Promise.resolve(key);
-                    if (key === patch.key)
-                        return parent.prev(patch.before);
-                    return parent.prev(key);
-                };
-                partial.next = (key = null) => {
-                    if (key === patch.key)
-                        return Promise.resolve(patch.before);
-                    return parent.next(key).then(next => next == patch.before ? patch.key : next);
-                };
-            }
-        }
-        if (Patch.isDeletePatch(patch)) {
-            partial = {
-                get: key => key !== patch.key ? parent.get(key) : State.NOT_FOUND,
-                prev: (key = null) => parent.prev(key).then(prev => prev === patch.key ? parent.prev(prev) : prev),
-                next: (key = null) => parent.next(key).then(next => next === patch.key ? parent.next(next) : next)
-            };
-        }
-        return extend(parent, partial);
-        ;
+        return splice(parent, patch.range, patch.added);
     }
     State.patch = patch;
+    function toIterator(state, range = Range.all) {
+        var current = null;
+        function get() {
+            return state.get(current);
+        }
+        function next() {
+            return state.next(current === null ? range[0] : current).then(next => current = (next == range[1] ? null : next));
+        }
+        return { get, next };
+    }
+    State.toIterator = toIterator;
     function reverse(parent) {
         return extend(parent, {
             prev: parent.next,
@@ -61,17 +88,22 @@ export var State;
     }
     State.map = map;
     function filter(parent, filterFn) {
-        return extend(parent, {
-            get: key => parent.get(key).then(value => filterFn(value) ? value : State.NOT_FOUND),
-            prev: key => StateIterator.findKey(State.reverse(parent), filterFn, [key, null]),
-            next: key => StateIterator.findKey(parent, filterFn, [key, null])
-        });
+        function get(key) {
+            return parent.get(key).then(value => Promise.resolve(filterFn(value)).then(res => res ? value : Key.NOT_FOUND));
+        }
+        function prev(key) {
+            return parent.prev(key).then(p => p === null ? null : parent.get(p).then(value => filterFn(value, p)).then(result => result ? p : prev(p)));
+        }
+        function next(key) {
+            return parent.next(key).then(n => n === null ? null : parent.get(n).then(value => filterFn(value, n)).then(result => result ? n : next(n)));
+        }
+        return extend(parent, { get, prev, next });
     }
     State.filter = filter;
     function zoom(parent, key) {
-        const next = (k) => k == null ? Promise.resolve(key) : k === key ? Promise.resolve(null) : State.NOT_FOUND;
+        const next = (k) => k == null ? Promise.resolve(key) : k === key ? Promise.resolve(null) : Key.NOT_FOUND;
         return extend(parent, {
-            get: k => k === key ? parent.get(key) : State.NOT_FOUND,
+            get: k => k === key ? parent.get(key) : Key.NOT_FOUND,
             prev: next,
             next: next
         });
@@ -92,7 +124,7 @@ export var State;
     function keyBy(parent, keyFn) {
         var keyMap = cache(State.map(parent, keyFn));
         var reverseKeyMap = cache({
-            get: key => StateIterator.keyOf(keyMap, key),
+            get: key => AsyncIterator.keyOf(State.toIterator(keyMap), key),
             prev: key => reverseKeyMap.get(key).then(keyMap.prev).then(keyMap.get),
             next: key => reverseKeyMap.get(key).then(keyMap.next).then(keyMap.get)
         });
@@ -101,7 +133,7 @@ export var State;
     State.keyBy = keyBy;
     function fromArray(values) {
         return {
-            get: (key) => key in values ? Promise.resolve(values[key]) : State.NOT_FOUND,
+            get: (key) => key in values ? Promise.resolve(values[key]) : Key.NOT_FOUND,
             prev: (key) => {
                 var index = key == null ? values.length - 1 : key - 1;
                 return Promise.resolve(index === -1 ? null : index);
@@ -120,13 +152,13 @@ export var State;
         }, Object.create(null));
         return {
             get: (key) => {
-                return key in values ? Promise.resolve(values[key]) : State.NOT_FOUND;
+                return key in values ? Promise.resolve(values[key]) : Key.NOT_FOUND;
             },
             prev: (key) => {
                 if (key == null)
                     return Promise.resolve(keys[keys.length - 1]);
                 if (!(key in indexByKey))
-                    return State.NOT_FOUND;
+                    return Key.NOT_FOUND;
                 var index = indexByKey[key];
                 if (index === 0)
                     return Promise.resolve(null);
@@ -136,7 +168,7 @@ export var State;
                 if (key == null)
                     return Promise.resolve(keys[0]);
                 if (!(key in indexByKey))
-                    return State.NOT_FOUND;
+                    return Key.NOT_FOUND;
                 var index = indexByKey[key];
                 if (index === keys.length - 1)
                     return Promise.resolve(null);
@@ -145,8 +177,37 @@ export var State;
         };
     }
     State.fromObject = fromObject;
+    function fromIterator(iterator) {
+        var cache = Cache.create(), exhausted = false, currentKey = null;
+        var cachingIterator = AsyncIterator.extend(iterator, {
+            get: () => cache.get[currentKey] = iterator.get(),
+            next: () => cache.next[currentKey] = iterator.next().then(key => {
+                cache.prev[key] = Promise.resolve(currentKey);
+                exhausted = key === null;
+                return currentKey = key;
+            }),
+        });
+        function get(key) {
+            if (exhausted)
+                return Key.NOT_FOUND;
+            if (key === currentKey)
+                return cachingIterator.get();
+            return AsyncIterator.find(cachingIterator, (value, k) => k === key);
+        }
+        function prev(key) {
+            if (exhausted)
+                return Key.NOT_FOUND;
+            return AsyncIterator.some(cachingIterator, (value, k) => k === key).then(() => cache.prev[key]);
+        }
+        function next(key) {
+            if (exhausted)
+                return Key.NOT_FOUND;
+            if (key === currentKey)
+                return cachingIterator.next();
+            return AsyncIterator.findKey(cachingIterator, (value, k) => k === key).then(() => cachingIterator.next());
+        }
+        return Cache.apply(cache, { get, prev, next });
+    }
+    State.fromIterator = fromIterator;
 })(State || (State = {}));
-Object.defineProperty(State, "NOT_FOUND", {
-    get: () => Promise.reject("No entry at the specified key")
-});
 export default State;

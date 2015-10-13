@@ -11,18 +11,20 @@
         "src/**/*.ts"
     ],
     "files": [
+        "src/async_iterator.ts",
         "src/bind.ts",
         "src/cache.ts",
         "src/factory.ts",
         "src/key.ts",
         "src/lens.ts",
         "src/list.ts",
+        "src/maybe.ts",
         "src/mutable.ts",
         "src/observable.ts",
         "src/patch.ts",
+        "src/promise_utils.ts",
         "src/range.ts",
         "src/sonic.ts",
-        "src/state_iterator.ts",
         "src/state.ts",
         "src/tree.ts"
     ],

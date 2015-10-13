@@ -1,21 +1,10 @@
-import Key from './key';
+import Range from './range';
+import State from './state';
 export interface Patch<V> {
-    operation: string;
-    key: Key;
-}
-export interface DeletePatch<V> extends Patch<V> {
-}
-export interface SetPatch<V> extends Patch<V> {
-    key: Key;
-    value: V;
-    before?: Key;
+    range: Range;
+    added?: State<V>;
 }
 export declare module Patch {
-    const SET: string;
-    const DELETE: string;
-    function setPatch<V>(key: Key, value: V, before?: Key): SetPatch<V>;
-    function deletePatch<V>(key: Key): DeletePatch<V>;
-    function isSetPatch<V>(patch: Patch<V>): patch is SetPatch<V>;
-    function isDeletePatch<V>(patch: Patch<V>): patch is DeletePatch<V>;
+    function apply<V>(patch: Patch<V>, state: State<V>): State<V>;
 }
 export default Patch;
