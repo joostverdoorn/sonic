@@ -40,7 +40,7 @@ export var State;
         if (child === State.Empty)
             return filtered;
         function get(key) {
-            return child.get(key).catch(reason => reason === Key.NOT_FOUND_ERROR ? parent.get(key) : Promise.reject(reason));
+            return child.get(key).catch(reason => reason === Key.NOT_FOUND_ERROR ? filtered.get(key) : Promise.reject(reason));
         }
         function prev(key = null) {
             if (key == range[0])
@@ -89,7 +89,7 @@ export var State;
     State.map = map;
     function filter(parent, filterFn) {
         function get(key) {
-            return parent.get(key).then(value => Promise.resolve(filterFn(value)).then(res => res ? value : Key.NOT_FOUND));
+            return parent.get(key).then(value => Promise.resolve(filterFn(value, key)).then(res => res ? value : Key.NOT_FOUND));
         }
         function prev(key) {
             return parent.prev(key).then(p => p === null ? null : parent.get(p).then(value => filterFn(value, p)).then(result => result ? p : prev(p)));

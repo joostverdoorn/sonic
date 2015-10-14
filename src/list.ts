@@ -7,6 +7,8 @@ import { Tree,
          Path }       from './tree';
 import { Observable,
          Subject }    from './observable';
+import AsyncIterator  from './async_iterator';
+
 
 export interface List<V> {
   state: State<V>
@@ -43,17 +45,16 @@ export module List {
 
   export function zoom<V>(parent: List<V>, key: Key): List<V> {
     var state   = State.zoom(parent.state, key),
-        patches = Observable.filter(parent.patches, patch => state.get(key).then(
-          () => true,
-          reason => reason === Key.NOT_FOUND_ERROR ? false : Promise.reject(reason)
-        ));
+        patches = Observable.map(
+          Observable.filter(parent.patches, patch => AsyncIterator.some(State.toIterator(parent.state, patch.range), (value, k) => k === key))
+        , (patch) => {return {range: Range.all, added: patch.added ? patch.added : undefined}});
 
-    function reduceFn(old: State<V>, patch: Patch<V>) {
-      return state = Patch.apply(patch, old);
-    }
+    // function reduceFn(old: State<V>, patch: Patch<V>) {
+    //   return state = State.zoom(parent.state, key);
+    // }
 
 
-    return create(state, patches, reduceFn);
+    return create(state, patches);
   }
 
   export function flatten<V>(parent: List<List<V>>): List<V> {

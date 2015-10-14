@@ -2,8 +2,10 @@ import Key from './key';
 import Patch from './patch';
 import State from './state';
 import Cache from './cache';
+import Range from './range';
 import { Tree, Path } from './tree';
 import { Observable, Subject } from './observable';
+import AsyncIterator from './async_iterator';
 export var List;
 (function (List) {
     function map(parent, mapFn) {
@@ -29,11 +31,8 @@ export var List;
     }
     List.filter = filter;
     function zoom(parent, key) {
-        var state = State.zoom(parent.state, key), patches = Observable.filter(parent.patches, patch => state.get(key).then(() => true, reason => reason === Key.NOT_FOUND_ERROR ? false : Promise.reject(reason)));
-        function reduceFn(old, patch) {
-            return state = Patch.apply(patch, old);
-        }
-        return create(state, patches, reduceFn);
+        var state = State.zoom(parent.state, key), patches = Observable.map(Observable.filter(parent.patches, patch => AsyncIterator.some(State.toIterator(parent.state, patch.range), (value, k) => k === key)), (patch) => { return { range: Range.all, added: patch.added ? patch.added : undefined }; });
+        return create(state, patches);
     }
     List.zoom = zoom;
     function flatten(parent) {

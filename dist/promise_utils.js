@@ -1,6 +1,3 @@
-// type Just<V> = [V];
-// type Nothing<V> = Array<V> & { 0: void }
-// type Maybe<V> = Just<V> | Nothing<V>;
 export var PromiseUtils;
 (function (PromiseUtils) {
     function lazy(executor) {

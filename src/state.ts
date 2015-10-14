@@ -58,7 +58,7 @@ export module State {
     if (child === Empty) return filtered;
 
     function get(key: Key): Promise<V> {
-      return child.get(key).catch(reason => reason === Key.NOT_FOUND_ERROR ? parent.get(key) : Promise.reject(reason));
+      return child.get(key).catch(reason => reason === Key.NOT_FOUND_ERROR ? filtered.get(key) : Promise.reject(reason));
     }
 
     function prev(key: Key = null): Promise<Key> {
@@ -115,7 +115,7 @@ export module State {
 
   export function filter<V>(parent: State<V>, filterFn: (value: V, key?: Key) => boolean| Promise<boolean>): State<V> {
     function get(key: Key): Promise<V> {
-      return parent.get(key).then(value => Promise.resolve(filterFn(value)).then(res => res ? value : Key.NOT_FOUND));
+      return parent.get(key).then(value => Promise.resolve(filterFn(value, key)).then(res => res ? value : Key.NOT_FOUND));
     }
 
     function prev(key: Key): Promise<Key> {
