@@ -297,15 +297,9 @@ exports.List = List;
         var xpatches = new _observable.Subject();
         var xparent = cache(map(parent, function (list, key) {
             _observable.Observable.map(list.patches, function (patch) {
-                if (_patch2['default'].isSetPatch(patch) && 'before' in patch) {
-                    if (patch.before !== null) return _patch2['default'].extend(patch, { key: _tree.Path.toKey([key, patch.key]), before: _tree.Path.toKey([key, patch.before]) });
-                    return _tree.Tree.next(_state2['default'].map(parent.state, function (list) {
-                        return list.state;
-                    }), [key, patch.key]).then(function (next) {
-                        return _patch2['default'].extend(patch, { key: _tree.Path.toKey([key, patch.key]), before: _tree.Path.toKey(next) });
-                    });
-                }
-                return _patch2['default'].extend(patch, { key: _tree.Path.toKey([key, patch.key]) });
+                return Promise.all([patch.range[0] == null ? _tree.Tree.prev(xparent.state, [key]).then(_tree.Path.toKey) : _tree.Path.toKey(_tree.Path.append([key], patch.range[0])), patch.range[1] == null ? _tree.Tree.next(xparent.state, [key]).then(_tree.Path.toKey) : _tree.Path.toKey(_tree.Path.append([key], patch.range[1]))]).then(function (range) {
+                    return { range: range, added: patch.added ? patch.added : undefined };
+                });
             }).subscribe(xpatches);
             return list.state;
         }));
@@ -313,14 +307,26 @@ exports.List = List;
         return create(state, xpatches);
     }
     List.flatten = flatten;
+    function keyBy(parent, keyFn) {
+        var state = _state2['default'].keyBy(parent.state, keyFn),
+            parentState = parent.state,
+            patches = _observable.Observable.map(parent.patches, function (patch) {
+            parentState = parent.state;
+            return Promise.all([patch.range[0] == _key2['default'].None ? Promise.resolve(_key2['default'].None) : parentState.get(patch.range[0]).then(function (value) {
+                return keyFn(value, patch.range[0]);
+            }), patch.range[1] == _key2['default'].None ? Promise.resolve(_key2['default'].None) : parentState.get(patch.range[1]).then(function (value) {
+                return keyFn(value, patch.range[1]);
+            })]).then(function (range) {
+                return { range: range, added: patch.added ? _state2['default'].keyBy(patch.added, keyFn) : undefined };
+            });
+        });
+        return create(state, patches);
+    }
+    List.keyBy = keyBy;
     function cache(parent) {
         var cache = _cache2['default'].create(),
-            state = _cache2['default'].apply(cache, parent.state),
-            reducer = function reducer(state, patch) {
-            cache = _cache2['default'].patch(cache, patch);
-            return _cache2['default'].apply(cache, parent.state);
-        };
-        return List.create(state, parent.patches, reducer);
+            state = _cache2['default'].apply(cache, parent.state);
+        return List.create(state, parent.patches);
     }
     List.cache = cache;
     function create(state, patches) {

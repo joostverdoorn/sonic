@@ -61,12 +61,10 @@ export module List {
     var xpatches = new Subject;
     var xparent = cache(map(parent, ((list, key) => {
       Observable.map(list.patches, patch => {
-        if (Patch.isSetPatch(patch) && 'before' in patch) {
-          if (patch.before !== null) return Patch.extend(patch, { key: Path.toKey([key, patch.key]), before: Path.toKey([key, patch.before]) });
-          return Tree.next(State.map(parent.state, list => list.state), [key, patch.key])
-                     .then(next => Patch.extend(patch, { key: Path.toKey([key, patch.key]), before: Path.toKey(next) }));
-        }
-        return Patch.extend(patch, { key: Path.toKey([key, patch.key]) });
+        return Promise.all([
+          patch.range[0] == null ? Tree.prev(xparent.state, [key]).then(Path.toKey) : Path.toKey(Path.append([key], patch.range[0])),
+          patch.range[1] == null ? Tree.next(xparent.state, [key]).then(Path.toKey) : Path.toKey(Path.append([key], patch.range[1]))
+        ]).then((range: Range) => { return { range: range, added: patch.added ? patch.added : undefined }});
       }).subscribe(xpatches);
 
       return list.state;
@@ -76,24 +74,33 @@ export module List {
     return create(state, xpatches);
   }
 
-  // export function keyBy<V>(parent: List<V>, keyFn: (value: V, key: Key) => Key): List<V> {
-  //   var state   = State.keyBy(parent.state, keyFn),
-  //       reducer = (state: State<V>, patch: Patch<V>) => {
-  //
-  //       };
-  //
-  //   return create(state, patches, reducer);
-  // }
+  export function keyBy<V>(parent: List<V>, keyFn: (value: V, key: Key) => Key): List<V> {
+    var state   = State.keyBy(parent.state, keyFn),
+        parentState = parent.state,
+        patches = Observable.map(parent.patches, (patch) => {
+          parentState = parent.state;
+
+          return Promise.all([
+            patch.range[0] == Key.None ? Promise.resolve(Key.None) : parentState.get(patch.range[0]).then(value => keyFn(value, patch.range[0])),
+            patch.range[1] == Key.None ? Promise.resolve(Key.None) : parentState.get(patch.range[1]).then(value => keyFn(value, patch.range[1]))
+          ]).then((range: Range) => { return { range: range, added: patch.added ? State.keyBy(patch.added, keyFn) : undefined }});
+        });
+        // reducer = (state: State<V>, patch: Patch<V>) => {
+        // };
+
+    return create(state, patches);
+  }
 
   export function cache<V>(parent: List<V>): List<V> {
     var cache = Cache.create(),
-        state = Cache.apply(cache, parent.state),
-        reducer = (state: State<V>, patch: Patch<V>): State<V> => {
-          cache = Cache.patch(cache, patch);
-          return Cache.apply(cache, parent.state);
-        }
+        state = Cache.apply(cache, parent.state);
+        // reducer = (state: State<V>, patch: Patch<V>): State<V> => {
+        //   cache = Cache.extend(cache);
+        //
+        //   return Cache.apply(cache, parent.state);
+        // }
+    return List.create(state, parent.patches);
 
-    return List.create(state, parent.patches, reducer);
   }
 
   export function create<V>(state: State<V>, patches: Observable<Patch<V>>, reducer: (state: State<V>, patch: Patch<V>) => State<V> = State.patch): List<V> {

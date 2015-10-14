@@ -11,6 +11,7 @@ export declare module List {
     function filter<V>(parent: List<V>, filterFn: (value: V, key: Key) => boolean): List<V>;
     function zoom<V>(parent: List<V>, key: Key): List<V>;
     function flatten<V>(parent: List<List<V>>): List<V>;
+    function keyBy<V>(parent: List<V>, keyFn: (value: V, key: Key) => Key): List<V>;
     function cache<V>(parent: List<V>): List<V>;
     function create<V>(state: State<V>, patches: Observable<Patch<V>>, reducer?: (state: State<V>, patch: Patch<V>) => State<V>): List<V>;
 }
