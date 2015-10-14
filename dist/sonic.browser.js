@@ -288,7 +288,7 @@ exports.List = List;
                 return k === key;
             });
         }), function (patch) {
-            return { range: _range2['default'].all, added: patch.added ? patch.added : undefined };
+            return { range: _range2['default'].all, added: patch.added ? _state2['default'].zoom(patch.added, key) : undefined };
         });
         return create(state, patches);
     }
@@ -716,7 +716,11 @@ exports.State = State;
     State.filter = filter;
     function zoom(parent, key) {
         var next = function next(k) {
-            return k == null ? Promise.resolve(key) : k === key ? Promise.resolve(null) : _key2['default'].NOT_FOUND;
+            return k == null ? parent.get(key).then(function () {
+                return key;
+            }, function (reason) {
+                return reason === _key2['default'].NOT_FOUND_ERROR ? null : Promise.reject(reason);
+            }) : key === k ? Promise.resolve(null) : _key2['default'].NOT_FOUND;
         };
         return extend(parent, {
             get: function get(k) {

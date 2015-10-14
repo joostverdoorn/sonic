@@ -130,7 +130,7 @@ export module State {
   }
 
   export function zoom<V>(parent: State<V>, key: Key): State<V> {
-    const next = (k: Key) => k == null ? Promise.resolve(key) : k === key ? Promise.resolve(null) : Key.NOT_FOUND;
+    const next = (k: Key) => k == null ? parent.get(key).then(() => key, reason => reason === Key.NOT_FOUND_ERROR ? null : Promise.reject(reason)) : (key === k ? Promise.resolve(null) : Key.NOT_FOUND);
 
     return extend(parent, {
       get:  k => k === key ? parent.get(key) : Key.NOT_FOUND,

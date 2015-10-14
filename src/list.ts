@@ -47,7 +47,7 @@ export module List {
     var state   = State.zoom(parent.state, key),
         patches = Observable.map(
           Observable.filter(parent.patches, patch => AsyncIterator.some(State.toIterator(parent.state, patch.range), (value, k) => k === key))
-        , (patch) => {return {range: Range.all, added: patch.added ? patch.added : undefined}});
+        , (patch) => {return {range: Range.all, added: patch.added ? State.zoom(patch.added, key) : undefined}});
 
     // function reduceFn(old: State<V>, patch: Patch<V>) {
     //   return state = State.zoom(parent.state, key);

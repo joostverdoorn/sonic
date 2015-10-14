@@ -101,7 +101,7 @@ export var State;
     }
     State.filter = filter;
     function zoom(parent, key) {
-        const next = (k) => k == null ? Promise.resolve(key) : k === key ? Promise.resolve(null) : Key.NOT_FOUND;
+        const next = (k) => k == null ? parent.get(key).then(() => key, reason => reason === Key.NOT_FOUND_ERROR ? null : Promise.reject(reason)) : (key === k ? Promise.resolve(null) : Key.NOT_FOUND);
         return extend(parent, {
             get: k => k === key ? parent.get(key) : Key.NOT_FOUND,
             prev: next,
