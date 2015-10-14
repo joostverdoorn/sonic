@@ -1,32 +1,23 @@
 import Key from './key';
-export function disposable(disposer) {
-    var done = false;
-    return {
-        dispose: () => {
-            if (done)
-                return;
-            done = true, disposer();
-        }
-    };
-}
-export class Subject {
-    constructor() {
-        this._count = 0;
-        this.subscribe = (observer) => {
-            var observerKey = Key.create();
-            this._observers[observerKey] = observer;
-            return disposable(() => delete this._observers[observerKey]);
+export var Disposable;
+(function (Disposable) {
+    function create(disposer) {
+        var done = false;
+        return {
+            dispose: () => {
+                if (done)
+                    return;
+                done = true;
+                disposer();
+            }
         };
-        this.onNext = (value) => {
-            return Promise.all(Object.keys(this._observers).map(key => this._observers[key].onNext(value))).then(() => { });
-        };
-        this._observers = Object.create(null);
     }
-}
+    Disposable.create = create;
+})(Disposable || (Disposable = {}));
 export var Observable;
 (function (Observable) {
     function map(observable, mapFn) {
-        const subject = new Subject;
+        const subject = Subject.create();
         observable.subscribe({
             onNext: value => Promise.resolve(mapFn(value)).then(subject.onNext)
         });
@@ -34,7 +25,7 @@ export var Observable;
     }
     Observable.map = map;
     function filter(observable, filterFn) {
-        const subject = new Subject();
+        const subject = Subject.create();
         observable.subscribe({
             onNext: value => Promise.resolve(filterFn(value)).then(result => result ? subject.onNext(value) : undefined)
         });
@@ -42,7 +33,7 @@ export var Observable;
     }
     Observable.filter = filter;
     function scan(observable, scanFn, memo) {
-        const subject = new Subject();
+        const subject = Subject.create();
         observable.subscribe({
             onNext: value => Promise.resolve(scanFn(memo, value)).then(value => { memo = value; subject.onNext(value); })
         });
@@ -50,3 +41,19 @@ export var Observable;
     }
     Observable.scan = scan;
 })(Observable || (Observable = {}));
+export var Subject;
+(function (Subject) {
+    function create() {
+        const observers = Object.create(null);
+        function subscribe(observer) {
+            var observerKey = Key.create();
+            observers[observerKey] = observer;
+            return Disposable.create(() => delete observers[observerKey]);
+        }
+        function onNext(value) {
+            return Promise.all(Object.keys(observers).map(key => observers[key].onNext(value))).then(() => { });
+        }
+        return { subscribe, onNext };
+    }
+    Subject.create = create;
+})(Subject || (Subject = {}));

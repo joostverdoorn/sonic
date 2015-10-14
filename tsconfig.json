@@ -18,8 +18,6 @@
         "src/key.ts",
         "src/lens.ts",
         "src/list.ts",
-        "src/maybe.ts",
-        "src/mutable.ts",
         "src/observable.ts",
         "src/patch.ts",
         "src/promise_utils.ts",

@@ -16,8 +16,8 @@ export declare module State {
     }
     const Empty: {
         get: (key: number | string) => Promise<{}>;
-        prev: (key?: number | string) => Promise<number | string>;
-        next: (key?: number | string) => Promise<number | string>;
+        prev: (key?: number | string) => Promise<number | string> | Promise<{}>;
+        next: (key?: number | string) => Promise<number | string> | Promise<{}>;
     };
     function first<V>(state: State<V>): Promise<V>;
     function last<V>(state: State<V>): Promise<V>;

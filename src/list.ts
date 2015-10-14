@@ -58,7 +58,7 @@ export module List {
   }
 
   export function flatten<V>(parent: List<List<V>>): List<V> {
-    var xpatches = new Subject;
+    var xpatches = Subject.create();
     var xparent = cache(map(parent, ((list, key) => {
       Observable.map(list.patches, patch => {
         return Promise.all([
@@ -92,15 +92,15 @@ export module List {
   }
 
   export function cache<V>(parent: List<V>): List<V> {
-    var cache = Cache.create(),
-        state = Cache.apply(cache, parent.state);
-        // reducer = (state: State<V>, patch: Patch<V>): State<V> => {
-        //   cache = Cache.extend(cache);
-        //
-        //   return Cache.apply(cache, parent.state);
-        // }
-    return List.create(state, parent.patches);
+    var state = State.cache(parent.state),
+        patches = Observable.map(parent.patches, patch => {
+          return {
+            range: patch.range,
+            added: State.cache(patch.added)
+          }
+        });
 
+    return List.create(state, patches);
   }
 
   export function create<V>(state: State<V>, patches: Observable<Patch<V>>, reducer: (state: State<V>, patch: Patch<V>) => State<V> = State.patch): List<V> {

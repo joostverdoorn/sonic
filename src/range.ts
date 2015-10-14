@@ -1,5 +1,4 @@
 import Key   from './key';
-import Maybe from './maybe';
 
 export type Range = [Key, Key];
 

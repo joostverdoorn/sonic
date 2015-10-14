@@ -4,13 +4,12 @@ import _List from './list';
 import _Tree from './tree';
 import _Cache from './cache';
 import { Subject as _Subject } from './observable';
-import _Mutable from './mutable';
 import _PromiseUtils from './promise_utils';
 export function Sonic(obj) {
     if (obj instanceof Array)
-        return _Mutable.create(_State.fromArray(obj), new _Subject);
+        return _List.create(_State.fromArray(obj), _Subject.create());
     if (obj instanceof Object)
-        return _Mutable.create(_State.fromObject(obj), new _Subject);
+        return _List.create(_State.fromObject(obj), _Subject.create());
 }
 export var Sonic;
 (function (Sonic) {
@@ -19,7 +18,6 @@ export var Sonic;
     Sonic.List = _List;
     Sonic.Tree = _Tree;
     Sonic.Subject = _Subject;
-    Sonic.Mutable = _Mutable;
     Sonic.Cache = _Cache;
     Sonic.PromiseUtils = _PromiseUtils;
 })(Sonic || (Sonic = {}));

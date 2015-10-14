@@ -1,7 +1,6 @@
 import Key from './key';
 import Patch from './patch';
 import State from './state';
-import Cache from './cache';
 import Range from './range';
 import { Tree, Path } from './tree';
 import { Observable, Subject } from './observable';
@@ -36,7 +35,7 @@ export var List;
     }
     List.zoom = zoom;
     function flatten(parent) {
-        var xpatches = new Subject;
+        var xpatches = Subject.create();
         var xparent = cache(map(parent, ((list, key) => {
             Observable.map(list.patches, patch => {
                 return Promise.all([
@@ -62,8 +61,13 @@ export var List;
     }
     List.keyBy = keyBy;
     function cache(parent) {
-        var cache = Cache.create(), state = Cache.apply(cache, parent.state);
-        return List.create(state, parent.patches);
+        var state = State.cache(parent.state), patches = Observable.map(parent.patches, patch => {
+            return {
+                range: patch.range,
+                added: State.cache(patch.added)
+            };
+        });
+        return List.create(state, patches);
     }
     List.cache = cache;
     function create(state, patches, reducer = State.patch) {

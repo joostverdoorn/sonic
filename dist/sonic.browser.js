@@ -160,14 +160,14 @@ exports.Cache = Cache;
             return key in cache.get ? cache.get[key] : cache.get[key] = state.get(key);
         }
         function prev() {
-            var key = arguments[0] === undefined ? _key2['default'].None : arguments[0];
+            var key = arguments.length <= 0 || arguments[0] === undefined ? _key2['default'].None : arguments[0];
 
             return key in cache.prev ? cache.prev[key] : cache.prev[key] = state.prev(key).then(function (prev) {
                 cache.next[prev] = Promise.resolve(key);return prev;
             });
         }
         function next() {
-            var key = arguments[0] === undefined ? _key2['default'].None : arguments[0];
+            var key = arguments.length <= 0 || arguments[0] === undefined ? _key2['default'].None : arguments[0];
 
             return key in cache.next ? cache.next[key] : cache.next[key] = state.next(key).then(function (next) {
                 cache.prev[next] = Promise.resolve(key);return next;
@@ -188,7 +188,7 @@ Object.defineProperty(exports, "__esModule", {
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { "default": obj }; }
 
-var _promise_utils = require("./promise_utils");
+var _promise_utils = require('./promise_utils');
 
 var _promise_utils2 = _interopRequireDefault(_promise_utils);
 
@@ -212,7 +212,7 @@ var Key;
 exports["default"] = Key;
 module.exports = exports["default"];
 
-},{"./promise_utils":8}],4:[function(require,module,exports){
+},{"./promise_utils":7}],4:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, '__esModule', {
@@ -232,10 +232,6 @@ var _patch2 = _interopRequireDefault(_patch);
 var _state = require('./state');
 
 var _state2 = _interopRequireDefault(_state);
-
-var _cache = require('./cache');
-
-var _cache2 = _interopRequireDefault(_cache);
 
 var _range = require('./range');
 
@@ -294,7 +290,7 @@ exports.List = List;
     }
     List.zoom = zoom;
     function flatten(parent) {
-        var xpatches = new _observable.Subject();
+        var xpatches = _observable.Subject.create();
         var xparent = cache(map(parent, function (list, key) {
             _observable.Observable.map(list.patches, function (patch) {
                 return Promise.all([patch.range[0] == null ? _tree.Tree.prev(xparent.state, [key]).then(_tree.Path.toKey) : _tree.Path.toKey(_tree.Path.append([key], patch.range[0])), patch.range[1] == null ? _tree.Tree.next(xparent.state, [key]).then(_tree.Path.toKey) : _tree.Path.toKey(_tree.Path.append([key], patch.range[1]))]).then(function (range) {
@@ -324,13 +320,18 @@ exports.List = List;
     }
     List.keyBy = keyBy;
     function cache(parent) {
-        var cache = _cache2['default'].create(),
-            state = _cache2['default'].apply(cache, parent.state);
-        return List.create(state, parent.patches);
+        var state = _state2['default'].cache(parent.state),
+            patches = _observable.Observable.map(parent.patches, function (patch) {
+            return {
+                range: patch.range,
+                added: _state2['default'].cache(patch.added)
+            };
+        });
+        return List.create(state, patches);
     }
     List.cache = cache;
     function create(state, patches) {
-        var reducer = arguments[2] === undefined ? _state2['default'].patch : arguments[2];
+        var reducer = arguments.length <= 2 || arguments[2] === undefined ? _state2['default'].patch : arguments[2];
 
         var list = { state: state, patches: patches };
         _observable.Observable.scan(patches, reducer, state).subscribe({
@@ -344,7 +345,7 @@ exports.List = List;
 })(List || (exports.List = List = {}));
 exports['default'] = List;
 
-},{"./async_iterator":1,"./cache":2,"./key":3,"./observable":6,"./patch":7,"./range":9,"./state":10,"./tree":11}],5:[function(require,module,exports){
+},{"./async_iterator":1,"./key":3,"./observable":5,"./patch":6,"./range":8,"./state":10,"./tree":11}],5:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, '__esModule', {
@@ -352,84 +353,31 @@ Object.defineProperty(exports, '__esModule', {
 });
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
-
-var _state = require('./state');
-
-var _state2 = _interopRequireDefault(_state);
-
-var _observable = require('./observable');
-
-var Mutable;
-exports.Mutable = Mutable;
-(function (Mutable) {
-    function create(state, patches) {
-        var reducer = arguments[2] === undefined ? _state2['default'].patch : arguments[2];
-
-        var list = { state: state, patches: patches };
-        _observable.Observable.scan(patches, reducer, state).subscribe({
-            onNext: function onNext(state) {
-                list.state = state;
-            }
-        });
-        return list;
-    }
-    Mutable.create = create;
-})(Mutable || (exports.Mutable = Mutable = {}));
-exports['default'] = Mutable;
-
-},{"./observable":6,"./state":10}],6:[function(require,module,exports){
-'use strict';
-
-Object.defineProperty(exports, '__esModule', {
-    value: true
-});
-exports.disposable = disposable;
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
-
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError('Cannot call a class as a function'); } }
 
 var _key = require('./key');
 
 var _key2 = _interopRequireDefault(_key);
 
-function disposable(disposer) {
-    var done = false;
-    return {
-        dispose: function dispose() {
-            if (done) return;
-            done = true, disposer();
-        }
-    };
-}
-
-var Subject = function Subject() {
-    var _this = this;
-
-    _classCallCheck(this, Subject);
-
-    this._count = 0;
-    this.subscribe = function (observer) {
-        var observerKey = _key2['default'].create();
-        _this._observers[observerKey] = observer;
-        return disposable(function () {
-            return delete _this._observers[observerKey];
-        });
-    };
-    this.onNext = function (value) {
-        return Promise.all(Object.keys(_this._observers).map(function (key) {
-            return _this._observers[key].onNext(value);
-        })).then(function () {});
-    };
-    this._observers = Object.create(null);
-};
-
-exports.Subject = Subject;
+var Disposable;
+exports.Disposable = Disposable;
+(function (Disposable) {
+    function create(disposer) {
+        var done = false;
+        return {
+            dispose: function dispose() {
+                if (done) return;
+                done = true;
+                disposer();
+            }
+        };
+    }
+    Disposable.create = create;
+})(Disposable || (exports.Disposable = Disposable = {}));
 var Observable;
 exports.Observable = Observable;
 (function (Observable) {
     function map(observable, mapFn) {
-        var subject = new Subject();
+        var subject = Subject.create();
         observable.subscribe({
             onNext: function onNext(value) {
                 return Promise.resolve(mapFn(value)).then(subject.onNext);
@@ -439,7 +387,7 @@ exports.Observable = Observable;
     }
     Observable.map = map;
     function filter(observable, filterFn) {
-        var subject = new Subject();
+        var subject = Subject.create();
         observable.subscribe({
             onNext: function onNext(value) {
                 return Promise.resolve(filterFn(value)).then(function (result) {
@@ -451,7 +399,7 @@ exports.Observable = Observable;
     }
     Observable.filter = filter;
     function scan(observable, scanFn, memo) {
-        var subject = new Subject();
+        var subject = Subject.create();
         observable.subscribe({
             onNext: function onNext(value) {
                 return Promise.resolve(scanFn(memo, value)).then(function (value) {
@@ -463,8 +411,29 @@ exports.Observable = Observable;
     }
     Observable.scan = scan;
 })(Observable || (exports.Observable = Observable = {}));
+var Subject;
+exports.Subject = Subject;
+(function (Subject) {
+    function create() {
+        var observers = Object.create(null);
+        function subscribe(observer) {
+            var observerKey = _key2['default'].create();
+            observers[observerKey] = observer;
+            return Disposable.create(function () {
+                return delete observers[observerKey];
+            });
+        }
+        function onNext(value) {
+            return Promise.all(Object.keys(observers).map(function (key) {
+                return observers[key].onNext(value);
+            })).then(function () {});
+        }
+        return { subscribe: subscribe, onNext: onNext };
+    }
+    Subject.create = create;
+})(Subject || (exports.Subject = Subject = {}));
 
-},{"./key":3}],7:[function(require,module,exports){
+},{"./key":3}],6:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, '__esModule', {
@@ -488,7 +457,10 @@ exports.Patch = Patch;
 })(Patch || (exports.Patch = Patch = {}));
 exports['default'] = Patch;
 
-},{"./state":10}],8:[function(require,module,exports){
+},{"./state":10}],7:[function(require,module,exports){
+// type Just<V> = [V];
+// type Nothing<V> = Array<V> & { 0: void }
+// type Maybe<V> = Just<V> | Nothing<V>;
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -509,7 +481,7 @@ exports.PromiseUtils = PromiseUtils;
 })(PromiseUtils || (exports.PromiseUtils = PromiseUtils = {}));
 exports["default"] = PromiseUtils;
 
-},{}],9:[function(require,module,exports){
+},{}],8:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, '__esModule', {
@@ -541,7 +513,63 @@ exports.Range = Range;
 })(Range || (exports.Range = Range = {}));
 exports['default'] = Range;
 
-},{"./key":3}],10:[function(require,module,exports){
+},{"./key":3}],9:[function(require,module,exports){
+'use strict';
+
+Object.defineProperty(exports, '__esModule', {
+    value: true
+});
+exports.Sonic = Sonic;
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
+
+var _state = require('./state');
+
+var _state2 = _interopRequireDefault(_state);
+
+var _async_iterator = require('./async_iterator');
+
+var _async_iterator2 = _interopRequireDefault(_async_iterator);
+
+var _list = require('./list');
+
+var _list2 = _interopRequireDefault(_list);
+
+var _tree = require('./tree');
+
+var _tree2 = _interopRequireDefault(_tree);
+
+var _cache = require('./cache');
+
+var _cache2 = _interopRequireDefault(_cache);
+
+var _observable = require('./observable');
+
+var _promise_utils = require('./promise_utils');
+
+var _promise_utils2 = _interopRequireDefault(_promise_utils);
+
+function Sonic(obj) {
+    if (obj instanceof Array) return _list2['default'].create(_state2['default'].fromArray(obj), _observable.Subject.create());
+    if (obj instanceof Object) return _list2['default'].create(_state2['default'].fromObject(obj), _observable.Subject.create());
+}
+
+var Sonic;
+exports.Sonic = Sonic;
+(function (Sonic) {
+    Sonic.State = _state2['default'];
+    Sonic.AsyncIterator = _async_iterator2['default'];
+    Sonic.List = _list2['default'];
+    Sonic.Tree = _tree2['default'];
+    Sonic.Subject = _observable.Subject;
+    Sonic.Cache = _cache2['default'];
+    Sonic.PromiseUtils = _promise_utils2['default'];
+})(Sonic || (exports.Sonic = exports.Sonic = Sonic = {}));
+;
+module.exports = Sonic;
+exports['default'] = Sonic;
+
+},{"./async_iterator":1,"./cache":2,"./list":4,"./observable":5,"./promise_utils":7,"./state":10,"./tree":11}],10:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, '__esModule', {
@@ -607,13 +635,13 @@ exports.State = State;
     }
     State.extend = extend;
     function slice(parent) {
-        var range = arguments[1] === undefined ? [null, null] : arguments[1];
+        var range = arguments.length <= 1 || arguments[1] === undefined ? [null, null] : arguments[1];
 
         return fromIterator(toIterator(parent, range));
     }
     State.slice = slice;
     function splice(parent, range) {
-        var child = arguments[2] === undefined ? State.Empty : arguments[2];
+        var child = arguments.length <= 2 || arguments[2] === undefined ? State.Empty : arguments[2];
 
         if (range[0] === range[1] && range[0] != null) return parent;
         var deleted = slice(parent, range),
@@ -631,7 +659,7 @@ exports.State = State;
             });
         }
         function prev() {
-            var key = arguments[0] === undefined ? null : arguments[0];
+            var key = arguments.length <= 0 || arguments[0] === undefined ? null : arguments[0];
 
             if (key == range[0]) return child.prev();
             if (key == null) return filtered.prev();
@@ -642,7 +670,7 @@ exports.State = State;
             });
         }
         function next() {
-            var key = arguments[0] === undefined ? null : arguments[0];
+            var key = arguments.length <= 0 || arguments[0] === undefined ? null : arguments[0];
 
             if (key == range[0]) return child.next();
             if (key == null) return filtered.next();
@@ -660,7 +688,7 @@ exports.State = State;
     }
     State.patch = patch;
     function toIterator(state) {
-        var range = arguments[1] === undefined ? _range2['default'].all : arguments[1];
+        var range = arguments.length <= 1 || arguments[1] === undefined ? _range2['default'].all : arguments[1];
 
         var current = null;
         function get() {
@@ -862,7 +890,7 @@ exports.State = State;
 })(State || (exports.State = State = {}));
 exports['default'] = State;
 
-},{"./async_iterator":1,"./cache":2,"./key":3,"./range":9,"./tree":11}],11:[function(require,module,exports){
+},{"./async_iterator":1,"./cache":2,"./key":3,"./range":8,"./tree":11}],11:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, '__esModule', {
@@ -967,66 +995,5 @@ exports.Tree = Tree;
 })(Tree || (exports.Tree = Tree = {}));
 exports['default'] = Tree;
 
-},{"./state":10}],12:[function(require,module,exports){
-'use strict';
-
-Object.defineProperty(exports, '__esModule', {
-    value: true
-});
-exports.Sonic = Sonic;
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
-
-var _state = require('./state');
-
-var _state2 = _interopRequireDefault(_state);
-
-var _async_iterator = require('./async_iterator');
-
-var _async_iterator2 = _interopRequireDefault(_async_iterator);
-
-var _list = require('./list');
-
-var _list2 = _interopRequireDefault(_list);
-
-var _tree = require('./tree');
-
-var _tree2 = _interopRequireDefault(_tree);
-
-var _cache = require('./cache');
-
-var _cache2 = _interopRequireDefault(_cache);
-
-var _observable = require('./observable');
-
-var _mutable = require('./mutable');
-
-var _mutable2 = _interopRequireDefault(_mutable);
-
-var _promise_utils = require('./promise_utils');
-
-var _promise_utils2 = _interopRequireDefault(_promise_utils);
-
-function Sonic(obj) {
-    if (obj instanceof Array) return _mutable2['default'].create(_state2['default'].fromArray(obj), new _observable.Subject());
-    if (obj instanceof Object) return _mutable2['default'].create(_state2['default'].fromObject(obj), new _observable.Subject());
-}
-
-var Sonic;
-exports.Sonic = Sonic;
-(function (Sonic) {
-    Sonic.State = _state2['default'];
-    Sonic.AsyncIterator = _async_iterator2['default'];
-    Sonic.List = _list2['default'];
-    Sonic.Tree = _tree2['default'];
-    Sonic.Subject = _observable.Subject;
-    Sonic.Mutable = _mutable2['default'];
-    Sonic.Cache = _cache2['default'];
-    Sonic.PromiseUtils = _promise_utils2['default'];
-})(Sonic || (exports.Sonic = exports.Sonic = Sonic = {}));
-;
-module.exports = Sonic;
-exports['default'] = Sonic;
-
-},{"./async_iterator":1,"./cache":2,"./list":4,"./mutable":5,"./observable":6,"./promise_utils":8,"./state":10,"./tree":11}]},{},[12])(12)
+},{"./state":10}]},{},[9])(9)
 });
