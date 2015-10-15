@@ -45,13 +45,14 @@ export var Subject;
 (function (Subject) {
     function create() {
         const observers = Object.create(null);
+        var current = Promise.resolve();
         function subscribe(observer) {
             var observerKey = Key.create();
             observers[observerKey] = observer;
             return Disposable.create(() => delete observers[observerKey]);
         }
         function onNext(value) {
-            return Promise.all(Object.keys(observers).map(key => observers[key].onNext(value))).then(() => { });
+            return current = current.then(() => Promise.all(Object.keys(observers).map(key => observers[key].onNext(value))).then(() => { }));
         }
         return { subscribe, onNext };
     }

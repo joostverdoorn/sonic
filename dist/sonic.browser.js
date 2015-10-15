@@ -416,6 +416,7 @@ exports.Subject = Subject;
 (function (Subject) {
     function create() {
         var observers = Object.create(null);
+        var current = Promise.resolve();
         function subscribe(observer) {
             var observerKey = _key2['default'].create();
             observers[observerKey] = observer;
@@ -424,9 +425,11 @@ exports.Subject = Subject;
             });
         }
         function onNext(value) {
-            return Promise.all(Object.keys(observers).map(function (key) {
-                return observers[key].onNext(value);
-            })).then(function () {});
+            return current = current.then(function () {
+                return Promise.all(Object.keys(observers).map(function (key) {
+                    return observers[key].onNext(value);
+                })).then(function () {});
+            });
         }
         return { subscribe: subscribe, onNext: onNext };
     }

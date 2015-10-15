@@ -65,6 +65,7 @@ export module Observable {
 export module Subject {
   export function create<T>(): Subject<T> {
     const observers: {[key: string]: Observer<T>} = Object.create(null);
+    var current = Promise.resolve();
 
     function subscribe(observer: Observer<T>): Disposable {
       var observerKey = Key.create();
@@ -73,7 +74,7 @@ export module Subject {
     }
 
     function onNext(value: T): Promise<void> {
-      return Promise.all(Object.keys(observers).map(key => observers[key].onNext(value))).then(() => {});
+      return current = current.then(() => Promise.all(Object.keys(observers).map(key => observers[key].onNext(value))).then(() => {}));
     }
 
     return { subscribe, onNext };
