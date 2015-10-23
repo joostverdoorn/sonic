@@ -34,7 +34,11 @@ export var List;
     }
     List.filter = filter;
     function zoom(parent, key) {
-        var state = State.zoom(parent.state, key), patches = Observable.map(Observable.filter(parent.patches, patch => AsyncIterator.some(State.toIterator(parent.state, patch.range), (value, k) => k === key)), patch => {
+        var parentState = parent.state, state = State.zoom(parent.state, key), patches = Observable.map(Observable.filter(parent.patches, patch => {
+            return AsyncIterator.some(State.toIterator(parentState, patch.range), (value, k) => k === key)
+                .then(res => patch.added ? State.has(patch.added, key) : res);
+        }), patch => {
+            parentState = parent.state;
             return {
                 range: Range.all,
                 added: patch.added ? State.zoom(patch.added, key) : undefined

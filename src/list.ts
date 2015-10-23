@@ -1,16 +1,16 @@
-import   Key          from './key';
-import   Patch        from './patch';
-import   State        from './state';
-import   Cache        from './cache';
+import   Key           from './key';
+import   Patch         from './patch';
+import   State         from './state';
+import   Cache         from './cache';
 import { Range,
          PrevPosition,
          NextPosition,
-         Position }   from './range';
+         Position }    from './range';
 import { Tree,
-         Path }       from './tree';
+         Path }        from './tree';
 import { Observable,
-         Subject }    from './observable';
-import AsyncIterator  from './async_iterator';
+         Subject }     from './observable';
+import   AsyncIterator from './async_iterator';
 
 
 export interface List<V> {
@@ -54,10 +54,15 @@ export module List {
   }
 
   export function zoom<V>(parent: List<V>, key: Key): List<V> {
-    var state   = State.zoom(parent.state, key),
+    var parentState = parent.state,
+        state   = State.zoom(parent.state, key),
         patches = Observable.map(
-          Observable.filter(parent.patches, patch => AsyncIterator.some(State.toIterator(parent.state, patch.range), (value, k) => k === key))
+          Observable.filter(parent.patches, patch => {
+            return AsyncIterator.some(State.toIterator(parentState, patch.range), (value, k) => k === key)
+              .then(res => patch.added ? State.has(patch.added, key) : res)
+          })
         , patch => {
+          parentState = parent.state;
           return {
             range: Range.all,
             added: patch.added ? State.zoom(patch.added, key) : undefined

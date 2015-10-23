@@ -336,12 +336,16 @@ exports.List = List;
     }
     List.filter = filter;
     function zoom(parent, key) {
-        var state = _state2['default'].zoom(parent.state, key),
+        var parentState = parent.state,
+            state = _state2['default'].zoom(parent.state, key),
             patches = _observable.Observable.map(_observable.Observable.filter(parent.patches, function (patch) {
-            return _async_iterator2['default'].some(_state2['default'].toIterator(parent.state, patch.range), function (value, k) {
+            return _async_iterator2['default'].some(_state2['default'].toIterator(parentState, patch.range), function (value, k) {
                 return k === key;
+            }).then(function (res) {
+                return patch.added ? _state2['default'].has(patch.added, key) : res;
             });
         }), function (patch) {
+            parentState = parent.state;
             return {
                 range: _range.Range.all,
                 added: patch.added ? _state2['default'].zoom(patch.added, key) : undefined
