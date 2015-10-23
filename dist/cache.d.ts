@@ -14,6 +14,6 @@ export declare type Cache<V> = {
 export declare module Cache {
     function create<V>(): Cache<V>;
     function extend<V>(cache: Cache<V>): Cache<V>;
-    function apply<V>(cache: Cache<V>, state: State<V>): State<V>;
+    function apply<V>(state: State<V>, cache: Cache<V>): State<V>;
 }
 export default Cache;

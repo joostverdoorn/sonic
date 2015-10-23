@@ -4,6 +4,8 @@ export interface AsyncIterator<V> {
     next: () => Promise<Key>;
 }
 export declare module AsyncIterator {
+    type Entry<V> = [Key, V];
+    const Empty: AsyncIterator<any>;
     interface Partial<V> {
         get?: () => Promise<V>;
         next?: () => Promise<Key>;
@@ -20,6 +22,12 @@ export declare module AsyncIterator {
     function keyAt<V>(iterator: AsyncIterator<V>, index: number): Promise<Key>;
     function at<V>(iterator: AsyncIterator<V>, index: number): Promise<V>;
     function contains<V>(iterator: AsyncIterator<V>, value: V): Promise<boolean>;
+    function concat<V>(...iterators: AsyncIterator<V>[]): AsyncIterator<V>;
+    function fromEntries<V>(entries: Entry<V>[]): AsyncIterator<V>;
+    function fromArray<V>(array: V[]): AsyncIterator<V>;
+    function fromObject<V>(object: {
+        [key: string]: V;
+    }): AsyncIterator<V>;
     function toArray<V>(iterator: AsyncIterator<V>): Promise<V[]>;
     function toObject<V>(iterator: AsyncIterator<V>): Promise<{
         [key: string]: V;

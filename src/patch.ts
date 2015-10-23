@@ -7,7 +7,7 @@ export interface Patch<V> {
 };
 
 export module Patch {
-  export function apply<V>(patch: Patch<V>, state: State<V>): State<V> {
+  export function apply<V>(state: State<V>, patch: Patch<V>): State<V> {
     return State.splice(state, patch.range, patch.added);
   }
 }

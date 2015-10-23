@@ -2,7 +2,7 @@ import State from './state';
 ;
 export var Patch;
 (function (Patch) {
-    function apply(patch, state) {
+    function apply(state, patch) {
         return State.splice(state, patch.range, patch.added);
     }
     Patch.apply = apply;

@@ -1,6 +1,5 @@
 import Key from './key';
-import Range from './range';
-import Patch from './patch';
+import { Range } from './range';
 import AsyncIterator from './async_iterator';
 import { Tree } from './tree';
 export interface State<V> {
@@ -19,13 +18,14 @@ export declare module State {
         prev: (key?: number | string) => Promise<number | string> | Promise<{}>;
         next: (key?: number | string) => Promise<number | string> | Promise<{}>;
     };
+    function extend<V, W>(parent: State<V>, {get, prev, next}: Partial<W>): State<W>;
     function first<V>(state: State<V>): Promise<V>;
     function last<V>(state: State<V>): Promise<V>;
-    function extend<V, W>(parent: State<V>, {get, prev, next}: Partial<W>): State<W>;
+    function has<V>(state: State<V>, key: Key): Promise<boolean>;
+    function contains<V>(state: State<V>, value: V): Promise<boolean>;
+    function isEmpty<V>(state: State<V>): Promise<boolean>;
     function slice<V>(parent: State<V>, range?: Range): State<V>;
     function splice<V>(parent: State<V>, range: Range, child?: State<V>): State<V>;
-    function patch<V>(parent: State<V>, patch: Patch<V>): State<V>;
-    function toIterator<V>(state: State<V>, range?: Range): AsyncIterator<V>;
     function reverse<V>(parent: State<V>): State<V>;
     function map<V, W>(parent: State<V>, mapFn: (value: V, key?: Key) => W | Promise<W>): State<W>;
     function filter<V>(parent: State<V>, filterFn: (value: V, key?: Key) => boolean | Promise<boolean>): State<V>;
@@ -38,5 +38,6 @@ export declare module State {
         [key: string]: V;
     }): State<V>;
     function fromIterator<V>(iterator: AsyncIterator<V>): State<V>;
+    function toIterator<V>(state: State<V>, range?: Range): AsyncIterator<V>;
 }
 export default State;

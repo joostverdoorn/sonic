@@ -7,6 +7,13 @@ export interface AsyncIterator<V> {
 
 export module AsyncIterator {
 
+  export type Entry<V> = [Key, V];
+
+  export const Empty: AsyncIterator<any> = {
+    get: () => Key.NOT_FOUND,
+    next: () => Promise.resolve(Key.sentinel)
+  }
+
   export interface Partial<V> {
     get?:  () => Promise<V>
     next?: () => Promise<Key>
@@ -68,6 +75,34 @@ export module AsyncIterator {
 
   export function contains<V>(iterator: AsyncIterator<V>, value: V): Promise<boolean> {
     return some(iterator, v => v === value);
+  }
+
+  export function concat<V>(...iterators: AsyncIterator<V>[]): AsyncIterator<V> {
+    return iterators.reduce((memo, value) => {
+      var iterated = false;
+
+      return {
+        get:  () => iterated ? value.get() : memo.get(),
+        next: () => iterated ? value.next() : memo.next().then(key => key !== Key.sentinel ? key : (iterated = true, value.next()))
+      }
+    }, Empty);
+  }
+
+  export function fromEntries<V>(entries: Entry<V>[]): AsyncIterator<V> {
+    var current = -1;
+
+    return {
+      get:  () => current === -1 ? Key.NOT_FOUND : Promise.resolve(entries[current][1]),
+      next: () => Promise.resolve(++current === entries.length ? Key.sentinel : entries[current][0])
+    }
+  }
+
+  export function fromArray<V>(array: V[]): AsyncIterator<V> {
+    return fromEntries(array.map<Entry<V>>((value, key) => [key, value]));
+  }
+
+  export function fromObject<V>(object: {[key: string]: V}): AsyncIterator<V> {
+    return fromEntries(Object.keys(object).map<Entry<V>>(key => [key, object[key]]));
   }
 
   export function toArray<V>(iterator: AsyncIterator<V>): Promise<V[]> {

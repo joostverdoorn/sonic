@@ -25,16 +25,16 @@ export module Cache {
     }
   }
 
-  export function apply<V>(cache: Cache<V>, state: State<V>): State<V> {
+  export function apply<V>(state: State<V>, cache: Cache<V>): State<V> {
     function get(key: Key): Promise<V> {
       return key in cache.get ? cache.get[key] : cache.get[key] = state.get(key);
     }
 
-    function prev(key: Key = Key.None): Promise<Key> {
+    function prev(key: Key = Key.sentinel): Promise<Key> {
       return key in cache.prev ? cache.prev[key] : cache.prev[key] = state.prev(key).then(prev => {cache.next[prev] = Promise.resolve(key); return prev});
     }
 
-    function next(key: Key = Key.None): Promise<Key> {
+    function next(key: Key = Key.sentinel): Promise<Key> {
       return key in cache.next ? cache.next[key] : cache.next[key] = state.next(key).then(next => {cache.prev[next] = Promise.resolve(key); return next});
     }
 

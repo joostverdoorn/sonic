@@ -1,6 +1,10 @@
 import Key from './key';
 export var AsyncIterator;
 (function (AsyncIterator) {
+    AsyncIterator.Empty = {
+        get: () => Key.NOT_FOUND,
+        next: () => Promise.resolve(Key.sentinel)
+    };
     function extend(iterator, partial) {
         iterator = Object.create(iterator);
         if ('get' in partial)
@@ -60,6 +64,32 @@ export var AsyncIterator;
         return some(iterator, v => v === value);
     }
     AsyncIterator.contains = contains;
+    function concat(...iterators) {
+        return iterators.reduce((memo, value) => {
+            var iterated = false;
+            return {
+                get: () => iterated ? value.get() : memo.get(),
+                next: () => iterated ? value.next() : memo.next().then(key => key !== Key.sentinel ? key : (iterated = true, value.next()))
+            };
+        }, AsyncIterator.Empty);
+    }
+    AsyncIterator.concat = concat;
+    function fromEntries(entries) {
+        var current = -1;
+        return {
+            get: () => current === -1 ? Key.NOT_FOUND : Promise.resolve(entries[current][1]),
+            next: () => Promise.resolve(++current === entries.length ? Key.sentinel : entries[current][0])
+        };
+    }
+    AsyncIterator.fromEntries = fromEntries;
+    function fromArray(array) {
+        return fromEntries(array.map((value, key) => [key, value]));
+    }
+    AsyncIterator.fromArray = fromArray;
+    function fromObject(object) {
+        return fromEntries(Object.keys(object).map(key => [key, object[key]]));
+    }
+    AsyncIterator.fromObject = fromObject;
     function toArray(iterator) {
         return reduce(iterator, (memo, value) => (memo.push(value), memo), []);
     }

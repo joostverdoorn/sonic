@@ -1,20 +1,28 @@
 import Key   from './key';
 
-export type Range = [Key, Key];
+export type Range = [Position, Position];
+
+export type PrevPosition = {
+  prev: Key
+}
+
+export type NextPosition = {
+  next: Key
+}
+
+export type Position = PrevPosition | NextPosition;
 
 export module Range {
-  export const all: Range = [Key.None, Key.None];
+  export const all: Range = [{next: Key.sentinel}, {prev: Key.sentinel}];
+}
 
-  export function from(key: Key): Range {
-    return [key, Key.None];
+export module Position {
+  export function isPrevPosition(position: Position): position is PrevPosition {
+    return 'prev' in position;
   }
 
-  export function to(key: Key): Range {
-    return [Key.None, key];
-  }
-
-  export function between(a: Key, b: Key): Range {
-    return [a, b];
+  export function isNextPosition(position: Position): position is NextPosition {
+    return 'next' in position;
   }
 }
 

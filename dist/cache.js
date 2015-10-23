@@ -17,14 +17,14 @@ export var Cache;
         };
     }
     Cache.extend = extend;
-    function apply(cache, state) {
+    function apply(state, cache) {
         function get(key) {
             return key in cache.get ? cache.get[key] : cache.get[key] = state.get(key);
         }
-        function prev(key = Key.None) {
+        function prev(key = Key.sentinel) {
             return key in cache.prev ? cache.prev[key] : cache.prev[key] = state.prev(key).then(prev => { cache.next[prev] = Promise.resolve(key); return prev; });
         }
-        function next(key = Key.None) {
+        function next(key = Key.sentinel) {
             return key in cache.next ? cache.next[key] : cache.next[key] = state.next(key).then(next => { cache.prev[next] = Promise.resolve(key); return next; });
         }
         return { get, prev, next };

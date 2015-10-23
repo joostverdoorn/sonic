@@ -1,5 +1,5 @@
 import Key from './key';
-import Range from './range';
+import { Position, Range } from './range';
 import Cache from './cache';
 import AsyncIterator from './async_iterator';
 import { Tree, Path } from './tree';
@@ -7,17 +7,9 @@ export var State;
 (function (State) {
     State.Empty = {
         get: (key) => Key.NOT_FOUND,
-        prev: (key) => key == null ? Promise.resolve(Key.None) : Key.NOT_FOUND,
-        next: (key) => key == null ? Promise.resolve(Key.None) : Key.NOT_FOUND
+        prev: (key = Key.sentinel) => key == Key.sentinel ? Promise.resolve(Key.sentinel) : Key.NOT_FOUND,
+        next: (key = Key.sentinel) => key == Key.sentinel ? Promise.resolve(Key.sentinel) : Key.NOT_FOUND
     };
-    function first(state) {
-        return state.next().then(key => state.get(key));
-    }
-    State.first = first;
-    function last(state) {
-        return state.prev().then(key => state.get(key));
-    }
-    State.last = last;
     function extend(parent, { get, prev, next }) {
         var state = Object.create(parent);
         if (get)
@@ -29,51 +21,75 @@ export var State;
         return state;
     }
     State.extend = extend;
-    function slice(parent, range = [null, null]) {
+    function first(state) {
+        return state.next().then(key => state.get(key));
+    }
+    State.first = first;
+    function last(state) {
+        return state.prev().then(key => state.get(key));
+    }
+    State.last = last;
+    function has(state, key) {
+        return state.get(key).then(() => true, reason => reason === Key.NOT_FOUND_ERROR ? false : Promise.reject(reason));
+    }
+    State.has = has;
+    function contains(state, value) {
+        return AsyncIterator.some(toIterator(state), (v, k) => v === value);
+    }
+    State.contains = contains;
+    function isEmpty(state) {
+        return state.next().then(next => next === Key.sentinel);
+    }
+    State.isEmpty = isEmpty;
+    function slice(parent, range = Range.all) {
         return fromIterator(toIterator(parent, range));
     }
     State.slice = slice;
-    function splice(parent, range, child = State.Empty) {
-        if (range[0] === range[1] && range[0] != null)
-            return parent;
-        const deleted = slice(parent, range), filtered = filter(parent, (value, key) => deleted.get(key).then(() => false, () => true));
-        if (child === State.Empty)
+    function splice(parent, range, child) {
+        var deleted = slice(parent, range), filtered = filter(parent, (value, key) => deleted.get(key).then(() => false, () => true));
+        if (child == null)
             return filtered;
+        var bridgedChild, bridgedParent, from = range[0], to = range[1];
+        bridgedChild = extend(child, {
+            prev: key => child.prev(key).then(prev => {
+                if (prev !== Key.sentinel)
+                    return Promise.resolve(prev);
+                return Position.isNextPosition(from) ? Promise.resolve(from.next) : parent.prev(from.prev);
+            }),
+            next: key => child.next(key).then(next => {
+                if (next !== Key.sentinel)
+                    return Promise.resolve(next);
+                return Position.isPrevPosition(to) ? Promise.resolve(to.prev) : parent.next(to.next);
+            })
+        });
+        bridgedParent = extend(filtered, {
+            prev: key => parent.prev(key).then(prev => {
+                if (Position.isNextPosition(to) && prev === to.next)
+                    return bridgedChild.prev(Key.sentinel);
+                return has(deleted, prev).then(res => res ? Key.NOT_FOUND : prev);
+            }),
+            next: key => parent.next(key).then(next => {
+                if (Position.isPrevPosition(from) && next === from.prev)
+                    return bridgedChild.next(Key.sentinel);
+                return has(deleted, next).then(res => res ? Key.NOT_FOUND : next);
+            })
+        });
         function get(key) {
-            return child.get(key).catch(reason => reason === Key.NOT_FOUND_ERROR ? filtered.get(key) : Promise.reject(reason));
+            return child.get(key).catch(reason => reason === Key.NOT_FOUND_ERROR ? bridgedParent.get(key) : Promise.reject(reason));
         }
-        function prev(key = null) {
-            if (key == range[0])
-                return child.prev();
-            if (key == null)
-                return filtered.prev();
-            return child.prev(key).then(prev => prev == null ? range[1] : prev, reason => reason === Key.NOT_FOUND_ERROR ? filtered.next(key) : Promise.reject(reason));
+        function prev(key = Key.sentinel) {
+            if (Position.isPrevPosition(to) && key === to.prev)
+                return bridgedParent.next(Key.sentinel);
+            return has(bridgedChild, key).then(res => res ? bridgedChild.prev(key) : bridgedParent.prev(key));
         }
-        function next(key = null) {
-            if (key == range[0])
-                return child.next();
-            if (key == null)
-                return filtered.next();
-            return child.next(key).then(next => next == null ? range[1] : next, reason => reason === Key.NOT_FOUND_ERROR ? filtered.next(key) : Promise.reject(reason));
+        function next(key = Key.sentinel) {
+            if (Position.isNextPosition(from) && key === from.next)
+                return bridgedChild.next(Key.sentinel);
+            return has(bridgedChild, key).then(res => res ? bridgedChild.next(key) : bridgedParent.next(key));
         }
         return { get, prev, next };
     }
     State.splice = splice;
-    function patch(parent, patch) {
-        return splice(parent, patch.range, patch.added);
-    }
-    State.patch = patch;
-    function toIterator(state, range = Range.all) {
-        var current = null;
-        function get() {
-            return state.get(current);
-        }
-        function next() {
-            return state.next(current === null ? range[0] : current).then(next => current = (next == range[1] ? null : next));
-        }
-        return { get, next };
-    }
-    State.toIterator = toIterator;
     function reverse(parent) {
         return extend(parent, {
             prev: parent.next,
@@ -118,7 +134,7 @@ export var State;
     }
     State.flatten = flatten;
     function cache(parent) {
-        return Cache.apply(Cache.create(), parent);
+        return Cache.apply(parent, Cache.create());
     }
     State.cache = cache;
     function keyBy(parent, keyFn) {
@@ -206,8 +222,27 @@ export var State;
                 return cachingIterator.next();
             return AsyncIterator.findKey(cachingIterator, (value, k) => k === key).then(() => cachingIterator.next());
         }
-        return Cache.apply(cache, { get, prev, next });
+        return Cache.apply({ get, prev, next }, cache);
     }
     State.fromIterator = fromIterator;
+    function toIterator(state, range = Range.all) {
+        var current = Key.sentinel;
+        function get() {
+            return state.get(current);
+        }
+        function next() {
+            var from = range[0], to = range[1];
+            function iterate(key) {
+                return state.next(key).then(next => Position.isPrevPosition(to) && to.prev === next ? current = Key.sentinel : current = next);
+            }
+            if (current === Key.sentinel)
+                return Position.isPrevPosition(from) ? Promise.resolve(current = from.prev) : iterate(from.next);
+            if (Position.isNextPosition(to) && to.next === current)
+                return Promise.resolve(current = Key.sentinel);
+            return iterate(current);
+        }
+        return { get, next };
+    }
+    State.toIterator = toIterator;
 })(State || (State = {}));
 export default State;

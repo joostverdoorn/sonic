@@ -1,5 +1,6 @@
 import   Key           from './key';
-import   Range         from './range';
+import { Position,
+         Range }       from './range';
 import   Patch         from './patch';
 import   Cache         from './cache';
 import   AsyncIterator from './async_iterator';
@@ -14,7 +15,6 @@ export interface State<V> {
   next: (key?: Key) => Promise<Key>;
 }
 
-
 export module State {
   export interface Partial<V> {
     get?:  (key: Key)  => Promise<V>;
@@ -24,16 +24,8 @@ export module State {
 
   export const Empty = {
     get: (key: Key) => Key.NOT_FOUND,
-    prev: (key?: Key) => key == null ? Promise.resolve(Key.None) : Key.NOT_FOUND,
-    next: (key?: Key) => key == null ? Promise.resolve(Key.None) : Key.NOT_FOUND
-  }
-
-  export function first<V>(state: State<V>): Promise<V> {
-    return state.next().then(key => state.get(key));
-  }
-
-  export function last<V>(state: State<V>): Promise<V> {
-    return state.prev().then(key => state.get(key));
+    prev: (key = Key.sentinel) => key == Key.sentinel ? Promise.resolve(Key.sentinel) : Key.NOT_FOUND,
+    next: (key = Key.sentinel) => key == Key.sentinel ? Promise.resolve(Key.sentinel) : Key.NOT_FOUND
   }
 
   export function extend<V, W>(parent: State<V>, { get, prev, next }: Partial<W>): State<W> {
@@ -44,60 +36,80 @@ export module State {
     return state;
   }
 
-  export function slice<V>(parent: State<V>, range: Range = [null, null]): State<V> {
+  export function first<V>(state: State<V>): Promise<V> {
+    return state.next().then(key => state.get(key));
+  }
+
+  export function last<V>(state: State<V>): Promise<V> {
+    return state.prev().then(key => state.get(key));
+  }
+
+  export function has<V>(state: State<V>, key: Key): Promise<boolean> {
+    return state.get(key).then(() => true, reason => reason === Key.NOT_FOUND_ERROR ? false : Promise.reject(reason));
+  }
+
+  export function contains<V>(state: State<V>, value: V): Promise<boolean> {
+    return AsyncIterator.some(toIterator(state), (v, k) => v === value);
+  }
+
+  export function isEmpty<V>(state: State<V>): Promise<boolean> {
+    return state.next().then(next => next === Key.sentinel);
+  }
+
+  export function slice<V>(parent: State<V>, range: Range = Range.all): State<V> {
     return fromIterator(toIterator(parent, range));
   }
 
+  export function splice<V>(parent: State<V>, range: Range, child?: State<V>): State<V> {
+    var deleted = slice(parent, range),
+        filtered = filter(parent, (value, key) => deleted.get(key).then(() => false, () => true));
 
-  export function splice<V>(parent: State<V>, range: Range, child: State<V> = Empty): State<V> {
-    if (range[0] === range[1] && range[0] != null) return parent;
+    if (child == null) return filtered;
 
-    const deleted = slice(parent, range),
-          filtered = filter(parent, (value, key) => deleted.get(key).then(() => false, () => true));
+    var bridgedChild: State<V>,
+        bridgedParent: State<V>,
+        from = range[0],
+        to   = range[1];
 
-    if (child === Empty) return filtered;
+    bridgedChild = extend(child, {
+      prev: key => child.prev(key).then(prev => {
+        if (prev !== Key.sentinel) return Promise.resolve(prev);
+        return Position.isNextPosition(from) ? Promise.resolve(from.next) : parent.prev(from.prev);
+      }),
+
+      next: key => child.next(key).then(next => {
+        if (next !== Key.sentinel) return Promise.resolve(next);
+        return Position.isPrevPosition(to) ? Promise.resolve(to.prev) : parent.next(to.next);
+      })
+    });
+
+    bridgedParent = extend(filtered, {
+      prev: key => parent.prev(key).then(prev => {
+        if (Position.isNextPosition(to) && prev === to.next) return bridgedChild.prev(Key.sentinel);
+        return has(deleted, prev).then(res => res ? Key.NOT_FOUND : prev);
+      }),
+
+      next: key => parent.next(key).then(next => {
+        if (Position.isPrevPosition(from) && next === from.prev) return bridgedChild.next(Key.sentinel);
+        return has(deleted, next).then(res => res ? Key.NOT_FOUND : next);
+      })
+    });
 
     function get(key: Key): Promise<V> {
-      return child.get(key).catch(reason => reason === Key.NOT_FOUND_ERROR ? filtered.get(key) : Promise.reject(reason));
+      return child.get(key).catch(reason => reason === Key.NOT_FOUND_ERROR ? bridgedParent.get(key) : Promise.reject(reason));
     }
 
-    function prev(key: Key = null): Promise<Key> {
-      if (key == range[0]) return child.prev();
-      if (key == null) return filtered.prev();
-      return child.prev(key).then(
-        prev => prev == null ? range[1] : prev,
-        reason => reason === Key.NOT_FOUND_ERROR ? filtered.next(key) : Promise.reject(reason)
-      );
+    function prev(key: Key = Key.sentinel): Promise<Key> {
+      if (Position.isPrevPosition(to) && key === to.prev) return bridgedParent.next(Key.sentinel);
+      return has(bridgedChild, key).then(res => res ? bridgedChild.prev(key) : bridgedParent.prev(key));
     }
 
-    function next(key: Key = null): Promise<Key> {
-      if (key == range[0]) return child.next();
-      if (key == null) return filtered.next();
-      return child.next(key).then(
-        next => next == null ? range[1] : next,
-        reason => reason === Key.NOT_FOUND_ERROR ? filtered.next(key) : Promise.reject(reason)
-      );
+    function next(key = Key.sentinel): Promise<Key> {
+      if (Position.isNextPosition(from) && key === from.next) return bridgedChild.next(Key.sentinel);
+      return has(bridgedChild, key).then(res => res ? bridgedChild.next(key) : bridgedParent.next(key));
     }
 
     return {get, prev, next};
-  }
-
-  export function patch<V>(parent: State<V>, patch: Patch<V>): State<V> {
-    return splice(parent, patch.range, patch.added);
-  }
-
-  export function toIterator<V>(state: State<V>, range: Range = Range.all): AsyncIterator<V> {
-    var current: Key = null;
-
-    function get(): Promise<V> {
-      return state.get(current);
-    }
-
-    function next(): Promise<Key> {
-      return state.next(current === null ? range[0] : current).then(next => current = (next == range[1] ? null : next));
-    }
-
-    return {get, next};
   }
 
   export function reverse<V>(parent: State<V>): State<V> {
@@ -148,7 +160,7 @@ export module State {
   }
 
   export function cache<V>(parent: State<V>): State<V> {
-    return Cache.apply(Cache.create(), parent);
+    return Cache.apply(parent, Cache.create());
   }
 
   export function keyBy<V>(parent: State<V>, keyFn: (value: V, key?: Key) => Key | Promise<Key>): State<V> {
@@ -241,7 +253,30 @@ export module State {
       return AsyncIterator.findKey(cachingIterator, (value, k) => k === key).then(() => cachingIterator.next());
     }
 
-    return Cache.apply(cache, {get, prev, next});
+    return Cache.apply({get, prev, next}, cache);
+  }
+
+  export function toIterator<V>(state: State<V>, range: Range = Range.all): AsyncIterator<V> {
+    var current: Key = Key.sentinel;
+
+    function get(): Promise<V> {
+      return state.get(current);
+    }
+
+    function next(): Promise<Key> {
+      var from = range[0],
+          to   = range[1];
+
+      function iterate(key: Key) {
+        return state.next(key).then(next => Position.isPrevPosition(to) && to.prev === next ? current = Key.sentinel : current = next);
+      }
+
+      if (current === Key.sentinel) return Position.isPrevPosition(from) ? Promise.resolve(current = from.prev) : iterate(from.next);
+      if (Position.isNextPosition(to) && to.next === current) return Promise.resolve(current = Key.sentinel);
+      return iterate(current);
+    }
+
+    return {get, next};
   }
 }
 

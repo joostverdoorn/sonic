@@ -5,6 +5,6 @@ export interface Patch<V> {
     added?: State<V>;
 }
 export declare module Patch {
-    function apply<V>(patch: Patch<V>, state: State<V>): State<V>;
+    function apply<V>(state: State<V>, patch: Patch<V>): State<V>;
 }
 export default Patch;
