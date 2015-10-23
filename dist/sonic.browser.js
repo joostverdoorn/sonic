@@ -77,7 +77,7 @@ exports.AsyncIterator = AsyncIterator;
                 return res ? (key = k, true) : false;
             });
         }).then(function (found) {
-            return found ? key : _key3['default'].NOT_FOUND;
+            return found ? key : _key3['default'].sentinel;
         });
     }
     AsyncIterator.findKey = findKey;
@@ -310,28 +310,21 @@ exports.List = List;
     }
     List.map = map;
     function filter(parent, filterFn) {
-        var list,
-            state = _state2['default'].filter(parent.state, filterFn),
+        var state = _state2['default'].filter(parent.state, filterFn),
             patches = _observable.Observable.map(parent.patches, function (patch) {
-            var from = patch.range[0],
-                to = patch.range[1];
-            return Promise.all([_async_iterator2['default'].findKey(_state2['default'].toIterator(_state2['default'].reverse(state), [_range.Position.isPrevPosition(from) ? { next: from.prev } : { prev: from.next }, { prev: null }]), filterFn).then(function (next) {
+            return Promise.all([_async_iterator2['default'].findKey(_state2['default'].toIterator(_state2['default'].reverse(state), [_range.Position.reverse(patch.range[0]), { prev: null }]), filterFn).then(function (next) {
                 return { next: next };
-            }, function (reason) {
-                return reason === _key2['default'].NOT_FOUND_ERROR ? { next: _key2['default'].sentinel } : Promise.reject(reason);
-            }), _async_iterator2['default'].findKey(_state2['default'].toIterator(state, [to, { prev: null }]), filterFn).then(function (prev) {
+            }), _async_iterator2['default'].findKey(_state2['default'].toIterator(state, [patch.range[1], { prev: null }]), filterFn).then(function (prev) {
                 return { prev: prev };
-            }, function (reason) {
-                return reason === _key2['default'].NOT_FOUND_ERROR ? { prev: _key2['default'].sentinel } : Promise.reject(reason);
             })]).then(function (range) {
                 return {
                     range: range,
-                    added: patch.added == undefined ? undefined : _state2['default'].filter(patch.added, filterFn)
+                    added: patch.added ? _state2['default'].filter(patch.added, filterFn) : undefined
                 };
             });
         });
-        return list = create(state, patches, function (oldState, patche) {
-            return state = _patch2['default'].apply(oldState, patche);
+        return create(state, patches, function (oldState, patches) {
+            return state = _patch2['default'].apply(oldState, patches);
         });
     }
     List.filter = filter;
@@ -595,6 +588,10 @@ exports.Position = Position;
         return 'next' in position;
     }
     Position.isNextPosition = isNextPosition;
+    function reverse(position) {
+        return Position.isPrevPosition(position) ? { next: position.prev } : { prev: position.next };
+    }
+    Position.reverse = reverse;
 })(Position || (exports.Position = Position = {}));
 exports['default'] = Range;
 

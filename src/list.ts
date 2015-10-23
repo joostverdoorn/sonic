@@ -21,36 +21,27 @@ export interface List<V> {
 export module List {
   export function map<V, W>(parent: List<V>, mapFn: (value: V, key: Key) => W | Promise<W>): List<W> {
     var state = State.map(parent.state, mapFn),
-        patches = Observable.map<Patch<V>, Patch<W>>(parent.patches, patch => {
-          return {
-            range: patch.range,
-            added: patch.added ? State.map(patch.added, mapFn) : undefined
-          };
-        });
+        patches = Observable.map(parent.patches, patch => ({
+          range: patch.range,
+          added: patch.added ? State.map(patch.added, mapFn) : undefined
+        }));
 
     return create(state, patches);
   }
 
   export function filter<V>(parent: List<V>, filterFn: (value: V, key: Key) => boolean): List<V> {
-    var list: List<V>,
-        state = State.filter(parent.state, filterFn),
+    var state = State.filter(parent.state, filterFn),
         patches = Observable.map(parent.patches, patch => {
-          var from = patch.range[0],
-              to   = patch.range[1];
-
           return Promise.all<Position>([
-            AsyncIterator.findKey(State.toIterator(State.reverse(state), [Position.isPrevPosition(from) ? {next: from.prev} : {prev: from.next}, {prev: null}]), filterFn)
-              .then(next => ({next}), reason => reason === Key.NOT_FOUND_ERROR ? {next: Key.sentinel} : Promise.reject(reason)),
-
-            AsyncIterator.findKey(State.toIterator(state, [to, {prev: null}]), filterFn)
-              .then(prev => ({prev}), reason => reason === Key.NOT_FOUND_ERROR ? {prev: Key.sentinel} : Promise.reject(reason)),
+            AsyncIterator.findKey(State.toIterator(State.reverse(state), [Position.reverse(patch.range[0]), {prev: null}]), filterFn).then(next => ({next})),
+            AsyncIterator.findKey(State.toIterator(state, [patch.range[1], {prev: null}]), filterFn).then(prev => ({prev}))
           ]).then((range: Range) => ({
             range: range,
-            added: patch.added == undefined ? undefined : State.filter(patch.added, filterFn)
+            added: patch.added ? State.filter(patch.added, filterFn) : undefined
           }));
         });
 
-    return list = create(state, patches, (oldState, patche) => state = Patch.apply(oldState, patche));
+    return create(state, patches, (oldState, patches) => state = Patch.apply(oldState, patches));
   }
 
   export function zoom<V>(parent: List<V>, key: Key): List<V> {

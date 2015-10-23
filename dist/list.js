@@ -8,29 +8,24 @@ import AsyncIterator from './async_iterator';
 export var List;
 (function (List) {
     function map(parent, mapFn) {
-        var state = State.map(parent.state, mapFn), patches = Observable.map(parent.patches, patch => {
-            return {
-                range: patch.range,
-                added: patch.added ? State.map(patch.added, mapFn) : undefined
-            };
-        });
+        var state = State.map(parent.state, mapFn), patches = Observable.map(parent.patches, patch => ({
+            range: patch.range,
+            added: patch.added ? State.map(patch.added, mapFn) : undefined
+        }));
         return create(state, patches);
     }
     List.map = map;
     function filter(parent, filterFn) {
-        var list, state = State.filter(parent.state, filterFn), patches = Observable.map(parent.patches, patch => {
-            var from = patch.range[0], to = patch.range[1];
+        var state = State.filter(parent.state, filterFn), patches = Observable.map(parent.patches, patch => {
             return Promise.all([
-                AsyncIterator.findKey(State.toIterator(State.reverse(state), [Position.isPrevPosition(from) ? { next: from.prev } : { prev: from.next }, { prev: null }]), filterFn)
-                    .then(next => ({ next }), reason => reason === Key.NOT_FOUND_ERROR ? { next: Key.sentinel } : Promise.reject(reason)),
-                AsyncIterator.findKey(State.toIterator(state, [to, { prev: null }]), filterFn)
-                    .then(prev => ({ prev }), reason => reason === Key.NOT_FOUND_ERROR ? { prev: Key.sentinel } : Promise.reject(reason)),
+                AsyncIterator.findKey(State.toIterator(State.reverse(state), [Position.reverse(patch.range[0]), { prev: null }]), filterFn).then(next => ({ next })),
+                AsyncIterator.findKey(State.toIterator(state, [patch.range[1], { prev: null }]), filterFn).then(prev => ({ prev }))
             ]).then((range) => ({
                 range: range,
-                added: patch.added == undefined ? undefined : State.filter(patch.added, filterFn)
+                added: patch.added ? State.filter(patch.added, filterFn) : undefined
             }));
         });
-        return list = create(state, patches, (oldState, patche) => state = Patch.apply(oldState, patche));
+        return create(state, patches, (oldState, patches) => state = Patch.apply(oldState, patches));
     }
     List.filter = filter;
     function zoom(parent, key) {

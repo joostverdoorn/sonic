@@ -13,5 +13,6 @@ export declare module Range {
 export declare module Position {
     function isPrevPosition(position: Position): position is PrevPosition;
     function isNextPosition(position: Position): position is NextPosition;
+    function reverse(position: Position): Position;
 }
 export default Range;

@@ -36,7 +36,7 @@ export var AsyncIterator;
     function findKey(iterator, predicate) {
         var key;
         return some(iterator, (v, k) => Promise.resolve(predicate(v, k)).then(res => res ? (key = k, true) : false))
-            .then(found => found ? key : Key.NOT_FOUND);
+            .then(found => found ? key : Key.sentinel);
     }
     AsyncIterator.findKey = findKey;
     function find(iterator, predicate) {

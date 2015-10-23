@@ -24,6 +24,10 @@ export module Position {
   export function isNextPosition(position: Position): position is NextPosition {
     return 'next' in position;
   }
+
+  export function reverse(position: Position): Position {
+    return Position.isPrevPosition(position) ? {next: position.prev} : {prev: position.next};
+  }
 }
 
 export default Range;

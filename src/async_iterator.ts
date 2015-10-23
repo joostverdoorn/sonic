@@ -49,7 +49,7 @@ export module AsyncIterator {
   export function findKey<V>(iterator: AsyncIterator<V>, predicate: (value: V, key?: Key) => boolean | Promise<boolean>): Promise<Key> {
     var key: Key;
     return some(iterator, (v: V, k: Key) => Promise.resolve(predicate(v, k)).then(res => res ? (key = k, true) : false))
-      .then(found => found ? key : Key.NOT_FOUND);
+      .then(found => found ? key : Key.sentinel);
   }
 
   export function find<V>(iterator: AsyncIterator<V>, predicate: (value: V, key?: Key) => boolean | Promise<boolean>): Promise<V> {

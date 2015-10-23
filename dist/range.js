@@ -13,5 +13,9 @@ export var Position;
         return 'next' in position;
     }
     Position.isNextPosition = isNextPosition;
+    function reverse(position) {
+        return Position.isPrevPosition(position) ? { next: position.prev } : { prev: position.next };
+    }
+    Position.reverse = reverse;
 })(Position || (Position = {}));
 export default Range;
