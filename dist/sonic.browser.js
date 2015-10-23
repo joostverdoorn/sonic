@@ -287,6 +287,8 @@ var _state2 = _interopRequireDefault(_state);
 
 var _range = require('./range');
 
+var _tree = require('./tree');
+
 var _observable = require('./observable');
 
 var _async_iterator = require('./async_iterator');
@@ -348,6 +350,53 @@ exports.List = List;
         return create(state, patches);
     }
     List.zoom = zoom;
+    function flatten(parent) {
+        var patches_ = _observable.Subject.create();
+        var parent_ = cache(map(parent, function (list, key) {
+            _observable.Observable.map(list.patches, function (patch) {
+                var from = patch.range[0],
+                    to = patch.range[1];
+                function mapPrevPosition(position) {
+                    if (position.prev === _key2['default'].sentinel) return list.state.prev(_key2['default'].sentinel).then(function (next) {
+                        return { next: _tree.Path.toKey([key, next]) };
+                    });
+                    return Promise.resolve({ prev: _tree.Path.toKey([key, position.prev]) });
+                }
+                function mapNextPosition(position) {
+                    if (position.next === _key2['default'].sentinel) return list.state.next(_key2['default'].sentinel).then(function (prev) {
+                        return { prev: _tree.Path.toKey([key, prev]) };
+                    });
+                    return Promise.resolve({ next: _tree.Path.toKey([key, position.next]) });
+                }
+                return Promise.all([_range.Position.isNextPosition(from) ? mapNextPosition(from) : mapPrevPosition(from), _range.Position.isNextPosition(to) ? mapNextPosition(to) : mapPrevPosition(to)]).then(function (range) {
+                    return { range: range, added: patch.added ? patch.added : undefined };
+                });
+            }).subscribe(patches_);
+            return list.state;
+        }));
+        _observable.Observable.map(parent.patches, function (patch) {
+            var from = patch.range[0],
+                to = patch.range[1];
+            function mapPrevPosition(position) {
+                return position.prev === _key2['default'].sentinel ? Promise.resolve({ prev: _key2['default'].sentinel }) : _tree.Tree.next(parent_.state, [position.prev]).then(_tree.Path.toKey).then(function (prev) {
+                    return { prev: prev };
+                });
+            }
+            function mapNextPosition(position) {
+                return position.next === _key2['default'].sentinel ? Promise.resolve({ next: _key2['default'].sentinel }) : _tree.Tree.prev(parent_.state, [position.next]).then(_tree.Path.toKey).then(function (next) {
+                    return { next: next };
+                });
+            }
+            return Promise.all([_range.Position.isNextPosition(from) ? mapNextPosition(from) : mapPrevPosition(from), _range.Position.isNextPosition(to) ? mapNextPosition(to) : mapPrevPosition(to)]).then(function (range) {
+                return { range: range, added: patch.added ? _state2['default'].flatten(_state2['default'].map(patch.added, function (list) {
+                        return list.state;
+                    })) : undefined };
+            });
+        }).subscribe(patches_);
+        var state = _state2['default'].flatten(parent_.state);
+        return create(state, patches_);
+    }
+    List.flatten = flatten;
     function cache(parent) {
         var state = _state2['default'].cache(parent.state),
             patches = _observable.Observable.map(parent.patches, function (patch) {
@@ -374,7 +423,7 @@ exports.List = List;
 })(List || (exports.List = List = {}));
 exports['default'] = List;
 
-},{"./async_iterator":1,"./key":3,"./observable":5,"./patch":6,"./range":8,"./state":10}],5:[function(require,module,exports){
+},{"./async_iterator":1,"./key":3,"./observable":5,"./patch":6,"./range":8,"./state":10,"./tree":11}],5:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, '__esModule', {
@@ -962,6 +1011,8 @@ exports.State = State;
                     return _range.Position.isPrevPosition(to) && to.prev === next ? current = _key2['default'].sentinel : current = next;
                 });
             }
+            if (_range.Position.isPrevPosition(from) && _range.Position.isPrevPosition(to) && from.prev === to.prev) return Promise.resolve(_key2['default'].sentinel);
+            if (_range.Position.isNextPosition(from) && _range.Position.isNextPosition(to) && from.next === to.next) return Promise.resolve(_key2['default'].sentinel);
             if (current === _key2['default'].sentinel) return _range.Position.isPrevPosition(from) ? Promise.resolve(current = from.prev) : iterate(from.next);
             if (_range.Position.isNextPosition(to) && to.next === current) return Promise.resolve(current = _key2['default'].sentinel);
             return iterate(current);

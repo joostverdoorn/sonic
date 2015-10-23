@@ -66,23 +66,55 @@ export module List {
 
     return create(state, patches);
   }
-  //
-  // export function flatten<V>(parent: List<List<V>>): List<V> {
-  //   var xpatches = Subject.create();
-  //   var xparent = cache(map(parent, ((list, key) => {
-  //     Observable.map(list.patches, patch => {
-  //       return Promise.all([
-  //         patch.range[0] == null ? Tree.prev(xparent.state, [key]).then(Path.toKey) : Path.toKey(Path.append([key], patch.range[0])),
-  //         patch.range[1] == null ? Tree.next(xparent.state, [key]).then(Path.toKey) : Path.toKey(Path.append([key], patch.range[1]))
-  //       ]).then((range: Range) => { return { range: range, added: patch.added ? patch.added : undefined }});
-  //     }).subscribe(xpatches);
-  //
-  //     return list.state;
-  //   })));
-  //   var state = State.flatten(xparent.state);
-  //
-  //   return create(state, xpatches);
-  // }
+
+  export function flatten<V>(parent: List<List<V>>): List<V> {
+    var patches_ = Subject.create();
+    var parent_ = cache(map(parent, ((list, key) => {
+      Observable.map(list.patches, patch => {
+        var from = patch.range[0],
+            to   = patch.range[1];
+
+        function mapPrevPosition(position: PrevPosition): Promise<Position> {
+          if (position.prev === Key.sentinel) return list.state.prev(Key.sentinel).then(next => ({next: Path.toKey([key, next])}));
+          return Promise.resolve({prev: Path.toKey([key, position.prev])});
+        }
+
+        function mapNextPosition(position: NextPosition): Promise<Position> {
+          if (position.next === Key.sentinel) return list.state.next(Key.sentinel).then(prev => ({prev: Path.toKey([key, prev])}));
+          return Promise.resolve({next: Path.toKey([key, position.next])});
+        }
+
+        return Promise.all([
+          Position.isNextPosition(from) ? mapNextPosition(from) : mapPrevPosition(from),
+          Position.isNextPosition(to)   ? mapNextPosition(to)   : mapPrevPosition(to)
+        ]).then((range: Range) => ({ range: range, added: patch.added ? patch.added : undefined }));
+      }).subscribe(patches_);
+
+      return list.state;
+    })));
+
+    Observable.map(parent.patches, patch => {
+      var from = patch.range[0],
+          to   = patch.range[1];
+
+      function mapPrevPosition(position: PrevPosition): Promise<Position> {
+        return position.prev === Key.sentinel ? Promise.resolve({prev: Key.sentinel}) : Tree.next(parent_.state, [position.prev]).then(Path.toKey).then(prev => ({prev}));
+      }
+
+      function mapNextPosition(position: NextPosition): Promise<Position> {
+        return position.next === Key.sentinel ? Promise.resolve({next: Key.sentinel}) : Tree.prev(parent_.state, [position.next]).then(Path.toKey).then(next => ({next}));
+      }
+
+      return Promise.all([
+        Position.isNextPosition(from) ? mapNextPosition(from) : mapPrevPosition(from),
+        Position.isNextPosition(to)   ? mapNextPosition(to)   : mapPrevPosition(to)
+      ]).then((range: Range) => ({ range: range, added: patch.added ? State.flatten(State.map(patch.added, list => list.state)) : undefined }));
+    }).subscribe(patches_);
+
+    var state = State.flatten(parent_.state);
+
+    return create(state, patches_);
+  }
   //
   // export function keyBy<V>(parent: List<V>, keyFn: (value: V, key: Key) => Key): List<V> {
   //   var state   = State.keyBy(parent.state, keyFn),

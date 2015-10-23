@@ -235,6 +235,10 @@ export var State;
             function iterate(key) {
                 return state.next(key).then(next => Position.isPrevPosition(to) && to.prev === next ? current = Key.sentinel : current = next);
             }
+            if (Position.isPrevPosition(from) && Position.isPrevPosition(to) && from.prev === to.prev)
+                return Promise.resolve(Key.sentinel);
+            if (Position.isNextPosition(from) && Position.isNextPosition(to) && from.next === to.next)
+                return Promise.resolve(Key.sentinel);
             if (current === Key.sentinel)
                 return Position.isPrevPosition(from) ? Promise.resolve(current = from.prev) : iterate(from.next);
             if (Position.isNextPosition(to) && to.next === current)
