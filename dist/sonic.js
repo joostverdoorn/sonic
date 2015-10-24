@@ -1,10 +1,11 @@
 import _State from './state';
 import _AsyncIterator from './async_iterator';
-import _List from './list';
+import { List as _List } from './list';
 import _Tree from './tree';
 import _Cache from './cache';
 import { Subject as _Subject } from './observable';
 import _PromiseUtils from './promise_utils';
+import _Lens from './lens';
 export function Sonic(obj) {
     if (obj instanceof Array)
         return _List.create(_State.fromArray(obj), _Subject.create());
@@ -20,6 +21,7 @@ export var Sonic;
     Sonic.Subject = _Subject;
     Sonic.Cache = _Cache;
     Sonic.PromiseUtils = _PromiseUtils;
+    Sonic.Lens = _Lens;
 })(Sonic || (Sonic = {}));
 ;
 module.exports = Sonic;

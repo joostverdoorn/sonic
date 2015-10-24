@@ -264,7 +264,44 @@ var Key;
 exports["default"] = Key;
 module.exports = exports["default"];
 
-},{"./promise_utils":7}],4:[function(require,module,exports){
+},{"./promise_utils":8}],4:[function(require,module,exports){
+'use strict';
+
+Object.defineProperty(exports, '__esModule', {
+    value: true
+});
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
+
+var _state = require('./state');
+
+var _state2 = _interopRequireDefault(_state);
+
+var _list = require('./list');
+
+var _observable = require('./observable');
+
+var Lens;
+exports.Lens = Lens;
+(function (Lens) {
+    function compose(parent, lens) {
+        var getSubject = _observable.Subject.create(),
+            setSubject = _observable.Subject.create();
+        _observable.Observable.map(parent.patches, function (patch) {
+            if (patch.added) return { range: patch.range, added: _state2['default'].map(patch.added, lens.get) };
+            return { range: patch.range };
+        }).subscribe(getSubject);
+        _observable.Observable.map(setSubject, function (patch) {
+            if (patch.added) return { range: patch.range, added: _state2['default'].map(patch.added, lens.set) };
+            return { range: patch.range };
+        }).subscribe(parent.patches);
+        return _list.List.create(_state2['default'].map(parent.state, lens.get), { subscribe: getSubject.subscribe, onNext: setSubject.onNext });
+    }
+    Lens.compose = compose;
+})(Lens || (exports.Lens = Lens = {}));
+exports['default'] = Lens;
+
+},{"./list":5,"./observable":6,"./state":11}],5:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, '__esModule', {
@@ -420,7 +457,7 @@ exports.List = List;
 })(List || (exports.List = List = {}));
 exports['default'] = List;
 
-},{"./async_iterator":1,"./key":3,"./observable":5,"./patch":6,"./range":8,"./state":10,"./tree":11}],5:[function(require,module,exports){
+},{"./async_iterator":1,"./key":3,"./observable":6,"./patch":7,"./range":9,"./state":11,"./tree":12}],6:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, '__esModule', {
@@ -511,7 +548,7 @@ exports.Subject = Subject;
     Subject.create = create;
 })(Subject || (exports.Subject = Subject = {}));
 
-},{"./key":3}],6:[function(require,module,exports){
+},{"./key":3}],7:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, '__esModule', {
@@ -535,7 +572,7 @@ exports.Patch = Patch;
 })(Patch || (exports.Patch = Patch = {}));
 exports['default'] = Patch;
 
-},{"./state":10}],7:[function(require,module,exports){
+},{"./state":11}],8:[function(require,module,exports){
 // type Just<V> = [V];
 // type Nothing<V> = Array<V> & { 0: void }
 // type Maybe<V> = Just<V> | Nothing<V>;
@@ -559,7 +596,7 @@ exports.PromiseUtils = PromiseUtils;
 })(PromiseUtils || (exports.PromiseUtils = PromiseUtils = {}));
 exports["default"] = PromiseUtils;
 
-},{}],8:[function(require,module,exports){
+},{}],9:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, '__esModule', {
@@ -595,7 +632,7 @@ exports.Position = Position;
 })(Position || (exports.Position = Position = {}));
 exports['default'] = Range;
 
-},{"./key":3}],9:[function(require,module,exports){
+},{"./key":3}],10:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, '__esModule', {
@@ -615,8 +652,6 @@ var _async_iterator2 = _interopRequireDefault(_async_iterator);
 
 var _list = require('./list');
 
-var _list2 = _interopRequireDefault(_list);
-
 var _tree = require('./tree');
 
 var _tree2 = _interopRequireDefault(_tree);
@@ -631,9 +666,13 @@ var _promise_utils = require('./promise_utils');
 
 var _promise_utils2 = _interopRequireDefault(_promise_utils);
 
+var _lens = require('./lens');
+
+var _lens2 = _interopRequireDefault(_lens);
+
 function Sonic(obj) {
-    if (obj instanceof Array) return _list2['default'].create(_state2['default'].fromArray(obj), _observable.Subject.create());
-    if (obj instanceof Object) return _list2['default'].create(_state2['default'].fromObject(obj), _observable.Subject.create());
+    if (obj instanceof Array) return _list.List.create(_state2['default'].fromArray(obj), _observable.Subject.create());
+    if (obj instanceof Object) return _list.List.create(_state2['default'].fromObject(obj), _observable.Subject.create());
 }
 
 var Sonic;
@@ -641,17 +680,18 @@ exports.Sonic = Sonic;
 (function (Sonic) {
     Sonic.State = _state2['default'];
     Sonic.AsyncIterator = _async_iterator2['default'];
-    Sonic.List = _list2['default'];
+    Sonic.List = _list.List;
     Sonic.Tree = _tree2['default'];
     Sonic.Subject = _observable.Subject;
     Sonic.Cache = _cache2['default'];
     Sonic.PromiseUtils = _promise_utils2['default'];
+    Sonic.Lens = _lens2['default'];
 })(Sonic || (exports.Sonic = exports.Sonic = Sonic = {}));
 ;
 module.exports = Sonic;
 exports['default'] = Sonic;
 
-},{"./async_iterator":1,"./cache":2,"./list":4,"./observable":5,"./promise_utils":7,"./state":10,"./tree":11}],10:[function(require,module,exports){
+},{"./async_iterator":1,"./cache":2,"./lens":4,"./list":5,"./observable":6,"./promise_utils":8,"./state":11,"./tree":12}],11:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, '__esModule', {
@@ -1024,7 +1064,7 @@ exports.State = State;
 })(State || (exports.State = State = {}));
 exports['default'] = State;
 
-},{"./async_iterator":1,"./cache":2,"./key":3,"./range":8,"./tree":11}],11:[function(require,module,exports){
+},{"./async_iterator":1,"./cache":2,"./key":3,"./range":9,"./tree":12}],12:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, '__esModule', {
@@ -1129,5 +1169,5 @@ exports.Tree = Tree;
 })(Tree || (exports.Tree = Tree = {}));
 exports['default'] = Tree;
 
-},{"./state":10}]},{},[9])(9)
+},{"./state":11}]},{},[10])(10)
 });

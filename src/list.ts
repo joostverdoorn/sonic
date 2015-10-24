@@ -18,6 +18,10 @@ export interface List<V> {
   patches: Observable<Patch<V>>
 }
 
+export interface MutableList<V> extends List<V> {
+  patches: Subject<Patch<V>>
+}
+
 export module List {
   export function map<V, W>(parent: List<V>, mapFn: (value: V, key: Key) => W | Promise<W>): List<W> {
     var state = State.map(parent.state, mapFn),
@@ -141,7 +145,9 @@ export module List {
     return List.create(state, patches);
   }
 
-  export function create<V>(state: State<V>, patches: Observable<Patch<V>>, reducer: (state: State<V>, patch: Patch<V>) => State<V> = Patch.apply): List<V> {
+  export function create<V>(state: State<V>, patches: Subject<Patch<V>>, reducer?: (state: State<V>, patch: Patch<V>) => State<V>): MutableList<V>
+  export function create<V>(state: State<V>, patches: Observable<Patch<V>>, reducer?: (state: State<V>, patch: Patch<V>) => State<V>): List<V>
+  export function create<V>(state: State<V>, patches: Observable<Patch<V>>, reducer: (state: State<V>, patch: Patch<V>) => State<V> = Patch.apply): any {
     const list = { state, patches };
 
     Observable.scan(patches, reducer, state).subscribe({
