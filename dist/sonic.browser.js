@@ -940,10 +940,14 @@ exports.State = State;
                 return _async_iterator2['default'].keyOf(State.toIterator(keyMap), key);
             },
             prev: function prev(key) {
-                return reverseKeyMap.get(key).then(keyMap.prev).then(keyMap.get);
+                return reverseKeyMap.get(key).then(keyMap.prev).then(function (prev) {
+                    return prev === _key2['default'].sentinel ? prev : keyMap.get(prev);
+                });
             },
             next: function next(key) {
-                return reverseKeyMap.get(key).then(keyMap.next).then(keyMap.get);
+                return reverseKeyMap.get(key).then(keyMap.next).then(function (next) {
+                    return next === _key2['default'].sentinel ? next : keyMap.get(next);
+                });
             }
         });
         return extend(reverseKeyMap, { get: function get(key) {

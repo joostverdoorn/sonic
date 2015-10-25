@@ -24,8 +24,7 @@
         "src/range.ts",
         "src/sonic.ts",
         "src/state.ts",
-        "src/tree.ts",
-        "src/xhr.ts"
+        "src/tree.ts"
     ],
     "exclude": []
 }

@@ -167,8 +167,8 @@ export module State {
     var keyMap: State<Key> = cache(State.map(parent, keyFn));
     var reverseKeyMap: State<Key> = cache({
       get:  key => AsyncIterator.keyOf(State.toIterator(keyMap), key),
-      prev: key => reverseKeyMap.get(key).then(keyMap.prev).then(keyMap.get),
-      next: key => reverseKeyMap.get(key).then(keyMap.next).then(keyMap.get)
+      prev: key => reverseKeyMap.get(key).then(keyMap.prev).then(prev => prev === Key.sentinel ? prev : keyMap.get(prev)),
+      next: key => reverseKeyMap.get(key).then(keyMap.next).then(next => next === Key.sentinel ? next : keyMap.get(next))
     });
 
     return extend(reverseKeyMap, { get: key => reverseKeyMap.get(key).then(parent.get) });
