@@ -1,6 +1,7 @@
 require('coffee-script').register();
 
 var gulp       = require('gulp'),
+    sourcemaps = require('gulp-sourcemaps'),
     merge      = require('merge2'),
     path       = require('path'),
     istanbul   = require('gulp-istanbul'),
@@ -23,17 +24,20 @@ var typescriptProject = typescript.createProject('tsconfig.json', { typescript: 
 
 gulp.task('typescript', function() {
   var result = gulp
-    .src('src/**/*.ts')
+    .src(['src/**/*.ts'], {base: 'src'})
+    .pipe(sourcemaps.init())
     .pipe(typescript(typescriptProject))
 
   return merge([
     result.dts.pipe(gulp.dest('dist')),
-    result.js.pipe(gulp.dest('dist'))
+    result.js
+      .pipe(sourcemaps.write('.',{includeContent:false, sourceRoot: '../src'}) )
+      .pipe(gulp.dest('dist'))
   ]);
 });
 
 gulp.task('browserify', ['typescript'], function() {
-  return browserify('dist/sonic.js', {standalone: 'Sonic', sourceType: 'module'})
+  return browserify('dist/sonic.js', {standalone: 'Sonic', sourceType: 'module', debug: true})
     .transform(babelify)
     .bundle()
     .pipe(source('sonic.browser.js'))
@@ -90,7 +94,9 @@ gulp.task('coffeeify', ['instrument'], function() {
 gulp.task('spec', ['coffeeify'], function() {
   return gulp
     .src('test/spec/**/*.js')
-    .pipe(jasmine({ includeStackTrace: true }))
+    .pipe(jasmine({
+      // includeStackTrace: true 
+    }))
     .pipe(istanbul.writeReports({
       dir: 'coverage',
       reporters: ['html']

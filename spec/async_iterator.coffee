@@ -3,11 +3,15 @@ Key           = require('src/key')
 AsyncIterator = require('src/async_iterator').default
 
 beforeEach ->
-  current = null
+  current = Key.sentinel
   @iterator =
-    get: () -> `current ? Key.NOT_FOUND : Promise.resolve(4)`
-    next: () -> `current ? Promise.resolve(null) : Promise.resolve(1)`
+    get: () -> `current !== Key.sentinel ? Promise.resolve(4) : Key.NOT_FOUND`
+    next: () -> `current === Key.sentinel ? Promise.resolve(current = 1) : Promise.resolve(current = Key.sentinel)`
 
 describe "some", ->
   it "should resolve with true if the predicate is true for some element", (done) ->
     expect(AsyncIterator.some(@iterator, (x) -> x > 2)).toResolveWith(true, done)
+
+describe "every", ->
+  it "should resolve with true if the predicate is true for every element", (done) ->
+    expect(AsyncIterator.every(@iterator, (x) -> x > 2)).toResolveWith(true, done)
