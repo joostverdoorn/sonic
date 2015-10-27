@@ -34,7 +34,7 @@
     "gulp-coffeeify": "^0.1.8",
     "gulp-debug": "~2.1.0",
     "gulp-foreach": "~0.1.0",
-    "gulp-istanbul": "^0.10.2",
+    "gulp-istanbul": "steffansluis/gulp-istanbul",
     "gulp-jasmine": "^2.0.1",
     "gulp-rename": "^1.2.2",
     "gulp-sourcemaps": "^1.6.0",
