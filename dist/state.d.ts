@@ -33,6 +33,7 @@ export declare module State {
     function flatten<V>(parent: Tree<V>): State<V>;
     function cache<V>(parent: State<V>): State<V>;
     function keyBy<V>(parent: State<V>, keyFn: (value: V, key?: Key) => Key | Promise<Key>): State<V>;
+    function keys(parent: State<any>): State<Key>;
     function fromArray<V>(values: V[]): State<V>;
     function fromObject<V>(values: {
         [key: string]: V;

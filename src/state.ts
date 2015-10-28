@@ -167,11 +167,21 @@ export module State {
     var keyMap: State<Key> = cache(State.map(parent, keyFn));
     var reverseKeyMap: State<Key> = cache({
       get:  key => AsyncIterator.keyOf(State.toIterator(keyMap), key),
-      prev: key => reverseKeyMap.get(key).then(keyMap.prev).then(prev => prev === Key.sentinel ? prev : keyMap.get(prev)),
-      next: key => reverseKeyMap.get(key).then(keyMap.next).then(next => next === Key.sentinel ? next : keyMap.get(next))
+      prev: (key = Key.sentinel) => {
+        return Promise.resolve(key === Key.sentinel ? Key.sentinel : reverseKeyMap.get(key))
+          .then(keyMap.prev).then(prev => prev === Key.sentinel ? prev : keyMap.get(prev))
+      },
+      next: (key = Key.sentinel) => {
+        return Promise.resolve(key === Key.sentinel ? Key.sentinel : reverseKeyMap.get(key))
+          .then(keyMap.next).then(next => next === Key.sentinel ? next : keyMap.get(next))
+      }
     });
 
     return extend(reverseKeyMap, { get: key => reverseKeyMap.get(key).then(parent.get) });
+  }
+
+  export function keys(parent: State<any>): State<Key> {
+    return map(parent, (value, key) => key);
   }
 
   export function fromArray<V>(values: V[]): State<V> {
@@ -266,9 +276,6 @@ export module State {
     function next(): Promise<Key> {
       var from = range[0],
           to   = range[1];
-
-
-
 
       function iterate(key: Key) {
         return state.next(key).then(next => Position.isPrevPosition(to) && to.prev === next ? current = Key.sentinel : current = next);

@@ -939,13 +939,17 @@ exports.State = State;
             get: function get(key) {
                 return _async_iterator2['default'].keyOf(State.toIterator(keyMap), key);
             },
-            prev: function prev(key) {
-                return reverseKeyMap.get(key).then(keyMap.prev).then(function (prev) {
+            prev: function prev() {
+                var key = arguments.length <= 0 || arguments[0] === undefined ? _key2['default'].sentinel : arguments[0];
+
+                return Promise.resolve(key === _key2['default'].sentinel ? _key2['default'].sentinel : reverseKeyMap.get(key)).then(keyMap.prev).then(function (prev) {
                     return prev === _key2['default'].sentinel ? prev : keyMap.get(prev);
                 });
             },
-            next: function next(key) {
-                return reverseKeyMap.get(key).then(keyMap.next).then(function (next) {
+            next: function next() {
+                var key = arguments.length <= 0 || arguments[0] === undefined ? _key2['default'].sentinel : arguments[0];
+
+                return Promise.resolve(key === _key2['default'].sentinel ? _key2['default'].sentinel : reverseKeyMap.get(key)).then(keyMap.next).then(function (next) {
                     return next === _key2['default'].sentinel ? next : keyMap.get(next);
                 });
             }
@@ -955,6 +959,12 @@ exports.State = State;
             } });
     }
     State.keyBy = keyBy;
+    function keys(parent) {
+        return map(parent, function (value, key) {
+            return key;
+        });
+    }
+    State.keys = keys;
     function fromArray(values) {
         return {
             get: function get(key) {
