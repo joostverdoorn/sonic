@@ -33,6 +33,13 @@ export var State;
         return state.get(key).then(() => true, reason => reason === Key.NOT_FOUND_ERROR ? false : Promise.reject(reason));
     }
     State.has = has;
+    function is(state, other) {
+        var iterator = toIterator(state), otherIterator = toIterator(other);
+        return AsyncIterator.every(iterator, (value, key) => {
+            return otherIterator.next().then(k => k !== key ? false : otherIterator.get().then(v => v === value));
+        }).then(res => res ? otherIterator.next().then(k => k === Key.sentinel) : false);
+    }
+    State.is = is;
     function contains(state, value) {
         return AsyncIterator.some(toIterator(state), (v, k) => v === value);
     }
@@ -260,3 +267,4 @@ export var State;
     State.toIterator = toIterator;
 })(State || (State = {}));
 export default State;
+//# sourceMappingURL=state.js.map

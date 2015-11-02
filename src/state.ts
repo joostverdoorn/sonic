@@ -48,6 +48,15 @@ export module State {
     return state.get(key).then(() => true, reason => reason === Key.NOT_FOUND_ERROR ? false : Promise.reject(reason));
   }
 
+  export function is<V>(state: State<V>, other: State<V>): Promise<boolean> {
+    var iterator = toIterator(state),
+        otherIterator = toIterator(other);
+
+    return AsyncIterator.every(iterator, (value, key) => {
+      return otherIterator.next().then(k => k !== key ? false : otherIterator.get().then(v => v === value));
+    }).then(res => res ? otherIterator.next().then(k => k === Key.sentinel) : false);
+  }
+
   export function contains<V>(state: State<V>, value: V): Promise<boolean> {
     return AsyncIterator.some(toIterator(state), (v, k) => v === value);
   }

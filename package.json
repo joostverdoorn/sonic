@@ -1,9 +1,8 @@
 {
   "name": "sonic",
-  "description": "",
-  "version": "0.0.1",
-  "author": "Joost Verdoorn",
-  "contributors": [
+  "description": "Async ops over async data",
+  "version": "0.1.0",
+  "authors": [
     "Joost Verdoorn",
     "Steffan Sluis"
   ],
@@ -12,41 +11,26 @@
     "dist",
     "src"
   ],
-  "licenses": [
-    {
-      "type": "MIT",
-      "url": "https://github.com/joostverdoorn/sonic/blob/master/LICENSE"
-    }
-  ],
+  "license": "MIT",
   "repository": {
     "type": "git",
     "url": "https://github.com/joostverdoorn/sonic.git"
   },
   "devDependencies": {
     "babelify": "~6.1.2",
-    "bluebird": "^2.10.2",
     "browserify": "^10.2.0",
-    "coffee-script": "^1.9.2",
-    "gulp": "^3.9.0",
-    "gulp-babel": "~5.2.1",
-    "gulp-bench": "^1.1.0",
-    "gulp-coffee": "^2.3.1",
-    "gulp-coffeeify": "^0.1.8",
-    "gulp-debug": "~2.1.0",
+    "faucet": "0.0.1",
+    "glob-stream": "^5.0.0",
+    "gulp": "gulpjs/gulp#4.0",
     "gulp-foreach": "~0.1.0",
-    "gulp-istanbul": "steffansluis/gulp-istanbul",
-    "gulp-jasmine": "^2.0.1",
     "gulp-rename": "^1.2.2",
     "gulp-sourcemaps": "^1.6.0",
     "gulp-typescript": "^2.8.1",
     "gulp-uglify": "^1.2.0",
-    "jasmine-expect": "^1.22.3",
     "merge2": "^0.3.5",
-    "path": "^0.12.7",
-    "promise-matchers": "^0.9.6",
+    "tape": "^4.2.2",
+    "through2": "^2.0.0",
     "typescript": "git://github.com/Microsoft/TypeScript#master",
-    "typescript-register": "^1.1.0",
-    "typescript-require": "^0.2.8",
     "vinyl-buffer": "^1.0.0",
     "vinyl-source-stream": "^1.1.0"
   },

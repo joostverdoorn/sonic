@@ -58,3 +58,4 @@ export var Subject;
     }
     Subject.create = create;
 })(Subject || (Subject = {}));
+//# sourceMappingURL=observable.js.map

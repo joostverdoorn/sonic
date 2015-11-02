@@ -15,13 +15,14 @@ export declare module State {
     }
     const Empty: {
         get: (key: number | string) => Promise<{}>;
-        prev: (key?: number | string) => Promise<number | string> | Promise<{}>;
-        next: (key?: number | string) => Promise<number | string> | Promise<{}>;
+        prev: (key?: number | string) => Promise<number | string>;
+        next: (key?: number | string) => Promise<number | string>;
     };
     function extend<V, W>(parent: State<V>, {get, prev, next}: Partial<W>): State<W>;
     function first<V>(state: State<V>): Promise<V>;
     function last<V>(state: State<V>): Promise<V>;
     function has<V>(state: State<V>, key: Key): Promise<boolean>;
+    function is<V>(state: State<V>, other: State<V>): Promise<boolean>;
     function contains<V>(state: State<V>, value: V): Promise<boolean>;
     function isEmpty<V>(state: State<V>): Promise<boolean>;
     function slice<V>(parent: State<V>, range?: Range): State<V>;
