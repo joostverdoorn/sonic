@@ -32,3 +32,5 @@ export var Cache;
     Cache.apply = apply;
 })(Cache || (Cache = {}));
 export default Cache;
+
+//# sourceMappingURL=cache.js.map

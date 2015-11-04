@@ -53,7 +53,7 @@ export module AsyncIterator {
   }
 
   export function find<V>(iterator: AsyncIterator<V>, predicate: (value: V, key?: Key) => boolean | Promise<boolean>): Promise<V> {
-    return findKey(iterator, predicate).then(iterator.get);
+    return findKey(iterator, predicate).then(key => key === Key.sentinel ? Key.NOT_FOUND : iterator.get());
   }
 
   export function keyOf<V>(iterator: AsyncIterator<V>, value: V): Promise<Key> {
@@ -79,21 +79,23 @@ export module AsyncIterator {
 
   export function concat<V>(...iterators: AsyncIterator<V>[]): AsyncIterator<V> {
     return iterators.reduce((memo, value) => {
-      var iterated = false;
+      var iterated = false,
+          queue = Promise.resolve(null);
 
       return {
-        get:  () => iterated ? value.get() : memo.get(),
-        next: () => iterated ? value.next() : memo.next().then(key => key !== Key.sentinel ? key : (iterated = true, value.next()))
+        get:  () => queue.then(() => iterated ? value.get() : memo.get()),
+        next: () => queue.then(() => iterated ? value.next() : memo.next().then(key => key !== Key.sentinel ? key : (iterated = true, value.next())))
       }
     }, Empty);
   }
 
   export function fromEntries<V>(entries: Entry<V>[]): AsyncIterator<V> {
-    var current = -1;
+    var current = -1,
+        queue = Promise.resolve(null);
 
     return {
-      get:  () => current === -1 ? Key.NOT_FOUND : Promise.resolve(entries[current][1]),
-      next: () => Promise.resolve(++current === entries.length ? Key.sentinel : entries[current][0])
+      get:  () => queue = queue.then(() => current < 0 || current >= entries.length ? Promise.reject<V>(current) : Promise.resolve(entries[current][1])),
+      next: () => queue = queue.then(() => Promise.resolve(++current >= entries.length ? Key.sentinel : entries[current][0]))
     }
   }
 

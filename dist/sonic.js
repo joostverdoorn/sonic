@@ -26,3 +26,5 @@ export var Sonic;
 ;
 module.exports = Sonic;
 export default Sonic;
+
+//# sourceMappingURL=sonic.js.map

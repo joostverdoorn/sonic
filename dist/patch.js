@@ -8,3 +8,5 @@ export var Patch;
     Patch.apply = apply;
 })(Patch || (Patch = {}));
 export default Patch;
+
+//# sourceMappingURL=patch.js.map

@@ -4,19 +4,18 @@ var gulp       = require('gulp'),
     foreach    = require('gulp-foreach'),
     uglify     = require('gulp-uglify'),
     typescript = require('gulp-typescript'),
-    gs         = require('glob-stream'),
     merge      = require('merge2'),
     source     = require('vinyl-source-stream'),
     buffer     = require('vinyl-buffer'),
     browserify = require('browserify'),
     babelify   = require('babelify'),
-    faucet     = require('faucet'),
+    report     = require('tap-spec'),
     through    = require('through2'),
     stream     = require('stream'),
     spawn      = require('child_process').spawn,
     exec       = require('child_process').exec;
 
-var typescriptProject = typescript.createProject('tsconfig.json', { typescript: require('typescript') });
+var typescriptProject = typescript.createProject('tsconfig.json');
 
 gulp.task('typescript', () => {
   var result = gulp
@@ -52,14 +51,14 @@ gulp.task('dist',    gulp.series('typescript', 'browserify', 'uglify'));
 gulp.task('d',       gulp.task('dist'));
 gulp.task('default', gulp.task('dist'));
 
-gulp.task('spec', done => {
+gulp.task('spec', gulp.series('typescript', done => {
   var passing = true;
 
   gulp.src('spec/*.js')
     .pipe(foreach((stream, file) => {
-      var child = spawn('node')
+      var child = spawn("node")
 
-      browserify(file.path)
+      browserify(file.path, { sourceType: 'module' })
         .transform(babelify)
         .bundle()
         .pipe(source('test.js'))
@@ -68,15 +67,17 @@ gulp.task('spec', done => {
           callback(null, file.contents)
         })).pipe(child.stdin);
 
-      return child.stdout.pipe(faucet());
+      return child.stdout;
     })).on('data', data => {
       if (data.indexOf('not ok') > -1) passing = false;
     }).on('end', () => {
       if (passing) return done();
       process.stdout.write("\007");
       done('failed');
-    }).pipe(process.stdout);
-});
+    })
+    .pipe(report())
+    .pipe(process.stdout);
+}));
 gulp.task('s', gulp.task('spec'));
 
 gulp.task('watch', function() {
@@ -85,7 +86,7 @@ gulp.task('watch', function() {
 gulp.task('w', gulp.series('watch'));
 
 gulp.task('watch-spec', gulp.parallel(
-  gulp.series('typescript', gulp.parallel('spec', gulp.series('browserify', 'uglify'))),
-  () => gulp.watch(['src/*.ts', 'spec/*.js'], gulp.series('typescript', gulp.parallel('spec',gulp.series('browserify', 'uglify'))))
+  gulp.series('spec', gulp.series('browserify', 'uglify')),
+  () => gulp.watch(['src/*.ts', 'spec/*.js'], gulp.series('spec', gulp.series('browserify', 'uglify')))
 ));
 gulp.task('ws', gulp.series('watch-spec'));

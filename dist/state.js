@@ -111,14 +111,18 @@ export var State;
     }
     State.map = map;
     function filter(parent, filterFn) {
+        var cache = Object.create(null);
+        function have(key) {
+            return key in cache ? cache[key] : cache[key] = parent.get(key).then(value => filterFn(value, key));
+        }
         function get(key) {
-            return parent.get(key).then(value => Promise.resolve(filterFn(value, key)).then(res => res ? value : Key.NOT_FOUND));
+            return have(key).then(res => res ? parent.get(key) : Key.NOT_FOUND);
         }
         function prev(key) {
-            return parent.prev(key).then(p => p === null ? null : parent.get(p).then(value => filterFn(value, p)).then(result => result ? p : prev(p)));
+            return parent.prev(key).then(p => p === null ? null : have(p).then(res => res ? p : prev(p)));
         }
         function next(key) {
-            return parent.next(key).then(n => n === null ? null : parent.get(n).then(value => filterFn(value, n)).then(result => result ? n : next(n)));
+            return parent.next(key).then(n => n === null ? null : have(n).then(res => res ? n : next(n)));
         }
         return extend(parent, { get, prev, next });
     }
@@ -179,39 +183,11 @@ export var State;
     }
     State.fromArray = fromArray;
     function fromObject(values) {
-        var keys = Object.keys(values), indexByKey = keys.reduce((memo, key, index) => {
-            memo[key] = index;
-            return memo;
-        }, Object.create(null));
-        return {
-            get: (key) => {
-                return key in values ? Promise.resolve(values[key]) : Key.NOT_FOUND;
-            },
-            prev: (key) => {
-                if (key == null)
-                    return Promise.resolve(keys[keys.length - 1]);
-                if (!(key in indexByKey))
-                    return Key.NOT_FOUND;
-                var index = indexByKey[key];
-                if (index === 0)
-                    return Promise.resolve(null);
-                return Promise.resolve(keys[index - 1]);
-            },
-            next: (key) => {
-                if (key == null)
-                    return Promise.resolve(keys[0]);
-                if (!(key in indexByKey))
-                    return Key.NOT_FOUND;
-                var index = indexByKey[key];
-                if (index === keys.length - 1)
-                    return Promise.resolve(null);
-                return Promise.resolve(keys[index + 1]);
-            }
-        };
+        return fromIterator(AsyncIterator.fromObject(values));
     }
     State.fromObject = fromObject;
     function fromIterator(iterator) {
-        var cache = Cache.create(), exhausted = false, currentKey = null;
+        var cache = Cache.create(), exhausted = false, currentKey = null, queue = Promise.resolve(null);
         var cachingIterator = AsyncIterator.extend(iterator, {
             get: () => cache.get[currentKey] = iterator.get(),
             next: () => cache.next[currentKey] = iterator.next().then(key => {
@@ -223,48 +199,57 @@ export var State;
         function get(key) {
             if (exhausted)
                 return Key.NOT_FOUND;
-            if (key === currentKey)
-                return cachingIterator.get();
-            return AsyncIterator.find(cachingIterator, (value, k) => k === key);
+            return queue = queue.then(() => {
+                if (key === currentKey)
+                    return cachingIterator.get();
+                return AsyncIterator.find(cachingIterator, (value, k) => k === key);
+            });
         }
         function prev(key) {
             if (exhausted)
                 return Key.NOT_FOUND;
-            return AsyncIterator.some(cachingIterator, (value, k) => k === key).then(() => cache.prev[key]);
+            return queue = queue.then(() => {
+                return AsyncIterator.some(cachingIterator, (value, k) => k === key).then(() => cache.prev[key]);
+            });
         }
         function next(key) {
             if (exhausted)
                 return Key.NOT_FOUND;
-            if (key === currentKey)
-                return cachingIterator.next();
-            return AsyncIterator.findKey(cachingIterator, (value, k) => k === key).then(() => cachingIterator.next());
+            return queue = queue.then(() => {
+                if (key === currentKey)
+                    return cachingIterator.next();
+                return AsyncIterator.findKey(cachingIterator, (value, k) => k === key).then(() => cachingIterator.next());
+            });
         }
         return Cache.apply({ get, prev, next }, cache);
     }
     State.fromIterator = fromIterator;
     function toIterator(state, range = Range.all) {
-        var current = Key.sentinel;
+        var current = Key.sentinel, queue = Promise.resolve(null);
         function get() {
-            return state.get(current);
+            return queue = queue.then(() => state.get(current));
         }
         function next() {
-            var from = range[0], to = range[1];
-            function iterate(key) {
-                return state.next(key).then(next => Position.isPrevPosition(to) && to.prev === next ? current = Key.sentinel : current = next);
-            }
-            if (Position.isPrevPosition(from) && Position.isPrevPosition(to) && from.prev === to.prev)
-                return Promise.resolve(Key.sentinel);
-            if (Position.isNextPosition(from) && Position.isNextPosition(to) && from.next === to.next)
-                return Promise.resolve(Key.sentinel);
-            if (current === Key.sentinel)
-                return Position.isPrevPosition(from) ? Promise.resolve(current = from.prev) : iterate(from.next);
-            if (Position.isNextPosition(to) && to.next === current)
-                return Promise.resolve(current = Key.sentinel);
-            return iterate(current);
+            return queue = queue.then(() => {
+                var from = range[0], to = range[1];
+                function iterate(key) {
+                    return state.next(key).then(next => Position.isPrevPosition(to) && to.prev === next ? current = Key.sentinel : current = next);
+                }
+                if (Position.isPrevPosition(from) && Position.isPrevPosition(to) && from.prev === to.prev)
+                    return Promise.resolve(Key.sentinel);
+                if (Position.isNextPosition(from) && Position.isNextPosition(to) && from.next === to.next)
+                    return Promise.resolve(Key.sentinel);
+                if (current === Key.sentinel)
+                    return Position.isPrevPosition(from) ? Promise.resolve(current = from.prev) : iterate(from.next);
+                if (Position.isNextPosition(to) && to.next === current)
+                    return Promise.resolve(current = Key.sentinel);
+                return iterate(current);
+            });
         }
         return { get, next };
     }
     State.toIterator = toIterator;
 })(State || (State = {}));
 export default State;
+
 //# sourceMappingURL=state.js.map

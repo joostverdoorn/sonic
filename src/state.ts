@@ -135,16 +135,22 @@ export module State {
   }
 
   export function filter<V>(parent: State<V>, filterFn: (value: V, key?: Key) => boolean| Promise<boolean>): State<V> {
+    var cache: {[key: string]: Promise<boolean>} = Object.create(null);
+
+    function have(key: Key) {
+      return key in cache ? cache[key] : cache[key] = parent.get(key).then(value => filterFn(value, key))
+    }
+
     function get(key: Key): Promise<V> {
-      return parent.get(key).then(value => Promise.resolve(filterFn(value, key)).then(res => res ? value : Key.NOT_FOUND));
+      return have(key).then(res => res ? parent.get(key) : Key.NOT_FOUND);
     }
 
     function prev(key: Key): Promise<Key> {
-      return parent.prev(key).then(p => p === null ? null : parent.get(p).then(value => filterFn(value, p)).then(result => result ? p : prev(p)));
+      return parent.prev(key).then(p => p === null ? null : have(p).then(res => res ? p : prev(p)));
     }
 
     function next(key: Key): Promise<Key> {
-      return parent.next(key).then(n => n === null ? null : parent.get(n).then(value => filterFn(value, n)).then(result => result ? n : next(n)));
+      return parent.next(key).then(n => n === null ? null : have(n).then(res => res ? n : next(n)));
     }
 
     return extend(parent, { get, prev, next });
@@ -208,43 +214,14 @@ export module State {
   }
 
   export function fromObject<V>(values: {[key: string]: V}): State<V> {
-    var keys = Object.keys(values),
-        indexByKey: {[key: string]: number} = keys.reduce((memo, key, index) => {
-          memo[key] = index;
-          return memo;
-        },  Object.create(null));
-
-    return {
-      get: (key: Key): Promise<V> => {
-        return key in values ? Promise.resolve(values[key]) : Key.NOT_FOUND;
-      },
-
-      prev: (key: Key): Promise<Key> => {
-        if (key == null) return Promise.resolve(keys[keys.length - 1]);
-        if (!(key in indexByKey)) return Key.NOT_FOUND;
-
-        var index = indexByKey[key];
-        if (index === 0) return Promise.resolve(null);
-
-        return Promise.resolve(keys[index - 1]);
-      },
-
-      next: (key: Key): Promise<Key> => {
-        if (key == null) return Promise.resolve(keys[0]);
-        if (!(key in indexByKey)) return Key.NOT_FOUND;
-
-        var index = indexByKey[key];
-        if (index === keys.length - 1) return Promise.resolve(null);
-
-        return Promise.resolve(keys[index + 1]);
-      }
-    }
+    return fromIterator(AsyncIterator.fromObject(values));
   }
 
   export function fromIterator<V>(iterator: AsyncIterator<V>): State<V> {
     var cache = Cache.create(),
         exhausted = false,
-        currentKey: Key = null;
+        currentKey: Key = null,
+        queue = Promise.resolve(null);
 
     var cachingIterator = AsyncIterator.extend(iterator, {
       get:  () => cache.get[currentKey] = iterator.get(),
@@ -257,44 +234,53 @@ export module State {
 
     function get(key: Key): Promise<V> {
       if (exhausted) return Key.NOT_FOUND;
-      if (key === currentKey) return cachingIterator.get();
-      return AsyncIterator.find(cachingIterator, (value, k) => k === key);
+      return queue = queue.then(() => {
+        if (key === currentKey) return cachingIterator.get();
+        return AsyncIterator.find(cachingIterator, (value, k) => k === key);
+      });
     }
 
     function prev(key: Key): Promise<Key> {
       if (exhausted) return Key.NOT_FOUND;
-      return AsyncIterator.some(cachingIterator, (value, k) => k === key).then(() => cache.prev[key]);
+      return queue = queue.then(() => {
+        return AsyncIterator.some(cachingIterator, (value, k) => k === key).then(() => cache.prev[key]);
+      });
     }
 
     function next(key: Key): Promise<Key> {
       if (exhausted) return Key.NOT_FOUND;
-      if (key === currentKey) return cachingIterator.next()
-      return AsyncIterator.findKey(cachingIterator, (value, k) => k === key).then(() => cachingIterator.next());
+      return queue = queue.then(() => {
+        if (key === currentKey) return cachingIterator.next()
+        return AsyncIterator.findKey(cachingIterator, (value, k) => k === key).then(() => cachingIterator.next());
+      });
     }
 
     return Cache.apply({get, prev, next}, cache);
   }
 
   export function toIterator<V>(state: State<V>, range: Range = Range.all): AsyncIterator<V> {
-    var current: Key = Key.sentinel;
+    var current: Key = Key.sentinel,
+        queue = Promise.resolve(null);
 
     function get(): Promise<V> {
-      return state.get(current);
+      return queue = queue.then(() => state.get(current));
     }
 
     function next(): Promise<Key> {
-      var from = range[0],
-          to   = range[1];
+      return queue = queue.then(() => {
+        var from = range[0],
+            to   = range[1];
 
-      function iterate(key: Key) {
-        return state.next(key).then(next => Position.isPrevPosition(to) && to.prev === next ? current = Key.sentinel : current = next);
-      }
+        function iterate(key: Key) {
+          return state.next(key).then(next => Position.isPrevPosition(to) && to.prev === next ? current = Key.sentinel : current = next);
+        }
 
-      if (Position.isPrevPosition(from) && Position.isPrevPosition(to) && from.prev === to.prev) return Promise.resolve(Key.sentinel);
-      if (Position.isNextPosition(from) && Position.isNextPosition(to) && from.next === to.next) return Promise.resolve(Key.sentinel);
-      if (current === Key.sentinel) return Position.isPrevPosition(from) ? Promise.resolve(current = from.prev) : iterate(from.next);
-      if (Position.isNextPosition(to) && to.next === current) return Promise.resolve(current = Key.sentinel);
-      return iterate(current);
+        if (Position.isPrevPosition(from) && Position.isPrevPosition(to) && from.prev === to.prev) return Promise.resolve(Key.sentinel);
+        if (Position.isNextPosition(from) && Position.isNextPosition(to) && from.next === to.next) return Promise.resolve(Key.sentinel);
+        if (current === Key.sentinel) return Position.isPrevPosition(from) ? Promise.resolve(current = from.prev) : iterate(from.next);
+        if (Position.isNextPosition(to) && to.next === current) return Promise.resolve(current = Key.sentinel);
+        return iterate(current);
+      });
     }
 
     return {get, next};

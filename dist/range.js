@@ -19,3 +19,5 @@ export var Position;
     Position.reverse = reverse;
 })(Position || (Position = {}));
 export default Range;
+
+//# sourceMappingURL=range.js.map

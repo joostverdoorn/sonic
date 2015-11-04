@@ -15,3 +15,5 @@ var Key;
     Key.create = create;
 })(Key || (Key = {}));
 export default Key;
+
+//# sourceMappingURL=key.js.map

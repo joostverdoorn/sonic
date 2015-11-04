@@ -40,7 +40,7 @@ export var AsyncIterator;
     }
     AsyncIterator.findKey = findKey;
     function find(iterator, predicate) {
-        return findKey(iterator, predicate).then(iterator.get);
+        return findKey(iterator, predicate).then(key => key === Key.sentinel ? Key.NOT_FOUND : iterator.get());
     }
     AsyncIterator.find = find;
     function keyOf(iterator, value) {
@@ -66,19 +66,19 @@ export var AsyncIterator;
     AsyncIterator.contains = contains;
     function concat(...iterators) {
         return iterators.reduce((memo, value) => {
-            var iterated = false;
+            var iterated = false, queue = Promise.resolve(null);
             return {
-                get: () => iterated ? value.get() : memo.get(),
-                next: () => iterated ? value.next() : memo.next().then(key => key !== Key.sentinel ? key : (iterated = true, value.next()))
+                get: () => queue.then(() => iterated ? value.get() : memo.get()),
+                next: () => queue.then(() => iterated ? value.next() : memo.next().then(key => key !== Key.sentinel ? key : (iterated = true, value.next())))
             };
         }, AsyncIterator.Empty);
     }
     AsyncIterator.concat = concat;
     function fromEntries(entries) {
-        var current = -1;
+        var current = -1, queue = Promise.resolve(null);
         return {
-            get: () => current === -1 ? Key.NOT_FOUND : Promise.resolve(entries[current][1]),
-            next: () => Promise.resolve(++current === entries.length ? Key.sentinel : entries[current][0])
+            get: () => queue = queue.then(() => current < 0 || current >= entries.length ? Promise.reject(current) : Promise.resolve(entries[current][1])),
+            next: () => queue = queue.then(() => Promise.resolve(++current >= entries.length ? Key.sentinel : entries[current][0]))
         };
     }
     AsyncIterator.fromEntries = fromEntries;
@@ -100,3 +100,5 @@ export var AsyncIterator;
     AsyncIterator.toObject = toObject;
 })(AsyncIterator || (AsyncIterator = {}));
 export default AsyncIterator;
+
+//# sourceMappingURL=async_iterator.js.map
