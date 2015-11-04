@@ -192,7 +192,7 @@ export module State {
       }
     });
 
-    return extend(reverseKeyMap, { get: key => reverseKeyMap.get(key).then(parent.get) });
+    return extend(reverseKeyMap, { get: key => reverseKeyMap.get(key).then(key => key === Key.sentinel ? Key.NOT_FOUND : parent.get(key)) });
   }
 
   export function keys(parent: State<any>): State<Key> {

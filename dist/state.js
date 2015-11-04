@@ -161,7 +161,7 @@ export var State;
                     .then(keyMap.next).then(next => next === Key.sentinel ? next : keyMap.get(next));
             }
         });
-        return extend(reverseKeyMap, { get: key => reverseKeyMap.get(key).then(parent.get) });
+        return extend(reverseKeyMap, { get: key => reverseKeyMap.get(key).then(key => key === Key.sentinel ? Key.NOT_FOUND : parent.get(key)) });
     }
     State.keyBy = keyBy;
     function keys(parent) {
