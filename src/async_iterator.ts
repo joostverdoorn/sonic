@@ -28,7 +28,7 @@ export module AsyncIterator {
 
   export function every<V>(iterator: AsyncIterator<V>, predicate: (value: V, key?: Key) => boolean | Promise<boolean>): Promise<boolean> {
     function loop(): Promise<boolean> {
-      return iterator.next().then(key => key == null || iterator.get().then(value => predicate(value, key)).then(result => result ? loop() : false));
+      return iterator.next().then(key => key === Key.sentinel || iterator.get().then(value => predicate(value, key)).then(result => result ? loop() : false));
     }
 
     return loop();
@@ -94,7 +94,7 @@ export module AsyncIterator {
         queue = Promise.resolve(null);
 
     return {
-      get:  () => queue = queue.then(() => current < 0 || current >= entries.length ? Promise.reject<V>(current) : Promise.resolve(entries[current][1])),
+      get:  () => queue = queue.then(() => current < 0 || current >= entries.length ? Key.NOT_FOUND : Promise.resolve(entries[current][1])),
       next: () => queue = queue.then(() => Promise.resolve(++current >= entries.length ? Key.sentinel : entries[current][0]))
     }
   }
