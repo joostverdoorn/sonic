@@ -48,6 +48,29 @@ export var AsyncIterator;
         }).then(res => res ? other.next().then(result => result.done) : false);
     }
     AsyncIterator.is = is;
+    function map(iterator, mapFn) {
+        return {
+            next: () => iterator.next().then(result => {
+                return result.done ? Promise.resolve(AsyncIterator.sentinel) : Promise.resolve(mapFn(result.value)).then(value => ({ done: false, value }));
+            })
+        };
+    }
+    AsyncIterator.map = map;
+    function filter(iterator, filterFn) {
+        function next() {
+            return iterator.next().then(result => result.done ? result : Promise.resolve(filterFn(result.value)).then(satisfied => satisfied ? result : next()));
+        }
+        return { next };
+    }
+    AsyncIterator.filter = filter;
+    function scan(iterator, scanFn, memo) {
+        return {
+            next: () => iterator.next().then(result => {
+                return result.done ? Promise.resolve(AsyncIterator.sentinel) : Promise.resolve(scanFn(memo, result.value)).then(value => ({ done: false, value: memo = value }));
+            })
+        };
+    }
+    AsyncIterator.scan = scan;
     function concat(...iterators) {
         return iterators.reduce((memo, value) => {
             var iterated = false, queue = Promise.resolve(null);
@@ -64,14 +87,6 @@ export var AsyncIterator;
         };
     }
     AsyncIterator.fromArray = fromArray;
-    function map(iterator, mapFn) {
-        return {
-            next: () => iterator.next().then(result => {
-                return result.done ? Promise.resolve(AsyncIterator.sentinel) : Promise.resolve(mapFn(result.value)).then(value => ({ done: false, value }));
-            })
-        };
-    }
-    AsyncIterator.map = map;
     function fromObject(object) {
         return fromArray(Object.keys(object).map(key => [key, object[key]]));
     }

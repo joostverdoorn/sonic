@@ -14,9 +14,11 @@ export declare module AsyncIterator {
     function at<T>(iterator: AsyncIterator<T>, index: number): Promise<T>;
     function contains<T>(iterator: AsyncIterator<T>, value: T): Promise<boolean>;
     function is<T>(iterator: AsyncIterator<T>, other: AsyncIterator<T>, equals?: (a: T, b: T) => boolean | Promise<boolean>): Promise<boolean>;
+    function map<T, U>(iterator: AsyncIterator<T>, mapFn: (value: T) => U | Promise<U>): AsyncIterator<U>;
+    function filter<T>(iterator: AsyncIterator<T>, filterFn: (value: T) => boolean | Promise<boolean>): AsyncIterator<T>;
+    function scan<T, U>(iterator: AsyncIterator<T>, scanFn: (memo: U, value: T) => U | Promise<U>, memo?: U): AsyncIterator<U>;
     function concat<T>(...iterators: AsyncIterator<T>[]): AsyncIterator<T>;
     function fromArray<T>(array: T[]): AsyncIterator<T>;
-    function map<T, U>(iterator: AsyncIterator<T>, mapFn: (value: T) => U | Promise<U>): AsyncIterator<U>;
     function fromObject<V>(object: {
         [key: string]: V;
     }): AsyncIterator<Entry<V>>;

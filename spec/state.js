@@ -124,40 +124,38 @@ test('splice', t => {
   });
 });
 
+test('map', t => {
+  var { map, is } = State;
+  t.test('should map stuff', t => is(map(state({a: 3, b: 4, c: 5}), x => x * 2), state({a: 6, b: 8, c: 10})).then(t.ok));
+});
+
 test('filter', t => {
   var { filter, is } = State;
   t.test('should filter stuff', t => is(filter(state({a: 3, b: 4, c: 5}), x => x > 3), state({b: 4, c: 5})).then(t.ok));
   t.test('should filter less stuff', t => is(filter(state({a: 3}), x => x > 3), state({})).then(t.ok));
 });
 
-test('fromEntries', t => {
-  t.test('should produce a state', t => {
-    var { fromEntries } = State,
-        object = {a: 3, b: 4, c: 5}
-
-    t.test('get', t => {
-      t.test('should contain a', t => state(object).get('a').then(c(t.equals, 3)));
-      t.test('should contain b', t => state(object).get('b').then(c(t.equals, 4)));
-      t.test('should contain c', t => state(object).get('c').then(c(t.equals, 5)));
-      t.test('should not contain d', t => state(object).get('d').then(t.fail, t.pass));
-    });
-
-    t.test('next', t => {
-      t.test('a first', t => state(object).next().then(c(t.equals, 'a')));
-      t.test('b next of a', t => state(object).next('a').then(c(t.equals, 'b')));
-      t.test('c next of b', t => state(object).next('a').then(c(t.equals, 'b')));
-      t.test('c last', t => state(object).next('c').then(r(t.equals, null)));
-    });
-
-    t.test('prev', t => {
-      t.test('c last', t => state(object).prev().then(c(t.equals, 'c')));
-      t.test('b before c', t => state(object).prev('c').then(c(t.equals, 'b')));
-      t.test('a before b', t => state(object).prev('b').then(c(t.equals, 'a')));
-      t.test('a first', t => state(object).prev('a').then(r(t.equals, null)));
-    });
-  });
+test('scan', t => {
+  var { scan, is } = State;
+  t.test('should scan stuff', t => is(scan(state({a: 3, b: 4, c: 5}), (x, y) => x + y, 0), state({a: 3, b: 7, c: 12})).then(t.ok));
 });
 
+test('flatten', t => {
+  var { flatten, is, entries } = State;
+  var tree = state({x: state({a: 3, b: 4, c: 5}), y: state({d: 6, e: 7, f: 8})});
+  var flattened = state({'x/a': 3, 'x/b': 4, 'x/c': 5, 'y/d': 6, 'y/e': 7, 'y/f': 8});
+
+  t.test('should flatten stuff', t => is(flatten(tree), flattened).then(t.ok));
+});
+
+test('keyBy', t => {
+  var { keyBy } = State,
+      array = [3, 4, 5],
+      object = {6: 3, 8: 4, 10: 5},
+      keyFn = (value, key) => (value * 2).toString();
+
+  t.test('should key the state by the keyFn', t => State.is(state(object), keyBy(state(array), keyFn)).then(t.ok));
+});
 
 test('entries', t => {
   var { entries } = State;
@@ -180,11 +178,49 @@ test('entries', t => {
   });
 });
 
-test('keyBy', t => {
-  var { keyBy } = State,
-      array = [3, 4, 5],
-      object = {6: 3, 8: 4, 10: 5},
-      keyFn = (value, key) => value * 2;
+test('fromEntries', t => {
+  t.test('should produce a state', t => {
+    var { is, fromEntries } = State,
+        object = {a: 3, b: 4, c: 5};
 
-  t.test('should key the state by the keyFn', t => State.is(state(object), keyBy(state(array), keyFn)))
+    var iterator = AsyncIterator.fromObject;
+
+    t.test(t => is(fromEntries(iterator(object)), state(object)).then(t.ok));
+
+    t.test('get', t => {
+      t.test('should contain a', t => fromEntries(iterator(object)).get('a').then(c(t.equals, 3)));
+      t.test('should contain b', t => fromEntries(iterator(object)).get('b').then(c(t.equals, 4)));
+      t.test('should contain c', t => fromEntries(iterator(object)).get('c').then(c(t.equals, 5)));
+      t.test('should not contain d', t => fromEntries(iterator(object)).get('d').then(t.fail, t.pass));
+    });
+
+    t.test('next', t => {
+      t.test('a first', t => fromEntries(iterator(object)).next().then(c(t.equals, 'a')));
+      t.test('b next of a', t => fromEntries(iterator(object)).next('a').then(c(t.equals, 'b')));
+      t.test('c next of b', t => fromEntries(iterator(object)).next('a').then(c(t.equals, 'b')));
+      t.test('c last', t => fromEntries(iterator(object)).next('c').then(r(t.equals, null)));
+    });
+
+    t.test('prev', t => {
+      t.test('c last', t => fromEntries(iterator(object)).prev().then(c(t.equals, 'c')));
+      t.test('b before c', t => fromEntries(iterator(object)).prev('c').then(c(t.equals, 'b')));
+      t.test('a before b', t => fromEntries(iterator(object)).prev('b').then(c(t.equals, 'a')));
+      t.test('a first', t => fromEntries(iterator(object)).prev('a').then(r(t.equals, null)));
+    });
+  });
+});
+
+test('fromKeys', t => {
+  var { is, fromKeys } = State;
+  t.test('should create a state with the given keys and null values', t => {
+    return is(state({a: null, b: null, c: null}), fromKeys(AsyncIterator.fromArray(['a', 'b', 'c']))).then(t.ok);
+  });
+});
+
+test('fromValues', t => {
+  var { is, fromValues } = State;
+  t.test('should create a state with the given values and incrementing keys', t => {
+    // FIXME
+    return is(fromValues(AsyncIterator.fromArray(['a', 'b', 'c'])), fromValues(AsyncIterator.fromArray(['a', 'b', 'c']))).then(t.ok);
+  });
 });

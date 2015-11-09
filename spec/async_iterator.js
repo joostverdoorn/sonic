@@ -107,6 +107,32 @@ test('is', t => {
   });
 });
 
+test('map', t => {
+  var { is, map } = AsyncIterator;
+
+  t.test('should map the given iterator with the given map function', t => {
+    return is(map(iterator([1,2,3]), x => x * 2), iterator([2,4,6])).then(t.ok);
+  });
+});
+
+test('filter', t => {
+  var { is, filter } = AsyncIterator;
+
+  t.test('should filter the given iterator with the given filter function', t => {
+    return is(filter(iterator([1,2,3]), x => x % 2 == 1), iterator([1,3])).then(t.ok);
+  });
+});
+
+
+test('scan', t => {
+  var { is, scan } = AsyncIterator;
+
+  t.test('should scan over the given iterator with the given scan function', t => {
+    return is(scan(iterator([1,2,3]), (x, y) => x + y, 0), iterator([1,3,6])).then(t.ok);
+  });
+});
+
+
 test('concat', t => {
   t.test('should return an iterator over the combined elements', t => {
     return AsyncIterator.is(iterator([1,2,3,4,5,6]), AsyncIterator.concat(iterator([1,2,3]), iterator([4,5,6]))).then(t.ok)

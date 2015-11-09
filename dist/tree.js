@@ -6,11 +6,11 @@ export var Path;
     }
     Path.key = key;
     function fromKey(key) {
-        return key == null ? null : JSON.parse(key.toString());
+        return key == null ? null : key.toString().split('/');
     }
     Path.fromKey = fromKey;
     function toKey(path) {
-        return path == null ? null : JSON.stringify(path);
+        return path == null ? null : path.join('/');
     }
     Path.toKey = toKey;
     function head(path) {

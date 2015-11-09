@@ -154,6 +154,12 @@ export module State {
     return extend(parent, { get, prev, next });
   }
 
+  export function scan<V, W>(parent: State<V>, scanFn: (memo: W, value: V, key: Key) => W | Promise<W>, memo?: W): State<W> {
+    return fromEntries(AsyncIterator.scan<Entry<V>, Entry<W>>(entries(parent), (m, entry) =>  {
+      return Promise.resolve(scanFn(m[1], entry[1], entry[0])).then(result => [entry[0], result]);
+    }, [Key.sentinel, memo]));
+  }
+
   export function zoom<V>(parent: State<V>, key: Key): State<V> {
     const next = (k: Key) => k == null ? parent.get(key).then(() => key, reason => reason === Key.NOT_FOUND_ERROR ? null : Promise.reject(reason)) : (key === k ? Promise.resolve(null) : Key.NOT_FOUND);
 
@@ -172,22 +178,51 @@ export module State {
     });
   }
 
-  export function cache<V>(parent: State<V>): State<V> {
-    return Cache.apply(parent, Cache.create());
-  }
-
   export function keyBy<V>(parent: State<V>, keyFn: (value: V, key?: Key) => Key | Promise<Key>): State<V> {
     return fromEntries(AsyncIterator.map(entries(parent), entry => {
       return Promise.resolve(keyFn(entry[1], entry[0])).then(key => [key, entry[1]]);
     }));
   }
 
-  export function fromArray<V>(values: V[]): State<V> {
-    return fromEntries(AsyncIterator.fromArray(values.map((value, key) => <Entry<V>> [key, value])));
+  export function cache<V>(parent: State<V>): State<V> {
+    return Cache.apply(parent, Cache.create());
   }
 
-  export function fromObject<V>(values: {[key: string]: V}): State<V> {
-    return fromEntries(AsyncIterator.fromObject(values));
+  export function entries<V>(state: State<V>, range: Range = Range.all): AsyncIterator<Entry<V>> {
+    var current = Key.sentinel,
+        done = false,
+        from = range[0],
+        to   = range[1];
+
+    return {
+      next: () => {
+        function get(key: Key) {
+          if (key === Key.sentinel) return (done = true, Promise.resolve(AsyncIterator.sentinel));
+          return state.get(key).then( value => (current = key, {done: false, value: [key, value]}));
+        }
+
+        function iterate(key: Key) {
+          return state.next(key).then(next => {
+            if(Position.isPrevPosition(to) && to.prev === next) return get(Key.sentinel);
+            return get(next);
+          });
+        }
+
+        if (Position.isPrevPosition(from) && Position.isPrevPosition(to) && from.prev === to.prev) return get(Key.sentinel);
+        if (Position.isNextPosition(from) && Position.isNextPosition(to) && from.next === to.next) return get(Key.sentinel);
+        if (current === Key.sentinel) return Position.isPrevPosition(from) ? get(from.prev) : iterate(from.next);
+        if (Position.isNextPosition(to) && to.next === current) return get(Key.sentinel);
+        return iterate(current);
+      }
+    }
+  }
+
+  export function keys<V>(state: State<V>, range: Range = Range.all): AsyncIterator<Key> {
+    return AsyncIterator.map(entries(state), Entry.key);
+  }
+
+  export function values<V>(state: State<V>, range: Range = Range.all): AsyncIterator<V> {
+    return AsyncIterator.map(entries(state), Entry.value);
   }
 
   export function fromEntries<V>(iterator: AsyncIterator<Entry<V>>): State<V> {
@@ -233,33 +268,20 @@ export module State {
     return Cache.apply({get, prev, next}, cache);
   }
 
-  export function entries<V>(state: State<V>, range: Range = Range.all): AsyncIterator<Entry<V>> {
-    var current = Key.sentinel,
-        done = false,
-        from = range[0],
-        to   = range[1];
+  export function fromKeys(iterator: AsyncIterator<Key>): State<void> {
+    return fromEntries(AsyncIterator.map(iterator, key => <Entry<void>>[key, null]));
+  }
 
-    return {
-      next: () => {
-        function get(key: Key) {
-          if (key === Key.sentinel) return (done = true, Promise.resolve(AsyncIterator.sentinel));
-          return state.get(key).then( value => (current = key, {done: false, value: [key, value]}));
-        }
+  export function fromValues<V>(iterator: AsyncIterator<V>): State<V> {
+    return fromEntries(AsyncIterator.scan(iterator, (prev, value) => <[number, V]>[prev[0] + 1, value], <[number, V]>[-1, null]))
+  }
 
-        function iterate(key: Key) {
-          return state.next(key).then(next => {
-            if(Position.isPrevPosition(to) && to.prev === next) return get(Key.sentinel);
-            return get(next);
-          });
-        }
+  export function fromArray<V>(values: V[]): State<V> {
+    return fromEntries(AsyncIterator.fromArray(values.map((value, key) => <Entry<V>> [key, value])));
+  }
 
-        if (Position.isPrevPosition(from) && Position.isPrevPosition(to) && from.prev === to.prev) return get(Key.sentinel);
-        if (Position.isNextPosition(from) && Position.isNextPosition(to) && from.next === to.next) return get(Key.sentinel);
-        if (current === Key.sentinel) return Position.isPrevPosition(from) ? get(from.prev) : iterate(from.next);
-        if (Position.isNextPosition(to) && to.next === current) return get(Key.sentinel);
-        return iterate(current);
-      }
-    }
+  export function fromObject<V>(values: {[key: string]: V}): State<V> {
+    return fromEntries(AsyncIterator.fromObject(values));
   }
 }
 

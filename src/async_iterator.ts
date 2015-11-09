@@ -57,6 +57,30 @@ export module AsyncIterator {
     }).then(res => res ? other.next().then(result => result.done) : false);
   }
 
+  export function map<T, U>(iterator: AsyncIterator<T>, mapFn: (value: T) => U | Promise<U>): AsyncIterator<U> {
+    return {
+      next: () => iterator.next().then(result => {
+        return result.done ? Promise.resolve(sentinel) : Promise.resolve(mapFn(result.value)).then(value => ({done: false, value}))
+      })
+    };
+  }
+
+  export function filter<T>(iterator: AsyncIterator<T>, filterFn: (value: T) => boolean | Promise<boolean>): AsyncIterator<T> {
+    function next(): Promise<IteratorResult<T>> {
+      return iterator.next().then(result => result.done ? result : Promise.resolve(filterFn(result.value)).then(satisfied => satisfied ? result : next()));
+    }
+
+    return {next};
+  }
+
+  export function scan<T, U>(iterator: AsyncIterator<T>, scanFn: (memo: U, value: T) => U | Promise<U>, memo?: U): AsyncIterator<U> {
+    return {
+      next: () => iterator.next().then(result => {
+        return result.done ? Promise.resolve(sentinel) : Promise.resolve(scanFn(memo, result.value)).then(value => ({done: false, value: memo = value}))
+      })
+    }
+  }
+
   export function concat<T>(...iterators: AsyncIterator<T>[]): AsyncIterator<T> {
     return iterators.reduce((memo, value) => {
       var iterated = false,
@@ -76,14 +100,6 @@ export module AsyncIterator {
     return {
       next: () => queue = queue.then(() => {}, () => {}).then(() => Promise.resolve(++current >= array.length ? sentinel : {done: false, value: array[current]}))
     }
-  }
-
-  export function map<T, U>(iterator: AsyncIterator<T>, mapFn: (value: T) => U | Promise<U>): AsyncIterator<U> {
-    return {
-      next: () => iterator.next().then(result => {
-        return result.done ? Promise.resolve(sentinel) : Promise.resolve(mapFn(result.value)).then(value => ({done: false, value}))
-      })
-    };
   }
 
   export function fromObject<V>(object: {[key: string]: V}): AsyncIterator<Entry<V>> {

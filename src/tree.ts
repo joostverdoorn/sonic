@@ -9,11 +9,11 @@ export module Path {
   }
 
   export function fromKey(key: Key): Path {
-    return key == null ? null : JSON.parse(key.toString());
+    return key == null ? null : key.toString().split('/');
   }
 
   export function toKey(path: Path): Key {
-    return path == null ? null : JSON.stringify(path);
+    return path == null ? null : path.join('/');
   }
 
   export function head(path: Path): Key {

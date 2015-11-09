@@ -126,6 +126,12 @@ export var State;
         return extend(parent, { get, prev, next });
     }
     State.filter = filter;
+    function scan(parent, scanFn, memo) {
+        return fromEntries(AsyncIterator.scan(entries(parent), (m, entry) => {
+            return Promise.resolve(scanFn(m[1], entry[1], entry[0])).then(result => [entry[0], result]);
+        }, [Key.sentinel, memo]));
+    }
+    State.scan = scan;
     function zoom(parent, key) {
         const next = (k) => k == null ? parent.get(key).then(() => key, reason => reason === Key.NOT_FOUND_ERROR ? null : Promise.reject(reason)) : (key === k ? Promise.resolve(null) : Key.NOT_FOUND);
         return extend(parent, {
@@ -143,24 +149,53 @@ export var State;
         });
     }
     State.flatten = flatten;
-    function cache(parent) {
-        return Cache.apply(parent, Cache.create());
-    }
-    State.cache = cache;
     function keyBy(parent, keyFn) {
         return fromEntries(AsyncIterator.map(entries(parent), entry => {
             return Promise.resolve(keyFn(entry[1], entry[0])).then(key => [key, entry[1]]);
         }));
     }
     State.keyBy = keyBy;
-    function fromArray(values) {
-        return fromEntries(AsyncIterator.fromArray(values.map((value, key) => [key, value])));
+    function cache(parent) {
+        return Cache.apply(parent, Cache.create());
     }
-    State.fromArray = fromArray;
-    function fromObject(values) {
-        return fromEntries(AsyncIterator.fromObject(values));
+    State.cache = cache;
+    function entries(state, range = Range.all) {
+        var current = Key.sentinel, done = false, from = range[0], to = range[1];
+        return {
+            next: () => {
+                function get(key) {
+                    if (key === Key.sentinel)
+                        return (done = true, Promise.resolve(AsyncIterator.sentinel));
+                    return state.get(key).then(value => (current = key, { done: false, value: [key, value] }));
+                }
+                function iterate(key) {
+                    return state.next(key).then(next => {
+                        if (Position.isPrevPosition(to) && to.prev === next)
+                            return get(Key.sentinel);
+                        return get(next);
+                    });
+                }
+                if (Position.isPrevPosition(from) && Position.isPrevPosition(to) && from.prev === to.prev)
+                    return get(Key.sentinel);
+                if (Position.isNextPosition(from) && Position.isNextPosition(to) && from.next === to.next)
+                    return get(Key.sentinel);
+                if (current === Key.sentinel)
+                    return Position.isPrevPosition(from) ? get(from.prev) : iterate(from.next);
+                if (Position.isNextPosition(to) && to.next === current)
+                    return get(Key.sentinel);
+                return iterate(current);
+            }
+        };
     }
-    State.fromObject = fromObject;
+    State.entries = entries;
+    function keys(state, range = Range.all) {
+        return AsyncIterator.map(entries(state), Entry.key);
+    }
+    State.keys = keys;
+    function values(state, range = Range.all) {
+        return AsyncIterator.map(entries(state), Entry.value);
+    }
+    State.values = values;
     function fromEntries(iterator) {
         var cache = Cache.create(), exhausted = false, currentKey = null, queue = Promise.resolve(null);
         var cachingIterator = {
@@ -198,35 +233,22 @@ export var State;
         return Cache.apply({ get, prev, next }, cache);
     }
     State.fromEntries = fromEntries;
-    function entries(state, range = Range.all) {
-        var current = Key.sentinel, done = false, from = range[0], to = range[1];
-        return {
-            next: () => {
-                function get(key) {
-                    if (key === Key.sentinel)
-                        return (done = true, Promise.resolve(AsyncIterator.sentinel));
-                    return state.get(key).then(value => (current = key, { done: false, value: [key, value] }));
-                }
-                function iterate(key) {
-                    return state.next(key).then(next => {
-                        if (Position.isPrevPosition(to) && to.prev === next)
-                            return get(Key.sentinel);
-                        return get(next);
-                    });
-                }
-                if (Position.isPrevPosition(from) && Position.isPrevPosition(to) && from.prev === to.prev)
-                    return get(Key.sentinel);
-                if (Position.isNextPosition(from) && Position.isNextPosition(to) && from.next === to.next)
-                    return get(Key.sentinel);
-                if (current === Key.sentinel)
-                    return Position.isPrevPosition(from) ? get(from.prev) : iterate(from.next);
-                if (Position.isNextPosition(to) && to.next === current)
-                    return get(Key.sentinel);
-                return iterate(current);
-            }
-        };
+    function fromKeys(iterator) {
+        return fromEntries(AsyncIterator.map(iterator, key => [key, null]));
     }
-    State.entries = entries;
+    State.fromKeys = fromKeys;
+    function fromValues(iterator) {
+        return fromEntries(AsyncIterator.scan(iterator, (prev, value) => [prev[0] + 1, value], [-1, null]));
+    }
+    State.fromValues = fromValues;
+    function fromArray(values) {
+        return fromEntries(AsyncIterator.fromArray(values.map((value, key) => [key, value])));
+    }
+    State.fromArray = fromArray;
+    function fromObject(values) {
+        return fromEntries(AsyncIterator.fromObject(values));
+    }
+    State.fromObject = fromObject;
 })(State || (State = {}));
 export default State;
 

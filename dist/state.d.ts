@@ -31,15 +31,20 @@ export declare module State {
     function reverse<V>(parent: State<V>): State<V>;
     function map<V, W>(parent: State<V>, mapFn: (value: V, key?: Key) => W | Promise<W>): State<W>;
     function filter<V>(parent: State<V>, filterFn: (value: V, key?: Key) => boolean | Promise<boolean>): State<V>;
+    function scan<V, W>(parent: State<V>, scanFn: (memo: W, value: V, key: Key) => W | Promise<W>, memo?: W): State<W>;
     function zoom<V>(parent: State<V>, key: Key): State<V>;
     function flatten<V>(parent: Tree<V>): State<V>;
-    function cache<V>(parent: State<V>): State<V>;
     function keyBy<V>(parent: State<V>, keyFn: (value: V, key?: Key) => Key | Promise<Key>): State<V>;
+    function cache<V>(parent: State<V>): State<V>;
+    function entries<V>(state: State<V>, range?: Range): AsyncIterator<Entry<V>>;
+    function keys<V>(state: State<V>, range?: Range): AsyncIterator<Key>;
+    function values<V>(state: State<V>, range?: Range): AsyncIterator<V>;
+    function fromEntries<V>(iterator: AsyncIterator<Entry<V>>): State<V>;
+    function fromKeys(iterator: AsyncIterator<Key>): State<void>;
+    function fromValues<V>(iterator: AsyncIterator<V>): State<V>;
     function fromArray<V>(values: V[]): State<V>;
     function fromObject<V>(values: {
         [key: string]: V;
     }): State<V>;
-    function fromEntries<V>(iterator: AsyncIterator<Entry<V>>): State<V>;
-    function entries<V>(state: State<V>, range?: Range): AsyncIterator<Entry<V>>;
 }
 export default State;
