@@ -1,4 +1,5 @@
 import Key from './key';
+import Entry from './entry';
 import { Position, Range } from './range';
 import Cache from './cache';
 import AsyncIterator from './async_iterator';
@@ -34,14 +35,12 @@ export var State;
     }
     State.has = has;
     function is(state, other) {
-        var iterator = toIterator(state), otherIterator = toIterator(other);
-        return AsyncIterator.every(iterator, (value, key) => {
-            return otherIterator.next().then(k => k !== key ? false : otherIterator.get().then(v => v === value));
-        }).then(res => res ? otherIterator.next().then(k => k === Key.sentinel) : false);
+        var iterator = entries(state), otherIterator = entries(other);
+        return AsyncIterator.is(iterator, otherIterator, Entry.is);
     }
     State.is = is;
     function contains(state, value) {
-        return AsyncIterator.some(toIterator(state), (v, k) => v === value);
+        return AsyncIterator.some(entries(state), ([k, v]) => v === value);
     }
     State.contains = contains;
     function isEmpty(state) {
@@ -49,7 +48,7 @@ export var State;
     }
     State.isEmpty = isEmpty;
     function slice(parent, range = Range.all) {
-        return fromIterator(toIterator(parent, range));
+        return fromEntries(entries(parent, range));
     }
     State.slice = slice;
     function splice(parent, range, child) {
@@ -82,11 +81,11 @@ export var State;
             })
         });
         function get(key) {
-            return child.get(key).catch(reason => reason === Key.NOT_FOUND_ERROR ? bridgedParent.get(key) : Promise.reject(reason));
+            return has(child, key).then(res => res ? bridgedChild.get(key) : bridgedParent.get(key));
         }
         function prev(key = Key.sentinel) {
             if (Position.isPrevPosition(to) && key === to.prev)
-                return bridgedParent.next(Key.sentinel);
+                return bridgedChild.prev(Key.sentinel);
             return has(bridgedChild, key).then(res => res ? bridgedChild.prev(key) : bridgedParent.prev(key));
         }
         function next(key = Key.sentinel) {
@@ -151,7 +150,7 @@ export var State;
     function keyBy(parent, keyFn) {
         var keyMap = cache(State.map(parent, keyFn));
         var reverseKeyMap = cache({
-            get: key => AsyncIterator.keyOf(State.toIterator(keyMap), key),
+            get: key => AsyncIterator.find(entries(keyMap), ([k, v]) => v === key).then(Entry.key),
             prev: (key = Key.sentinel) => {
                 return Promise.resolve(key === Key.sentinel ? Key.sentinel : reverseKeyMap.get(key))
                     .then(keyMap.prev).then(prev => prev === Key.sentinel ? prev : keyMap.get(prev));
@@ -169,86 +168,79 @@ export var State;
     }
     State.keys = keys;
     function fromArray(values) {
-        return {
-            get: (key) => key in values ? Promise.resolve(values[key]) : Key.NOT_FOUND,
-            prev: (key) => {
-                var index = key == null ? values.length - 1 : key - 1;
-                return Promise.resolve(index === -1 ? null : index);
-            },
-            next: (key) => {
-                var index = key == null ? 0 : key + 1;
-                return Promise.resolve(index === values.length ? null : index);
-            }
-        };
+        return fromEntries(AsyncIterator.fromArray(values.map((value, key) => [key, value])));
     }
     State.fromArray = fromArray;
     function fromObject(values) {
-        return fromIterator(AsyncIterator.fromObject(values));
+        return fromEntries(AsyncIterator.fromObject(values));
     }
     State.fromObject = fromObject;
-    function fromIterator(iterator) {
+    function fromEntries(iterator) {
         var cache = Cache.create(), exhausted = false, currentKey = null, queue = Promise.resolve(null);
-        var cachingIterator = AsyncIterator.extend(iterator, {
-            get: () => cache.get[currentKey] = iterator.get(),
-            next: () => cache.next[currentKey] = iterator.next().then(key => {
-                cache.prev[key] = Promise.resolve(currentKey);
-                exhausted = key === null;
-                return currentKey = key;
-            }),
-        });
+        var cachingIterator = {
+            next: () => iterator.next().then(({ done, value: entry }) => {
+                if (done) {
+                    exhausted = true;
+                    cache.prev[Key.sentinel] = Promise.resolve(currentKey);
+                    cache.next[currentKey] = Promise.resolve(Key.sentinel);
+                    return AsyncIterator.sentinel;
+                }
+                cache.prev[entry[0]] = Promise.resolve(currentKey);
+                cache.next[currentKey] = Promise.resolve(entry[0]);
+                cache.get[entry[0]] = Promise.resolve(entry[1]);
+                currentKey = entry[0];
+                return { done, value: entry };
+            })
+        };
         function get(key) {
             if (exhausted)
                 return Key.NOT_FOUND;
-            return queue = queue.then(() => {
-                if (key === currentKey)
-                    return cachingIterator.get();
-                return AsyncIterator.find(cachingIterator, (value, k) => k === key);
-            });
+            return AsyncIterator.find(cachingIterator, ([k, v]) => k === key).then(Entry.value);
         }
         function prev(key) {
             if (exhausted)
                 return Key.NOT_FOUND;
-            return queue = queue.then(() => {
-                return AsyncIterator.some(cachingIterator, (value, k) => k === key).then(() => cache.prev[key]);
-            });
+            return AsyncIterator.some(cachingIterator, ([k, v]) => k === key).then(() => key in cache.prev ? cache.prev[key] : Key.NOT_FOUND);
         }
         function next(key) {
             if (exhausted)
                 return Key.NOT_FOUND;
-            return queue = queue.then(() => {
-                if (key === currentKey)
-                    return cachingIterator.next();
-                return AsyncIterator.findKey(cachingIterator, (value, k) => k === key).then(() => cachingIterator.next());
-            });
+            if (key === currentKey)
+                return cachingIterator.next().then(result => result.done ? Key.sentinel : result.value[0]);
+            return AsyncIterator.find(cachingIterator, ([k, v]) => k === key).then(() => cachingIterator.next()).then(result => result.done ? Key.sentinel : result.value[0]);
         }
         return Cache.apply({ get, prev, next }, cache);
     }
-    State.fromIterator = fromIterator;
-    function toIterator(state, range = Range.all) {
-        var current = Key.sentinel, queue = Promise.resolve(null);
-        function get() {
-            return queue = queue.then(() => state.get(current));
-        }
-        function next() {
-            return queue = queue.then(() => {
-                var from = range[0], to = range[1];
+    State.fromEntries = fromEntries;
+    function entries(state, range = Range.all) {
+        var current = Key.sentinel, done = false, from = range[0], to = range[1];
+        return {
+            next: () => {
+                function get(key) {
+                    if (key === Key.sentinel)
+                        return (done = true, Promise.resolve(AsyncIterator.sentinel));
+                    return state.get(key).then(value => (current = key, { done: false, value: [key, value] }));
+                }
                 function iterate(key) {
-                    return state.next(key).then(next => Position.isPrevPosition(to) && to.prev === next ? current = Key.sentinel : current = next);
+                    return state.next(key).then(next => {
+                        if (Position.isPrevPosition(to) && to.prev === next)
+                            return get(Key.sentinel);
+                        return get(next);
+                    });
                 }
                 if (Position.isPrevPosition(from) && Position.isPrevPosition(to) && from.prev === to.prev)
-                    return Promise.resolve(Key.sentinel);
+                    return get(Key.sentinel);
                 if (Position.isNextPosition(from) && Position.isNextPosition(to) && from.next === to.next)
-                    return Promise.resolve(Key.sentinel);
+                    return get(Key.sentinel);
                 if (current === Key.sentinel)
-                    return Position.isPrevPosition(from) ? Promise.resolve(current = from.prev) : iterate(from.next);
+                    return Position.isPrevPosition(from) ? get(from.prev) : iterate(from.next);
                 if (Position.isNextPosition(to) && to.next === current)
-                    return Promise.resolve(current = Key.sentinel);
+                    return get(Key.sentinel);
                 return iterate(current);
-            });
-        }
-        return { get, next };
+            }
+        };
     }
-    State.toIterator = toIterator;
+    State.entries = entries;
 })(State || (State = {}));
 export default State;
 

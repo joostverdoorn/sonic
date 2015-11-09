@@ -15,6 +15,7 @@
         "src/async_iterator.ts",
         "src/bind.ts",
         "src/cache.ts",
+        "src/entry.ts",
         "src/factory.ts",
         "src/key.ts",
         "src/lens.ts",

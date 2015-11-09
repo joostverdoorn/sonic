@@ -4,12 +4,13 @@ var gulp       = require('gulp'),
     foreach    = require('gulp-foreach'),
     uglify     = require('gulp-uglify'),
     typescript = require('gulp-typescript'),
+    notifier   = require('node-notifier'),
     merge      = require('merge2'),
     source     = require('vinyl-source-stream'),
     buffer     = require('vinyl-buffer'),
     browserify = require('browserify'),
     babelify   = require('babelify'),
-    report     = require('tap-spec'),
+    report     = require('faucet'),
     through    = require('through2'),
     stream     = require('stream'),
     spawn      = require('child_process').spawn,
@@ -53,6 +54,9 @@ gulp.task('default', gulp.task('dist'));
 
 gulp.task('spec', gulp.series('typescript', done => {
   var passing = true;
+      // report = spawn('node_modules/tap/bin/run.js', ['-Rspec', '--', '-'])
+
+  // report.stdout.pipe(process.stdout);
 
   gulp.src('spec/*.js')
     .pipe(foreach((stream, file) => {
@@ -68,11 +72,16 @@ gulp.task('spec', gulp.series('typescript', done => {
         })).pipe(child.stdin);
 
       return child.stdout;
-    })).on('data', data => {
+    }))
+    .on('data', data => {
       if (data.indexOf('not ok') > -1) passing = false;
     }).on('end', () => {
-      if (passing) return done();
+      if (passing) {
+        notifier.notify({title: 'Sonic Test Results', message: 'Tests passed!'});
+        return done();
+      }
       process.stdout.write("\007");
+      notifier.notify({title: 'Sonic Test Results', message: 'Tests failed!'});
       done('failed');
     })
     .pipe(report())

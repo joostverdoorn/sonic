@@ -1,6 +1,7 @@
 import test              from 'blue-tape';
-import State         from '../dist/state';
+import State             from '../dist/state';
 import { AsyncIterator } from '../dist/async_iterator';
+import Entry             from '../dist/entry';
 
 function slice(array, index, count) {
   return Array.prototype.slice.call(array, index, count);
@@ -26,9 +27,11 @@ function r(fn) {
   }
 }
 
-function state(obj) {
-  return Array.isArray(obj) ? State.fromArray(obj) : State.fromObject(obj);
+
+function state(object) {
+  return State.fromEntries(AsyncIterator.fromObject(object));
 }
+
 
 test('first', t => {
   var { first } = State;
@@ -108,68 +111,80 @@ test('slice', t => {
 
 test('splice', t => {
   var { is, splice } = State;
-  t.test('should return an equal state when nothing is removed and added', t => is(splice(state({a: 3, b: 4, c: 5}), [{next: 'a'}, {prev: 'b'}]), state({a: 3, b: 4, c: 5})));
+  t.test('should return an equal state when nothing is removed and added', t => {
+    return is(splice(state({a: 3, b: 4, c: 5}), [{next: 'a'}, {prev: 'b'}]), state({a: 3, b: 4, c: 5}));
+  });
+
+  t.test('should return an equal state when something is added without removing', t => {
+    return is(splice(state({a: 3, b: 4, c: 5}), [{next: 'a'}, {prev: 'b'}], state({d: 6})), state({a: 3, d: 6, b: 4, c: 5}));
+  });
+
+  t.test('should return an equal state when something is added when removing', t => {
+    return is(splice(state({a: 3, b: 4, c: 5}), [{next: 'a'}, {prev: 'c'}], state({d: 6})), state({a: 3, d: 6, c: 5}));
+  });
 });
 
 test('filter', t => {
   var { filter, is } = State;
-  t.test('should filter stuff', t => is(filter(state({a: 3, b: 4, c: 5}), x => x > 3), state({b: 4, c: 5})));
-  t.test('should filter less stuff', t => is(filter(state({a: 3}), x => x > 3), state({})));
+  t.test('should filter stuff', t => is(filter(state({a: 3, b: 4, c: 5}), x => x > 3), state({b: 4, c: 5})).then(t.ok));
+  t.test('should filter less stuff', t => is(filter(state({a: 3}), x => x > 3), state({})).then(t.ok));
 });
 
+test('fromEntries', t => {
+  t.test('should produce a state', t => {
+    var { fromEntries } = State,
+        object = {a: 3, b: 4, c: 5}
 
-    // t.end()
-
-    // AsyncIterator.toArray(State.toIterator(a)).then(console.log);
-    // AsyncIterator.toArray(State.toIterator(State.splice(a, [{before: 'b', before: 'b'}]))).then(console.log);
-
-
-    // Promise.all([
-    //   // State.is(state, state).then(t.ok, t.fail)
-    //   State.is(a, State.splice(a, [{before: 'b'}, {before: 'b'}])).then(t.ok, t.fail)
-    //   // State.splice(state, [{before:}, {}]).then(spliced => State.is(state, spliced).then(t.ok, t.fail),
-    //   // State.splice(state, [{before:}, {}]).then(spliced => State.is(state, spliced).then(t.ok, t.fail),
-    // ]).then(() => t.end());
-  // });
-
-test('fromIterator', t => {
-  t.test('should not be sensitive to race conditions', t => {
-    var obj = {a: 3};
-    var it = AsyncIterator.fromObject(obj);
-    var s = State.fromIterator(it);
-
-
-    var u = State.extend(s, {
-      next: (key) => s.next(key).then(x => x)
+    t.test('get', t => {
+      t.test('should contain a', t => state(object).get('a').then(c(t.equals, 3)));
+      t.test('should contain b', t => state(object).get('b').then(c(t.equals, 4)));
+      t.test('should contain c', t => state(object).get('c').then(c(t.equals, 5)));
+      t.test('should not contain d', t => state(object).get('d').then(t.fail, t.pass));
     });
 
-    return u.next().then(console.log)
-    // s.next().then(s.get).then(console.log)
+    t.test('next', t => {
+      t.test('a first', t => state(object).next().then(c(t.equals, 'a')));
+      t.test('b next of a', t => state(object).next('a').then(c(t.equals, 'b')));
+      t.test('c next of b', t => state(object).next('a').then(c(t.equals, 'b')));
+      t.test('c last', t => state(object).next('c').then(r(t.equals, null)));
+    });
 
-
-
-
+    t.test('prev', t => {
+      t.test('c last', t => state(object).prev().then(c(t.equals, 'c')));
+      t.test('b before c', t => state(object).prev('c').then(c(t.equals, 'b')));
+      t.test('a before b', t => state(object).prev('b').then(c(t.equals, 'a')));
+      t.test('a first', t => state(object).prev('a').then(r(t.equals, null)));
+    });
   });
 });
 
-test('toIterator', t => {
-  function toObject(s, range) {
-    return AsyncIterator.toObject(State.toIterator(s, range));
-  }
 
-  var s = state({a: 3, b: 4, c: 5}),
+test('entries', t => {
+  var { entries } = State;
+
+  var object = {a: 3, b: 4, c: 5},
+      s = state(object),
       u = state({});
 
   t.test('should return an iterator over the entire state when no range is given', t => {
-    t.test('full state',  t => toObject(s).then(c(t.same, {a: 3, b: 4, c: 5})));
-    t.test('empty state', t => toObject(u).then(c(t.same, {})));
+    t.test('full state',  t => AsyncIterator.is(AsyncIterator.fromObject(object), entries(s), Entry.is).then(t.ok));
+    t.test('empty state', t => AsyncIterator.is(AsyncIterator.fromObject({}), entries(u)).then(t.ok));
   });
 
   t.test('should return an iterator over a range when a range is given', t => {
-    t.test('everything', t => toObject(s, [{next: null}, {prev: null}]).then(r(t.same, {a: 3, b: 4, c: 5})));
-    t.test('nothing',    t => toObject(s, [{next: 'a'},  {prev: 'b'}]).then(r(t.same, {})));
-    t.test('after a',    t => toObject(s, [{next: 'a'},  {prev: null}]).then(r(t.same, {b: 4, c: 5})));
-    t.test('until c',    t => toObject(s, [{next: null}, {prev: 'c'}]).then(r(t.same, {a: 3, b: 4})));
-    t.test('only b',     t => toObject(s, [{prev: 'b'},  {next: 'b'}]).then(r(t.same, {b: 4})));
+    t.test('everything', t => AsyncIterator.is(entries(s, [{next: null}, {prev: null}]), AsyncIterator.fromObject({a: 3, b: 4, c: 5}), Entry.is).then(t.ok));
+    t.test('nothing',    t => AsyncIterator.is(entries(s, [{next: 'a'},  {prev: 'b'}]), AsyncIterator.fromObject({}), Entry.is).then(t.ok));
+    t.test('after a',    t => AsyncIterator.is(entries(s, [{next: 'a'},  {prev: null}]), AsyncIterator.fromObject({b: 4, c: 5}), Entry.is).then(t.ok));
+    t.test('until c',    t => AsyncIterator.is(entries(s, [{next: null}, {prev: 'c'}]), AsyncIterator.fromObject({a: 3, b: 4}), Entry.is).then(t.ok));
+    t.test('only b',     t => AsyncIterator.is(entries(s, [{prev: 'b'},  {next: 'b'}]), AsyncIterator.fromObject({b: 4}), Entry.is).then(t.ok));
   });
+});
+
+test('keyBy', t => {
+  var { keyBy } = State,
+      array = [3, 4, 5],
+      object = {6: 3, 8: 4, 10: 5},
+      keyFn = (value, key) => value * 2;
+
+  t.test('should key the state by the keyFn', t => State.is(state(object), keyBy(state(array), keyFn)))
 });

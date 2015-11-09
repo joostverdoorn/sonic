@@ -1,118 +1,93 @@
 import Key   from './key';
+import Entry from './entry';
 
-export interface AsyncIterator<V> {
-  get:  () => Promise<V>
-  next: () => Promise<Key>
+export interface AsyncIterator<T> {
+  next: () => Promise<IteratorResult<T>>
 }
 
 export module AsyncIterator {
 
-  export type Entry<V> = [Key, V];
+  export const sentinel: IteratorResult<any> = { done: true };
 
   export const Empty: AsyncIterator<any> = {
-    get: () => Key.NOT_FOUND,
-    next: () => Promise.resolve(Key.sentinel)
+    next: () => Promise.resolve(sentinel)
   }
 
-  export interface Partial<V> {
-    get?:  () => Promise<V>
-    next?: () => Promise<Key>
-  }
-
-  export function extend<V>(iterator: AsyncIterator<V>, partial: Partial<V>): AsyncIterator<V> {
-    iterator = Object.create(iterator);
-    if ('get' in partial) iterator.get = partial.get;
-    if ('next' in partial) iterator.next = partial.next;
-    return iterator;
-  }
-
-  export function every<V>(iterator: AsyncIterator<V>, predicate: (value: V, key?: Key) => boolean | Promise<boolean>): Promise<boolean> {
+  export function every<T>(iterator: AsyncIterator<T>, predicate: (value: T) => boolean | Promise<boolean>): Promise<boolean> {
     function loop(): Promise<boolean> {
-      return iterator.next().then(key => key === Key.sentinel || iterator.get().then(value => predicate(value, key)).then(result => result ? loop() : false));
+      return iterator.next().then(result => result.done ? true : Promise.resolve(predicate(result.value)).then(satisfied => satisfied ? loop() : false));
     }
 
     return loop();
   }
 
-  export function some<V>(iterator: AsyncIterator<V>, predicate: (value: V, key?: Key) => boolean | Promise<boolean>): Promise<boolean> {
-    return every(iterator, (value, key) => Promise.resolve(predicate(value, key)).then(result => !result)).then(result => !result);
+  export function some<T>(iterator: AsyncIterator<T>, predicate: (value: T) => boolean | Promise<boolean>): Promise<boolean> {
+    return every(iterator, value => Promise.resolve(predicate(value)).then(result => !result)).then(result => !result);
   }
 
-  export function forEach<V>(iterator: AsyncIterator<V>, fn: (value: V, key?: Key) => void | Promise<void>): Promise<void> {
-    return every(iterator, (value: V, key: Key) => Promise.resolve(fn(value, key)).then(() => true)).then(() => {})
+  export function forEach<T>(iterator: AsyncIterator<T>, fn: (value: T) => void | Promise<void>): Promise<void> {
+    return every(iterator, (value: T) => Promise.resolve(fn(value)).then(() => true)).then(() => {})
   }
 
-  export function reduce<V, W>(iterator: AsyncIterator<V>, fn: (memo: W, value: V, key?: Key) => W | Promise<W>, memo?: W): Promise<W> {
-    return forEach(iterator, (value: V, key: Key) => Promise.resolve(fn(memo, value, key)).then(value => { memo = value })).then(() => memo);
+  export function reduce<T, U>(iterator: AsyncIterator<T>, fn: (memo: U, value: T) => U | Promise<U>, memo?: U): Promise<U> {
+    return forEach(iterator, (value: T) => Promise.resolve(fn(memo, value)).then(value => { memo = value })).then(() => memo);
   }
 
-  export function findKey<V>(iterator: AsyncIterator<V>, predicate: (value: V, key?: Key) => boolean | Promise<boolean>): Promise<Key> {
-    var key: Key;
-    return some(iterator, (v: V, k: Key) => Promise.resolve(predicate(v, k)).then(res => res ? (key = k, true) : false))
-      .then(found => found ? key : Key.sentinel);
+  export function find<T>(iterator: AsyncIterator<T>, predicate: (value: T) => boolean | Promise<boolean>): Promise<T> {
+    var result: T;
+    return some(iterator, value => Promise.resolve(predicate(value)).then(satisfied => satisfied ? (result = value, true) : false)).then(satisfied => satisfied ? result : Key.NOT_FOUND);
   }
 
-  export function find<V>(iterator: AsyncIterator<V>, predicate: (value: V, key?: Key) => boolean | Promise<boolean>): Promise<V> {
-    return findKey(iterator, predicate).then(key => key === Key.sentinel ? Key.NOT_FOUND : iterator.get());
-  }
-
-  export function keyOf<V>(iterator: AsyncIterator<V>, value: V): Promise<Key> {
-    return findKey(iterator, v => v === value);
-  }
-
-  export function indexOf<V>(iterator: AsyncIterator<V>, value: V): Promise<number> {
+  export function indexOf<T>(iterator: AsyncIterator<T>, value: T): Promise<number> {
     var index = -1;
-    return some(iterator, (v: V, k: Key) => (index++, value == v)).then(found => found ? index : Key.NOT_FOUND);
+    return some(iterator, v => (index++, value == v)).then(found => found ? index : Key.NOT_FOUND);
   }
 
-  export function keyAt<V>(iterator: AsyncIterator<V>, index: number): Promise<Key> {
-    return findKey(iterator, () => 0 === index--);
+  export function at<T>(iterator: AsyncIterator<T>, index: number): Promise<T> {
+    return find(iterator, () => 0 === index--);
   }
 
-  export function at<V>(iterator: AsyncIterator<V>, index: number): Promise<V> {
-    return keyAt(iterator, index).then(iterator.get);
-  }
-
-  export function contains<V>(iterator: AsyncIterator<V>, value: V): Promise<boolean> {
+  export function contains<T>(iterator: AsyncIterator<T>, value: T): Promise<boolean> {
     return some(iterator, v => v === value);
   }
 
-  export function concat<V>(...iterators: AsyncIterator<V>[]): AsyncIterator<V> {
+  export function concat<T>(...iterators: AsyncIterator<T>[]): AsyncIterator<T> {
     return iterators.reduce((memo, value) => {
       var iterated = false,
           queue = Promise.resolve(null);
 
       return {
-        get:  () => queue.then(() => iterated ? value.get() : memo.get()),
-        next: () => queue.then(() => iterated ? value.next() : memo.next().then(key => key !== Key.sentinel ? key : (iterated = true, value.next())))
+        next: () => queue = queue.then(() => {}, () => {}).then(() => iterated ? value.next() : memo.next().then(result => result.done ? (iterated = true, value.next()) : result))
       }
+
     }, Empty);
   }
 
-  export function fromEntries<V>(entries: Entry<V>[]): AsyncIterator<V> {
+  export function is<T>(iterator: AsyncIterator<T>, other: AsyncIterator<T>, equals: (a: T, b: T) => boolean | Promise<boolean> = (a, b) => a === b): Promise<boolean> {
+    return AsyncIterator.every(iterator, value => {
+      return other.next().then(result => !result.done && equals(result.value, value));
+    }).then(res => res ? other.next().then(result => result.done) : false);
+  }
+
+  export function fromArray<T>(array: T[]): AsyncIterator<T> {
     var current = -1,
         queue = Promise.resolve(null);
 
     return {
-      get:  () => queue = queue.then(() => current < 0 || current >= entries.length ? Key.NOT_FOUND : Promise.resolve(entries[current][1])),
-      next: () => queue = queue.then(() => Promise.resolve(++current >= entries.length ? Key.sentinel : entries[current][0]))
+      next: () => queue = queue.then(() => {}, () => {}).then(() => Promise.resolve(++current >= array.length ? sentinel : {done: false, value: array[current]}))
     }
   }
 
-  export function fromArray<V>(array: V[]): AsyncIterator<V> {
-    return fromEntries(array.map<Entry<V>>((value, key) => [key, value]));
+  export function fromObject<V>(object: {[key: string]: V}): AsyncIterator<Entry<V>> {
+    return fromArray(Object.keys(object).map<Entry<V>>(key => [key, object[key]]));
   }
 
-  export function fromObject<V>(object: {[key: string]: V}): AsyncIterator<V> {
-    return fromEntries(Object.keys(object).map<Entry<V>>(key => [key, object[key]]));
+  export function toArray<T>(iterator: AsyncIterator<T>): Promise<T[]> {
+    return reduce(iterator, (memo: T[], value: T) => (memo.push(value), memo), []);
   }
 
-  export function toArray<V>(iterator: AsyncIterator<V>): Promise<V[]> {
-    return reduce(iterator, (memo: V[], value: V) => (memo.push(value), memo), []);
-  }
-
-  export function toObject<V>(iterator: AsyncIterator<V>): Promise<{[key: string]: V}> {
-    return reduce(iterator, (memo: {[key: string]: V}, value: V, key: Key) => (memo[key] = value, memo), Object.create(null));
+  export function toObject<V>(iterator: AsyncIterator<Entry<V>>): Promise<{[key: string]: V}> {
+    return reduce(iterator, (memo: {[key: string]: V}, [key, value]) => (memo[key] = value, memo), Object.create(null));
   }
 }
 

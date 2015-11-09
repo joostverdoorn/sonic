@@ -1,78 +1,139 @@
-import test          from 'tape';
-import Key           from '../dist/key';
+import test          from 'blue-tape';
 import AsyncIterator from '../dist/async_iterator';
 
-// console.log('test')
-function createIterator() {
-  var current = Key.sentinel;
+function iterator(values) {
+  var current = -1;
   return {
-    get:  () => current !== Key.sentinel ? Promise.resolve(4) : Key.NOT_FOUND,
-    next: () => current === Key.sentinel ? Promise.resolve(current = 1) : Promise.resolve(current = Key.sentinel)
+    next: () => ++current < values.length ? Promise.resolve({ done: false, value: values[current] }) : Promise.resolve({ done: true })
   }
 }
 
-test('extend', t => {
-  t.test('should extend the iterator with the partial', t => {
-    var iterator = createIterator(),
-        get = () => {},
-        next = () => {};
-
-    var it = AsyncIterator.extend(iterator, {get, next});
-
-    t.equals(it.get, get);
-    t.equals(it.next, next);
-
-    t.end();
-  });
-});
-
-
-test('some', t => {
-
-  t.test('should resolve with true if the predicate is true for some element', t => {
-    var iterator = createIterator();
-    AsyncIterator.some(iterator, x => x > 2).then(t.ok, t.error).then(t.end);
-  });
-
-  t.test('should resolve with false if the predicate is not true for some element', t => {
-    var iterator = createIterator();
-    AsyncIterator.some(iterator, x => x < 2).then(t.notOk, t.error).then(t.end);
-  });
-
-  //
-  // t.end()
-});
 
 test('every', t => {
   t.test('should resolve with true if the predicate is true for every element', t => {
-    var iterator = createIterator();
-    AsyncIterator.every(iterator, x => x > 2).then(t.ok, t.error).then(t.end);
+    return AsyncIterator.every(iterator([1,2,3]), x => x > 0).then(t.ok, t.error);
   });
 
   t.test('should resolve with false if the predicate is not true for every element', t => {
-    var iterator = createIterator();
-    AsyncIterator.every(iterator, x => x < 2).then(t.notOk, t.error).then(t.end);
+    return AsyncIterator.every(iterator([1,2,3]), x => x > 2).then(t.notOk, t.error);
   });
-
-  // t.end()
 });
 
+test('some', t => {
+  t.test('should resolve with true if the predicate is true for some element', t => {
+    return AsyncIterator.some(iterator([1,2,3]), x => x > 2).then(t.ok, t.error);
+  });
 
+  t.test('should resolve with false if the predicate is not true for some element', t => {
+    return AsyncIterator.some(iterator([1,2,3]), x => x > 6).then(t.notOk, t.error);
+  });
+});
 
+test('forEach', t => {
+  t.test('should hit each element', t => {
+    var result = [];
+    return AsyncIterator.forEach(iterator([1,2,3]), x => result.push(x)).then(() => {
+      t.same([1,2,3], result);
+    });
+  });
+});
 
+test('reduce', t => {
+  t.test('should reduce', t => {
+    return AsyncIterator.reduce(iterator([1,2,3]), (x, y) => x + y, 0).then(x => t.is(x, 6));
+  });
+});
 
-// test.end();
-//
-// test('Bla', function (t) {
-//   t.equal(true, false);
-//   t.end();
-//
-//   describe "some", ->
-//     it "should resolve with true if the predicate is true for some element", (done) ->
-//       expect(AsyncIterator.some(@iterator, (x) -> x > 2)).toResolveWith(true, done)
-//
-//   describe "every", ->
-//     it "should resolve with true if the predicate is true for every element", (done) ->
-//       expect(AsyncIterator.every(@iterator, (x) -> x > 2)).toResolveWith(true, done)
-//
-// })
+test('find', t => {
+  t.test('should return the first element that satisfies the predicate', t => {
+    return AsyncIterator.find(iterator([1,2,3]), x => x > 2).then(x => t.is(x, 3));
+  });
+
+  t.test('should reject when no element satisfies the predicate', t => {
+    return AsyncIterator.find(iterator([1,2,3]), x => x > 4).then(t.fail, t.pass);
+  });
+});
+
+test('indexOf', t => {
+  t.test('should return the index of the given element', t => {
+    return AsyncIterator.indexOf(iterator([1,2,3]), 3).then(i => t.is(i, 2));
+  });
+
+  t.test('should reject when the element isnt present', t => {
+    return AsyncIterator.indexOf(iterator([1,2,3]), 4).then(t.fail, t.pass);
+  })
+});
+
+test('at', t => {
+  t.test('should resolve with the element at the given index', t => {
+    return AsyncIterator.at(iterator([1,2,3]), 2).then(x => t.is(x, 3));
+  });
+
+  t.test('should reject when the index is out of bounds', t => {
+    return AsyncIterator.at(iterator([1,2,3]), 3).then(t.fail, t.pass);
+  });
+
+});
+
+test('contains', t => {
+  t.test('should resolve with true when the iterator contains the given element', t => {
+    return AsyncIterator.contains(iterator([1,2,3]), 3).then(t.ok);
+  });
+
+  t.test('should resolve with false when the iterator doesnt contain the given element', t => {
+    return AsyncIterator.contains(iterator([1,2,3]), 4).then(t.notOk);
+  });
+});
+
+test('is', t => {
+  t.test('should resolve with true when the two iterators contain the same results', t => {
+    return AsyncIterator.is(iterator([1,2,3]), iterator([1,2,3])).then(t.ok);
+  });
+
+  t.test('should resolve with false when the two iterators don\'t contain the same results', t => {
+    return AsyncIterator.is(iterator([1,2,3]), iterator([1,2,4])).then(t.notOk);
+  });
+
+  t.test('should resolve with false when the two iterators contain the same results, but lengths differ', t => {
+    return AsyncIterator.is(iterator([1,2,3]), iterator([1,2,3,4])).then(t.notOk);
+  });
+
+  t.test('should resolve with false when the two iterators contain the same results, but lengths differ', t => {
+    return AsyncIterator.is(iterator([1,2,3,4]), iterator([1,2,3])).then(t.notOk);
+  });
+
+  t.test('should work with a custom comparator', t => {
+    return AsyncIterator.is(iterator([1.1, 2.2, 3.3]), iterator([1,2,3]), (a, b) => Math.floor(a) === Math.floor(b)).then(t.ok);
+  });
+});
+
+test('concat', t => {
+  t.test('should return an iterator over the combined elements', t => {
+    return AsyncIterator.is(iterator([1,2,3,4,5,6]), AsyncIterator.concat(iterator([1,2,3]), iterator([4,5,6]))).then(t.ok)
+  });
+});
+
+test('fromArray', t => {
+  t.test('should return an iterator with the values of the array as results', t => {
+    return AsyncIterator.is(iterator([1,2,3]), AsyncIterator.fromArray([1,2,3])).then(t.ok);
+  });
+});
+
+test('fromObject', t => {
+  t.test('should return an iterator with the entries of the object as results', t => {
+    AsyncIterator.toArray(AsyncIterator.fromObject({a: 1, b: 2, c: 3})).then(t.comment)
+    return AsyncIterator.is(iterator([['a', 1], ['b', 2] ,['c', 3]]), AsyncIterator.fromObject({a: 1, b: 2, c: 3}), (a, b) => a[0] === b[0] && a[1] === b[1]).then(t.ok);
+  });
+});
+
+test('toArray', t => {
+  t.test('should return an array containing all elements', t => {
+    return AsyncIterator.toArray(iterator([1,2,3])).then(array => t.same(array, [1,2,3]));
+  });
+});
+
+test('toObject', t => {
+  t.test('should return an object containing all entries', t => {
+    return AsyncIterator.toObject(iterator([['a', 1], ['b', 2], ['c', 3]])).then(object => t.same(object, {a: 1, b: 2, c: 3}));
+  });
+});

@@ -1,4 +1,5 @@
 import Key from './key';
+import Entry from './entry';
 import { Range } from './range';
 import AsyncIterator from './async_iterator';
 import { Tree } from './tree';
@@ -39,7 +40,7 @@ export declare module State {
     function fromObject<V>(values: {
         [key: string]: V;
     }): State<V>;
-    function fromIterator<V>(iterator: AsyncIterator<V>): State<V>;
-    function toIterator<V>(state: State<V>, range?: Range): AsyncIterator<V>;
+    function fromEntries<V>(iterator: AsyncIterator<Entry<V>>): State<V>;
+    function entries<V>(state: State<V>, range?: Range): AsyncIterator<Entry<V>>;
 }
 export default State;
