@@ -37,8 +37,8 @@ export module List {
     var state = State.filter(parent.state, filterFn),
         patches = Observable.map(parent.patches, patch => {
           return Promise.all<Position>([
-            AsyncIterator.findKey(State.toIterator(State.reverse(state), [Position.reverse(patch.range[0]), {prev: null}]), filterFn).then(next => ({next})),
-            AsyncIterator.findKey(State.toIterator(state, [patch.range[1], {prev: null}]), filterFn).then(prev => ({prev}))
+            AsyncIterator.find(State.entries(State.reverse(state), [Position.reverse(patch.range[0]), {prev: null}]), entry => filterFn(entry[1], entry[0])).then(next => ({next: next[0]})),
+            AsyncIterator.find(State.entries(state, [patch.range[1], {prev: null}]), entry => filterFn(entry[1], entry[0])).then(prev => ({prev: prev[0]}))
           ]).then((range: Range) => ({
             range: range,
             added: patch.added ? State.filter(patch.added, filterFn) : undefined
@@ -53,7 +53,7 @@ export module List {
         state   = State.zoom(parent.state, key),
         patches = Observable.map(
           Observable.filter(parent.patches, patch => {
-            return AsyncIterator.some(State.toIterator(parentState, patch.range), (value, k) => k === key)
+            return AsyncIterator.some(State.entries(parentState, patch.range), entry => entry[0] === key)
               .then(res => patch.added ? State.has(patch.added, key) : res)
           })
         , patch => {

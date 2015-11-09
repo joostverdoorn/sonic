@@ -40,7 +40,7 @@ export var State;
     }
     State.is = is;
     function contains(state, value) {
-        return AsyncIterator.some(entries(state), ([k, v]) => v === value);
+        return AsyncIterator.some(entries(state), entry => entry[1] === value);
     }
     State.contains = contains;
     function isEmpty(state) {
@@ -148,25 +148,11 @@ export var State;
     }
     State.cache = cache;
     function keyBy(parent, keyFn) {
-        var keyMap = cache(State.map(parent, keyFn));
-        var reverseKeyMap = cache({
-            get: key => AsyncIterator.find(entries(keyMap), ([k, v]) => v === key).then(Entry.key),
-            prev: (key = Key.sentinel) => {
-                return Promise.resolve(key === Key.sentinel ? Key.sentinel : reverseKeyMap.get(key))
-                    .then(keyMap.prev).then(prev => prev === Key.sentinel ? prev : keyMap.get(prev));
-            },
-            next: (key = Key.sentinel) => {
-                return Promise.resolve(key === Key.sentinel ? Key.sentinel : reverseKeyMap.get(key))
-                    .then(keyMap.next).then(next => next === Key.sentinel ? next : keyMap.get(next));
-            }
-        });
-        return extend(reverseKeyMap, { get: key => reverseKeyMap.get(key).then(key => key === Key.sentinel ? Key.NOT_FOUND : parent.get(key)) });
+        return fromEntries(AsyncIterator.map(entries(parent), entry => {
+            return Promise.resolve(keyFn(entry[1], entry[0])).then(key => [key, entry[1]]);
+        }));
     }
     State.keyBy = keyBy;
-    function keys(parent) {
-        return map(parent, (value, key) => key);
-    }
-    State.keys = keys;
     function fromArray(values) {
         return fromEntries(AsyncIterator.fromArray(values.map((value, key) => [key, value])));
     }
@@ -195,19 +181,19 @@ export var State;
         function get(key) {
             if (exhausted)
                 return Key.NOT_FOUND;
-            return AsyncIterator.find(cachingIterator, ([k, v]) => k === key).then(Entry.value);
+            return AsyncIterator.find(cachingIterator, entry => entry[0] === key).then(Entry.value);
         }
         function prev(key) {
             if (exhausted)
                 return Key.NOT_FOUND;
-            return AsyncIterator.some(cachingIterator, ([k, v]) => k === key).then(() => key in cache.prev ? cache.prev[key] : Key.NOT_FOUND);
+            return AsyncIterator.some(cachingIterator, entry => entry[0] === key).then(() => key in cache.prev ? cache.prev[key] : Key.NOT_FOUND);
         }
         function next(key) {
             if (exhausted)
                 return Key.NOT_FOUND;
             if (key === currentKey)
                 return cachingIterator.next().then(result => result.done ? Key.sentinel : result.value[0]);
-            return AsyncIterator.find(cachingIterator, ([k, v]) => k === key).then(() => cachingIterator.next()).then(result => result.done ? Key.sentinel : result.value[0]);
+            return AsyncIterator.find(cachingIterator, entry => entry[0] === key).then(() => cachingIterator.next()).then(result => result.done ? Key.sentinel : result.value[0]);
         }
         return Cache.apply({ get, prev, next }, cache);
     }

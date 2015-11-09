@@ -51,6 +51,12 @@ export module AsyncIterator {
     return some(iterator, v => v === value);
   }
 
+  export function is<T>(iterator: AsyncIterator<T>, other: AsyncIterator<T>, equals: (a: T, b: T) => boolean | Promise<boolean> = (a, b) => a === b): Promise<boolean> {
+    return AsyncIterator.every(iterator, value => {
+      return other.next().then(result => !result.done && equals(result.value, value));
+    }).then(res => res ? other.next().then(result => result.done) : false);
+  }
+
   export function concat<T>(...iterators: AsyncIterator<T>[]): AsyncIterator<T> {
     return iterators.reduce((memo, value) => {
       var iterated = false,
@@ -63,12 +69,6 @@ export module AsyncIterator {
     }, Empty);
   }
 
-  export function is<T>(iterator: AsyncIterator<T>, other: AsyncIterator<T>, equals: (a: T, b: T) => boolean | Promise<boolean> = (a, b) => a === b): Promise<boolean> {
-    return AsyncIterator.every(iterator, value => {
-      return other.next().then(result => !result.done && equals(result.value, value));
-    }).then(res => res ? other.next().then(result => result.done) : false);
-  }
-
   export function fromArray<T>(array: T[]): AsyncIterator<T> {
     var current = -1,
         queue = Promise.resolve(null);
@@ -76,6 +76,14 @@ export module AsyncIterator {
     return {
       next: () => queue = queue.then(() => {}, () => {}).then(() => Promise.resolve(++current >= array.length ? sentinel : {done: false, value: array[current]}))
     }
+  }
+
+  export function map<T, U>(iterator: AsyncIterator<T>, mapFn: (value: T) => U | Promise<U>): AsyncIterator<U> {
+    return {
+      next: () => iterator.next().then(result => {
+        return result.done ? Promise.resolve(sentinel) : Promise.resolve(mapFn(result.value)).then(value => ({done: false, value}))
+      })
+    };
   }
 
   export function fromObject<V>(object: {[key: string]: V}): AsyncIterator<Entry<V>> {

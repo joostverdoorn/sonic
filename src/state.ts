@@ -56,7 +56,7 @@ export module State {
   }
 
   export function contains<V>(state: State<V>, value: V): Promise<boolean> {
-    return AsyncIterator.some(entries(state), ([k, v]) => v === value);
+    return AsyncIterator.some(entries(state), entry => entry[1] === value);
   }
 
   export function isEmpty<V>(state: State<V>): Promise<boolean> {
@@ -104,7 +104,6 @@ export module State {
 
     function get(key: Key): Promise<V> {
       return has(child, key).then(res => res ? bridgedChild.get(key) : bridgedParent.get(key));
-      // return child.get(key).catch(reason => reason === Key.NOT_FOUND_ERROR ? bridgedParent.get(key) : Promise.reject(reason));
     }
 
     function prev(key: Key = Key.sentinel): Promise<Key> {
@@ -178,24 +177,9 @@ export module State {
   }
 
   export function keyBy<V>(parent: State<V>, keyFn: (value: V, key?: Key) => Key | Promise<Key>): State<V> {
-    var keyMap: State<Key> = cache(State.map(parent, keyFn));
-    var reverseKeyMap: State<Key> = cache({
-      get:  key => AsyncIterator.find(entries(keyMap), ([k, v]) => v === key).then(Entry.key),
-      prev: (key = Key.sentinel) => {
-        return Promise.resolve(key === Key.sentinel ? Key.sentinel : reverseKeyMap.get(key))
-          .then(keyMap.prev).then(prev => prev === Key.sentinel ? prev : keyMap.get(prev))
-      },
-      next: (key = Key.sentinel) => {
-        return Promise.resolve(key === Key.sentinel ? Key.sentinel : reverseKeyMap.get(key))
-          .then(keyMap.next).then(next => next === Key.sentinel ? next : keyMap.get(next))
-      }
-    });
-
-    return extend(reverseKeyMap, { get: key => reverseKeyMap.get(key).then(key => key === Key.sentinel ? Key.NOT_FOUND : parent.get(key)) });
-  }
-
-  export function keys(parent: State<any>): State<Key> {
-    return map(parent, (value, key) => key);
+    return fromEntries(AsyncIterator.map(entries(parent), entry => {
+      return Promise.resolve(keyFn(entry[1], entry[0])).then(key => [key, entry[1]]);
+    }));
   }
 
   export function fromArray<V>(values: V[]): State<V> {
@@ -232,18 +216,18 @@ export module State {
 
     function get(key: Key): Promise<V> {
       if (exhausted) return Key.NOT_FOUND;
-      return AsyncIterator.find(cachingIterator, ([k, v]) => k === key).then(Entry.value);
+      return AsyncIterator.find(cachingIterator, entry => entry[0] === key).then(Entry.value);
     }
 
     function prev(key: Key): Promise<Key> {
       if (exhausted) return Key.NOT_FOUND;
-      return AsyncIterator.some(cachingIterator, ([k, v]) => k === key).then(() => key in cache.prev ? cache.prev[key] : Key.NOT_FOUND);
+      return AsyncIterator.some(cachingIterator, entry => entry[0] === key).then(() => key in cache.prev ? cache.prev[key] : Key.NOT_FOUND);
     }
 
     function next(key: Key): Promise<Key> {
       if (exhausted) return Key.NOT_FOUND;
       if (key === currentKey) return cachingIterator.next().then(result => result.done ? Key.sentinel : result.value[0])
-      return AsyncIterator.find(cachingIterator, ([k, v]) => k === key).then(() => cachingIterator.next()).then(result => result.done ? Key.sentinel : result.value[0]);
+      return AsyncIterator.find(cachingIterator, entry => entry[0] === key).then(() => cachingIterator.next()).then(result => result.done ? Key.sentinel : result.value[0]);
     }
 
     return Cache.apply({get, prev, next}, cache);
@@ -255,13 +239,13 @@ export module State {
         from = range[0],
         to   = range[1];
 
-
     return {
       next: () => {
         function get(key: Key) {
           if (key === Key.sentinel) return (done = true, Promise.resolve(AsyncIterator.sentinel));
           return state.get(key).then( value => (current = key, {done: false, value: [key, value]}));
         }
+
         function iterate(key: Key) {
           return state.next(key).then(next => {
             if(Position.isPrevPosition(to) && to.prev === next) return get(Key.sentinel);
@@ -277,33 +261,6 @@ export module State {
       }
     }
   }
-  // export function toIterator<V>(state: State<V>, range: Range = Range.all): AsyncIterator<V> {
-  //   var current: Key = Key.sentinel,
-  //       queue = Promise.resolve(null);
-  //
-  //   function get(): Promise<V> {
-  //     return queue = queue.then(() => {}, () => {}).then(() => state.get(current));
-  //   }
-  //
-  //   function next(): Promise<Key> {
-  //     return queue = queue.then(() => {}, () => {}).then(() => {
-  //       var from = range[0],
-  //           to   = range[1];
-  //
-  //       function iterate(key: Key) {
-  //         return state.next(key).then(next => Position.isPrevPosition(to) && to.prev === next ? current = Key.sentinel : current = next);
-  //       }
-  //
-  //       if (Position.isPrevPosition(from) && Position.isPrevPosition(to) && from.prev === to.prev) return Promise.resolve(Key.sentinel);
-  //       if (Position.isNextPosition(from) && Position.isNextPosition(to) && from.next === to.next) return Promise.resolve(Key.sentinel);
-  //       if (current === Key.sentinel) return Position.isPrevPosition(from) ? Promise.resolve(current = from.prev) : iterate(from.next);
-  //       if (Position.isNextPosition(to) && to.next === current) return Promise.resolve(current = Key.sentinel);
-  //       return iterate(current);
-  //     });
-  //   }
-  //
-  //   return {get, next};
-  // }
 }
 
 export default State;
