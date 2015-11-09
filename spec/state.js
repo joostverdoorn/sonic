@@ -1,7 +1,7 @@
-import test              from 'blue-tape';
-import State             from '../dist/state';
-import { AsyncIterator } from '../dist/async_iterator';
-import Entry             from '../dist/entry';
+import test          from 'blue-tape';
+import State         from '../dist/state';
+import AsyncIterator from '../dist/async_iterator';
+import Entry         from '../dist/entry';
 
 function slice(array, index, count) {
   return Array.prototype.slice.call(array, index, count);
@@ -27,11 +27,9 @@ function r(fn) {
   }
 }
 
-
 function state(object) {
   return State.fromEntries(AsyncIterator.fromObject(object));
 }
-
 
 test('first', t => {
   var { first } = State;
