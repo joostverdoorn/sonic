@@ -58,7 +58,7 @@ gulp.task('spec', gulp.series('typescript', done => {
 
   // report.stdout.pipe(process.stdout);
 
-  gulp.src('spec/list.js')
+  gulp.src('spec/*.js')
     .pipe(foreach((stream, file) => {
       var child = spawn("node")
 

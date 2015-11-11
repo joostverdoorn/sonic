@@ -81,6 +81,21 @@ export var AsyncIterator;
         };
     }
     AsyncIterator.zip = zip;
+    function take(iterator, count) {
+        var i = 0;
+        return {
+            next: () => ++i > count ? Promise.resolve(AsyncIterator.sentinel) : iterator.next()
+        };
+    }
+    AsyncIterator.take = take;
+    function skip(iterator, count) {
+        var i = 0;
+        function next() {
+            return i++ < count ? iterator.next().then(next) : iterator.next();
+        }
+        return { next };
+    }
+    AsyncIterator.skip = skip;
     function concat(...iterators) {
         return iterators.reduce((memo, value) => {
             var iterated = false, queue = Promise.resolve(null);

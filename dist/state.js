@@ -160,6 +160,14 @@ export var State;
         }));
     }
     State.keyBy = keyBy;
+    function take(parent, count) {
+        return fromEntries(AsyncIterator.take(entries(parent), count));
+    }
+    State.take = take;
+    function skip(parent, count) {
+        return fromEntries(AsyncIterator.skip(entries(parent), count));
+    }
+    State.skip = skip;
     function cache(parent) {
         return Cache.apply(parent, Cache.create());
     }

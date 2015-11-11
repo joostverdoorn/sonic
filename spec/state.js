@@ -189,6 +189,16 @@ test('keyBy', t => {
   t.test('should key the state by the keyFn', t => State.is(state(object), keyBy(state(array), keyFn)).then(t.ok));
 });
 
+test('take', t => {
+  var { take, is } = State;
+  t.test('should take count', t => is(take(state({a: 3, b: 4, c: 5, d: 6}), 2), state({a: 3, b: 4})).then(t.ok));
+});
+
+test('take', t => {
+  var { skip, is, toArray } = State;
+  t.test('should skip count', t => is(skip(state({a: 3, b: 4, c: 5, d: 6}), 2), state({c: 5, d: 6})).then(t.ok));
+});
+
 test('entries', t => {
   var { entries } = State;
 

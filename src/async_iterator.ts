@@ -78,7 +78,7 @@ export module AsyncIterator {
       next: () => iterator.next().then(result => {
         return result.done ? Promise.resolve(sentinel) : Promise.resolve(scanFn(memo, result.value)).then(value => ({done: false, value: memo = value}))
       })
-    }
+    };
   }
 
   export function zip<T, U>(iterator: AsyncIterator<T>, other: AsyncIterator<U>): AsyncIterator<[T, U]> {
@@ -87,7 +87,24 @@ export module AsyncIterator {
         if (result.done || otherResult.done) return sentinel;
         return { done: false, value: [result.value, otherResult.value ]};
       })
+    };
+  }
+
+  export function take<T>(iterator: AsyncIterator<T>, count: number): AsyncIterator<T> {
+    var i = 0;
+    return {
+      next: () => ++i > count ? Promise.resolve(sentinel) : iterator.next()
+    };
+  }
+
+  export function skip<T>(iterator: AsyncIterator<T>, count: number): AsyncIterator<T> {
+    var i = 0;
+
+    function next(): Promise<IteratorResult<T>> {
+      return i++ < count ? iterator.next().then(next) : iterator.next()
     }
+
+    return { next };
   }
 
   export function concat<T>(...iterators: AsyncIterator<T>[]): AsyncIterator<T> {

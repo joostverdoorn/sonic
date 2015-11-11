@@ -188,6 +188,14 @@ export module State {
     }));
   }
 
+  export function take<V>(parent: State<V>, count: number): State<V> {
+    return fromEntries(AsyncIterator.take(entries(parent), count));
+  }
+
+  export function skip<V>(parent: State<V>, count: number): State<V> {
+    return fromEntries(AsyncIterator.skip(entries(parent), count));
+  }
+
   export function cache<V>(parent: State<V>): State<V> {
     return Cache.apply(parent, Cache.create());
   }

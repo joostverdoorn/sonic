@@ -132,6 +132,21 @@ test('scan', t => {
   });
 });
 
+test('take', t => {
+  var { is, take, toArray } = AsyncIterator;
+
+  t.test('should take count items', t => {
+    return is(take(iterator([1,2,3,4]), 2), iterator([1,2])).then(t.ok);
+  });
+});
+
+test('take', t => {
+  var { is, skip, toArray } = AsyncIterator;
+
+  t.test('should skip count items', t => {
+    return is(skip(iterator([1,2,3,4]), 2), iterator([3,4])).then(t.ok);
+  });
+});
 
 test('concat', t => {
   t.test('should return an iterator over the combined elements', t => {

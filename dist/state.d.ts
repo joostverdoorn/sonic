@@ -36,6 +36,8 @@ export declare module State {
     function zoom<V>(parent: State<V>, key: Key): State<V>;
     function flatten<V>(parent: Tree<V>): State<V>;
     function keyBy<V>(parent: State<V>, keyFn: (value: V, key?: Key) => Key | Promise<Key>): State<V>;
+    function take<V>(parent: State<V>, count: number): State<V>;
+    function skip<V>(parent: State<V>, count: number): State<V>;
     function cache<V>(parent: State<V>): State<V>;
     function entries<V>(state: State<V>, range?: Range): AsyncIterator<Entry<V>>;
     function keys<V>(state: State<V>, range?: Range): AsyncIterator<Key>;
