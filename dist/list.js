@@ -81,6 +81,17 @@ export var List;
         return create(state, patches_);
     }
     List.flatten = flatten;
+    function scan(parent, scanFn, memo) {
+        var state = State.scan(parent.state, scanFn, memo), list, patches = Observable.map(parent.patches, patch => {
+            var parentState = parent.state, listState = list.state, range = [patch.range[0], { prev: null }], added = State.lazy(() => {
+                return State.last(listState, [{ next: null }, patch.range[0]])
+                    .then(memo => State.scan(State.slice(parentState, [patch.range[0], { prev: null }]), scanFn, memo));
+            });
+            return { range, added };
+        });
+        return list = create(state, patches);
+    }
+    List.scan = scan;
     function cache(parent) {
         var state = State.cache(parent.state), patches = Observable.map(parent.patches, patch => {
             return {
@@ -88,6 +99,7 @@ export var List;
                 added: State.cache(patch.added)
             };
         });
+        ``;
         return List.create(state, patches);
     }
     List.cache = cache;

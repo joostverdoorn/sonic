@@ -81,6 +81,15 @@ export module AsyncIterator {
     }
   }
 
+  export function zip<T, U>(iterator: AsyncIterator<T>, other: AsyncIterator<U>): AsyncIterator<[T, U]> {
+    return {
+      next: () => Promise.all<IteratorResult<T & U>>([iterator.next(), other.next()]).then(([result, otherResult]) => {
+        if (result.done || otherResult.done) return sentinel;
+        return { done: false, value: [result.value, otherResult.value ]};
+      })
+    }
+  }
+
   export function concat<T>(...iterators: AsyncIterator<T>[]): AsyncIterator<T> {
     return iterators.reduce((memo, value) => {
       var iterated = false,

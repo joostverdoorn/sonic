@@ -20,8 +20,8 @@ export declare module State {
         next: (key?: number | string) => Promise<number | string>;
     };
     function extend<V, W>(parent: State<V>, {get, prev, next}: Partial<W>): State<W>;
-    function first<V>(state: State<V>): Promise<V>;
-    function last<V>(state: State<V>): Promise<V>;
+    function first<V>(state: State<V>, [from, to]?: Range): Promise<V>;
+    function last<V>(state: State<V>, [from, to]?: Range): Promise<V>;
     function has<V>(state: State<V>, key: Key): Promise<boolean>;
     function is<V>(state: State<V>, other: State<V>): Promise<boolean>;
     function contains<V>(state: State<V>, value: V): Promise<boolean>;
@@ -32,6 +32,7 @@ export declare module State {
     function map<V, W>(parent: State<V>, mapFn: (value: V, key?: Key) => W | Promise<W>): State<W>;
     function filter<V>(parent: State<V>, filterFn: (value: V, key?: Key) => boolean | Promise<boolean>): State<V>;
     function scan<V, W>(parent: State<V>, scanFn: (memo: W, value: V, key: Key) => W | Promise<W>, memo?: W): State<W>;
+    function zip<V, W>(parent: State<V>, other: State<W>): State<[V, W]>;
     function zoom<V>(parent: State<V>, key: Key): State<V>;
     function flatten<V>(parent: Tree<V>): State<V>;
     function keyBy<V>(parent: State<V>, keyFn: (value: V, key?: Key) => Key | Promise<Key>): State<V>;
@@ -46,5 +47,10 @@ export declare module State {
     function fromObject<V>(values: {
         [key: string]: V;
     }): State<V>;
+    function lazy<V>(fn: () => State<V> | Promise<State<V>>): State<V>;
+    function toObject<V>(state: State<V>, range?: Range): Promise<{
+        [key: string]: V;
+    }>;
+    function toArray<V>(state: State<V>, range?: Range): Promise<V[]>;
 }
 export default State;

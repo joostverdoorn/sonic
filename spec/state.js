@@ -28,21 +28,25 @@ function r(fn) {
 }
 
 function state(object) {
-  return State.fromEntries(AsyncIterator.fromObject(object));
+  return Array.isArray(object) ? State.fromArray(object) : State.fromObject(object);
 }
 
 test('first', t => {
   var { first } = State;
 
-  t.test('should resolve with the first element of the state', t => first(state([1,2,3])).then(c(t.equal, 1)));
+  t.test('should resolve with the first element of the state', t => first(state([0,1,2])).then(f => t.equal(f, 0)));
   t.test('should reject when the state is empty', t => first(state([])).then(t.fail, t.pass));
+  t.test('should resolve with the first of a range when PrevPosition', t => first(state([0,1,2]), [{prev: 1}, {next: 2}]).then(f => t.equal(f, 1)));
+  t.test('should resolve with the first of a range when NextPosition', t => first(state([0,1,2]), [{next: 0}, {next: 2}]).then(f => t.equal(f, 1)));
 });
 
 test('last', t => {
   var { last } = State;
 
-  t.test('should resolve with the last element of the state', t => last(state([1,2,3])).then(c(t.equal, 3)));
+  t.test('should resolve with the last element of the state', t => last(state([0,1,2])).then(l => t.equal(l, 2)));
   t.test('should reject when the state is empty', t => last(state([])).then(t.fail, t.pass));
+  t.test('should resolve with the last of a range when PrevPosition', t => last(state([0,1,2]), [{prev: 0}, {prev: 2}]).then(l => t.equal(l, 1)));
+  t.test('should resolve with the last of a range when NextPosition', t => last(state([0,1,2]), [{prev: 0}, {next: 1}]).then(l => t.equal(l, 1)));
 });
 
 test('has', t => {
@@ -110,16 +114,41 @@ test('slice', t => {
 test('splice', t => {
   var { is, splice } = State;
   t.test('should return an equal state when nothing is removed and added', t => {
-    return is(splice(state({a: 3, b: 4, c: 5}), [{next: 'a'}, {prev: 'b'}]), state({a: 3, b: 4, c: 5}));
+    return is(splice(state({a: 3, b: 4, c: 5}), [{next: 'a'}, {prev: 'b'}]), state({a: 3, b: 4, c: 5})).then(t.ok);
   });
 
   t.test('should return an equal state when something is added without removing', t => {
-    return is(splice(state({a: 3, b: 4, c: 5}), [{next: 'a'}, {prev: 'b'}], state({d: 6})), state({a: 3, d: 6, b: 4, c: 5}));
+    return is(splice(state({a: 3, b: 4, c: 5}), [{next: 'a'}, {prev: 'b'}], state({d: 6})), state({a: 3, d: 6, b: 4, c: 5})).then(t.ok);
   });
 
   t.test('should return an equal state when something is added when removing', t => {
-    return is(splice(state({a: 3, b: 4, c: 5}), [{next: 'a'}, {prev: 'c'}], state({d: 6})), state({a: 3, d: 6, c: 5}));
+    return is(splice(state({a: 3, b: 4, c: 5}), [{next: 'a'}, {prev: 'c'}], state({d: 6})), state({a: 3, d: 6, c: 5})).then(t.ok);
   });
+
+  t.test('should return an equal state when something is added without removing at the beginning 1', t => {
+    return is(splice(state({a: 3, b: 4, c: 5}), [{next: null}, {prev: 'a'}], state({d: 6})), state({d: 6, a: 3, b: 4, c: 5})).then(t.ok);
+  });
+
+  t.test('should return an equal state when something is added without removing at the beginning 2', t => {
+    return is(splice(state({a: 3, b: 4, c: 5}), [{prev: 'a'}, {prev: 'a'}], state({d: 6})), state({d: 6, a: 3, b: 4, c: 5})).then(t.ok);
+  });
+
+  t.test('should return an equal state when something is added when removing at the end 1', t => {
+    return is(splice(state({a: 3, b: 4, c: 5}), [{next: 'b'}, {prev: null}], state({d: 6})), state({a: 3, b: 4, d: 6})).then(t.ok);
+  });
+
+  t.test('should return an equal state when something is added when removing at the end 2', t => {
+    return is(splice(state({a: 3, b: 4, c: 5}), [{next: 'b'}, {next: 'c'}], state({d: 6})), state({a: 3, b: 4, d: 6})).then(t.ok);
+  });
+
+  t.test('should return an equal state when something is added without removing at the end 1', t => {
+    return is(splice(state({a: 3, b: 4, c: 5}), [{next: 'c'}, {prev: null}], state({d: 6})), state({a: 3, b: 4, c: 5,d: 6})).then(t.ok);
+  });
+
+  t.test('should return an equal state when something is added without removing at the end 2', t => {
+    return is(splice(state({a: 3, b: 4, c: 5}), [{next: 'c'}, {next: 'c'}], state({d: 6})), state({a: 3, b: 4, c: 5, d: 6})).then(t.ok);
+  });
+
 });
 
 test('map', t => {
@@ -136,6 +165,11 @@ test('filter', t => {
 test('scan', t => {
   var { scan, is } = State;
   t.test('should scan stuff', t => is(scan(state({a: 3, b: 4, c: 5}), (x, y) => x + y, 0), state({a: 3, b: 7, c: 12})).then(t.ok));
+});
+
+test('zip', t => {
+  var { zip, toArray } = State;
+  t.test('should zip stuff', t => toArray(zip(state({a: 3, b: 4, c: 5}), state({d: 6, e: 7, f: 8}))).then(a => t.same(a, [[3,6], [4,7], [5,8]])));
 });
 
 test('flatten', t => {
@@ -218,7 +252,13 @@ test('fromKeys', t => {
 test('fromValues', t => {
   var { is, fromValues } = State;
   t.test('should create a state with the given values and incrementing keys', t => {
-    // FIXME
+    // FIXME we test nothing here
     return is(fromValues(AsyncIterator.fromArray(['a', 'b', 'c'])), fromValues(AsyncIterator.fromArray(['a', 'b', 'c']))).then(t.ok);
   });
+});
+
+
+test('lazy', t => {
+  var { lazy, is } = State;
+  t.test('should work', t => is(lazy(() => state([1,2,3])), state([1,2,3])).then(t.ok));
 });

@@ -4,6 +4,7 @@ import { Position, Range } from './range';
 import Cache from './cache';
 import AsyncIterator from './async_iterator';
 import { Tree, Path } from './tree';
+import PromiseUtils from './promise_utils';
 export var State;
 (function (State) {
     State.Empty = {
@@ -22,12 +23,12 @@ export var State;
         return state;
     }
     State.extend = extend;
-    function first(state) {
-        return state.next().then(key => state.get(key));
+    function first(state, [from, to] = Range.all) {
+        return Position.isPrevPosition(from) ? state.get(from.prev) : state.next(from.next).then(state.get);
     }
     State.first = first;
-    function last(state) {
-        return state.prev().then(key => state.get(key));
+    function last(state, [from, to] = Range.all) {
+        return Position.isNextPosition(to) ? state.get(to.next) : state.prev(to.prev).then(state.get);
     }
     State.last = last;
     function has(state, key) {
@@ -118,22 +119,26 @@ export var State;
             return have(key).then(res => res ? parent.get(key) : Key.NOT_FOUND);
         }
         function prev(key) {
-            return parent.prev(key).then(p => p === null ? null : have(p).then(res => res ? p : prev(p)));
+            return parent.prev(key).then(p => p === Key.sentinel ? Key.sentinel : have(p).then(res => res ? p : prev(p)));
         }
         function next(key) {
-            return parent.next(key).then(n => n === null ? null : have(n).then(res => res ? n : next(n)));
+            return parent.next(key).then(n => n === Key.sentinel ? Key.sentinel : have(n).then(res => res ? n : next(n)));
         }
         return extend(parent, { get, prev, next });
     }
     State.filter = filter;
     function scan(parent, scanFn, memo) {
-        return fromEntries(AsyncIterator.scan(entries(parent), (m, entry) => {
-            return Promise.resolve(scanFn(m[1], entry[1], entry[0])).then(result => [entry[0], result]);
+        return fromEntries(AsyncIterator.scan(entries(parent), (memoEntry, entry) => {
+            return Promise.resolve(scanFn(memoEntry[1], entry[1], entry[0])).then(result => [entry[0], result]);
         }, [Key.sentinel, memo]));
     }
     State.scan = scan;
+    function zip(parent, other) {
+        return fromValues(AsyncIterator.zip(values(parent), values(other)));
+    }
+    State.zip = zip;
     function zoom(parent, key) {
-        const next = (k) => k == null ? parent.get(key).then(() => key, reason => reason === Key.NOT_FOUND_ERROR ? null : Promise.reject(reason)) : (key === k ? Promise.resolve(null) : Key.NOT_FOUND);
+        const next = (k = Key.sentinel) => k === Key.sentinel ? parent.get(key).then(() => key, reason => reason === Key.NOT_FOUND_ERROR ? Key.sentinel : Promise.reject(reason)) : (key === k ? Promise.resolve(Key.sentinel) : Key.NOT_FOUND);
         return extend(parent, {
             get: k => k === key ? parent.get(key) : Key.NOT_FOUND,
             prev: next,
@@ -189,11 +194,11 @@ export var State;
     }
     State.entries = entries;
     function keys(state, range = Range.all) {
-        return AsyncIterator.map(entries(state), Entry.key);
+        return AsyncIterator.map(entries(state, range), Entry.key);
     }
     State.keys = keys;
     function values(state, range = Range.all) {
-        return AsyncIterator.map(entries(state), Entry.value);
+        return AsyncIterator.map(entries(state, range), Entry.value);
     }
     State.values = values;
     function fromEntries(iterator) {
@@ -242,13 +247,35 @@ export var State;
     }
     State.fromValues = fromValues;
     function fromArray(values) {
-        return fromEntries(AsyncIterator.fromArray(values.map((value, key) => [key, value])));
+        return fromValues(AsyncIterator.fromArray(values));
     }
     State.fromArray = fromArray;
     function fromObject(values) {
         return fromEntries(AsyncIterator.fromObject(values));
     }
     State.fromObject = fromObject;
+    function lazy(fn) {
+        var state, promise = PromiseUtils.lazy((resolve, reject) => resolve(Promise.resolve(fn()).then(s => state = s)));
+        function get(key) {
+            return state ? state.get(key) : promise.then(s => s.get(key));
+        }
+        function prev(key) {
+            return state ? state.prev(key) : promise.then(s => s.prev(key));
+        }
+        function next(key) {
+            return state ? state.next(key) : promise.then(s => s.next(key));
+        }
+        return { get, prev, next };
+    }
+    State.lazy = lazy;
+    function toObject(state, range = Range.all) {
+        return AsyncIterator.toObject(entries(state, range));
+    }
+    State.toObject = toObject;
+    function toArray(state, range = Range.all) {
+        return AsyncIterator.toArray(values(state, range));
+    }
+    State.toArray = toArray;
 })(State || (State = {}));
 export default State;
 

@@ -17,6 +17,7 @@ export declare module AsyncIterator {
     function map<T, U>(iterator: AsyncIterator<T>, mapFn: (value: T) => U | Promise<U>): AsyncIterator<U>;
     function filter<T>(iterator: AsyncIterator<T>, filterFn: (value: T) => boolean | Promise<boolean>): AsyncIterator<T>;
     function scan<T, U>(iterator: AsyncIterator<T>, scanFn: (memo: U, value: T) => U | Promise<U>, memo?: U): AsyncIterator<U>;
+    function zip<T, U>(iterator: AsyncIterator<T>, other: AsyncIterator<U>): AsyncIterator<[T, U]>;
     function concat<T>(...iterators: AsyncIterator<T>[]): AsyncIterator<T>;
     function fromArray<T>(array: T[]): AsyncIterator<T>;
     function fromObject<V>(object: {

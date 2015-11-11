@@ -36,12 +36,12 @@ export module State {
     return state;
   }
 
-  export function first<V>(state: State<V>): Promise<V> {
-    return state.next().then(key => state.get(key));
+  export function first<V>(state: State<V>, [from, to]: Range = Range.all): Promise<V> {
+    return Position.isPrevPosition(from) ? state.get(from.prev) : state.next(from.next).then(state.get);
   }
 
-  export function last<V>(state: State<V>): Promise<V> {
-    return state.prev().then(key => state.get(key));
+  export function last<V>(state: State<V>, [from, to]: Range = Range.all): Promise<V> {
+    return Position.isNextPosition(to) ? state.get(to.next) : state.prev(to.prev).then(state.get);
   }
 
   export function has<V>(state: State<V>, key: Key): Promise<boolean> {
@@ -144,24 +144,28 @@ export module State {
     }
 
     function prev(key: Key): Promise<Key> {
-      return parent.prev(key).then(p => p === null ? null : have(p).then(res => res ? p : prev(p)));
+      return parent.prev(key).then(p => p === Key.sentinel ? Key.sentinel : have(p).then(res => res ? p : prev(p)));
     }
 
     function next(key: Key): Promise<Key> {
-      return parent.next(key).then(n => n === null ? null : have(n).then(res => res ? n : next(n)));
+      return parent.next(key).then(n => n === Key.sentinel ? Key.sentinel : have(n).then(res => res ? n : next(n)));
     }
 
     return extend(parent, { get, prev, next });
   }
 
   export function scan<V, W>(parent: State<V>, scanFn: (memo: W, value: V, key: Key) => W | Promise<W>, memo?: W): State<W> {
-    return fromEntries(AsyncIterator.scan<Entry<V>, Entry<W>>(entries(parent), (m, entry) =>  {
-      return Promise.resolve(scanFn(m[1], entry[1], entry[0])).then(result => [entry[0], result]);
-    }, [Key.sentinel, memo]));
+    return fromEntries(AsyncIterator.scan(entries(parent), (memoEntry, entry) =>  {
+      return Promise.resolve(scanFn(memoEntry[1], entry[1], entry[0])).then(result => [entry[0], result]);
+    }, <Entry<W>>[Key.sentinel, memo]));
+  }
+
+  export function zip<V, W>(parent: State<V>, other: State<W>): State<[V, W]> {
+    return fromValues(AsyncIterator.zip(values(parent), values(other)));
   }
 
   export function zoom<V>(parent: State<V>, key: Key): State<V> {
-    const next = (k: Key) => k == null ? parent.get(key).then(() => key, reason => reason === Key.NOT_FOUND_ERROR ? null : Promise.reject(reason)) : (key === k ? Promise.resolve(null) : Key.NOT_FOUND);
+    const next = (k: Key = Key.sentinel) => k === Key.sentinel ? parent.get(key).then(() => key, reason => reason === Key.NOT_FOUND_ERROR ? Key.sentinel : Promise.reject(reason)) : (key === k ? Promise.resolve(Key.sentinel) : Key.NOT_FOUND);
 
     return extend(parent, {
       get:  k => k === key ? parent.get(key) : Key.NOT_FOUND,
@@ -218,11 +222,11 @@ export module State {
   }
 
   export function keys<V>(state: State<V>, range: Range = Range.all): AsyncIterator<Key> {
-    return AsyncIterator.map(entries(state), Entry.key);
+    return AsyncIterator.map(entries(state, range), Entry.key);
   }
 
   export function values<V>(state: State<V>, range: Range = Range.all): AsyncIterator<V> {
-    return AsyncIterator.map(entries(state), Entry.value);
+    return AsyncIterator.map(entries(state, range), Entry.value);
   }
 
   export function fromEntries<V>(iterator: AsyncIterator<Entry<V>>): State<V> {
@@ -277,11 +281,38 @@ export module State {
   }
 
   export function fromArray<V>(values: V[]): State<V> {
-    return fromEntries(AsyncIterator.fromArray(values.map((value, key) => <Entry<V>> [key, value])));
+    return fromValues(AsyncIterator.fromArray(values));
   }
 
   export function fromObject<V>(values: {[key: string]: V}): State<V> {
     return fromEntries(AsyncIterator.fromObject(values));
+  }
+
+  export function lazy<V>(fn: () => State<V> | Promise<State<V>>): State<V> {
+    var state: State<V>,
+      promise = PromiseUtils.lazy<State<V>>((resolve, reject) => resolve(Promise.resolve(fn()).then(s => state = s)));
+
+    function get(key: Key): Promise<V> {
+      return state ? state.get(key) : promise.then(s => s.get(key));
+    }
+
+    function prev(key: Key): Promise<Key> {
+      return state ? state.prev(key) : promise.then(s => s.prev(key));
+    }
+
+    function next(key: Key): Promise<Key> {
+      return state ? state.next(key) : promise.then(s => s.next(key));
+    }
+
+    return {get, prev, next};
+  }
+
+  export function toObject<V>(state: State<V>, range: Range = Range.all): Promise<{[key: string]: V}> {
+    return AsyncIterator.toObject(entries(state, range));
+  }
+
+  export function toArray<V>(state: State<V>, range: Range = Range.all): Promise<V[]> {
+    return AsyncIterator.toArray(values(state, range));
   }
 }
 

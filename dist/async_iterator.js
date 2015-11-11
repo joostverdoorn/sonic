@@ -71,6 +71,16 @@ export var AsyncIterator;
         };
     }
     AsyncIterator.scan = scan;
+    function zip(iterator, other) {
+        return {
+            next: () => Promise.all([iterator.next(), other.next()]).then(([result, otherResult]) => {
+                if (result.done || otherResult.done)
+                    return AsyncIterator.sentinel;
+                return { done: false, value: [result.value, otherResult.value] };
+            })
+        };
+    }
+    AsyncIterator.zip = zip;
     function concat(...iterators) {
         return iterators.reduce((memo, value) => {
             var iterated = false, queue = Promise.resolve(null);

@@ -58,7 +58,7 @@ gulp.task('spec', gulp.series('typescript', done => {
 
   // report.stdout.pipe(process.stdout);
 
-  gulp.src('spec/*.js')
+  gulp.src('spec/list.js')
     .pipe(foreach((stream, file) => {
       var child = spawn("node")
 
@@ -94,8 +94,5 @@ gulp.task('watch', function() {
 });
 gulp.task('w', gulp.series('watch'));
 
-gulp.task('watch-spec', gulp.parallel(
-  gulp.series('spec', gulp.series('browserify', 'uglify')),
-  () => gulp.watch(['src/*.ts', 'spec/*.js'], gulp.series('spec', gulp.series('browserify', 'uglify')))
-));
+gulp.task('watch-spec', () => gulp.watch(['src/*.ts', 'spec/*.js'], gulp.series('spec', gulp.series('browserify', 'uglify'))));
 gulp.task('ws', gulp.series('watch-spec'));

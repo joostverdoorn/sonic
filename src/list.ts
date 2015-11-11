@@ -133,6 +133,26 @@ export module List {
   //   return create(state, patches);
   // }
 
+  export function scan<V, W>(parent: List<V>, scanFn: (memo: W, value: V) => W | Promise<W>, memo?: W): List<W> {
+    var state = State.scan(parent.state, scanFn, memo),
+        list: List<W>,
+        patches = Observable.map(parent.patches, patch => {
+          var parentState = parent.state,
+              listState = list.state,
+              range: Range = [patch.range[0], {prev: null}],
+              added = State.lazy(() => {
+                return State.last(listState, [{next: null}, patch.range[0]])
+                  .then(memo => State.scan(State.slice(parentState, [patch.range[0], {prev: null}]), scanFn, memo))
+              });
+
+
+
+          return { range, added };
+        });
+
+    return list = create(state, patches);
+  }
+
   export function cache<V>(parent: List<V>): List<V> {
     var state = State.cache(parent.state),
         patches = Observable.map(parent.patches, patch => {
@@ -141,7 +161,7 @@ export module List {
             added: State.cache(patch.added)
           }
         });
-
+``
     return List.create(state, patches);
   }
 
