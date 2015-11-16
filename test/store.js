@@ -42,7 +42,7 @@ test('map', t => {
       .then(t.ok);
   });
 });
-// 
+//
 // test('filter', t => {
 //   t.test('should work', t => {
 //

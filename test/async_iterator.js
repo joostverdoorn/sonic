@@ -140,7 +140,7 @@ test('take', t => {
   });
 });
 
-test('take', t => {
+test('skip', t => {
   var { is, skip, toArray } = AsyncIterator;
 
   t.test('should skip count items', t => {

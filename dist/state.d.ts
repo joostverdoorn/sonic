@@ -15,9 +15,9 @@ export declare module State {
         next?: (key?: Key) => Promise<Key>;
     }
     const Empty: {
-        get: (key: string) => Promise<{}>;
-        prev: (key?: string) => Promise<string>;
-        next: (key?: string) => Promise<string>;
+        get: (key: string) => Promise<any>;
+        prev: (key?: string) => Promise<string> | Promise<void>;
+        next: (key?: string) => Promise<string> | Promise<void>;
     };
     function extend<V, W>(parent: State<V>, {get, prev, next}: Partial<W>): State<W>;
     function first<V>(state: State<V>, [from, to]?: Range): Promise<V>;

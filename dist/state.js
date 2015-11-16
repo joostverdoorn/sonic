@@ -17,13 +17,13 @@ import { Position, Range } from './range';
 import Cache from './cache';
 import AsyncIterator from './async_iterator';
 import { Tree, Path } from './tree';
-import PromiseUtils from './promise_utils';
+import { NotFound } from './exceptions';
 export var State;
 (function (State) {
     State.Empty = {
-        get: (key) => Key.NOT_FOUND,
-        prev: (key = Key.sentinel) => key == Key.sentinel ? Promise.resolve(Key.sentinel) : Key.NOT_FOUND,
-        next: (key = Key.sentinel) => key == Key.sentinel ? Promise.resolve(Key.sentinel) : Key.NOT_FOUND
+        get: (key) => Promise.reject(new NotFound),
+        prev: (key = Key.sentinel) => key === Key.sentinel ? Promise.resolve(Key.sentinel) : Promise.reject(new NotFound),
+        next: (key = Key.sentinel) => key === Key.sentinel ? Promise.resolve(Key.sentinel) : Promise.reject(new NotFound)
     };
     function extend(parent, { get, prev, next }) {
         var state = Object.create(parent);
@@ -45,7 +45,17 @@ export var State;
     }
     State.last = last;
     function has(state, key) {
-        return state.get(key).then(() => true, reason => reason === Key.NOT_FOUND_ERROR ? false : Promise.reject(reason));
+        return __awaiter(this, void 0, Promise, function* () {
+            try {
+                yield state.get(key);
+                return true;
+            }
+            catch (error) {
+                if (error instanceof NotFound)
+                    return false;
+                throw error;
+            }
+        });
     }
     State.has = has;
     function is(state, other) {
@@ -90,12 +100,12 @@ export var State;
             prev: key => parent.prev(key).then(prev => {
                 if (Position.isNextPosition(to) && prev === to.next)
                     return bridgedChild.prev(Key.sentinel);
-                return has(deleted, prev).then(res => res ? Key.NOT_FOUND : prev);
+                return has(deleted, prev).then(res => res ? Promise.reject(new NotFound) : prev);
             }),
             next: key => parent.next(key).then(next => {
                 if (Position.isPrevPosition(from) && next === from.prev)
                     return bridgedChild.next(Key.sentinel);
-                return has(deleted, next).then(res => res ? Key.NOT_FOUND : next);
+                return has(deleted, next).then(res => res ? Promise.reject(new NotFound) : next);
             })
         });
         function get(key) {
@@ -122,9 +132,12 @@ export var State;
     }
     State.reverse = reverse;
     function map(parent, mapFn) {
-        return extend(parent, {
-            get: key => parent.get(key).then(value => mapFn(value, key))
-        });
+        function get(key) {
+            return __awaiter(this, void 0, Promise, function* () {
+                return mapFn(yield parent.get(key), key);
+            });
+        }
+        return extend(parent, { get });
     }
     State.map = map;
     function filter(parent, filterFn) {
@@ -133,7 +146,7 @@ export var State;
             return key in cache ? cache[key] : cache[key] = parent.get(key).then(value => filterFn(value, key));
         }
         function get(key) {
-            return have(key).then(res => res ? parent.get(key) : Key.NOT_FOUND);
+            return have(key).then(res => res ? parent.get(key) : Promise.reject(new NotFound));
         }
         function prev(key) {
             return parent.prev(key).then(p => p === Key.sentinel ? Key.sentinel : have(p).then(res => res ? p : prev(p)));
@@ -155,12 +168,27 @@ export var State;
     }
     State.zip = zip;
     function zoom(parent, key) {
-        const next = (k = Key.sentinel) => k === Key.sentinel ? parent.get(key).then(() => key, reason => reason === Key.NOT_FOUND_ERROR ? Key.sentinel : Promise.reject(reason)) : (key === k ? Promise.resolve(Key.sentinel) : Key.NOT_FOUND);
-        return extend(parent, {
-            get: k => k === key ? parent.get(key) : Key.NOT_FOUND,
-            prev: next,
-            next: next
-        });
+        var have;
+        function get(k) {
+            return __awaiter(this, void 0, Promise, function* () {
+                if (k === key)
+                    return parent.get(key);
+                throw new NotFound;
+            });
+        }
+        function next(k = Key.sentinel) {
+            return __awaiter(this, void 0, Promise, function* () {
+                if (k !== key && k !== Key.sentinel)
+                    throw new NotFound;
+                if (!(yield has(parent, key)))
+                    throw new NotFound;
+                if (k === Key.sentinel)
+                    return key;
+                if (k === key)
+                    return Key.sentinel;
+            });
+        }
+        return { get, prev: next, next };
     }
     State.zoom = zoom;
     function flatten(parent) {
@@ -211,7 +239,7 @@ export var State;
     State.cache = cache;
     function unit(value, key = Key.create()) {
         return {
-            get: k => k === key ? Promise.resolve(value) : Key.NOT_FOUND,
+            get: k => k === key ? Promise.resolve(value) : Promise.reject(new NotFound),
             prev: (k = Key.sentinel) => Promise.resolve(k === Key.sentinel ? key : Key.sentinel),
             next: (k = Key.sentinel) => Promise.resolve(k === Key.sentinel ? key : Key.sentinel)
         };
@@ -221,7 +249,7 @@ export var State;
         var current = Key.sentinel, done = false, from = range[0], to = range[1];
         function get(key) {
             if (key === Key.sentinel)
-                return (done = true, Promise.resolve(AsyncIterator.sentinel));
+                return (done = true, Promise.resolve(AsyncIterator.done));
             return state.get(key).then(value => (current = key, { done: false, value: [key, value] }));
         }
         function iterate(key) {
@@ -261,7 +289,7 @@ export var State;
                     exhausted = true;
                     cache.prev[Key.sentinel] = Promise.resolve(currentKey);
                     cache.next[currentKey] = Promise.resolve(Key.sentinel);
-                    return AsyncIterator.sentinel;
+                    return AsyncIterator.done;
                 }
                 cache.prev[entry[0]] = Promise.resolve(currentKey);
                 cache.next[currentKey] = Promise.resolve(entry[0]);
@@ -272,17 +300,17 @@ export var State;
         };
         function get(key) {
             if (exhausted)
-                return Key.NOT_FOUND;
+                return Promise.reject(new NotFound);
             return AsyncIterator.find(cachingIterator, entry => entry[0] === key).then(Entry.value);
         }
         function prev(key) {
             if (exhausted)
-                return Key.NOT_FOUND;
-            return AsyncIterator.some(cachingIterator, entry => entry[0] === key).then(() => key in cache.prev ? cache.prev[key] : Key.NOT_FOUND);
+                return Promise.reject(new NotFound);
+            return AsyncIterator.some(cachingIterator, entry => entry[0] === key).then(() => key in cache.prev ? cache.prev[key] : Promise.resolve(new NotFound));
         }
         function next(key) {
             if (exhausted)
-                return Key.NOT_FOUND;
+                return Promise.reject(new NotFound);
             if (key === currentKey)
                 return cachingIterator.next().then(result => result.done ? Key.sentinel : result.value[0]);
             return AsyncIterator.find(cachingIterator, entry => entry[0] === key).then(() => cachingIterator.next()).then(result => result.done ? Key.sentinel : result.value[0]);
@@ -307,15 +335,20 @@ export var State;
     }
     State.fromObject = fromObject;
     function lazy(fn) {
-        var state, promise = PromiseUtils.lazy((resolve, reject) => resolve(Promise.resolve(fn()).then(s => state = s)));
+        var state, queue = Promise.resolve();
+        function createState() {
+            return __awaiter(this, void 0, Promise, function* () {
+                return state ? state : state = yield fn();
+            });
+        }
         function get(key) {
-            return state ? state.get(key) : promise.then(s => s.get(key));
+            return state ? state.get(key) : queue.then(createState).then(s => s.get(key));
         }
         function prev(key) {
-            return state ? state.prev(key) : promise.then(s => s.prev(key));
+            return state ? state.prev(key) : queue.then(createState).then(s => s.prev(key));
         }
         function next(key) {
-            return state ? state.next(key) : promise.then(s => s.next(key));
+            return state ? state.next(key) : queue.then(createState).then(s => s.next(key));
         }
         return { get, prev, next };
     }

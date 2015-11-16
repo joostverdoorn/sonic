@@ -1,8 +1,5 @@
-import PromiseUtils from './promise_utils';
 var Key;
 (function (Key) {
-    Key.NOT_FOUND_ERROR = new Error("No entry at the specified key");
-    Key.NOT_FOUND = PromiseUtils.lazy((resolve, reject) => reject(Key.NOT_FOUND_ERROR));
     Key.sentinel = null;
     var uniqueKey = 0;
     function key(key) {

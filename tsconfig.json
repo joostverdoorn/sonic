@@ -1,6 +1,6 @@
 {
     "compilerOptions": {
-        "target": "es2015",
+        "target": "es6",
         "module": "es2015",
         "declaration": true,
         "noImplicitAny": true,
@@ -16,6 +16,7 @@
         "src/bind.ts",
         "src/cache.ts",
         "src/entry.ts",
+        "src/exceptions.ts",
         "src/factory.ts",
         "src/key.ts",
         "src/lens.ts",

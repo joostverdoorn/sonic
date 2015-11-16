@@ -38,6 +38,29 @@ export module Store {
         parentState = parent.state,
         state = State.filter(parent.state, filterFn);
 
+    // var dispatcher = Observable.map(parent.dispatcher, async (patch) => {
+    //   var [from, to] = patch.range;
+    //
+    //   // var filteredParentState = State.filter(parentState, filterFn);
+    //
+    //   var parentEntries = State.entries(parentState);
+    //
+    //   var empty = await State.empty(State.slice(parentState, patch.range));
+    //
+    //   if (Position.isPrevPosition(from) && empty) {
+    //
+    //   } else {
+    //
+    //   }
+    //   // try {
+    //     // AsyncIterator.find()
+    //
+    //   // }
+    //
+    //
+    //
+    // });
+
     //
     // var filteredDispatcher = Observable.filter(parent.dispatcher, patch => {
     //   return State.isEmpty()

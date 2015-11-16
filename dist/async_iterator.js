@@ -11,12 +11,12 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, Promi
         step("next", void 0);
     });
 };
-import Key from './key';
+import { NotFound } from './exceptions';
 export var AsyncIterator;
 (function (AsyncIterator) {
-    AsyncIterator.sentinel = { done: true };
+    AsyncIterator.done = { done: true };
     AsyncIterator.Empty = {
-        next: () => Promise.resolve(AsyncIterator.sentinel)
+        next: () => Promise.resolve(AsyncIterator.done)
     };
     function every(iterator, predicate) {
         return __awaiter(this, void 0, Promise, function* () {
@@ -30,25 +30,46 @@ export var AsyncIterator;
     }
     AsyncIterator.every = every;
     function some(iterator, predicate) {
-        return every(iterator, value => Promise.resolve(predicate(value)).then(result => !result)).then(result => !result);
+        return __awaiter(this, void 0, Promise, function* () {
+            return !(yield every(iterator, (value) => __awaiter(this, void 0, Promise, function* () { return !(yield predicate(value)); })));
+        });
     }
     AsyncIterator.some = some;
     function forEach(iterator, fn) {
-        return every(iterator, (value) => Promise.resolve(fn(value)).then(() => true)).then(() => { });
+        return __awaiter(this, void 0, Promise, function* () {
+            yield every(iterator, (value) => __awaiter(this, void 0, Promise, function* () { fn(value); return true; }));
+        });
     }
     AsyncIterator.forEach = forEach;
     function reduce(iterator, fn, memo) {
-        return forEach(iterator, (value) => Promise.resolve(fn(memo, value)).then(value => { memo = value; })).then(() => memo);
+        return __awaiter(this, void 0, Promise, function* () {
+            yield forEach(iterator, (value) => __awaiter(this, void 0, Promise, function* () { memo = yield fn(memo, value); }));
+            return memo;
+        });
     }
     AsyncIterator.reduce = reduce;
-    function find(iterator, predicate, orElse) {
-        var result;
-        return some(iterator, value => Promise.resolve(predicate(value)).then(satisfied => satisfied ? (result = value, true) : false)).then(satisfied => satisfied ? result : orElse ? orElse : Key.NOT_FOUND);
+    function find(iterator, predicate) {
+        return __awaiter(this, void 0, Promise, function* () {
+            var result;
+            if (yield some(iterator, (value) => __awaiter(this, void 0, Promise, function* () { return !(yield predicate(value)) ? false : (result = value, true); }))) {
+                return result;
+            }
+            else {
+                throw new NotFound;
+            }
+        });
     }
     AsyncIterator.find = find;
     function indexOf(iterator, value) {
-        var index = -1;
-        return some(iterator, v => (index++, value == v)).then(found => found ? index : Key.NOT_FOUND);
+        return __awaiter(this, void 0, Promise, function* () {
+            var index = -1;
+            if (yield some(iterator, v => (index++, value == v))) {
+                return index;
+            }
+            else {
+                throw new NotFound;
+            }
+        });
     }
     AsyncIterator.indexOf = indexOf;
     function at(iterator, index) {
@@ -60,73 +81,114 @@ export var AsyncIterator;
     }
     AsyncIterator.contains = contains;
     function is(iterator, other, equals = (a, b) => a === b) {
-        return AsyncIterator.every(iterator, value => {
-            return other.next().then(result => !result.done && equals(result.value, value));
-        }).then(res => res ? other.next().then(result => result.done) : false);
+        return __awaiter(this, void 0, Promise, function* () {
+            return (yield every(iterator, (value) => __awaiter(this, void 0, Promise, function* () {
+                var result = yield other.next();
+                return !result.done && equals(value, result.value);
+            }))) && (yield other.next()).done;
+        });
     }
     AsyncIterator.is = is;
     function map(iterator, mapFn) {
-        return {
-            next: () => iterator.next().then(result => {
-                return result.done ? Promise.resolve(AsyncIterator.sentinel) : Promise.resolve(mapFn(result.value)).then(value => ({ done: false, value }));
-            })
-        };
+        function next() {
+            return __awaiter(this, void 0, Promise, function* () {
+                var result = yield iterator.next();
+                return result.done ? AsyncIterator.done : { done: false, value: yield mapFn(result.value) };
+            });
+        }
+        return { next };
     }
     AsyncIterator.map = map;
     function filter(iterator, filterFn) {
         function next() {
-            return iterator.next().then(result => result.done ? result : Promise.resolve(filterFn(result.value)).then(satisfied => satisfied ? result : next()));
+            return __awaiter(this, void 0, Promise, function* () {
+                var result = yield iterator.next();
+                if (result.done)
+                    return AsyncIterator.done;
+                if (yield filterFn(result.value))
+                    return result;
+                return next();
+            });
         }
         return { next };
     }
     AsyncIterator.filter = filter;
     function scan(iterator, scanFn, memo) {
-        return {
-            next: () => iterator.next().then(result => {
-                return result.done ? Promise.resolve(AsyncIterator.sentinel) : Promise.resolve(scanFn(memo, result.value)).then(value => ({ done: false, value: memo = value }));
-            })
-        };
+        function next() {
+            return __awaiter(this, void 0, Promise, function* () {
+                var result = yield iterator.next();
+                if (result.done)
+                    return AsyncIterator.done;
+                memo = yield scanFn(memo, result.value);
+                return { done: false, value: memo };
+            });
+        }
+        return { next };
     }
     AsyncIterator.scan = scan;
     function zip(iterator, other) {
-        return {
-            next: () => Promise.all([iterator.next(), other.next()]).then(([result, otherResult]) => {
-                if (result.done || otherResult.done)
-                    return AsyncIterator.sentinel;
+        function next() {
+            return __awaiter(this, void 0, Promise, function* () {
+                var result = yield iterator.next();
+                if (result.done)
+                    return AsyncIterator.done;
+                var otherResult = yield other.next();
+                if (otherResult.done)
+                    return AsyncIterator.done;
                 return { done: false, value: [result.value, otherResult.value] };
-            })
-        };
+            });
+        }
+        return { next };
     }
     AsyncIterator.zip = zip;
     function take(iterator, count) {
         var i = 0;
-        return {
-            next: () => ++i > count ? Promise.resolve(AsyncIterator.sentinel) : iterator.next()
-        };
+        function next() {
+            return __awaiter(this, void 0, Promise, function* () {
+                return ++i > count ? AsyncIterator.done : iterator.next();
+            });
+        }
+        return { next };
     }
     AsyncIterator.take = take;
     function skip(iterator, count) {
         var i = 0;
         function next() {
-            return i++ < count ? iterator.next().then(next) : iterator.next();
+            return __awaiter(this, void 0, Promise, function* () {
+                if (i < count)
+                    yield some(iterator, () => ++i >= count);
+                return iterator.next();
+            });
         }
         return { next };
     }
     AsyncIterator.skip = skip;
     function concat(...iterators) {
-        return iterators.reduce((memo, value) => {
+        return iterators.reduce((memo, iterator) => {
             var iterated = false, queue = Promise.resolve(null);
-            return {
-                next: () => queue = queue.then(() => { }, () => { }).then(() => iterated ? value.next() : memo.next().then(result => result.done ? (iterated = true, value.next()) : result))
-            };
+            function next() {
+                return __awaiter(this, void 0, Promise, function* () {
+                    if (iterated)
+                        return iterator.next();
+                    var result = yield memo.next();
+                    if (!result.done)
+                        return result;
+                    iterated = true;
+                    return iterator.next();
+                });
+            }
+            return { next };
         }, AsyncIterator.Empty);
     }
     AsyncIterator.concat = concat;
     function fromArray(array) {
         var current = -1, queue = Promise.resolve(null);
-        return {
-            next: () => queue = queue.then(() => { }, () => { }).then(() => Promise.resolve(++current >= array.length ? AsyncIterator.sentinel : { done: false, value: array[current] }))
-        };
+        function next() {
+            return __awaiter(this, void 0, Promise, function* () {
+                return ++current >= array.length ? AsyncIterator.done : { done: false, value: array[current] };
+            });
+        }
+        return { next };
     }
     AsyncIterator.fromArray = fromArray;
     function fromObject(object) {
