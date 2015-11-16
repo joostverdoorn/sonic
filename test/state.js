@@ -11,22 +11,6 @@ function concat(array, other) {
   return Array.prototype.concat.call(array, other);
 }
 
-// Curry
-function c(fn) {
-  var args = slice(arguments, 1);
-  return function() {
-    return fn.apply(null, concat(args, slice(arguments)));
-  }
-}
-
-// Reverse curry
-function r(fn) {
-  var args = slice(arguments, 1);
-  return function() {
-    return fn.apply(null, concat(slice(arguments), args));
-  }
-}
-
 function state(object) {
   return Array.isArray(object) ? State.fromArray(object) : State.fromObject(object);
 }
@@ -34,19 +18,19 @@ function state(object) {
 test('first', t => {
   var { first } = State;
 
-  t.test('should resolve with the first element of the state', t => first(state([0,1,2])).then(f => t.equal(f, 0)));
+  t.test('should resolve with the first element of the state', t => first(state({a: 3, b: 4, c: 5})).then(f => t.equal(f, 3)));
   t.test('should reject when the state is empty', t => first(state([])).then(t.fail, t.pass));
-  t.test('should resolve with the first of a range when PrevPosition', t => first(state([0,1,2]), [{prev: 1}, {next: 2}]).then(f => t.equal(f, 1)));
-  t.test('should resolve with the first of a range when NextPosition', t => first(state([0,1,2]), [{next: 0}, {next: 2}]).then(f => t.equal(f, 1)));
+  t.test('should resolve with the first of a range when PrevPosition', t => first(state({a: 3, b: 4, c: 5}), [{prev: 'b'}, {next: 'c'}]).then(f => t.equal(f, 4)));
+  t.test('should resolve with the first of a range when NextPosition', t => first(state({a: 3, b: 4, c: 5}), [{next: 'a'}, {next: 'c'}]).then(f => t.equal(f, 4)));
 });
 
 test('last', t => {
   var { last } = State;
 
-  t.test('should resolve with the last element of the state', t => last(state([0,1,2])).then(l => t.equal(l, 2)));
+  t.test('should resolve with the last element of the state', t => last(state({a: 3, b: 4, c: 5})).then(l => t.equal(l, 5)));
   t.test('should reject when the state is empty', t => last(state([])).then(t.fail, t.pass));
-  t.test('should resolve with the last of a range when PrevPosition', t => last(state([0,1,2]), [{prev: 0}, {prev: 2}]).then(l => t.equal(l, 1)));
-  t.test('should resolve with the last of a range when NextPosition', t => last(state([0,1,2]), [{prev: 0}, {next: 1}]).then(l => t.equal(l, 1)));
+  t.test('should resolve with the last of a range when PrevPosition', t => last(state({a: 3, b: 4, c: 5}), [{prev: 'a'}, {prev: 'c'}]).then(l => t.equal(l, 4)));
+  t.test('should resolve with the last of a range when NextPosition', t => last(state({a: 3, b: 4, c: 5}), [{prev: 'a'}, {next: 'b'}]).then(l => t.equal(l, 4)));
 });
 
 test('has', t => {
@@ -85,15 +69,22 @@ test('is', t => {
   });
 });
 
-test('isEmpty', t => {
-  var { isEmpty } = State;
+test('empty', t => {
+  var { empty } = State;
 
-  t.test('should resolve with true if the state has no entries', t => isEmpty(state({})).then(t.ok));
-  t.test('should resolve with false if the state has entries', t => isEmpty(state({a: 3, b: 4, c: 5})).then(t.notOk));
+  t.test('should resolve with true if the state has no entries', t => empty(state({})).then(t.ok));
+  t.test('should resolve with false if the state has entries', t => empty(state({a: 3, b: 4, c: 5})).then(t.notOk));
 });
 
+test('any', t => {
+  var { any } = State;
+
+  t.test('should resolve with true if the state has entries', t => any(state({a: 3, b: 4, c: 5})).then(t.ok));
+  t.test('should resolve with false if the state has no entries', t => any(state({})).then(t.notOk));
+})
+
 test('slice', t => {
-  var { is, isEmpty, slice } = State;
+  var { is, empty, slice } = State;
   var s = state({a: 3, b: 4, c: 5});
 
   t.test('should return the sliced array', t => {
@@ -105,9 +96,12 @@ test('slice', t => {
   });
 
   t.test('should be empty when an empty range is given', t => {
-    t.test('before b', t => isEmpty(slice(s, [{prev: 'b'}, {prev: 'b'}])).then(t.ok));
-    t.test('after a', t => isEmpty(slice(s, [{next: 'a'}, {next: 'a'}])).then(t.ok));
-    t.test('betweeen a and b', t => isEmpty(slice(s, [{next: 'a'}, {prev: 'b'}])).then(t.ok));
+    t.test('before b', t => empty(slice(s, [{prev: 'b'}, {prev: 'b'}])).then(t.ok));
+    t.test('after a', t => empty(slice(s, [{next: 'a'}, {next: 'a'}])).then(t.ok));
+    t.test('between a and b', t => empty(slice(s, [{next: 'a'}, {prev: 'b'}])).then(t.ok));
+
+    // t.test('between b and a', t => empty(slice(s, [{prev: 'b'}, {next: 'a'}])).then(t.ok));
+    // t.test('xx', t => State.toArray(slice(s, [{prev: 'b'}, {next: 'a'}])).then(t.comment));
   });
 });
 
@@ -180,6 +174,15 @@ test('flatten', t => {
   t.test('should flatten stuff', t => is(flatten(tree), flattened).then(t.ok));
 });
 
+test('groupBy', t => {
+  var { groupBy, flatten, is, toArray } = State;
+
+  var s = state([0,1,2,3,4,5]);
+  var grouped = groupBy(s, x => String(x % 2));
+
+  t.test(t => toArray(flatten(grouped)).then(t.comment));
+});
+
 test('keyBy', t => {
   var { keyBy } = State,
       array = [3, 4, 5],
@@ -194,7 +197,7 @@ test('take', t => {
   t.test('should take count', t => is(take(state({a: 3, b: 4, c: 5, d: 6}), 2), state({a: 3, b: 4})).then(t.ok));
 });
 
-test('take', t => {
+test('skip', t => {
   var { skip, is, toArray } = State;
   t.test('should skip count', t => is(skip(state({a: 3, b: 4, c: 5, d: 6}), 2), state({c: 5, d: 6})).then(t.ok));
 });
@@ -230,24 +233,24 @@ test('fromEntries', t => {
     t.test(t => is(fromEntries(iterator(object)), state(object)).then(t.ok));
 
     t.test('get', t => {
-      t.test('should contain a', t => fromEntries(iterator(object)).get('a').then(c(t.equals, 3)));
-      t.test('should contain b', t => fromEntries(iterator(object)).get('b').then(c(t.equals, 4)));
-      t.test('should contain c', t => fromEntries(iterator(object)).get('c').then(c(t.equals, 5)));
+      t.test('should contain a',     t => fromEntries(iterator(object)).get('a').then(k => t.equals(k, 3)));
+      t.test('should contain b',     t => fromEntries(iterator(object)).get('b').then(k => t.equals(k, 4)));
+      t.test('should contain c',     t => fromEntries(iterator(object)).get('c').then(k => t.equals(k, 5)));
       t.test('should not contain d', t => fromEntries(iterator(object)).get('d').then(t.fail, t.pass));
     });
 
     t.test('next', t => {
-      t.test('a first', t => fromEntries(iterator(object)).next().then(c(t.equals, 'a')));
-      t.test('b next of a', t => fromEntries(iterator(object)).next('a').then(c(t.equals, 'b')));
-      t.test('c next of b', t => fromEntries(iterator(object)).next('a').then(c(t.equals, 'b')));
-      t.test('c last', t => fromEntries(iterator(object)).next('c').then(r(t.equals, null)));
+      t.test('a first',   t => fromEntries(iterator(object)).next().then(k => t.equals(k, 'a')));
+      t.test('b after a', t => fromEntries(iterator(object)).next('a').then(k => t.equals(k, 'b')));
+      t.test('c after b', t => fromEntries(iterator(object)).next('b').then(k => t.equals(k, 'c')));
+      t.test('c last',    t => fromEntries(iterator(object)).next('c').then(k => t.equals(k, null)));
     });
 
     t.test('prev', t => {
-      t.test('c last', t => fromEntries(iterator(object)).prev().then(c(t.equals, 'c')));
-      t.test('b before c', t => fromEntries(iterator(object)).prev('c').then(c(t.equals, 'b')));
-      t.test('a before b', t => fromEntries(iterator(object)).prev('b').then(c(t.equals, 'a')));
-      t.test('a first', t => fromEntries(iterator(object)).prev('a').then(r(t.equals, null)));
+      t.test('c last',     t => fromEntries(iterator(object)).prev().then(k => t.equals(k, 'c')));
+      t.test('b before c', t => fromEntries(iterator(object)).prev('c').then(k => t.equals(k, 'b')));
+      t.test('a before b', t => fromEntries(iterator(object)).prev('b').then(k => t.equals(k, 'a')));
+      t.test('a first',    t => fromEntries(iterator(object)).prev('a').then(k => t.equals(k, null)));
     });
   });
 });

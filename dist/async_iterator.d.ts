@@ -5,11 +5,11 @@ export interface AsyncIterator<T> {
 export declare module AsyncIterator {
     const sentinel: IteratorResult<any>;
     const Empty: AsyncIterator<any>;
-    function every<T>(iterator: AsyncIterator<T>, predicate: (value: T) => boolean | Promise<boolean>): Promise<boolean>;
+    function every<T>(iterator: Iterator<T> | AsyncIterator<T>, predicate: (value: T) => boolean | Promise<boolean>): Promise<boolean>;
     function some<T>(iterator: AsyncIterator<T>, predicate: (value: T) => boolean | Promise<boolean>): Promise<boolean>;
     function forEach<T>(iterator: AsyncIterator<T>, fn: (value: T) => void | Promise<void>): Promise<void>;
     function reduce<T, U>(iterator: AsyncIterator<T>, fn: (memo: U, value: T) => U | Promise<U>, memo?: U): Promise<U>;
-    function find<T>(iterator: AsyncIterator<T>, predicate: (value: T) => boolean | Promise<boolean>): Promise<T>;
+    function find<T>(iterator: AsyncIterator<T>, predicate: (value: T) => boolean | Promise<boolean>, orElse?: T): Promise<T>;
     function indexOf<T>(iterator: AsyncIterator<T>, value: T): Promise<number>;
     function at<T>(iterator: AsyncIterator<T>, index: number): Promise<T>;
     function contains<T>(iterator: AsyncIterator<T>, value: T): Promise<boolean>;

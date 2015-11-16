@@ -1,6 +1,6 @@
 import PromiseUtils from './promise_utils';
 
-type Key = number | string;
+type Key = string;
 
 module Key {
   export const NOT_FOUND_ERROR = new Error("No entry at the specified key");
@@ -15,7 +15,7 @@ module Key {
   }
 
   export function create() {
-    return uniqueKey++;
+    return "s_" + uniqueKey++;
   }
 }
 

@@ -1,16 +1,3 @@
-# Source maps
-*.js.map
-
-# External libraries
 node_modules
-bower_components
-
-# Build folders
-.grunt
 build
-
-# Generated files
-_SpecRunner.html
-stat
-test
-coverage
+*.js.map

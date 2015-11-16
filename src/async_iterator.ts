@@ -13,12 +13,14 @@ export module AsyncIterator {
     next: () => Promise.resolve(sentinel)
   }
 
-  export function every<T>(iterator: AsyncIterator<T>, predicate: (value: T) => boolean | Promise<boolean>): Promise<boolean> {
-    function loop(): Promise<boolean> {
-      return iterator.next().then(result => result.done ? true : Promise.resolve(predicate(result.value)).then(satisfied => satisfied ? loop() : false));
+  export async function every<T>(iterator: Iterator<T> | AsyncIterator<T>, predicate: (value: T) => boolean | Promise<boolean>): Promise<boolean> {
+    var result: IteratorResult<T>;
+
+    while ((result = await iterator.next()) && !result.done) {
+      if (!(await predicate(result.value))) return false;
     }
 
-    return loop();
+    return true;
   }
 
   export function some<T>(iterator: AsyncIterator<T>, predicate: (value: T) => boolean | Promise<boolean>): Promise<boolean> {
@@ -33,9 +35,9 @@ export module AsyncIterator {
     return forEach(iterator, (value: T) => Promise.resolve(fn(memo, value)).then(value => { memo = value })).then(() => memo);
   }
 
-  export function find<T>(iterator: AsyncIterator<T>, predicate: (value: T) => boolean | Promise<boolean>): Promise<T> {
+  export function find<T>(iterator: AsyncIterator<T>, predicate: (value: T) => boolean | Promise<boolean>, orElse?: T): Promise<T> {
     var result: T;
-    return some(iterator, value => Promise.resolve(predicate(value)).then(satisfied => satisfied ? (result = value, true) : false)).then(satisfied => satisfied ? result : Key.NOT_FOUND);
+    return some(iterator, value => Promise.resolve(predicate(value)).then(satisfied => satisfied ? (result = value, true) : false)).then(satisfied => satisfied ? result : orElse ? orElse : Key.NOT_FOUND);
   }
 
   export function indexOf<T>(iterator: AsyncIterator<T>, value: T): Promise<number> {

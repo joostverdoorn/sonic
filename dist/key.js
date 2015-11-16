@@ -10,10 +10,9 @@ var Key;
     }
     Key.key = key;
     function create() {
-        return uniqueKey++;
+        return "s_" + uniqueKey++;
     }
     Key.create = create;
 })(Key || (Key = {}));
 export default Key;
-
 //# sourceMappingURL=key.js.map

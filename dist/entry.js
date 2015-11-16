@@ -14,5 +14,4 @@ export var Entry;
     Entry.is = is;
 })(Entry || (Entry = {}));
 export default Entry;
-
 //# sourceMappingURL=entry.js.map

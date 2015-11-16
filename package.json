@@ -6,7 +6,8 @@
     "Joost Verdoorn",
     "Steffan Sluis"
   ],
-  "main": "dist/sonic",
+  "main": "dist/sonic.js",
+  "browser": "dist/sonic.browser.js",
   "files": [
     "dist",
     "src"
@@ -17,29 +18,19 @@
     "url": "https://github.com/joostverdoorn/sonic.git"
   },
   "devDependencies": {
-    "babelify": "~6.1.2",
+    "babel-loader": "^6.1.0",
+    "babel-plugin-transform-runtime": "^6.1.18",
+    "babel-preset-es2015": "^6.1.18",
     "blue-tape": "^0.1.10",
-    "browserify": "^10.2.0",
-    "faucet": "0.0.1",
-    "gulp": "gulpjs/gulp#4.0",
-    "gulp-foreach": "~0.1.0",
-    "gulp-notify": "^2.2.0",
-    "gulp-rename": "^1.2.2",
-    "gulp-sourcemaps": "^1.6.0",
-    "gulp-typescript": "^2.9.2",
-    "gulp-uglify": "^1.2.0",
-    "merge2": "^0.3.5",
-    "node-notifier": "^4.3.1",
-    "tap": "isaacs/node-tap",
-    "tap-dot": "^1.0.0",
-    "tap-spec": "^4.1.0",
-    "tape": "^4.2.2",
-    "through2": "^2.0.0",
-    "typescript": "git://github.com/Microsoft/TypeScript#master",
-    "vinyl-buffer": "^1.0.0",
-    "vinyl-source-stream": "^1.1.0"
+    "glob": "^6.0.1",
+    "tap": "github:isaacs/node-tap",
+    "typescript": "^1.8.0-dev.20151115",
+    "webpack": "^1.12.6"
   },
   "scripts": {
-    "test": "gulp spec"
+    "ts": "tsc",
+    "dist": "tsc && webpack --config webpack.src.config.js",
+    "test": "webpack --config webpack.test.config.js && node build/test.js | tap -Rdot -",
+    "watch": "tsc -w & webpack -w --config webpack.src.config.js"
   }
 }

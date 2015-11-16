@@ -1,3 +1,16 @@
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, Promise, generator) {
+    return new Promise(function (resolve, reject) {
+        generator = generator.call(thisArg, _arguments);
+        function cast(value) { return value instanceof Promise && value.constructor === Promise ? value : new Promise(function (resolve) { resolve(value); }); }
+        function onfulfill(value) { try { step("next", value); } catch (e) { reject(e); } }
+        function onreject(value) { try { step("throw", value); } catch (e) { reject(e); } }
+        function step(verb, value) {
+            var result = generator[verb](value);
+            result.done ? resolve(result.value) : cast(result.value).then(onfulfill, onreject);
+        }
+        step("next", void 0);
+    });
+};
 import Key from './key';
 export var AsyncIterator;
 (function (AsyncIterator) {
@@ -6,10 +19,14 @@ export var AsyncIterator;
         next: () => Promise.resolve(AsyncIterator.sentinel)
     };
     function every(iterator, predicate) {
-        function loop() {
-            return iterator.next().then(result => result.done ? true : Promise.resolve(predicate(result.value)).then(satisfied => satisfied ? loop() : false));
-        }
-        return loop();
+        return __awaiter(this, void 0, Promise, function* () {
+            var result;
+            while ((result = yield iterator.next()) && !result.done) {
+                if (!(yield predicate(result.value)))
+                    return false;
+            }
+            return true;
+        });
     }
     AsyncIterator.every = every;
     function some(iterator, predicate) {
@@ -24,9 +41,9 @@ export var AsyncIterator;
         return forEach(iterator, (value) => Promise.resolve(fn(memo, value)).then(value => { memo = value; })).then(() => memo);
     }
     AsyncIterator.reduce = reduce;
-    function find(iterator, predicate) {
+    function find(iterator, predicate, orElse) {
         var result;
-        return some(iterator, value => Promise.resolve(predicate(value)).then(satisfied => satisfied ? (result = value, true) : false)).then(satisfied => satisfied ? result : Key.NOT_FOUND);
+        return some(iterator, value => Promise.resolve(predicate(value)).then(satisfied => satisfied ? (result = value, true) : false)).then(satisfied => satisfied ? result : orElse ? orElse : Key.NOT_FOUND);
     }
     AsyncIterator.find = find;
     function indexOf(iterator, value) {
@@ -126,5 +143,4 @@ export var AsyncIterator;
     AsyncIterator.toObject = toObject;
 })(AsyncIterator || (AsyncIterator = {}));
 export default AsyncIterator;
-
 //# sourceMappingURL=async_iterator.js.map

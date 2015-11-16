@@ -15,9 +15,9 @@ export declare module State {
         next?: (key?: Key) => Promise<Key>;
     }
     const Empty: {
-        get: (key: number | string) => Promise<{}>;
-        prev: (key?: number | string) => Promise<number | string>;
-        next: (key?: number | string) => Promise<number | string>;
+        get: (key: string) => Promise<{}>;
+        prev: (key?: string) => Promise<string>;
+        next: (key?: string) => Promise<string>;
     };
     function extend<V, W>(parent: State<V>, {get, prev, next}: Partial<W>): State<W>;
     function first<V>(state: State<V>, [from, to]?: Range): Promise<V>;
@@ -25,7 +25,8 @@ export declare module State {
     function has<V>(state: State<V>, key: Key): Promise<boolean>;
     function is<V>(state: State<V>, other: State<V>): Promise<boolean>;
     function contains<V>(state: State<V>, value: V): Promise<boolean>;
-    function isEmpty<V>(state: State<V>): Promise<boolean>;
+    function empty<V>(state: State<V>): Promise<boolean>;
+    function any<V>(state: State<V>): Promise<boolean>;
     function slice<V>(parent: State<V>, range?: Range): State<V>;
     function splice<V>(parent: State<V>, range: Range, child?: State<V>): State<V>;
     function reverse<V>(parent: State<V>): State<V>;
@@ -35,10 +36,14 @@ export declare module State {
     function zip<V, W>(parent: State<V>, other: State<W>): State<[V, W]>;
     function zoom<V>(parent: State<V>, key: Key): State<V>;
     function flatten<V>(parent: Tree<V>): State<V>;
+    function groupBy<V>(parent: State<V>, groupFn: (value: V, key: Key) => Key | Promise<Key>): Tree<V>;
+    function unique<V>(parent: State<V>, uniqueFn?: (value: V, key: Key) => Key | Promise<Key>): State<V>;
+    function union<V>(state: State<V>, other: State<V>, uniqueFn?: (value: V, key: Key) => Key | Promise<Key>): State<V>;
     function keyBy<V>(parent: State<V>, keyFn: (value: V, key?: Key) => Key | Promise<Key>): State<V>;
     function take<V>(parent: State<V>, count: number): State<V>;
     function skip<V>(parent: State<V>, count: number): State<V>;
     function cache<V>(parent: State<V>): State<V>;
+    function unit<V>(value: V, key?: Key): State<V>;
     function entries<V>(state: State<V>, range?: Range): AsyncIterator<Entry<V>>;
     function keys<V>(state: State<V>, range?: Range): AsyncIterator<Key>;
     function values<V>(state: State<V>, range?: Range): AsyncIterator<V>;

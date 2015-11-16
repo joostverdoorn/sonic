@@ -1,7 +1,7 @@
 {
     "compilerOptions": {
-        "target": "es6",
-        "module": "commonjs",
+        "target": "es2015",
+        "module": "es2015",
         "declaration": true,
         "noImplicitAny": true,
         "removeComments": true,
@@ -19,13 +19,13 @@
         "src/factory.ts",
         "src/key.ts",
         "src/lens.ts",
-        "src/list.ts",
         "src/observable.ts",
         "src/patch.ts",
         "src/promise_utils.ts",
         "src/range.ts",
         "src/sonic.ts",
         "src/state.ts",
+        "src/store.ts",
         "src/tree.ts"
     ],
     "exclude": []
