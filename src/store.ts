@@ -11,6 +11,7 @@ import { Tree,
 import { Observable,
          Subject }     from './observable';
 import   AsyncIterator from './async_iterator';
+import { NotFound }    from './exceptions';
 
 
 export interface Store<V> {
@@ -38,75 +39,70 @@ export module Store {
         parentState = parent.state,
         state = State.filter(parent.state, filterFn);
 
-    // var dispatcher = Observable.map(parent.dispatcher, async (patch) => {
-    //   var [from, to] = patch.range;
-    //
-    //   // var filteredParentState = State.filter(parentState, filterFn);
-    //
-    //   var parentEntries = State.entries(parentState);
-    //
-    //   var empty = await State.empty(State.slice(parentState, patch.range));
-    //
-    //   if (Position.isPrevPosition(from) && empty) {
-    //
-    //   } else {
-    //
-    //   }
-    //   // try {
-    //     // AsyncIterator.find()
-    //
-    //   // }
-    //
-    //
-    //
-    // });
+    var dispatcher = Observable.map(parent.dispatcher, async (patch) => {
+      var [from, to] = patch.range;
 
-    //
-    // var filteredDispatcher = Observable.filter(parent.dispatcher, patch => {
-    //   return State.isEmpty()
-    // });
-    //
-    //
-    // var dispatcher = Observable.map(parent.dispatcher, patch => {
-    //
-    // });
+      // var filteredParentState = State.filter(parentState, filterFn);
 
-    //
-    //       var slice = State.slice(store.state, patch.range),
-    //           [from, to] = patch.range;
-    //
-    //
-    //       function moveFrom(position: Position): Promise<Position> {
-    //         if (Position.isPrevPosition(position)) {
-    //           var entries = State.entries(parentState, patch.range);
-    //
-    //
-    //           return AsyncIterator
-    //             .find(entries, ([key, value]) => filterFn(value, key), )
-    //             .catch(reason => {
-    //               if (reason !== Key.NOT_FOUND_ERROR) throw reason;
-    //               return to;
-    //             }).then()
-    //         } else {
-    //
-    //         }
-    //       }
-    //
-    //
-    //
-    //       return Promise.all([
-    //         move(from),
-    //         move(to)
-    //       ]).then((range: Range) => ({
-    //         range: (console.log(range), range),
-    //         added: patch.added ? State.filter(patch.added, filterFn) : undefined
-    //       }));
-    //     });
-    //
-    //
-    // return store = create(state, dispatcher);
+      function iteratorFilterFn([key, value]) {
+        return filterFn(value, key);
+      }
 
-    return null;
+      var parentEntries = State.entries(parentState);
+
+      var deleted = State.slice(parentState, patch.range);
+      var filteredDeleted = State.filter(deleted, filterFn);
+
+      var empty = await State.empty(filteredDeleted);
+
+      var newFrom: Position;
+      var newTo: Position;
+
+      if (Position.isPrevPosition(from) && !empty) {
+        var [key, value] = await AsyncIterator.find(State.entries(deleted), iteratorFilterFn);
+        newFrom = { prev: key };
+      } else {
+        try {
+          if (Position.isPrevPosition(from) && from.prev === Key.sentinel) {
+            newFrom = { prev: null };
+          } else {
+            var [key, value] = await AsyncIterator.find(State.entries(State.reverse(parentState), [Position.reverse(from), {next: Key.sentinel}]), iteratorFilterFn);
+            newFrom = { next: key };
+          }
+        } catch(error) {
+          if (error instanceof NotFound) {
+            newFrom = { next: Key.sentinel };
+          } else {
+            throw error;
+          }
+        }
+      }
+
+      if (Position.isNextPosition(to) && !empty) {
+        var [key, value] = await AsyncIterator.find(State.entries(State.reverse(deleted)), iteratorFilterFn);
+        newTo = { next: key };
+      } else {
+        try {
+          var [key, value] = await AsyncIterator.find(State.entries(parentState, [to, {prev: Key.sentinel}]), iteratorFilterFn);
+          newTo = { prev: key };
+        } catch(error) {
+          if (error instanceof NotFound) {
+            newTo = { prev: Key.sentinel };
+          } else {
+            throw error;
+          }
+        }
+      }
+
+      parentState = parent.state;
+
+      return {
+        range: <Range> [newFrom, newTo],
+        added: patch.added ? State.filter(patch.added, filterFn) : undefined
+      };
+    });
+
+    return create(State.filter(parent.state, filterFn), dispatcher);
   }
 
   export function zoom<V>(parent: Store<V>, key: Key): Store<V> {

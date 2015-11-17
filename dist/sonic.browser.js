@@ -84,6 +84,10 @@ return /******/ (function(modules) { // webpackBootstrap
 	
 	var _promise_utils2 = _interopRequireDefault(_promise_utils);
 	
+	var _lens = __webpack_require__(98);
+	
+	var _lens2 = _interopRequireDefault(_lens);
+	
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 	
 	var __awaiter = undefined && undefined.__awaiter || function (thisArg, _arguments, Promise, generator) {
@@ -129,6 +133,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    Sonic.Subject = _observable.Subject;
 	    Sonic.Cache = _cache2.default;
 	    Sonic.PromiseUtils = _promise_utils2.default;
+	    Sonic.Lens = _lens2.default;
 	})(Sonic || (Sonic = {}));
 	;
 	exports.default = Sonic;
@@ -4543,6 +4548,14 @@ return /******/ (function(modules) { // webpackBootstrap
 	});
 	exports.Store = undefined;
 	
+	var _regenerator = __webpack_require__(2);
+	
+	var _regenerator2 = _interopRequireDefault(_regenerator);
+	
+	var _slicedToArray2 = __webpack_require__(72);
+	
+	var _slicedToArray3 = _interopRequireDefault(_slicedToArray2);
+	
 	var _promise = __webpack_require__(42);
 	
 	var _promise2 = _interopRequireDefault(_promise);
@@ -4568,6 +4581,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	var _async_iterator = __webpack_require__(83);
 	
 	var _async_iterator2 = _interopRequireDefault(_async_iterator);
+	
+	var _exceptions = __webpack_require__(89);
 	
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 	
@@ -4614,10 +4629,168 @@ return /******/ (function(modules) { // webpackBootstrap
 	    }
 	    Store.map = map;
 	    function filter(parent, filterFn) {
+	        var _this = this;
+	
 	        var store,
 	            parentState = parent.state,
 	            state = _state2.default.filter(parent.state, filterFn);
-	        return null;
+	        var dispatcher = _observable.Observable.map(parent.dispatcher, function (patch) {
+	            return __awaiter(_this, void 0, _promise2.default, _regenerator2.default.mark(function _callee() {
+	                var _patch$range, from, to, iteratorFilterFn, parentEntries, deleted, filteredDeleted, empty, newFrom, newTo, _ref3, _ref4, key, value, _ref5, _ref6, _ref7, _ref8, _ref9, _ref10;
+	
+	                return _regenerator2.default.wrap(function _callee$(_context) {
+	                    while (1) {
+	                        switch (_context.prev = _context.next) {
+	                            case 0:
+	                                iteratorFilterFn = function iteratorFilterFn(_ref) {
+	                                    var _ref2 = (0, _slicedToArray3.default)(_ref, 2);
+	
+	                                    var key = _ref2[0];
+	                                    var value = _ref2[1];
+	
+	                                    return filterFn(value, key);
+	                                };
+	
+	                                _patch$range = (0, _slicedToArray3.default)(patch.range, 2);
+	                                from = _patch$range[0];
+	                                to = _patch$range[1];
+	                                parentEntries = _state2.default.entries(parentState);
+	                                deleted = _state2.default.slice(parentState, patch.range);
+	                                filteredDeleted = _state2.default.filter(deleted, filterFn);
+	                                _context.next = 9;
+	                                return _state2.default.empty(filteredDeleted);
+	
+	                            case 9:
+	                                empty = _context.sent;
+	
+	                                if (!(_range.Position.isPrevPosition(from) && !empty)) {
+	                                    _context.next = 20;
+	                                    break;
+	                                }
+	
+	                                _context.next = 13;
+	                                return _async_iterator2.default.find(_state2.default.entries(deleted), iteratorFilterFn);
+	
+	                            case 13:
+	                                _ref3 = _context.sent;
+	                                _ref4 = (0, _slicedToArray3.default)(_ref3, 2);
+	                                key = _ref4[0];
+	                                value = _ref4[1];
+	
+	                                newFrom = { prev: key };
+	                                _context.next = 41;
+	                                break;
+	
+	                            case 20:
+	                                _context.prev = 20;
+	
+	                                if (!(_range.Position.isPrevPosition(from) && from.prev === _key2.default.sentinel)) {
+	                                    _context.next = 25;
+	                                    break;
+	                                }
+	
+	                                newFrom = { prev: null };
+	                                _context.next = 32;
+	                                break;
+	
+	                            case 25:
+	                                _context.next = 27;
+	                                return _async_iterator2.default.find(_state2.default.entries(_state2.default.reverse(parentState), [_range.Position.reverse(from), { next: _key2.default.sentinel }]), iteratorFilterFn);
+	
+	                            case 27:
+	                                _ref5 = _context.sent;
+	                                _ref6 = (0, _slicedToArray3.default)(_ref5, 2);
+	                                key = _ref6[0];
+	                                value = _ref6[1];
+	
+	                                newFrom = { next: key };
+	
+	                            case 32:
+	                                _context.next = 41;
+	                                break;
+	
+	                            case 34:
+	                                _context.prev = 34;
+	                                _context.t0 = _context["catch"](20);
+	
+	                                if (!(_context.t0 instanceof _exceptions.NotFound)) {
+	                                    _context.next = 40;
+	                                    break;
+	                                }
+	
+	                                newFrom = { next: _key2.default.sentinel };
+	                                _context.next = 41;
+	                                break;
+	
+	                            case 40:
+	                                throw _context.t0;
+	
+	                            case 41:
+	                                if (!(_range.Position.isNextPosition(to) && !empty)) {
+	                                    _context.next = 51;
+	                                    break;
+	                                }
+	
+	                                _context.next = 44;
+	                                return _async_iterator2.default.find(_state2.default.entries(_state2.default.reverse(deleted)), iteratorFilterFn);
+	
+	                            case 44:
+	                                _ref7 = _context.sent;
+	                                _ref8 = (0, _slicedToArray3.default)(_ref7, 2);
+	                                key = _ref8[0];
+	                                value = _ref8[1];
+	
+	                                newTo = { next: key };
+	                                _context.next = 68;
+	                                break;
+	
+	                            case 51:
+	                                _context.prev = 51;
+	                                _context.next = 54;
+	                                return _async_iterator2.default.find(_state2.default.entries(parentState, [to, { prev: _key2.default.sentinel }]), iteratorFilterFn);
+	
+	                            case 54:
+	                                _ref9 = _context.sent;
+	                                _ref10 = (0, _slicedToArray3.default)(_ref9, 2);
+	                                key = _ref10[0];
+	                                value = _ref10[1];
+	
+	                                newTo = { prev: key };
+	                                _context.next = 68;
+	                                break;
+	
+	                            case 61:
+	                                _context.prev = 61;
+	                                _context.t1 = _context["catch"](51);
+	
+	                                if (!(_context.t1 instanceof _exceptions.NotFound)) {
+	                                    _context.next = 67;
+	                                    break;
+	                                }
+	
+	                                newTo = { prev: _key2.default.sentinel };
+	                                _context.next = 68;
+	                                break;
+	
+	                            case 67:
+	                                throw _context.t1;
+	
+	                            case 68:
+	                                parentState = parent.state;
+	                                return _context.abrupt("return", {
+	                                    range: [newFrom, newTo],
+	                                    added: patch.added ? _state2.default.filter(patch.added, filterFn) : undefined
+	                                });
+	
+	                            case 70:
+	                            case "end":
+	                                return _context.stop();
+	                        }
+	                    }
+	                }, _callee, this, [[20, 34], [51, 61]]);
+	            }));
+	        });
+	        return create(_state2.default.filter(parent.state, filterFn), dispatcher);
 	    }
 	    Store.filter = filter;
 	    function zoom(parent, key) {
@@ -4981,6 +5154,76 @@ return /******/ (function(modules) { // webpackBootstrap
 	})(PromiseUtils || (exports.PromiseUtils = PromiseUtils = {}));
 	exports.default = PromiseUtils;
 	//# sourceMappingURL=promise_utils.js.map
+
+/***/ },
+/* 98 */
+/***/ function(module, exports, __webpack_require__) {
+
+	"use strict";
+	
+	Object.defineProperty(exports, "__esModule", {
+	    value: true
+	});
+	exports.Lens = undefined;
+	
+	var _state = __webpack_require__(1);
+	
+	var _state2 = _interopRequireDefault(_state);
+	
+	var _store = __webpack_require__(94);
+	
+	var _observable = __webpack_require__(96);
+	
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+	
+	var __awaiter = undefined && undefined.__awaiter || function (thisArg, _arguments, Promise, generator) {
+	    return new Promise(function (resolve, reject) {
+	        generator = generator.call(thisArg, _arguments);
+	        function cast(value) {
+	            return value instanceof Promise && value.constructor === Promise ? value : new Promise(function (resolve) {
+	                resolve(value);
+	            });
+	        }
+	        function onfulfill(value) {
+	            try {
+	                step("next", value);
+	            } catch (e) {
+	                reject(e);
+	            }
+	        }
+	        function onreject(value) {
+	            try {
+	                step("throw", value);
+	            } catch (e) {
+	                reject(e);
+	            }
+	        }
+	        function step(verb, value) {
+	            var result = generator[verb](value);
+	            result.done ? resolve(result.value) : cast(result.value).then(onfulfill, onreject);
+	        }
+	        step("next", void 0);
+	    });
+	};
+	var Lens = exports.Lens = undefined;
+	(function (Lens) {
+	    function compose(parent, lens) {
+	        var getSubject = _observable.Subject.create(),
+	            setSubject = _observable.Subject.create();
+	        _observable.Observable.map(parent.dispatcher, function (patch) {
+	            if (patch.added) return { range: patch.range, added: _state2.default.map(patch.added, lens.get) };
+	            return { range: patch.range };
+	        }).subscribe(getSubject);
+	        _observable.Observable.map(setSubject, function (patch) {
+	            if (patch.added) return { range: patch.range, added: _state2.default.map(patch.added, lens.set) };
+	            return { range: patch.range };
+	        }).subscribe(parent.dispatcher);
+	        return _store.Store.create(_state2.default.map(parent.state, lens.get), { subscribe: getSubject.subscribe, onNext: setSubject.onNext });
+	    }
+	    Lens.compose = compose;
+	})(Lens || (exports.Lens = Lens = {}));
+	exports.default = Lens;
+	//# sourceMappingURL=lens.js.map
 
 /***/ }
 /******/ ])

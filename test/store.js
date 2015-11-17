@@ -42,12 +42,100 @@ test('map', t => {
       .then(t.ok);
   });
 });
-//
-// test('filter', t => {
-//   t.test('should work', t => {
-//
-//   });
-// });
+
+test('filter', t => {
+  t.test('should work reactively', t => {
+    t.test('remove all', async (t) => {
+      var s = store({a: 3, b: 4, c: 5});
+      var u = Store.filter(s, x => x % 2 === 0);
+      var p = {range: [{next: null}, {prev: null}]};
+
+      await s.dispatcher.onNext(p);
+      return State.is(u.state, state({})).then(t.ok);
+    });
+
+    t.test('remove all but first', async (t) => {
+      var s = store({a: 3, b: 4, c: 5});
+      var u = Store.filter(s, x => x % 2 === 0);
+      var p = {range: [{next: 'b'}, {prev: null}]};
+
+      await s.dispatcher.onNext(p);
+      return State.is(u.state, state({b: 4})).then(t.ok);
+    });
+
+    t.test('remove all but last', async (t) => {
+      var s = store({a: 3, b: 4, c: 5});
+      var u = Store.filter(s, x => x % 2 === 0);
+      var p = {range: [{next: null}, {prev: 'b'}]};
+
+      await s.dispatcher.onNext(p);
+      return State.is(u.state, state({b: 4})).then(t.ok);
+    });
+
+    t.test('remove none', async (t) => {
+      var s = store({a: 3, b: 4, c: 5});
+      var u = Store.filter(s, x => x % 2 === 0);
+      var p = {range: [{next: 'a'}, {next: 'a'}]};
+
+      await s.dispatcher.onNext(p);
+      return State.is(u.state, state({b: 4 })).then(t.ok);
+    });
+
+    t.test('remove none, add something', async (t) => {
+      var s = store({a: 3, b: 4, c: 5});
+      var u = Store.filter(s, x => x % 2 === 0);
+      var p = {range: [{next: 'a'}, {next: 'a'}], added: state({d: 6})};
+
+      await s.dispatcher.onNext(p);
+      return State.is(u.state, state({d: 6, b: 4 })).then(t.ok);
+    });
+
+    t.test('remove none, add something at beginning', async (t) => {
+      var s = store({a: 3, b: 4, c: 5});
+      var u = Store.filter(s, x => x % 2 === 0);
+      var p = {range: [{next: null}, {prev: 'a'}], added: state({d: 6})};
+
+      await s.dispatcher.onNext(p);
+      return State.is(u.state, state({d: 6, b: 4 })).then(t.ok);
+    });
+
+    t.test('remove none, add something at end', async (t) => {
+      var s = store({a: 3, b: 4, c: 5});
+      var u = Store.filter(s, x => x % 2 === 0);
+      var p = {range: [{prev: null}, {prev: null}], added: state({d: 6})};
+
+      await s.dispatcher.onNext(p);
+      return State.is(u.state, state({b: 4, d: 6 })).then(t.ok);
+    });
+
+
+    t.test('remove all, add something', async (t) => {
+      var s = store({a: 3, b: 4, c: 5});
+      var u = Store.filter(s, x => x % 2 === 0);
+      var p = {range: [{next: null}, {prev: null}], added: state({d: 6})};
+
+      await s.dispatcher.onNext(p);
+      return State.is(u.state, state({d: 6})).then(t.ok);
+    });
+
+    t.test('remove first, add something', async (t) => {
+      var s = store({a: 3, b: 4, c: 5});
+      var u = Store.filter(s, x => x % 2 === 0);
+      var p = {range: [{next: null}, {next: 'a'}], added: State.fromObject({d: 6})};
+
+      await s.dispatcher.onNext(p);
+      return State.is(u.state, state({d: 6, b: 4})).then(t.ok);
+    });
+
+
+
+
+
+    // return State.toArray(u.state).then(t.comment);
+
+
+  });
+});
 
 
 test('scan', t => {

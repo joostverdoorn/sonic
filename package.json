@@ -19,6 +19,7 @@
   },
   "devDependencies": {
     "babel-loader": "^6.1.0",
+    "babel-plugin-transform-async-to-generator": "^6.1.18",
     "babel-plugin-transform-runtime": "^6.1.18",
     "babel-preset-es2015": "^6.1.18",
     "blue-tape": "^0.1.10",
@@ -30,7 +31,7 @@
   "scripts": {
     "ts": "tsc",
     "dist": "tsc && webpack --config webpack.src.config.js",
-    "test": "webpack --config webpack.test.config.js && node build/test.js | faucet",
+    "test": "(webpack --config webpack.test.config.js && node build/test.js | faucet) || echo -e '\\u0007'",
     "watch": "tsc -w & webpack -w --config webpack.src.config.js"
   }
 }

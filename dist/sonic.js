@@ -18,6 +18,7 @@ import _Tree from './tree';
 import _Cache from './cache';
 import { Subject as _Subject } from './observable';
 import _PromiseUtils from './promise_utils';
+import _Lens from './lens';
 function Sonic(obj) {
     if (obj instanceof Array)
         return _Store.create(_State.fromArray(obj), _Subject.create());
@@ -33,6 +34,7 @@ var Sonic;
     Sonic.Subject = _Subject;
     Sonic.Cache = _Cache;
     Sonic.PromiseUtils = _PromiseUtils;
+    Sonic.Lens = _Lens;
 })(Sonic || (Sonic = {}));
 ;
 export default Sonic;

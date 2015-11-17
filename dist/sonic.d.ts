@@ -5,6 +5,7 @@ import _Tree from './tree';
 import _Cache from './cache';
 import { Subject as _Subject } from './observable';
 import _PromiseUtils from './promise_utils';
+import _Lens from './lens';
 declare function Sonic(obj: any): _MutabeStore<{}>;
 declare module Sonic {
     const State: typeof _State;
@@ -14,5 +15,6 @@ declare module Sonic {
     const Subject: typeof _Subject;
     const Cache: typeof _Cache;
     const PromiseUtils: typeof _PromiseUtils;
+    const Lens: typeof _Lens;
 }
 export default Sonic;

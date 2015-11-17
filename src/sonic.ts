@@ -6,7 +6,7 @@ import _Tree                          from './tree';
 import _Cache                         from './cache';
 import {Subject as _Subject}          from './observable';
 import _PromiseUtils                  from './promise_utils';
-// import _Lens                          from './lens';
+import _Lens                          from './lens';
 
 function Sonic(obj: any) {
   if (obj instanceof Array)  return _Store.create(_State.fromArray(obj),  _Subject.create());
@@ -21,19 +21,9 @@ module Sonic {
   export const Subject        = _Subject;
   export const Cache          = _Cache;
   export const PromiseUtils   = _PromiseUtils;
-  // export const Lens           = _Lens;
+  export const Lens           = _Lens;
 };
 
 export default Sonic;
-//
-//
 declare const module: any;
 module.exports = Sonic;
-
-
-// declare const window: any;
-//
-// window.Sonic = Sonic;
-//
-// debugger
-//
