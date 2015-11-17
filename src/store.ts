@@ -42,62 +42,37 @@ export module Store {
     var dispatcher = Observable.map(parent.dispatcher, async (patch) => {
       var [from, to] = patch.range;
 
-      // var filteredParentState = State.filter(parentState, filterFn);
-
       function iteratorFilterFn([key, value]) {
         return filterFn(value, key);
       }
 
-      var parentEntries = State.entries(parentState);
+      var deleted = State.slice(parentState, patch.range),
+          filteredDeleted = State.filter(deleted, filterFn),
+          empty = await State.empty(filteredDeleted);
 
-      var deleted = State.slice(parentState, patch.range);
-      var filteredDeleted = State.filter(deleted, filterFn);
+      async function move(state: State<V>, range: Range = Range.all): Promise<Key> {
+        var [key] = await AsyncIterator.find(State.entries(state, range), iteratorFilterFn);
+        return key;
+      }
 
-      var empty = await State.empty(filteredDeleted);
-
-      var newFrom: Position;
-      var newTo: Position;
-
-      if (Position.isPrevPosition(from) && !empty) {
-        var [key, value] = await AsyncIterator.find(State.entries(deleted), iteratorFilterFn);
-        newFrom = { prev: key };
-      } else {
+      async function mapPosition(position: Position, parentState: State<V>, deleted: State<V>): Promise<Position> {
+        if (Position.isPrevPosition(position) && !empty) return { prev: await move(deleted) };
         try {
-          if (Position.isPrevPosition(from) && from.prev === Key.sentinel) {
-            newFrom = { prev: null };
-          } else {
-            var [key, value] = await AsyncIterator.find(State.entries(State.reverse(parentState), [Position.reverse(from), {next: Key.sentinel}]), iteratorFilterFn);
-            newFrom = { next: key };
-          }
+          if (Position.isPrevPosition(position) && position.prev === Key.sentinel) return { prev: null };
+          return { next: await move(State.reverse(parentState), [Position.reverse(position), {next: Key.sentinel}]) };
         } catch(error) {
-          if (error instanceof NotFound) {
-            newFrom = { next: Key.sentinel };
-          } else {
-            throw error;
-          }
+          if (error instanceof NotFound) return { next: Key.sentinel };
+          throw error;
         }
       }
 
-      if (Position.isNextPosition(to) && !empty) {
-        var [key, value] = await AsyncIterator.find(State.entries(State.reverse(deleted)), iteratorFilterFn);
-        newTo = { next: key };
-      } else {
-        try {
-          var [key, value] = await AsyncIterator.find(State.entries(parentState, [to, {prev: Key.sentinel}]), iteratorFilterFn);
-          newTo = { prev: key };
-        } catch(error) {
-          if (error instanceof NotFound) {
-            newTo = { prev: Key.sentinel };
-          } else {
-            throw error;
-          }
-        }
-      }
+      from = await mapPosition(from, parentState, deleted);
+      to = Position.reverse(await mapPosition(Position.reverse(to), State.reverse(parentState), State.reverse(deleted)));
 
       parentState = parent.state;
 
       return {
-        range: <Range> [newFrom, newTo],
+        range: <Range> [from, to],
         added: patch.added ? State.filter(patch.added, filterFn) : undefined
       };
     });
