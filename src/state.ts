@@ -148,12 +148,13 @@ export module State {
   export function filter<V>(parent: State<V>, filterFn: (value: V, key?: Key) => boolean| Promise<boolean>): State<V> {
     var cache: {[key: string]: Promise<boolean>} = Object.create(null);
 
-    function have(key: Key) {
+    function have(key: Key): Promise<boolean> {
       return key in cache ? cache[key] : cache[key] = parent.get(key).then(value => filterFn(value, key));
     }
 
-    function get(key: Key): Promise<V> {
-      return have(key).then(res => res ? parent.get(key) : Promise.reject<any>(new NotFound));
+    async function get(key: Key): Promise<V> {
+      if (await(have(key))) return parent.get(key);
+      throw new NotFound;
     }
 
     function prev(key: Key): Promise<Key> {
@@ -171,6 +172,10 @@ export module State {
     return fromEntries(AsyncIterator.scan(entries(parent), (memoEntry, entry) =>  {
       return Promise.resolve(scanFn(memoEntry[1], entry[1], entry[0])).then(result => [entry[0], result]);
     }, <Entry<W>>[Key.sentinel, memo]));
+  }
+
+  export function without<V>(parent: State<V>, deleted: State<V>): State<V> {
+    return filter(parent, (value, key) => has(deleted, key));
   }
 
   export function zip<V, W>(parent: State<V>, other: State<W>): State<[V, W]> {

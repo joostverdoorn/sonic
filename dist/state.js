@@ -146,7 +146,11 @@ export var State;
             return key in cache ? cache[key] : cache[key] = parent.get(key).then(value => filterFn(value, key));
         }
         function get(key) {
-            return have(key).then(res => res ? parent.get(key) : Promise.reject(new NotFound));
+            return __awaiter(this, void 0, Promise, function* () {
+                if (yield (have(key)))
+                    return parent.get(key);
+                throw new NotFound;
+            });
         }
         function prev(key) {
             return parent.prev(key).then(p => p === Key.sentinel ? Key.sentinel : have(p).then(res => res ? p : prev(p)));
@@ -163,6 +167,10 @@ export var State;
         }, [Key.sentinel, memo]));
     }
     State.scan = scan;
+    function without(parent, deleted) {
+        return filter(parent, (value, key) => has(deleted, key));
+    }
+    State.without = without;
     function zip(parent, other) {
         return fromValues(AsyncIterator.zip(values(parent), values(other)));
     }

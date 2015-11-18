@@ -25,3 +25,4 @@
 ## Global
 - [ ] Check enforcement of string-only keys
 - [ ] Don't break on invalid ranges
+- [ ] Create convenience API
