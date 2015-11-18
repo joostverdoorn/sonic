@@ -284,19 +284,23 @@ export var State;
     function fromEntries(iterator) {
         var cache = Cache.create(), exhausted = false, currentKey = null, queue = Promise.resolve(null);
         var cachingIterator = {
-            next: () => iterator.next().then(({ done, value: entry }) => {
-                if (done) {
-                    exhausted = true;
-                    cache.prev[Key.sentinel] = Promise.resolve(currentKey);
-                    cache.next[currentKey] = Promise.resolve(Key.sentinel);
-                    return AsyncIterator.done;
-                }
-                cache.prev[entry[0]] = Promise.resolve(currentKey);
-                cache.next[currentKey] = Promise.resolve(entry[0]);
-                cache.get[entry[0]] = Promise.resolve(entry[1]);
-                currentKey = entry[0];
-                return { done, value: entry };
-            })
+            next() {
+                return __awaiter(this, void 0, Promise, function* () {
+                    var result = yield iterator.next();
+                    if (result.done) {
+                        exhausted = true;
+                        cache.prev[Key.sentinel] = Promise.resolve(currentKey);
+                        cache.next[currentKey] = Promise.resolve(Key.sentinel);
+                        return AsyncIterator.done;
+                    }
+                    var [key, value] = result.value;
+                    cache.prev[key] = Promise.resolve(currentKey);
+                    cache.next[currentKey] = Promise.resolve(key);
+                    cache.get[key] = Promise.resolve(value);
+                    currentKey = key;
+                    return { done: false, value: [key, value] };
+                });
+            }
         };
         function get(key) {
             if (exhausted)

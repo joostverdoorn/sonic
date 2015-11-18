@@ -707,22 +707,47 @@ return /******/ (function(modules) { // webpackBootstrap
 	            queue = _promise2.default.resolve(null);
 	        var cachingIterator = {
 	            next: function next() {
-	                return iterator.next().then(function (_ref12) {
-	                    var done = _ref12.done;
-	                    var entry = _ref12.value;
+	                return __awaiter(this, void 0, _promise2.default, _regenerator2.default.mark(function _callee5() {
+	                    var result, _result$value, key, value;
 	
-	                    if (done) {
-	                        exhausted = true;
-	                        cache.prev[_key2.default.sentinel] = _promise2.default.resolve(currentKey);
-	                        cache.next[currentKey] = _promise2.default.resolve(_key2.default.sentinel);
-	                        return _async_iterator2.default.done;
-	                    }
-	                    cache.prev[entry[0]] = _promise2.default.resolve(currentKey);
-	                    cache.next[currentKey] = _promise2.default.resolve(entry[0]);
-	                    cache.get[entry[0]] = _promise2.default.resolve(entry[1]);
-	                    currentKey = entry[0];
-	                    return { done: done, value: entry };
-	                });
+	                    return _regenerator2.default.wrap(function _callee5$(_context5) {
+	                        while (1) {
+	                            switch (_context5.prev = _context5.next) {
+	                                case 0:
+	                                    _context5.next = 2;
+	                                    return iterator.next();
+	
+	                                case 2:
+	                                    result = _context5.sent;
+	
+	                                    if (!result.done) {
+	                                        _context5.next = 8;
+	                                        break;
+	                                    }
+	
+	                                    exhausted = true;
+	                                    cache.prev[_key2.default.sentinel] = _promise2.default.resolve(currentKey);
+	                                    cache.next[currentKey] = _promise2.default.resolve(_key2.default.sentinel);
+	                                    return _context5.abrupt("return", _async_iterator2.default.done);
+	
+	                                case 8:
+	                                    _result$value = (0, _slicedToArray3.default)(result.value, 2);
+	                                    key = _result$value[0];
+	                                    value = _result$value[1];
+	
+	                                    cache.prev[key] = _promise2.default.resolve(currentKey);
+	                                    cache.next[currentKey] = _promise2.default.resolve(key);
+	                                    cache.get[key] = _promise2.default.resolve(value);
+	                                    currentKey = key;
+	                                    return _context5.abrupt("return", { done: false, value: [key, value] });
+	
+	                                case 16:
+	                                case "end":
+	                                    return _context5.stop();
+	                            }
+	                        }
+	                    }, _callee5, this);
+	                }));
 	            }
 	        };
 	        function get(key) {
@@ -764,11 +789,11 @@ return /******/ (function(modules) { // webpackBootstrap
 	    function fromValues(iterator) {
 	        return fromEntries(_async_iterator2.default.map(_async_iterator2.default.scan(iterator, function (prev, value) {
 	            return [prev[0] + 1, value];
-	        }, [-1, null]), function (_ref13) {
-	            var _ref14 = (0, _slicedToArray3.default)(_ref13, 2);
+	        }, [-1, null]), function (_ref12) {
+	            var _ref13 = (0, _slicedToArray3.default)(_ref12, 2);
 	
-	            var n = _ref14[0];
-	            var value = _ref14[1];
+	            var n = _ref13[0];
+	            var value = _ref13[1];
 	            return [n.toString(), value];
 	        }));
 	    }
@@ -785,36 +810,36 @@ return /******/ (function(modules) { // webpackBootstrap
 	        var state,
 	            queue = _promise2.default.resolve();
 	        function createState() {
-	            return __awaiter(this, void 0, _promise2.default, _regenerator2.default.mark(function _callee5() {
-	                return _regenerator2.default.wrap(function _callee5$(_context5) {
+	            return __awaiter(this, void 0, _promise2.default, _regenerator2.default.mark(function _callee6() {
+	                return _regenerator2.default.wrap(function _callee6$(_context6) {
 	                    while (1) {
-	                        switch (_context5.prev = _context5.next) {
+	                        switch (_context6.prev = _context6.next) {
 	                            case 0:
 	                                if (!state) {
-	                                    _context5.next = 4;
+	                                    _context6.next = 4;
 	                                    break;
 	                                }
 	
-	                                _context5.t0 = state;
-	                                _context5.next = 7;
+	                                _context6.t0 = state;
+	                                _context6.next = 7;
 	                                break;
 	
 	                            case 4:
-	                                _context5.next = 6;
+	                                _context6.next = 6;
 	                                return fn();
 	
 	                            case 6:
-	                                _context5.t0 = state = _context5.sent;
+	                                _context6.t0 = state = _context6.sent;
 	
 	                            case 7:
-	                                return _context5.abrupt("return", _context5.t0);
+	                                return _context6.abrupt("return", _context6.t0);
 	
 	                            case 8:
 	                            case "end":
-	                                return _context5.stop();
+	                                return _context6.stop();
 	                        }
 	                    }
-	                }, _callee5, this);
+	                }, _callee6, this);
 	            }));
 	        }
 	        function get(key) {

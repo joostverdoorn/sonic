@@ -289,28 +289,32 @@ export module State {
     return AsyncIterator.map(entries(state, range), Entry.value);
   }
 
-  export function fromEntries<V>(iterator: AsyncIterator<Entry<V>>): State<V> {
+  export function fromEntries<V>(iterator: Iterator<Entry<V>> | AsyncIterator<Entry<V>>): State<V> {
     var cache = Cache.create(),
         exhausted = false,
         currentKey: Key = null,
         queue = Promise.resolve(null);
 
     var cachingIterator = {
-      next: () => iterator.next().then(({done, value: entry}) => {
-        if (done) {
+      async next() {
+        var result = await iterator.next();
+
+        if (result.done) {
           exhausted = true;
           cache.prev[Key.sentinel] = Promise.resolve(currentKey);
           cache.next[currentKey] = Promise.resolve(Key.sentinel);
           return AsyncIterator.done;
         }
 
-        cache.prev[entry[0]] = Promise.resolve(currentKey);
-        cache.next[currentKey] = Promise.resolve(entry[0]);
-        cache.get[entry[0]] = Promise.resolve(entry[1]);
-        currentKey = entry[0];
+        var [key, value] = result.value;
 
-        return {done, value: entry};
-      })
+        cache.prev[key] = Promise.resolve(currentKey);
+        cache.next[currentKey] = Promise.resolve(key);
+        cache.get[key] = Promise.resolve(value);
+        currentKey = key;
+
+        return {done: false, value: [key, value]};
+      }
     };
 
     function get(key: Key): Promise<V> {
@@ -332,11 +336,11 @@ export module State {
     return Cache.apply({get, prev, next}, cache);
   }
 
-  export function fromKeys(iterator: AsyncIterator<Key>): State<void> {
+  export function fromKeys(iterator: Iterator<Key> | AsyncIterator<Key>): State<void> {
     return fromEntries(AsyncIterator.map(iterator, key => <Entry<void>>[key, null]));
   }
 
-  export function fromValues<V>(iterator: AsyncIterator<V>): State<V> {
+  export function fromValues<V>(iterator: Iterator<V> | AsyncIterator<V>): State<V> {
     return fromEntries(AsyncIterator.map(AsyncIterator.scan(iterator, (prev, value) => <[number, V]>[prev[0] + 1, value], <[number, V]>[-1, null]), ([n, value]) => [n.toString(), value]));
   }
 

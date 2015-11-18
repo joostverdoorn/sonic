@@ -47,9 +47,9 @@ export declare module State {
     function entries<V>(state: State<V>, range?: Range): AsyncIterator<Entry<V>>;
     function keys<V>(state: State<V>, range?: Range): AsyncIterator<Key>;
     function values<V>(state: State<V>, range?: Range): AsyncIterator<V>;
-    function fromEntries<V>(iterator: AsyncIterator<Entry<V>>): State<V>;
-    function fromKeys(iterator: AsyncIterator<Key>): State<void>;
-    function fromValues<V>(iterator: AsyncIterator<V>): State<V>;
+    function fromEntries<V>(iterator: Iterator<Entry<V>> | AsyncIterator<Entry<V>>): State<V>;
+    function fromKeys(iterator: Iterator<Key> | AsyncIterator<Key>): State<void>;
+    function fromValues<V>(iterator: Iterator<V> | AsyncIterator<V>): State<V>;
     function fromArray<V>(values: V[]): State<V>;
     function fromObject<V>(values: {
         [key: string]: V;
