@@ -10,7 +10,7 @@
 - [ ] Add remaining tests
 
 ## Store
-- [ ] Filter: fix rewriting of ranges to be as lazy as possible
+- [x] Filter: fix rewriting of ranges to be as lazy as possible
 - [ ] Implement remaining functions from state, reactively
 
 ## Observable

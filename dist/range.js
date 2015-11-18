@@ -15,6 +15,10 @@ import Key from './key';
 export var Range;
 (function (Range) {
     Range.all = [{ next: Key.sentinel }, { prev: Key.sentinel }];
+    function reverse([from, to]) {
+        return [Position.reverse(to), Position.reverse(from)];
+    }
+    Range.reverse = reverse;
 })(Range || (Range = {}));
 export var Position;
 (function (Position) {

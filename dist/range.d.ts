@@ -9,6 +9,7 @@ export declare type NextPosition = {
 export declare type Position = PrevPosition | NextPosition;
 export declare module Range {
     const all: Range;
+    function reverse([from, to]: Range): Range;
 }
 export declare module Position {
     function isPrevPosition(position: Position): position is PrevPosition;

@@ -108,7 +108,6 @@ test('filter', t => {
       return State.is(u.state, state({b: 4, d: 6 })).then(t.ok);
     });
 
-
     t.test('remove all, add something', async (t) => {
       var s = store({a: 3, b: 4, c: 5});
       var u = Store.filter(s, x => x % 2 === 0);

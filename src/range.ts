@@ -14,6 +14,10 @@ export type Position = PrevPosition | NextPosition;
 
 export module Range {
   export const all: Range = [{next: Key.sentinel}, {prev: Key.sentinel}];
+
+  export function reverse([from, to]: Range): Range {
+    return [Position.reverse(to), Position.reverse(from)];
+  }
 }
 
 export module Position {

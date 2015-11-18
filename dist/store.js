@@ -30,40 +30,40 @@ export var Store;
     }
     Store.map = map;
     function filter(parent, filterFn) {
-        var store, parentState = parent.state, state = State.filter(parent.state, filterFn);
-        var dispatcher = Observable.map(parent.dispatcher, (patch) => __awaiter(this, void 0, Promise, function* () {
-            var [from, to] = patch.range;
-            function iteratorFilterFn([key, value]) {
-                return filterFn(value, key);
-            }
-            var deleted = State.slice(parentState, patch.range), filteredDeleted = State.filter(deleted, filterFn), empty = yield State.empty(filteredDeleted);
-            function move(state, range = Range.all) {
-                return __awaiter(this, void 0, Promise, function* () {
-                    var [key] = yield AsyncIterator.find(State.entries(state, range), iteratorFilterFn);
+        var parentState = parent.state;
+        function find(state, range) {
+            return __awaiter(this, void 0, Promise, function* () {
+                try {
+                    var [key] = yield AsyncIterator.find(State.entries(state, range), ([key, value]) => filterFn(value, key));
                     return key;
-                });
-            }
-            function mapPosition(position, parentState, deleted) {
-                return __awaiter(this, void 0, Promise, function* () {
-                    if (Position.isPrevPosition(position) && !empty)
-                        return { prev: yield move(deleted) };
-                    try {
-                        if (Position.isPrevPosition(position) && position.prev === Key.sentinel)
-                            return { prev: null };
-                        return { next: yield move(State.reverse(parentState), [Position.reverse(position), { next: Key.sentinel }]) };
-                    }
-                    catch (error) {
-                        if (error instanceof NotFound)
-                            return { next: Key.sentinel };
-                        throw error;
-                    }
-                });
-            }
-            from = yield mapPosition(from, parentState, deleted);
-            to = Position.reverse(yield mapPosition(Position.reverse(to), State.reverse(parentState), State.reverse(deleted)));
+                }
+                catch (error) {
+                    if (error instanceof NotFound)
+                        return Key.sentinel;
+                    throw error;
+                }
+            });
+        }
+        function move(state, range) {
+            return __awaiter(this, void 0, Promise, function* () {
+                var deleted = State.slice(State.reverse(state), Range.reverse(range)), position = range[1];
+                if (Position.isNextPosition(position)) {
+                    if (!(yield State.empty(deleted)))
+                        return { next: yield find(deleted, Range.all) };
+                    if (position.next === Key.sentinel)
+                        return { next: Key.sentinel };
+                }
+                return { prev: yield find(state, [position, { next: Key.sentinel }]) };
+            });
+        }
+        var dispatcher = Observable.map(parent.dispatcher, (patch) => __awaiter(this, void 0, Promise, function* () {
+            var range = (yield Promise.all([
+                move(State.reverse(parentState), Range.reverse(patch.range)).then(Position.reverse),
+                move(parentState, patch.range)
+            ]));
             parentState = parent.state;
             return {
-                range: [from, to],
+                range: range,
                 added: patch.added ? State.filter(patch.added, filterFn) : undefined
             };
         }));

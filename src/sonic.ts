@@ -7,6 +7,10 @@ import _Cache                         from './cache';
 import {Subject as _Subject}          from './observable';
 import _PromiseUtils                  from './promise_utils';
 import _Lens                          from './lens';
+import _Patch                         from './patch';
+import { Range as _Range,
+         Position as _Position }      from './range';
+
 
 function Sonic(obj: any) {
   if (obj instanceof Array)  return _Store.create(_State.fromArray(obj),  _Subject.create());
@@ -22,6 +26,9 @@ module Sonic {
   export const Cache          = _Cache;
   export const PromiseUtils   = _PromiseUtils;
   export const Lens           = _Lens;
+  export const Patch          = _Patch;
+  export const Range          = _Range;
+  export const Position       = _Position;
 };
 
 export default Sonic;

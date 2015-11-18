@@ -88,6 +88,12 @@ return /******/ (function(modules) { // webpackBootstrap
 	
 	var _lens2 = _interopRequireDefault(_lens);
 	
+	var _patch = __webpack_require__(95);
+	
+	var _patch2 = _interopRequireDefault(_patch);
+	
+	var _range = __webpack_require__(81);
+	
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 	
 	var __awaiter = undefined && undefined.__awaiter || function (thisArg, _arguments, Promise, generator) {
@@ -134,6 +140,9 @@ return /******/ (function(modules) { // webpackBootstrap
 	    Sonic.Cache = _cache2.default;
 	    Sonic.PromiseUtils = _promise_utils2.default;
 	    Sonic.Lens = _lens2.default;
+	    Sonic.Patch = _patch2.default;
+	    Sonic.Range = _range.Range;
+	    Sonic.Position = _range.Position;
 	})(Sonic || (Sonic = {}));
 	;
 	exports.default = Sonic;
@@ -3411,6 +3420,10 @@ return /******/ (function(modules) { // webpackBootstrap
 	});
 	exports.Position = exports.Range = undefined;
 	
+	var _slicedToArray2 = __webpack_require__(72);
+	
+	var _slicedToArray3 = _interopRequireDefault(_slicedToArray2);
+	
 	var _key = __webpack_require__(79);
 	
 	var _key2 = _interopRequireDefault(_key);
@@ -3449,6 +3462,15 @@ return /******/ (function(modules) { // webpackBootstrap
 	var Range = exports.Range = undefined;
 	(function (Range) {
 	    Range.all = [{ next: _key2.default.sentinel }, { prev: _key2.default.sentinel }];
+	    function reverse(_ref) {
+	        var _ref2 = (0, _slicedToArray3.default)(_ref, 2);
+	
+	        var from = _ref2[0];
+	        var to = _ref2[1];
+	
+	        return [Position.reverse(to), Position.reverse(from)];
+	    }
+	    Range.reverse = reverse;
 	})(Range || (exports.Range = Range = {}));
 	var Position = exports.Position = undefined;
 	(function (Position) {
@@ -4656,147 +4678,131 @@ return /******/ (function(modules) { // webpackBootstrap
 	    function filter(parent, filterFn) {
 	        var _this = this;
 	
-	        var store,
-	            parentState = parent.state,
-	            state = _state2.default.filter(parent.state, filterFn);
+	        var parentState = parent.state;
+	        function find(state, range) {
+	            return __awaiter(this, void 0, _promise2.default, _regenerator2.default.mark(function _callee() {
+	                var _ref, _ref2, key;
+	
+	                return _regenerator2.default.wrap(function _callee$(_context) {
+	                    while (1) {
+	                        switch (_context.prev = _context.next) {
+	                            case 0:
+	                                _context.prev = 0;
+	                                _context.next = 3;
+	                                return _async_iterator2.default.find(_state2.default.entries(state, range), function (_ref3) {
+	                                    var _ref4 = (0, _slicedToArray3.default)(_ref3, 2);
+	
+	                                    var key = _ref4[0];
+	                                    var value = _ref4[1];
+	                                    return filterFn(value, key);
+	                                });
+	
+	                            case 3:
+	                                _ref = _context.sent;
+	                                _ref2 = (0, _slicedToArray3.default)(_ref, 1);
+	                                key = _ref2[0];
+	                                return _context.abrupt("return", key);
+	
+	                            case 9:
+	                                _context.prev = 9;
+	                                _context.t0 = _context["catch"](0);
+	
+	                                if (!(_context.t0 instanceof _exceptions.NotFound)) {
+	                                    _context.next = 13;
+	                                    break;
+	                                }
+	
+	                                return _context.abrupt("return", _key2.default.sentinel);
+	
+	                            case 13:
+	                                throw _context.t0;
+	
+	                            case 14:
+	                            case "end":
+	                                return _context.stop();
+	                        }
+	                    }
+	                }, _callee, this, [[0, 9]]);
+	            }));
+	        }
+	        function move(state, range) {
+	            return __awaiter(this, void 0, _promise2.default, _regenerator2.default.mark(function _callee2() {
+	                var deleted, position;
+	                return _regenerator2.default.wrap(function _callee2$(_context2) {
+	                    while (1) {
+	                        switch (_context2.prev = _context2.next) {
+	                            case 0:
+	                                deleted = _state2.default.slice(_state2.default.reverse(state), _range.Range.reverse(range)), position = range[1];
+	
+	                                if (!_range.Position.isNextPosition(position)) {
+	                                    _context2.next = 11;
+	                                    break;
+	                                }
+	
+	                                _context2.next = 4;
+	                                return _state2.default.empty(deleted);
+	
+	                            case 4:
+	                                if (_context2.sent) {
+	                                    _context2.next = 9;
+	                                    break;
+	                                }
+	
+	                                _context2.next = 7;
+	                                return find(deleted, _range.Range.all);
+	
+	                            case 7:
+	                                _context2.t0 = _context2.sent;
+	                                return _context2.abrupt("return", {
+	                                    next: _context2.t0
+	                                });
+	
+	                            case 9:
+	                                if (!(position.next === _key2.default.sentinel)) {
+	                                    _context2.next = 11;
+	                                    break;
+	                                }
+	
+	                                return _context2.abrupt("return", { next: _key2.default.sentinel });
+	
+	                            case 11:
+	                                _context2.next = 13;
+	                                return find(state, [position, { next: _key2.default.sentinel }]);
+	
+	                            case 13:
+	                                _context2.t1 = _context2.sent;
+	                                return _context2.abrupt("return", {
+	                                    prev: _context2.t1
+	                                });
+	
+	                            case 15:
+	                            case "end":
+	                                return _context2.stop();
+	                        }
+	                    }
+	                }, _callee2, this);
+	            }));
+	        }
 	        var dispatcher = _observable.Observable.map(parent.dispatcher, function (patch) {
 	            return __awaiter(_this, void 0, _promise2.default, _regenerator2.default.mark(function _callee3() {
-	                var _patch$range, from, to, iteratorFilterFn, deleted, filteredDeleted, empty, move, mapPosition;
-	
+	                var range;
 	                return _regenerator2.default.wrap(function _callee3$(_context3) {
 	                    while (1) {
 	                        switch (_context3.prev = _context3.next) {
 	                            case 0:
-	                                mapPosition = function mapPosition(position, parentState, deleted) {
-	                                    return __awaiter(this, void 0, _promise2.default, _regenerator2.default.mark(function _callee2() {
-	                                        return _regenerator2.default.wrap(function _callee2$(_context2) {
-	                                            while (1) {
-	                                                switch (_context2.prev = _context2.next) {
-	                                                    case 0:
-	                                                        if (!(_range.Position.isPrevPosition(position) && !empty)) {
-	                                                            _context2.next = 5;
-	                                                            break;
-	                                                        }
+	                                _context3.next = 2;
+	                                return _promise2.default.all([move(_state2.default.reverse(parentState), _range.Range.reverse(patch.range)).then(_range.Position.reverse), move(parentState, patch.range)]);
 	
-	                                                        _context2.next = 3;
-	                                                        return move(deleted);
-	
-	                                                    case 3:
-	                                                        _context2.t0 = _context2.sent;
-	                                                        return _context2.abrupt("return", {
-	                                                            prev: _context2.t0
-	                                                        });
-	
-	                                                    case 5:
-	                                                        _context2.prev = 5;
-	
-	                                                        if (!(_range.Position.isPrevPosition(position) && position.prev === _key2.default.sentinel)) {
-	                                                            _context2.next = 8;
-	                                                            break;
-	                                                        }
-	
-	                                                        return _context2.abrupt("return", { prev: null });
-	
-	                                                    case 8:
-	                                                        _context2.next = 10;
-	                                                        return move(_state2.default.reverse(parentState), [_range.Position.reverse(position), { next: _key2.default.sentinel }]);
-	
-	                                                    case 10:
-	                                                        _context2.t1 = _context2.sent;
-	                                                        return _context2.abrupt("return", {
-	                                                            next: _context2.t1
-	                                                        });
-	
-	                                                    case 14:
-	                                                        _context2.prev = 14;
-	                                                        _context2.t2 = _context2["catch"](5);
-	
-	                                                        if (!(_context2.t2 instanceof _exceptions.NotFound)) {
-	                                                            _context2.next = 18;
-	                                                            break;
-	                                                        }
-	
-	                                                        return _context2.abrupt("return", { next: _key2.default.sentinel });
-	
-	                                                    case 18:
-	                                                        throw _context2.t2;
-	
-	                                                    case 19:
-	                                                    case "end":
-	                                                        return _context2.stop();
-	                                                }
-	                                            }
-	                                        }, _callee2, this, [[5, 14]]);
-	                                    }));
-	                                };
-	
-	                                move = function move(state) {
-	                                    var range = arguments.length <= 1 || arguments[1] === undefined ? _range.Range.all : arguments[1];
-	
-	                                    return __awaiter(this, void 0, _promise2.default, _regenerator2.default.mark(function _callee() {
-	                                        var _ref3, _ref4, key;
-	
-	                                        return _regenerator2.default.wrap(function _callee$(_context) {
-	                                            while (1) {
-	                                                switch (_context.prev = _context.next) {
-	                                                    case 0:
-	                                                        _context.next = 2;
-	                                                        return _async_iterator2.default.find(_state2.default.entries(state, range), iteratorFilterFn);
-	
-	                                                    case 2:
-	                                                        _ref3 = _context.sent;
-	                                                        _ref4 = (0, _slicedToArray3.default)(_ref3, 1);
-	                                                        key = _ref4[0];
-	                                                        return _context.abrupt("return", key);
-	
-	                                                    case 6:
-	                                                    case "end":
-	                                                        return _context.stop();
-	                                                }
-	                                            }
-	                                        }, _callee, this);
-	                                    }));
-	                                };
-	
-	                                iteratorFilterFn = function iteratorFilterFn(_ref) {
-	                                    var _ref2 = (0, _slicedToArray3.default)(_ref, 2);
-	
-	                                    var key = _ref2[0];
-	                                    var value = _ref2[1];
-	
-	                                    return filterFn(value, key);
-	                                };
-	
-	                                _patch$range = (0, _slicedToArray3.default)(patch.range, 2);
-	                                from = _patch$range[0];
-	                                to = _patch$range[1];
-	                                deleted = _state2.default.slice(parentState, patch.range);
-	                                filteredDeleted = _state2.default.filter(deleted, filterFn);
-	                                _context3.next = 10;
-	                                return _state2.default.empty(filteredDeleted);
-	
-	                            case 10:
-	                                empty = _context3.sent;
-	                                _context3.next = 13;
-	                                return mapPosition(from, parentState, deleted);
-	
-	                            case 13:
-	                                from = _context3.sent;
-	                                _context3.t0 = _range.Position;
-	                                _context3.next = 17;
-	                                return mapPosition(_range.Position.reverse(to), _state2.default.reverse(parentState), _state2.default.reverse(deleted));
-	
-	                            case 17:
-	                                _context3.t1 = _context3.sent;
-	                                to = _context3.t0.reverse.call(_context3.t0, _context3.t1);
+	                            case 2:
+	                                range = _context3.sent;
 	
 	                                parentState = parent.state;
 	                                return _context3.abrupt("return", {
-	                                    range: [from, to],
+	                                    range: range,
 	                                    added: patch.added ? _state2.default.filter(patch.added, filterFn) : undefined
 	                                });
 	
-	                            case 21:
+	                            case 5:
 	                            case "end":
 	                                return _context3.stop();
 	                        }
