@@ -33,7 +33,8 @@ export declare module State {
     function map<V, W>(parent: State<V>, mapFn: (value: V, key?: Key) => W | Promise<W>): State<W>;
     function filter<V>(parent: State<V>, filterFn: (value: V, key?: Key) => boolean | Promise<boolean>): State<V>;
     function scan<V, W>(parent: State<V>, scanFn: (memo: W, value: V, key: Key) => W | Promise<W>, memo?: W): State<W>;
-    function without<V>(parent: State<V>, deleted: State<V>): State<V>;
+    function pick<V>(parent: State<V>, picked: State<V>): State<V>;
+    function omit<V>(parent: State<V>, omitted: State<V>): State<V>;
     function zip<V, W>(parent: State<V>, other: State<W>): State<[V, W]>;
     function zoom<V>(parent: State<V>, key: Key): State<V>;
     function flatten<V>(parent: Tree<V>): State<V>;

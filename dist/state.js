@@ -167,10 +167,14 @@ export var State;
         }, [Key.sentinel, memo]));
     }
     State.scan = scan;
-    function without(parent, deleted) {
-        return filter(parent, (value, key) => has(deleted, key));
+    function pick(parent, picked) {
+        return filter(parent, (value, key) => has(picked, key));
     }
-    State.without = without;
+    State.pick = pick;
+    function omit(parent, omitted) {
+        return filter(parent, (value, key) => __awaiter(this, void 0, Promise, function* () { return !(yield has(omitted, key)); }));
+    }
+    State.omit = omit;
     function zip(parent, other) {
         return fromValues(AsyncIterator.zip(values(parent), values(other)));
     }

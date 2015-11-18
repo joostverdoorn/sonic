@@ -161,6 +161,21 @@ test('scan', t => {
   t.test('should scan stuff', t => is(scan(state({a: 3, b: 4, c: 5}), (x, y) => x + y, 0), state({a: 3, b: 7, c: 12})).then(t.ok));
 });
 
+test('pick', t => {
+  var { pick, is } = State;
+
+  t.test('should pick all keys in picked', t => {
+    return is(pick(state({a: 3, b: 4, c: 5}), state({c: 12, a: 39})), state({a: 3, c: 5})).then(t.ok);
+  });
+});
+
+test('omit', t => {
+  var { omit, is } = State;
+  t.test('should omit all keys present in omitted', t => {
+    return is(omit(state({a: 3, b: 4, c: 5}), state({c: 12, a: 39})), state({b: 4})).then(t.ok);
+  })
+});
+
 test('zip', t => {
   var { zip, toArray } = State;
   t.test('should zip stuff', t => toArray(zip(state({a: 3, b: 4, c: 5}), state({d: 6, e: 7, f: 8}))).then(a => t.same(a, [[3,6], [4,7], [5,8]])));

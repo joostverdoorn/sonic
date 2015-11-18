@@ -174,8 +174,12 @@ export module State {
     }, <Entry<W>>[Key.sentinel, memo]));
   }
 
-  export function without<V>(parent: State<V>, deleted: State<V>): State<V> {
-    return filter(parent, (value, key) => has(deleted, key));
+  export function pick<V>(parent: State<V>, picked: State<V>): State<V> {
+    return filter(parent, (value, key) => has(picked, key))
+  }
+
+  export function omit<V>(parent: State<V>, omitted: State<V>): State<V> {
+    return filter(parent, async (value, key) => !(await has(omitted, key)));
   }
 
   export function zip<V, W>(parent: State<V>, other: State<W>): State<[V, W]> {
