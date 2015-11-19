@@ -4,7 +4,8 @@ import { Store as _Store,
          MutableStore as _MutabeStore } from './store';
 import _Tree                          from './tree';
 import _Cache                         from './cache';
-import {Subject as _Subject}          from './observable';
+import { Subject as _Subject,
+         Observable as _Observable }  from './observable';
 import _PromiseUtils                  from './promise_utils';
 import _Lens                          from './lens';
 import _Patch                         from './patch';
@@ -23,6 +24,7 @@ module Sonic {
   export const Store          = _Store;
   export const Tree           = _Tree;
   export const Subject        = _Subject;
+  export const Observable     = _Observable;
   export const Cache          = _Cache;
   export const PromiseUtils   = _PromiseUtils;
   export const Lens           = _Lens;

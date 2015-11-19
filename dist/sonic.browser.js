@@ -137,6 +137,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    Sonic.Store = _store.Store;
 	    Sonic.Tree = _tree2.default;
 	    Sonic.Subject = _observable.Subject;
+	    Sonic.Observable = _observable.Observable;
 	    Sonic.Cache = _cache2.default;
 	    Sonic.PromiseUtils = _promise_utils2.default;
 	    Sonic.Lens = _lens2.default;
@@ -5191,6 +5192,10 @@ return /******/ (function(modules) { // webpackBootstrap
 	
 	var _create2 = _interopRequireDefault(_create);
 	
+	var _regenerator = __webpack_require__(2);
+	
+	var _regenerator2 = _interopRequireDefault(_regenerator);
+	
 	var _promise = __webpack_require__(42);
 	
 	var _promise2 = _interopRequireDefault(_promise);
@@ -5280,6 +5285,82 @@ return /******/ (function(modules) { // webpackBootstrap
 	        return { subscribe: subject.subscribe };
 	    }
 	    Observable.scan = scan;
+	    function toIterator(observable) {
+	        function defer() {
+	            var resolve,
+	                reject,
+	                promise = new _promise2.default(function (res, rej) {
+	                resolve = res;
+	                reject = rej;
+	            });
+	            return { resolve: resolve, reject: reject, promise: promise };
+	        }
+	        var values = [];
+	        var deferreds = [];
+	        var done = false;
+	        var errored = false;
+	        var error;
+	        observable.subscribe({
+	            onNext: function onNext(value) {
+	                if (deferreds.length) deferreds.pop().resolve({ done: false, value: value });else values.push(value);
+	            },
+	            onComplete: function onComplete() {
+	                if (deferreds.length) deferreds.pop().resolve({ done: true });
+	                done = true;
+	            },
+	            onError: function onError(reason) {
+	                if (deferreds.length) deferreds.pop().reject(reason);
+	                errored = true;
+	                error = reason;
+	            }
+	        });
+	        function next() {
+	            return __awaiter(this, void 0, _promise2.default, _regenerator2.default.mark(function _callee() {
+	                var deferred;
+	                return _regenerator2.default.wrap(function _callee$(_context) {
+	                    while (1) {
+	                        switch (_context.prev = _context.next) {
+	                            case 0:
+	                                if (!(done && !values.length)) {
+	                                    _context.next = 2;
+	                                    break;
+	                                }
+	
+	                                return _context.abrupt("return", { done: true });
+	
+	                            case 2:
+	                                if (!(errored && !values.length)) {
+	                                    _context.next = 4;
+	                                    break;
+	                                }
+	
+	                                throw error;
+	
+	                            case 4:
+	                                if (!values.length) {
+	                                    _context.next = 6;
+	                                    break;
+	                                }
+	
+	                                return _context.abrupt("return", { done: false, value: values.shift() });
+	
+	                            case 6:
+	                                deferred = defer();
+	
+	                                deferreds.push(deferred);
+	                                return _context.abrupt("return", deferred.promise);
+	
+	                            case 9:
+	                            case "end":
+	                                return _context.stop();
+	                        }
+	                    }
+	                }, _callee, this);
+	            }));
+	        }
+	        return { next: next };
+	    }
+	    Observable.toIterator = toIterator;
 	})(Observable || (exports.Observable = Observable = {}));
 	var Subject = exports.Subject = undefined;
 	(function (Subject) {
@@ -5298,13 +5379,66 @@ return /******/ (function(modules) { // webpackBootstrap
 	            });
 	        }
 	        function onNext(value) {
-	            return current = current.then(function () {
-	                return _promise2.default.all((0, _keys2.default)(observers).map(function (key) {
-	                    return observers[key].onNext(value);
-	                })).then(function () {});
-	            });
+	            return __awaiter(this, void 0, _promise2.default, _regenerator2.default.mark(function _callee2() {
+	                return _regenerator2.default.wrap(function _callee2$(_context2) {
+	                    while (1) {
+	                        switch (_context2.prev = _context2.next) {
+	                            case 0:
+	                                return _context2.abrupt("return", current = current.then(function () {
+	                                    return _promise2.default.all((0, _keys2.default)(observers).map(function (key) {
+	                                        return observers[key].onNext(value);
+	                                    })).then(function () {});
+	                                }));
+	
+	                            case 1:
+	                            case "end":
+	                                return _context2.stop();
+	                        }
+	                    }
+	                }, _callee2, this);
+	            }));
 	        }
-	        return { subscribe: subscribe, onNext: onNext };
+	        function onComplete() {
+	            return __awaiter(this, void 0, _promise2.default, _regenerator2.default.mark(function _callee3() {
+	                return _regenerator2.default.wrap(function _callee3$(_context3) {
+	                    while (1) {
+	                        switch (_context3.prev = _context3.next) {
+	                            case 0:
+	                                return _context3.abrupt("return", current = current.then(function () {
+	                                    return _promise2.default.all((0, _keys2.default)(observers).map(function (key) {
+	                                        return observers[key].onComplete ? observers[key].onComplete() : undefined;
+	                                    })).then(function () {});
+	                                }));
+	
+	                            case 1:
+	                            case "end":
+	                                return _context3.stop();
+	                        }
+	                    }
+	                }, _callee3, this);
+	            }));
+	        }
+	        function onError(reason) {
+	            return __awaiter(this, void 0, _promise2.default, _regenerator2.default.mark(function _callee4() {
+	                return _regenerator2.default.wrap(function _callee4$(_context4) {
+	                    while (1) {
+	                        switch (_context4.prev = _context4.next) {
+	                            case 0:
+	                                return _context4.abrupt("return", current = current.then(function () {
+	                                    return _promise2.default.all((0, _keys2.default)(observers).map(function (key) {
+	                                        return observers[key].onError ? observers[key].onError(reason) : undefined;
+	                                    })).then(function () {});
+	                                }));
+	
+	                            case 1:
+	                            case "end":
+	                                return _context4.stop();
+	                        }
+	                    }
+	                }, _callee4, this);
+	            }));
+	        }
+	        return { subscribe: subscribe, onNext: onNext, onComplete: onComplete, onError: onError };
 	    }
 	    Subject.create = create;
 	})(Subject || (exports.Subject = Subject = {}));

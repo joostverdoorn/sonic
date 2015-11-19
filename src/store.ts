@@ -180,6 +180,31 @@ export module Store {
     return store = create(state, dispatcher);
   }
 
+  // export function take<V>(parent: Store<V>, count: number) {
+  //   var store: Store<V>,
+  //       state = State.take(parent.state, count);
+  //
+  //
+  //
+  //
+  //       dispatcher = Observable.map(parent.dispatcher, async (patch) => {
+  //         var parentState = parent.state,
+  //             storeState = store.state,
+  //             [from, to] = patch.range;
+  //
+  //
+  //
+  //         var added = State.lazy(async () => {
+  //           var last = await State.last(storeState, [{next: null}, from]);
+  //           return State.scan(State.slice(parentState, [{next: last}, {prev: null}]), scanFn, last !== Key.sentinel ? await storeState.get(last) : memo);
+  //         });
+  //
+  //         return { range: <Range> [from, {prev: null}], added };
+  //       });
+  //
+  //   return store = create(state, dispatcher);
+  // }
+
   export function cache<V>(parent: Store<V>): Store<V> {
     var state = State.cache(parent.state),
         dispatcher = Observable.map(parent.dispatcher, patch => ({

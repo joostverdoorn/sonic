@@ -1,4 +1,6 @@
 import Key   from './key';
+import AsyncIterator from './async_iterator';
+
 
 export interface Disposable {
   dispose(): void;
@@ -7,7 +9,7 @@ export interface Disposable {
 export interface Observer<T> {
   onNext: (value: T) => void | Promise<void>
   onComplete?: () => void | Promise<void>
-  onError?: () => void | Promise<void>
+  onError?: (reason: any) => void | Promise<void>
 }
 
 export interface Observable<T> {
@@ -60,6 +62,61 @@ export module Observable {
 
     return { subscribe: subject.subscribe };
   }
+
+  export function toIterator<T>(observable: Observable<T>): AsyncIterator<T> {
+    type Deferred<U> = {
+      resolve(value: U | PromiseLike<U>): void
+      reject(reason: any): void
+      promise: Promise<U>
+    }
+
+    function defer<U>(): Deferred<U> {
+      var resolve: (value: U | PromiseLike<U>) => void,
+          reject: (reason: any) => void,
+          promise = new Promise<U>((res, rej) => {
+            resolve = res;
+            reject = rej;
+          });
+
+      return {resolve, reject, promise};
+    }
+
+    var values: T[] = [];
+    var deferreds: Deferred<IteratorResult<T>>[] = [];
+    var done = false;
+    var errored = false;
+    var error: any;
+
+    observable.subscribe({
+      onNext(value: T) {
+        if (deferreds.length) deferreds.pop().resolve({done: false, value});
+        else values.push(value);
+      },
+
+      onComplete() {
+        if (deferreds.length) deferreds.pop().resolve({done: true});
+        done = true;
+      },
+
+      onError(reason: any) {
+        if (deferreds.length) deferreds.pop().reject(reason);
+        errored = true
+        error = reason;
+      }
+    });
+
+    async function next(): Promise<IteratorResult<T>> {
+      if (done && !values.length) return {done: true};
+      if (errored && !values.length) throw error;
+      if (values.length) return {done: false, value: values.shift() }
+
+      var deferred = defer<IteratorResult<T>>();
+      deferreds.push(deferred);
+      return deferred.promise;
+    }
+
+    return {next}
+  }
 }
 
 export module Subject {
@@ -77,10 +134,20 @@ export module Subject {
       return Disposable.create(() => delete observers[observerKey]);
     }
 
-    function onNext(value: T): Promise<void> {
+    async function onNext(value: T): Promise<void> {
       return current = current.then(() => Promise.all(Object.keys(observers).map(key => observers[key].onNext(value))).then(() => {}));
     }
 
-    return { subscribe, onNext };
+    async function onComplete(): Promise<void> {
+      return current = current.then(() => Promise.all(Object.keys(observers).map(key => observers[key].onComplete ? observers[key].onComplete() : undefined)).then(() => {}));
+    }
+
+    async function onError(reason: any): Promise<void> {
+      return current = current.then(() => Promise.all(Object.keys(observers).map(key => observers[key].onError ? observers[key].onError(reason) : undefined)).then(() => {}));
+    }
+
+
+
+    return { subscribe, onNext, onComplete, onError };
   }
 }
