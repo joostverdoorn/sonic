@@ -56,6 +56,10 @@ export var Observable;
 })(Observable || (Observable = {}));
 export var Subject;
 (function (Subject) {
+    function isSubject(obj) {
+        return typeof obj["onNext"] === "function";
+    }
+    Subject.isSubject = isSubject;
     function create() {
         const observers = Object.create(null);
         var current = Promise.resolve();

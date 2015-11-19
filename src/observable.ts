@@ -51,7 +51,7 @@ export module Observable {
     return { subscribe: subject.subscribe };
   }
 
-  export function scan<T, U>(observable: Observable<T>, scanFn: (memo: U, value: T) => U, memo: U): Observable<U> {
+  export function scan<T, U>(observable: Observable<T>, scanFn: (memo: U, value: T) => U | Promise<U>, memo: U): Observable<U> {
     const subject = Subject.create();
 
     observable.subscribe({
@@ -63,6 +63,10 @@ export module Observable {
 }
 
 export module Subject {
+  export function isSubject<T>(obj: any): obj is Subject<T> {
+    return typeof obj["onNext"] === "function";
+  }
+
   export function create<T>(): Subject<T> {
     const observers: {[key: string]: Observer<T>} = Object.create(null);
     var current = Promise.resolve();

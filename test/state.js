@@ -18,19 +18,17 @@ function state(object) {
 test('first', t => {
   var { first } = State;
 
-  t.test('should resolve with the first element of the state', t => first(state({a: 3, b: 4, c: 5})).then(f => t.equal(f, 3)));
-  t.test('should reject when the state is empty', t => first(state([])).then(t.fail, t.pass));
-  t.test('should resolve with the first of a range when PrevPosition', t => first(state({a: 3, b: 4, c: 5}), [{prev: 'b'}, {next: 'c'}]).then(f => t.equal(f, 4)));
-  t.test('should resolve with the first of a range when NextPosition', t => first(state({a: 3, b: 4, c: 5}), [{next: 'a'}, {next: 'c'}]).then(f => t.equal(f, 4)));
+  t.test('should resolve with the first key of the state', t => first(state({a: 3, b: 4, c: 5})).then(f => t.equal(f, 'a')));
+  t.test('should resolve with the first of a range when PrevPosition', t => first(state({a: 3, b: 4, c: 5}), [{prev: 'b'}, {next: 'c'}]).then(f => t.equal(f, 'b')));
+  t.test('should resolve with the first of a range when NextPosition', t => first(state({a: 3, b: 4, c: 5}), [{next: 'a'}, {next: 'c'}]).then(f => t.equal(f, 'b')));
 });
 
 test('last', t => {
   var { last } = State;
 
-  t.test('should resolve with the last element of the state', t => last(state({a: 3, b: 4, c: 5})).then(l => t.equal(l, 5)));
-  t.test('should reject when the state is empty', t => last(state([])).then(t.fail, t.pass));
-  t.test('should resolve with the last of a range when PrevPosition', t => last(state({a: 3, b: 4, c: 5}), [{prev: 'a'}, {prev: 'c'}]).then(l => t.equal(l, 4)));
-  t.test('should resolve with the last of a range when NextPosition', t => last(state({a: 3, b: 4, c: 5}), [{prev: 'a'}, {next: 'b'}]).then(l => t.equal(l, 4)));
+  t.test('should resolve with the last key of the state', t => last(state({a: 3, b: 4, c: 5})).then(l => t.equal(l, 'c')));
+  t.test('should resolve with the last of a range when PrevPosition', t => last(state({a: 3, b: 4, c: 5}), [{prev: 'a'}, {prev: 'c'}]).then(l => t.equal(l, 'b')));
+  t.test('should resolve with the last of a range when NextPosition', t => last(state({a: 3, b: 4, c: 5}), [{prev: 'a'}, {next: 'b'}]).then(l => t.equal(l, 'b')));
 });
 
 test('has', t => {

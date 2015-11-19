@@ -138,21 +138,85 @@ test('filter', t => {
 
 
 test('scan', t => {
-  var state = State.fromArray([1,2,3]);
-  var subject = Subject.create();
-  var store = Store.create(state, subject);
-  var scanned = Store.scan(store, (x, y) => x + y, 0);
-  var patch = {range: [{next: 2}, {prev: null}], added: State.fromObject({a: 4})};
 
-  t.test(t => State.toArray(scanned.state).then(t.comment))
-
-  t.test('should work reactively', t => {
-    return State.is(scanned.state, State.fromArray([1,3,6]))
+  // t.test(t => State.toArray(s).then(t.comment))
+  //
+  t.test('add at the end', t => {
+    var state = State.fromObject({a: 1, b: 2, c: 3});
+    var subject = Subject.create();
+    var store = Store.create(state, subject);
+    var scanned = Store.scan(store, (x, y) => x + y, 0);
+    var patch = {range: [{next: 'c'}, {prev: null}], added: State.fromObject({d: 4})};
+    return State.is(scanned.state, State.fromObject({a: 1, b: 3, c: 6}))
       .then(t.ok)
       .then(subject.onNext(patch))
-      .then(() => t.test(t => State.toArray(scanned.state).then(t.comment)))
-
-      // .then(() => State.is(scanned.state, State.fromArray([1,3,6,10])))
-      // .then(t.ok);
+      .then(() => State.is(scanned.state, State.fromObject({a: 1, b: 3, c: 6, d: 10})))
+      .then(t.ok);
   });
+
+  t.test('add at the beginning', t => {
+    var state = State.fromObject({a: 1, b: 2, c: 3});
+    var subject = Subject.create();
+    var store = Store.create(state, subject);
+    var scanned = Store.scan(store, (x, y) => x + y, 0);
+    var patch = {range: [{next: null}, {prev: 'a'}], added: State.fromObject({d: 4})};
+    return State.is(scanned.state, State.fromObject({a: 1, b: 3, c: 6}))
+      .then(t.ok)
+      .then(subject.onNext(patch))
+      .then(() => State.is(scanned.state, State.fromObject({d: 4, a: 5, b: 7, c: 10})))
+      .then(t.ok);
+  });
+
+  t.test('add in the middle', t => {
+    var state = State.fromObject({a: 1, b: 2, c: 3});
+    var subject = Subject.create();
+    var store = Store.create(state, subject);
+    var scanned = Store.scan(store, (x, y) => x + y, 0);
+    var patch = {range: [{next: 'a'}, {prev: 'b'}], added: State.fromObject({d: 4})};
+    return State.is(scanned.state, State.fromObject({a: 1, b: 3, c: 6}))
+      .then(t.ok)
+      .then(subject.onNext(patch))
+      .then(() => State.is(scanned.state, State.fromObject({a: 1, d: 5, b: 7, c: 10})))
+      .then(t.ok);
+  });
+
+  t.test('add at the end, remove last', t => {
+    var state = State.fromObject({a: 1, b: 2, c: 3});
+    var subject = Subject.create();
+    var store = Store.create(state, subject);
+    var scanned = Store.scan(store, (x, y) => x + y, 0);
+    var patch = {range: [{prev: 'c'}, {prev: null}], added: State.fromObject({d: 4})};
+    return State.is(scanned.state, State.fromObject({a: 1, b: 3, c: 6}))
+      .then(t.ok)
+      .then(subject.onNext(patch))
+      .then(() => State.is(scanned.state, State.fromObject({a: 1, b: 3, d: 7})))
+      .then(t.ok);
+  });
+
+  t.test('add at the beginning, remove first', t => {
+    var state = State.fromObject({a: 1, b: 2, c: 3});
+    var subject = Subject.create();
+    var store = Store.create(state, subject);
+    var scanned = Store.scan(store, (x, y) => x + y, 0);
+    var patch = {range: [{next: null}, {next: 'a'}], added: State.fromObject({d: 4})};
+    return State.is(scanned.state, State.fromObject({a: 1, b: 3, c: 6}))
+      .then(t.ok)
+      .then(subject.onNext(patch))
+      .then(() => State.is(scanned.state, State.fromObject({d: 4, b: 6, c: 9})))
+      .then(t.ok);
+  });
+
+  t.test('add in the middle, remove middle', t => {
+    var state = State.fromObject({a: 1, b: 2, c: 3});
+    var subject = Subject.create();
+    var store = Store.create(state, subject);
+    var scanned = Store.scan(store, (x, y) => x + y, 0);
+    var patch = {range: [{next: 'a'}, {prev: 'c'}], added: State.fromObject({d: 4})};
+    return State.is(scanned.state, State.fromObject({a: 1, b: 3, c: 6}))
+      .then(t.ok)
+      .then(subject.onNext(patch))
+      .then(() => State.is(scanned.state, State.fromObject({a: 1, d: 5, c: 8})))
+      .then(t.ok);
+  });
+
 });

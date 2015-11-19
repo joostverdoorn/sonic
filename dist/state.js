@@ -37,11 +37,15 @@ export var State;
     }
     State.extend = extend;
     function first(state, [from, to] = Range.all) {
-        return Position.isPrevPosition(from) ? state.get(from.prev) : state.next(from.next).then(state.get);
+        return __awaiter(this, void 0, Promise, function* () {
+            return Position.isPrevPosition(from) ? from.prev : state.next(from.next);
+        });
     }
     State.first = first;
     function last(state, [from, to] = Range.all) {
-        return Position.isNextPosition(to) ? state.get(to.next) : state.prev(to.prev).then(state.get);
+        return __awaiter(this, void 0, Promise, function* () {
+            return Position.isNextPosition(to) ? to.next : state.prev(to.prev);
+        });
     }
     State.last = last;
     function has(state, key) {
@@ -224,7 +228,7 @@ export var State;
     }
     State.groupBy = groupBy;
     function unique(parent, uniqueFn = String) {
-        return map(groupBy(parent, uniqueFn), s => first(s));
+        return map(groupBy(parent, uniqueFn), s => first(s).then(s.get));
     }
     State.unique = unique;
     function union(state, other, uniqueFn) {

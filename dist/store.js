@@ -124,13 +124,14 @@ export var Store;
     }
     Store.flatten = flatten;
     function scan(parent, scanFn, memo) {
-        var store, state = State.scan(parent.state, scanFn, memo), dispatcher = Observable.map(parent.dispatcher, patch => {
-            var parentState = parent.state, storeState = store.state, range = [patch.range[0], { prev: null }], added = State.lazy(() => {
-                return State.last(storeState, [{ next: null }, patch.range[0]])
-                    .then(memo => State.scan(State.slice(parentState, range), scanFn, memo));
-            });
-            return { range, added };
-        });
+        var store, state = State.scan(parent.state, scanFn, memo), dispatcher = Observable.map(parent.dispatcher, (patch) => __awaiter(this, void 0, Promise, function* () {
+            var parentState = parent.state, storeState = store.state, [from, to] = patch.range;
+            var added = State.lazy(() => __awaiter(this, void 0, Promise, function* () {
+                var last = yield State.last(storeState, [{ next: null }, from]);
+                return State.scan(State.slice(parentState, [{ next: last }, { prev: null }]), scanFn, last !== Key.sentinel ? yield storeState.get(last) : memo);
+            }));
+            return { range: [from, { prev: null }], added };
+        }));
         return store = create(state, dispatcher);
     }
     Store.scan = scan;
@@ -147,10 +148,13 @@ export var Store;
     }
     Store.states = states;
     function create(state, dispatcher, reducer = Patch.apply) {
-        const store = { state, dispatcher };
-        Observable.scan(dispatcher, reducer, state).subscribe({
-            onNext: (state) => { store.state = state; }
-        });
+        var subject = Subject.create();
+        Observable.scan(dispatcher, (state, patch) => __awaiter(this, void 0, Promise, function* () {
+            store.state = yield reducer(state, patch);
+            yield subject.onNext(patch);
+            return store.state;
+        }), state);
+        var store = { state, dispatcher: { subscribe: subject.subscribe, onNext: Subject.isSubject(dispatcher) ? dispatcher.onNext : undefined } };
         return store;
     }
     Store.create = create;

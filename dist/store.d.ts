@@ -17,7 +17,7 @@ export declare module Store {
     function scan<V, W>(parent: Store<V>, scanFn: (memo: W, value: V) => W | Promise<W>, memo?: W): Store<W>;
     function cache<V>(parent: Store<V>): Store<V>;
     function states<V>(store: Store<V>): Observable<State<V>>;
-    function create<V>(state: State<V>, dispatcher: Subject<Patch<V>>, reducer?: (state: State<V>, patch: Patch<V>) => State<V>): MutableStore<V>;
-    function create<V>(state: State<V>, dispatcher: Observable<Patch<V>>, reducer?: (state: State<V>, patch: Patch<V>) => State<V>): Store<V>;
+    function create<V>(state: State<V>, dispatcher: Subject<Patch<V>>, reducer?: (state: State<V>, patch: Patch<V>) => State<V> | Promise<State<V>>): MutableStore<V>;
+    function create<V>(state: State<V>, dispatcher: Observable<Patch<V>>, reducer?: (state: State<V>, patch: Patch<V>) => State<V> | Promise<State<V>>): Store<V>;
 }
 export default Store;

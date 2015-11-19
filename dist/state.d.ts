@@ -20,8 +20,8 @@ export declare module State {
         next: (key?: string) => Promise<string> | Promise<void>;
     };
     function extend<V, W>(parent: State<V>, {get, prev, next}: Partial<W>): State<W>;
-    function first<V>(state: State<V>, [from, to]?: Range): Promise<V>;
-    function last<V>(state: State<V>, [from, to]?: Range): Promise<V>;
+    function first<V>(state: State<V>, [from, to]?: Range): Promise<Key>;
+    function last<V>(state: State<V>, [from, to]?: Range): Promise<Key>;
     function has<V>(state: State<V>, key: Key): Promise<boolean>;
     function is<V>(state: State<V>, other: State<V>): Promise<boolean>;
     function contains<V>(state: State<V>, value: V): Promise<boolean>;

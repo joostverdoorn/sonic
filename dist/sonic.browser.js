@@ -265,7 +265,20 @@ return /******/ (function(modules) { // webpackBootstrap
 	        var from = _ref3[0];
 	        var to = _ref3[1];
 	
-	        return _range.Position.isPrevPosition(from) ? state.get(from.prev) : state.next(from.next).then(state.get);
+	        return __awaiter(this, void 0, _promise2.default, _regenerator2.default.mark(function _callee() {
+	            return _regenerator2.default.wrap(function _callee$(_context) {
+	                while (1) {
+	                    switch (_context.prev = _context.next) {
+	                        case 0:
+	                            return _context.abrupt("return", _range.Position.isPrevPosition(from) ? from.prev : state.next(from.next));
+	
+	                        case 1:
+	                        case "end":
+	                            return _context.stop();
+	                    }
+	                }
+	            }, _callee, this);
+	        }));
 	    }
 	    State.first = first;
 	    function last(state) {
@@ -276,42 +289,55 @@ return /******/ (function(modules) { // webpackBootstrap
 	        var from = _ref5[0];
 	        var to = _ref5[1];
 	
-	        return _range.Position.isNextPosition(to) ? state.get(to.next) : state.prev(to.prev).then(state.get);
+	        return __awaiter(this, void 0, _promise2.default, _regenerator2.default.mark(function _callee2() {
+	            return _regenerator2.default.wrap(function _callee2$(_context2) {
+	                while (1) {
+	                    switch (_context2.prev = _context2.next) {
+	                        case 0:
+	                            return _context2.abrupt("return", _range.Position.isNextPosition(to) ? to.next : state.prev(to.prev));
+	
+	                        case 1:
+	                        case "end":
+	                            return _context2.stop();
+	                    }
+	                }
+	            }, _callee2, this);
+	        }));
 	    }
 	    State.last = last;
 	    function has(state, key) {
-	        return __awaiter(this, void 0, _promise2.default, _regenerator2.default.mark(function _callee() {
-	            return _regenerator2.default.wrap(function _callee$(_context) {
+	        return __awaiter(this, void 0, _promise2.default, _regenerator2.default.mark(function _callee3() {
+	            return _regenerator2.default.wrap(function _callee3$(_context3) {
 	                while (1) {
-	                    switch (_context.prev = _context.next) {
+	                    switch (_context3.prev = _context3.next) {
 	                        case 0:
-	                            _context.prev = 0;
-	                            _context.next = 3;
+	                            _context3.prev = 0;
+	                            _context3.next = 3;
 	                            return state.get(key);
 	
 	                        case 3:
-	                            return _context.abrupt("return", true);
+	                            return _context3.abrupt("return", true);
 	
 	                        case 6:
-	                            _context.prev = 6;
-	                            _context.t0 = _context["catch"](0);
+	                            _context3.prev = 6;
+	                            _context3.t0 = _context3["catch"](0);
 	
-	                            if (!(_context.t0 instanceof _exceptions.NotFound)) {
-	                                _context.next = 10;
+	                            if (!(_context3.t0 instanceof _exceptions.NotFound)) {
+	                                _context3.next = 10;
 	                                break;
 	                            }
 	
-	                            return _context.abrupt("return", false);
+	                            return _context3.abrupt("return", false);
 	
 	                        case 10:
-	                            throw _context.t0;
+	                            throw _context3.t0;
 	
 	                        case 11:
 	                        case "end":
-	                            return _context.stop();
+	                            return _context3.stop();
 	                    }
 	                }
-	            }, _callee, this, [[0, 6]]);
+	            }, _callee3, this, [[0, 6]]);
 	        }));
 	    }
 	    State.has = has;
@@ -424,25 +450,25 @@ return /******/ (function(modules) { // webpackBootstrap
 	    State.reverse = reverse;
 	    function map(parent, mapFn) {
 	        function get(key) {
-	            return __awaiter(this, void 0, _promise2.default, _regenerator2.default.mark(function _callee2() {
-	                return _regenerator2.default.wrap(function _callee2$(_context2) {
+	            return __awaiter(this, void 0, _promise2.default, _regenerator2.default.mark(function _callee4() {
+	                return _regenerator2.default.wrap(function _callee4$(_context4) {
 	                    while (1) {
-	                        switch (_context2.prev = _context2.next) {
+	                        switch (_context4.prev = _context4.next) {
 	                            case 0:
-	                                _context2.next = 2;
+	                                _context4.next = 2;
 	                                return parent.get(key);
 	
 	                            case 2:
-	                                _context2.t0 = _context2.sent;
-	                                _context2.t1 = key;
-	                                return _context2.abrupt("return", mapFn(_context2.t0, _context2.t1));
+	                                _context4.t0 = _context4.sent;
+	                                _context4.t1 = key;
+	                                return _context4.abrupt("return", mapFn(_context4.t0, _context4.t1));
 	
 	                            case 5:
 	                            case "end":
-	                                return _context2.stop();
+	                                return _context4.stop();
 	                        }
 	                    }
-	                }, _callee2, this);
+	                }, _callee4, this);
 	            }));
 	        }
 	        return extend(parent, { get: get });
@@ -456,31 +482,31 @@ return /******/ (function(modules) { // webpackBootstrap
 	            });
 	        }
 	        function get(key) {
-	            return __awaiter(this, void 0, _promise2.default, _regenerator2.default.mark(function _callee3() {
-	                return _regenerator2.default.wrap(function _callee3$(_context3) {
+	            return __awaiter(this, void 0, _promise2.default, _regenerator2.default.mark(function _callee5() {
+	                return _regenerator2.default.wrap(function _callee5$(_context5) {
 	                    while (1) {
-	                        switch (_context3.prev = _context3.next) {
+	                        switch (_context5.prev = _context5.next) {
 	                            case 0:
-	                                _context3.next = 2;
+	                                _context5.next = 2;
 	                                return have(key);
 	
 	                            case 2:
-	                                if (!_context3.sent) {
-	                                    _context3.next = 4;
+	                                if (!_context5.sent) {
+	                                    _context5.next = 4;
 	                                    break;
 	                                }
 	
-	                                return _context3.abrupt("return", parent.get(key));
+	                                return _context5.abrupt("return", parent.get(key));
 	
 	                            case 4:
 	                                throw new _exceptions.NotFound();
 	
 	                            case 5:
 	                            case "end":
-	                                return _context3.stop();
+	                                return _context5.stop();
 	                        }
 	                    }
-	                }, _callee3, this);
+	                }, _callee5, this);
 	            }));
 	        }
 	        function prev(key) {
@@ -518,23 +544,23 @@ return /******/ (function(modules) { // webpackBootstrap
 	        var _this = this;
 	
 	        return filter(parent, function (value, key) {
-	            return __awaiter(_this, void 0, _promise2.default, _regenerator2.default.mark(function _callee4() {
-	                return _regenerator2.default.wrap(function _callee4$(_context4) {
+	            return __awaiter(_this, void 0, _promise2.default, _regenerator2.default.mark(function _callee6() {
+	                return _regenerator2.default.wrap(function _callee6$(_context6) {
 	                    while (1) {
-	                        switch (_context4.prev = _context4.next) {
+	                        switch (_context6.prev = _context6.next) {
 	                            case 0:
-	                                _context4.next = 2;
+	                                _context6.next = 2;
 	                                return has(omitted, key);
 	
 	                            case 2:
-	                                return _context4.abrupt("return", !_context4.sent);
+	                                return _context6.abrupt("return", !_context6.sent);
 	
 	                            case 3:
 	                            case "end":
-	                                return _context4.stop();
+	                                return _context6.stop();
 	                        }
 	                    }
-	                }, _callee4, this);
+	                }, _callee6, this);
 	            }));
 	        });
 	    }
@@ -546,51 +572,51 @@ return /******/ (function(modules) { // webpackBootstrap
 	    function zoom(parent, key) {
 	        var have;
 	        function get(k) {
-	            return __awaiter(this, void 0, _promise2.default, _regenerator2.default.mark(function _callee5() {
-	                return _regenerator2.default.wrap(function _callee5$(_context5) {
+	            return __awaiter(this, void 0, _promise2.default, _regenerator2.default.mark(function _callee7() {
+	                return _regenerator2.default.wrap(function _callee7$(_context7) {
 	                    while (1) {
-	                        switch (_context5.prev = _context5.next) {
+	                        switch (_context7.prev = _context7.next) {
 	                            case 0:
 	                                if (!(k === key)) {
-	                                    _context5.next = 2;
+	                                    _context7.next = 2;
 	                                    break;
 	                                }
 	
-	                                return _context5.abrupt("return", parent.get(key));
+	                                return _context7.abrupt("return", parent.get(key));
 	
 	                            case 2:
 	                                throw new _exceptions.NotFound();
 	
 	                            case 3:
 	                            case "end":
-	                                return _context5.stop();
+	                                return _context7.stop();
 	                        }
 	                    }
-	                }, _callee5, this);
+	                }, _callee7, this);
 	            }));
 	        }
 	        function next() {
 	            var k = arguments.length <= 0 || arguments[0] === undefined ? _key2.default.sentinel : arguments[0];
 	
-	            return __awaiter(this, void 0, _promise2.default, _regenerator2.default.mark(function _callee6() {
-	                return _regenerator2.default.wrap(function _callee6$(_context6) {
+	            return __awaiter(this, void 0, _promise2.default, _regenerator2.default.mark(function _callee8() {
+	                return _regenerator2.default.wrap(function _callee8$(_context8) {
 	                    while (1) {
-	                        switch (_context6.prev = _context6.next) {
+	                        switch (_context8.prev = _context8.next) {
 	                            case 0:
 	                                if (!(k !== key && k !== _key2.default.sentinel)) {
-	                                    _context6.next = 2;
+	                                    _context8.next = 2;
 	                                    break;
 	                                }
 	
 	                                throw new _exceptions.NotFound();
 	
 	                            case 2:
-	                                _context6.next = 4;
+	                                _context8.next = 4;
 	                                return has(parent, key);
 	
 	                            case 4:
-	                                if (_context6.sent) {
-	                                    _context6.next = 6;
+	                                if (_context8.sent) {
+	                                    _context8.next = 6;
 	                                    break;
 	                                }
 	
@@ -598,26 +624,26 @@ return /******/ (function(modules) { // webpackBootstrap
 	
 	                            case 6:
 	                                if (!(k === _key2.default.sentinel)) {
-	                                    _context6.next = 8;
+	                                    _context8.next = 8;
 	                                    break;
 	                                }
 	
-	                                return _context6.abrupt("return", key);
+	                                return _context8.abrupt("return", key);
 	
 	                            case 8:
 	                                if (!(k === key)) {
-	                                    _context6.next = 10;
+	                                    _context8.next = 10;
 	                                    break;
 	                                }
 	
-	                                return _context6.abrupt("return", _key2.default.sentinel);
+	                                return _context8.abrupt("return", _key2.default.sentinel);
 	
 	                            case 10:
 	                            case "end":
-	                                return _context6.stop();
+	                                return _context8.stop();
 	                        }
 	                    }
-	                }, _callee6, this);
+	                }, _callee8, this);
 	            }));
 	        }
 	        return { get: get, prev: next, next: next };
@@ -676,7 +702,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	        var uniqueFn = arguments.length <= 1 || arguments[1] === undefined ? String : arguments[1];
 	
 	        return map(groupBy(parent, uniqueFn), function (s) {
-	            return first(s);
+	            return first(s).then(s.get);
 	        });
 	    }
 	    State.unique = unique;
@@ -770,28 +796,28 @@ return /******/ (function(modules) { // webpackBootstrap
 	            queue = _promise2.default.resolve(null);
 	        var cachingIterator = {
 	            next: function next() {
-	                return __awaiter(this, void 0, _promise2.default, _regenerator2.default.mark(function _callee7() {
+	                return __awaiter(this, void 0, _promise2.default, _regenerator2.default.mark(function _callee9() {
 	                    var result, _result$value, key, value;
 	
-	                    return _regenerator2.default.wrap(function _callee7$(_context7) {
+	                    return _regenerator2.default.wrap(function _callee9$(_context9) {
 	                        while (1) {
-	                            switch (_context7.prev = _context7.next) {
+	                            switch (_context9.prev = _context9.next) {
 	                                case 0:
-	                                    _context7.next = 2;
+	                                    _context9.next = 2;
 	                                    return iterator.next();
 	
 	                                case 2:
-	                                    result = _context7.sent;
+	                                    result = _context9.sent;
 	
 	                                    if (!result.done) {
-	                                        _context7.next = 8;
+	                                        _context9.next = 8;
 	                                        break;
 	                                    }
 	
 	                                    exhausted = true;
 	                                    cache.prev[_key2.default.sentinel] = _promise2.default.resolve(currentKey);
 	                                    cache.next[currentKey] = _promise2.default.resolve(_key2.default.sentinel);
-	                                    return _context7.abrupt("return", _async_iterator2.default.done);
+	                                    return _context9.abrupt("return", _async_iterator2.default.done);
 	
 	                                case 8:
 	                                    _result$value = (0, _slicedToArray3.default)(result.value, 2);
@@ -802,14 +828,14 @@ return /******/ (function(modules) { // webpackBootstrap
 	                                    cache.next[currentKey] = _promise2.default.resolve(key);
 	                                    cache.get[key] = _promise2.default.resolve(value);
 	                                    currentKey = key;
-	                                    return _context7.abrupt("return", { done: false, value: [key, value] });
+	                                    return _context9.abrupt("return", { done: false, value: [key, value] });
 	
 	                                case 16:
 	                                case "end":
-	                                    return _context7.stop();
+	                                    return _context9.stop();
 	                            }
 	                        }
-	                    }, _callee7, this);
+	                    }, _callee9, this);
 	                }));
 	            }
 	        };
@@ -873,36 +899,36 @@ return /******/ (function(modules) { // webpackBootstrap
 	        var state,
 	            queue = _promise2.default.resolve();
 	        function createState() {
-	            return __awaiter(this, void 0, _promise2.default, _regenerator2.default.mark(function _callee8() {
-	                return _regenerator2.default.wrap(function _callee8$(_context8) {
+	            return __awaiter(this, void 0, _promise2.default, _regenerator2.default.mark(function _callee10() {
+	                return _regenerator2.default.wrap(function _callee10$(_context10) {
 	                    while (1) {
-	                        switch (_context8.prev = _context8.next) {
+	                        switch (_context10.prev = _context10.next) {
 	                            case 0:
 	                                if (!state) {
-	                                    _context8.next = 4;
+	                                    _context10.next = 4;
 	                                    break;
 	                                }
 	
-	                                _context8.t0 = state;
-	                                _context8.next = 7;
+	                                _context10.t0 = state;
+	                                _context10.next = 7;
 	                                break;
 	
 	                            case 4:
-	                                _context8.next = 6;
+	                                _context10.next = 6;
 	                                return fn();
 	
 	                            case 6:
-	                                _context8.t0 = state = _context8.sent;
+	                                _context10.t0 = state = _context10.sent;
 	
 	                            case 7:
-	                                return _context8.abrupt("return", _context8.t0);
+	                                return _context10.abrupt("return", _context10.t0);
 	
 	                            case 8:
 	                            case "end":
-	                                return _context8.stop();
+	                                return _context10.stop();
 	                        }
 	                    }
-	                }, _callee8, this);
+	                }, _callee10, this);
 	            }));
 	        }
 	        function get(key) {
@@ -4934,18 +4960,78 @@ return /******/ (function(modules) { // webpackBootstrap
 	    }
 	    Store.flatten = flatten;
 	    function scan(parent, scanFn, memo) {
+	        var _this2 = this;
+	
 	        var store,
 	            state = _state2.default.scan(parent.state, scanFn, memo),
 	            dispatcher = _observable.Observable.map(parent.dispatcher, function (patch) {
-	            var parentState = parent.state,
-	                storeState = store.state,
-	                range = [patch.range[0], { prev: null }],
-	                added = _state2.default.lazy(function () {
-	                return _state2.default.last(storeState, [{ next: null }, patch.range[0]]).then(function (memo) {
-	                    return _state2.default.scan(_state2.default.slice(parentState, range), scanFn, memo);
-	                });
-	            });
-	            return { range: range, added: added };
+	            return __awaiter(_this2, void 0, _promise2.default, _regenerator2.default.mark(function _callee5() {
+	                var _this3 = this;
+	
+	                var parentState, storeState, _patch$range, from, to, added;
+	
+	                return _regenerator2.default.wrap(function _callee5$(_context5) {
+	                    while (1) {
+	                        switch (_context5.prev = _context5.next) {
+	                            case 0:
+	                                parentState = parent.state;
+	                                storeState = store.state;
+	                                _patch$range = (0, _slicedToArray3.default)(patch.range, 2);
+	                                from = _patch$range[0];
+	                                to = _patch$range[1];
+	                                added = _state2.default.lazy(function () {
+	                                    return __awaiter(_this3, void 0, _promise2.default, _regenerator2.default.mark(function _callee4() {
+	                                        var last;
+	                                        return _regenerator2.default.wrap(function _callee4$(_context4) {
+	                                            while (1) {
+	                                                switch (_context4.prev = _context4.next) {
+	                                                    case 0:
+	                                                        _context4.next = 2;
+	                                                        return _state2.default.last(storeState, [{ next: null }, from]);
+	
+	                                                    case 2:
+	                                                        last = _context4.sent;
+	                                                        _context4.t0 = _state2.default;
+	                                                        _context4.t1 = _state2.default.slice(parentState, [{ next: last }, { prev: null }]);
+	                                                        _context4.t2 = scanFn;
+	
+	                                                        if (!(last !== _key2.default.sentinel)) {
+	                                                            _context4.next = 12;
+	                                                            break;
+	                                                        }
+	
+	                                                        _context4.next = 9;
+	                                                        return storeState.get(last);
+	
+	                                                    case 9:
+	                                                        _context4.t3 = _context4.sent;
+	                                                        _context4.next = 13;
+	                                                        break;
+	
+	                                                    case 12:
+	                                                        _context4.t3 = memo;
+	
+	                                                    case 13:
+	                                                        _context4.t4 = _context4.t3;
+	                                                        return _context4.abrupt("return", _context4.t0.scan.call(_context4.t0, _context4.t1, _context4.t2, _context4.t4));
+	
+	                                                    case 15:
+	                                                    case "end":
+	                                                        return _context4.stop();
+	                                                }
+	                                            }
+	                                        }, _callee4, this);
+	                                    }));
+	                                });
+	                                return _context5.abrupt("return", { range: [from, { prev: null }], added: added });
+	
+	                            case 7:
+	                            case "end":
+	                                return _context5.stop();
+	                        }
+	                    }
+	                }, _callee5, this);
+	            }));
 	        });
 	        return store = create(state, dispatcher);
 	    }
@@ -4968,14 +5054,37 @@ return /******/ (function(modules) { // webpackBootstrap
 	    }
 	    Store.states = states;
 	    function create(state, dispatcher) {
+	        var _this4 = this;
+	
 	        var reducer = arguments.length <= 2 || arguments[2] === undefined ? _patch2.default.apply : arguments[2];
 	
-	        var store = { state: state, dispatcher: dispatcher };
-	        _observable.Observable.scan(dispatcher, reducer, state).subscribe({
-	            onNext: function onNext(state) {
-	                store.state = state;
-	            }
-	        });
+	        var subject = _observable.Subject.create();
+	        _observable.Observable.scan(dispatcher, function (state, patch) {
+	            return __awaiter(_this4, void 0, _promise2.default, _regenerator2.default.mark(function _callee6() {
+	                return _regenerator2.default.wrap(function _callee6$(_context6) {
+	                    while (1) {
+	                        switch (_context6.prev = _context6.next) {
+	                            case 0:
+	                                _context6.next = 2;
+	                                return reducer(state, patch);
+	
+	                            case 2:
+	                                store.state = _context6.sent;
+	                                _context6.next = 5;
+	                                return subject.onNext(patch);
+	
+	                            case 5:
+	                                return _context6.abrupt("return", store.state);
+	
+	                            case 6:
+	                            case "end":
+	                                return _context6.stop();
+	                        }
+	                    }
+	                }, _callee6, this);
+	            }));
+	        }, state);
+	        var store = { state: state, dispatcher: { subscribe: subject.subscribe, onNext: _observable.Subject.isSubject(dispatcher) ? dispatcher.onNext : undefined } };
 	        return store;
 	    }
 	    Store.create = create;
@@ -5174,6 +5283,10 @@ return /******/ (function(modules) { // webpackBootstrap
 	})(Observable || (exports.Observable = Observable = {}));
 	var Subject = exports.Subject = undefined;
 	(function (Subject) {
+	    function isSubject(obj) {
+	        return typeof obj["onNext"] === "function";
+	    }
+	    Subject.isSubject = isSubject;
 	    function create() {
 	        var observers = (0, _create2.default)(null);
 	        var current = _promise2.default.resolve();

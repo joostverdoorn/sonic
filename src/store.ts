@@ -164,16 +164,17 @@ export module Store {
   export function scan<V, W>(parent: Store<V>, scanFn: (memo: W, value: V) => W | Promise<W>, memo?: W): Store<W> {
     var store: Store<W>,
         state = State.scan(parent.state, scanFn, memo),
-        dispatcher = Observable.map(parent.dispatcher, patch => {
+        dispatcher = Observable.map(parent.dispatcher, async (patch) => {
           var parentState = parent.state,
               storeState = store.state,
-              range: Range = [patch.range[0], {prev: null}],
-              added = State.lazy(() => {
-                return State.last(storeState, [{next: null}, patch.range[0]])
-                  .then(memo => State.scan(State.slice(parentState, range), scanFn, memo))
-              });
+              [from, to] = patch.range;
 
-          return { range, added };
+          var added = State.lazy(async () => {
+            var last = await State.last(storeState, [{next: null}, from]);
+            return State.scan(State.slice(parentState, [{next: last}, {prev: null}]), scanFn, last !== Key.sentinel ? await storeState.get(last) : memo);
+          });
+
+          return { range: <Range> [from, {prev: null}], added };
         });
 
     return store = create(state, dispatcher);
@@ -193,15 +194,20 @@ export module Store {
     return Observable.map(store.dispatcher, () => store.state);
   }
 
-  export function create<V>(state: State<V>, dispatcher: Subject<Patch<V>>, reducer?: (state: State<V>, patch: Patch<V>) => State<V>): MutableStore<V>
-  export function create<V>(state: State<V>, dispatcher: Observable<Patch<V>>, reducer?: (state: State<V>, patch: Patch<V>) => State<V>): Store<V>
-  export function create<V>(state: State<V>, dispatcher: Observable<Patch<V>>, reducer: (state: State<V>, patch: Patch<V>) => State<V> = Patch.apply): any {
-    const store = { state, dispatcher };
+  export function create<V>(state: State<V>, dispatcher: Subject<Patch<V>>, reducer?: (state: State<V>, patch: Patch<V>) => State<V> | Promise<State<V>>): MutableStore<V>
+  export function create<V>(state: State<V>, dispatcher: Observable<Patch<V>>, reducer?: (state: State<V>, patch: Patch<V>) => State<V> | Promise<State<V>>): Store<V>
+  export function create<V>(state: State<V>, dispatcher: Observable<Patch<V>>, reducer: (state: State<V>, patch: Patch<V>) => State<V> | Promise<State<V>> = Patch.apply): any {
 
-    Observable.scan(dispatcher, reducer, state).subscribe({
-      onNext: (state: State<V>) => {store.state = state}
-    });
+    var subject = Subject.create();
 
+
+    Observable.scan(dispatcher, async (state, patch) => {
+      store.state = await reducer(state, patch);
+      await subject.onNext(patch);
+      return store.state;
+    }, state);
+
+    var store = { state, dispatcher: { subscribe: subject.subscribe, onNext: Subject.isSubject(dispatcher) ? dispatcher.onNext : undefined }};
     return store;
   }
 }

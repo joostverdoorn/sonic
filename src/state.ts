@@ -37,12 +37,12 @@ export module State {
     return state;
   }
 
-  export function first<V>(state: State<V>, [from, to]: Range = Range.all): Promise<V> {
-    return Position.isPrevPosition(from) ? state.get(from.prev) : state.next(from.next).then(state.get);
+  export async function first<V>(state: State<V>, [from, to]: Range = Range.all): Promise<Key> {
+    return Position.isPrevPosition(from) ? from.prev : state.next(from.next)
   }
 
-  export function last<V>(state: State<V>, [from, to]: Range = Range.all): Promise<V> {
-    return Position.isNextPosition(to) ? state.get(to.next) : state.prev(to.prev).then(state.get);
+  export async function last<V>(state: State<V>, [from, to]: Range = Range.all): Promise<Key> {
+    return Position.isNextPosition(to) ? to.next : state.prev(to.prev)
   }
 
   export async function has<V>(state: State<V>, key: Key): Promise<boolean> {
@@ -228,7 +228,7 @@ export module State {
   }
 
   export function unique<V>(parent: State<V>, uniqueFn: (value: V, key: Key) => Key | Promise<Key> = String): State<V> {
-    return map(groupBy(parent, uniqueFn), s => first(s));
+    return map(groupBy(parent, uniqueFn), s => first(s).then(s.get));
   }
 
   export function union<V>(state: State<V>, other: State<V>, uniqueFn?: (value: V, key: Key) => Key | Promise<Key>): State<V> {

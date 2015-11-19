@@ -17,8 +17,9 @@ export declare module Disposable {
 export declare module Observable {
     function map<T, U>(observable: Observable<T>, mapFn: (value: T) => U | Promise<U>): Observable<U>;
     function filter<T>(observable: Observable<T>, filterFn: (value: T) => boolean | Promise<boolean>): Observable<T>;
-    function scan<T, U>(observable: Observable<T>, scanFn: (memo: U, value: T) => U, memo: U): Observable<U>;
+    function scan<T, U>(observable: Observable<T>, scanFn: (memo: U, value: T) => U | Promise<U>, memo: U): Observable<U>;
 }
 export declare module Subject {
+    function isSubject<T>(obj: any): obj is Subject<T>;
     function create<T>(): Subject<T>;
 }
