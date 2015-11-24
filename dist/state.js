@@ -79,6 +79,10 @@ export var State;
         return state.next().then(next => next !== Key.sentinel);
     }
     State.any = any;
+    function size(state) {
+        return AsyncIterator.size(keys(state));
+    }
+    State.size = size;
     function slice(parent, range = Range.all) {
         return fromEntries(entries(parent, range));
     }
@@ -286,7 +290,7 @@ export var State;
                 return get(Key.sentinel);
             return iterate(current);
         }
-        return { next };
+        return AsyncIterator.create(next);
     }
     State.entries = entries;
     function keys(state, range = Range.all) {

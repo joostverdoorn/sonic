@@ -135,6 +135,21 @@ export var Store;
         return store = create(state, dispatcher);
     }
     Store.scan = scan;
+    function take(parent, count) {
+        var store, state = State.take(parent.state, count);
+        var indexed = Store.scan(parent, ([index], value) => [index + 1, value], [-1, null]);
+        var dispatcher = Observable.map(indexed.dispatcher, (patch) => __awaiter(this, void 0, Promise, function* () {
+            var [from] = patch.range, parentState = parent.state, indexedState = indexed.state;
+            var key = yield State.last(indexedState, [{ next: null }, from]);
+            var index = key === Key.sentinel ? -1 : (yield indexedState.get(key))[0];
+            return {
+                range: patch.range,
+                added: State.take(State.map(patch.added, ([index, value]) => value), count - (index + 1))
+            };
+        }));
+        return create(state, dispatcher);
+    }
+    Store.take = take;
     function cache(parent) {
         var state = State.cache(parent.state), dispatcher = Observable.map(parent.dispatcher, patch => ({
             range: patch.range,

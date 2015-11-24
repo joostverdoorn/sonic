@@ -366,6 +366,10 @@ return /******/ (function(modules) { // webpackBootstrap
 	        });
 	    }
 	    State.any = any;
+	    function size(state) {
+	        return _async_iterator2.default.size(keys(state));
+	    }
+	    State.size = size;
 	    function slice(parent) {
 	        var range = arguments.length <= 1 || arguments[1] === undefined ? _range.Range.all : arguments[1];
 	
@@ -775,7 +779,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	            if (_range.Position.isNextPosition(to) && to.next === current) return get(_key2.default.sentinel);
 	            return iterate(current);
 	        }
-	        return { next: next };
+	        return _async_iterator2.default.create(next);
 	    }
 	    State.entries = entries;
 	    function keys(state) {
@@ -4015,6 +4019,15 @@ return /******/ (function(modules) { // webpackBootstrap
 	        });
 	    }
 	    AsyncIterator.at = at;
+	    function size(iterator) {
+	        var count = -1;
+	        return forEach(iterator, function () {
+	            count++;
+	        }).then(function () {
+	            return count;
+	        });
+	    }
+	    AsyncIterator.size = size;
 	    function contains(iterator, value) {
 	        return some(iterator, function (v) {
 	            return v === value;
@@ -4128,7 +4141,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	                }, _callee13, this);
 	            }));
 	        }
-	        return { next: next };
+	        return create(next);
 	    }
 	    AsyncIterator.map = map;
 	    function filter(iterator, filterFn) {
@@ -4175,7 +4188,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	                }, _callee14, this);
 	            }));
 	        }
-	        return { next: next };
+	        return create(next);
 	    }
 	    AsyncIterator.filter = filter;
 	    function scan(iterator, scanFn, memo) {
@@ -4215,7 +4228,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	                }, _callee15, this);
 	            }));
 	        }
-	        return { next: next };
+	        return create(next);
 	    }
 	    AsyncIterator.scan = scan;
 	    function zip(iterator, other) {
@@ -4264,7 +4277,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	                }, _callee16, this);
 	            }));
 	        }
-	        return { next: next };
+	        return create(next);
 	    }
 	    AsyncIterator.zip = zip;
 	    function take(iterator, count) {
@@ -4285,7 +4298,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	                }, _callee17, this);
 	            }));
 	        }
-	        return { next: next };
+	        return create(next);
 	    }
 	    AsyncIterator.take = take;
 	    function skip(iterator, count) {
@@ -4317,7 +4330,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	                }, _callee18, this);
 	            }));
 	        }
-	        return { next: next };
+	        return create(next);
 	    }
 	    AsyncIterator.skip = skip;
 	    function concat() {
@@ -4368,7 +4381,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	                    }, _callee19, this);
 	                }));
 	            }
-	            return { next: next };
+	            return create(next);
 	        }, AsyncIterator.Empty);
 	    }
 	    AsyncIterator.concat = concat;
@@ -4391,7 +4404,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	                }, _callee20, this);
 	            }));
 	        }
-	        return { next: next };
+	        return create(next);
 	    }
 	    AsyncIterator.fromArray = fromArray;
 	    function fromObject(object) {
@@ -4416,6 +4429,15 @@ return /******/ (function(modules) { // webpackBootstrap
 	        }, (0, _create2.default)(null));
 	    }
 	    AsyncIterator.toObject = toObject;
+	    function create(_next) {
+	        var queue = _promise2.default.resolve(null);
+	        return {
+	            next: function next() {
+	                return queue = queue.then(_next);
+	            }
+	        };
+	    }
+	    AsyncIterator.create = create;
 	})(AsyncIterator || (exports.AsyncIterator = AsyncIterator = {}));
 	exports.default = AsyncIterator;
 	//# sourceMappingURL=async_iterator.js.map
@@ -5037,6 +5059,75 @@ return /******/ (function(modules) { // webpackBootstrap
 	        return store = create(state, dispatcher);
 	    }
 	    Store.scan = scan;
+	    function take(parent, count) {
+	        var _this4 = this;
+	
+	        var store,
+	            state = _state2.default.take(parent.state, count);
+	        var indexed = Store.scan(parent, function (_ref5, value) {
+	            var _ref6 = (0, _slicedToArray3.default)(_ref5, 1);
+	
+	            var index = _ref6[0];
+	            return [index + 1, value];
+	        }, [-1, null]);
+	        var dispatcher = _observable.Observable.map(indexed.dispatcher, function (patch) {
+	            return __awaiter(_this4, void 0, _promise2.default, _regenerator2.default.mark(function _callee6() {
+	                var _patch$range2, from, parentState, indexedState, key, index;
+	
+	                return _regenerator2.default.wrap(function _callee6$(_context6) {
+	                    while (1) {
+	                        switch (_context6.prev = _context6.next) {
+	                            case 0:
+	                                _patch$range2 = (0, _slicedToArray3.default)(patch.range, 1);
+	                                from = _patch$range2[0];
+	                                parentState = parent.state;
+	                                indexedState = indexed.state;
+	                                _context6.next = 6;
+	                                return _state2.default.last(indexedState, [{ next: null }, from]);
+	
+	                            case 6:
+	                                key = _context6.sent;
+	
+	                                if (!(key === _key2.default.sentinel)) {
+	                                    _context6.next = 11;
+	                                    break;
+	                                }
+	
+	                                _context6.t0 = -1;
+	                                _context6.next = 14;
+	                                break;
+	
+	                            case 11:
+	                                _context6.next = 13;
+	                                return indexedState.get(key);
+	
+	                            case 13:
+	                                _context6.t0 = _context6.sent[0];
+	
+	                            case 14:
+	                                index = _context6.t0;
+	                                return _context6.abrupt("return", {
+	                                    range: patch.range,
+	                                    added: _state2.default.take(_state2.default.map(patch.added, function (_ref7) {
+	                                        var _ref8 = (0, _slicedToArray3.default)(_ref7, 2);
+	
+	                                        var index = _ref8[0];
+	                                        var value = _ref8[1];
+	                                        return value;
+	                                    }), count - (index + 1))
+	                                });
+	
+	                            case 16:
+	                            case "end":
+	                                return _context6.stop();
+	                        }
+	                    }
+	                }, _callee6, this);
+	            }));
+	        });
+	        return create(state, dispatcher);
+	    }
+	    Store.take = take;
 	    function cache(parent) {
 	        var state = _state2.default.cache(parent.state),
 	            dispatcher = _observable.Observable.map(parent.dispatcher, function (patch) {
@@ -5055,34 +5146,34 @@ return /******/ (function(modules) { // webpackBootstrap
 	    }
 	    Store.states = states;
 	    function create(state, dispatcher) {
-	        var _this4 = this;
+	        var _this5 = this;
 	
 	        var reducer = arguments.length <= 2 || arguments[2] === undefined ? _patch2.default.apply : arguments[2];
 	
 	        var subject = _observable.Subject.create();
 	        _observable.Observable.scan(dispatcher, function (state, patch) {
-	            return __awaiter(_this4, void 0, _promise2.default, _regenerator2.default.mark(function _callee6() {
-	                return _regenerator2.default.wrap(function _callee6$(_context6) {
+	            return __awaiter(_this5, void 0, _promise2.default, _regenerator2.default.mark(function _callee7() {
+	                return _regenerator2.default.wrap(function _callee7$(_context7) {
 	                    while (1) {
-	                        switch (_context6.prev = _context6.next) {
+	                        switch (_context7.prev = _context7.next) {
 	                            case 0:
-	                                _context6.next = 2;
+	                                _context7.next = 2;
 	                                return reducer(state, patch);
 	
 	                            case 2:
-	                                store.state = _context6.sent;
-	                                _context6.next = 5;
+	                                store.state = _context7.sent;
+	                                _context7.next = 5;
 	                                return subject.onNext(patch);
 	
 	                            case 5:
-	                                return _context6.abrupt("return", store.state);
+	                                return _context7.abrupt("return", store.state);
 	
 	                            case 6:
 	                            case "end":
-	                                return _context6.stop();
+	                                return _context7.stop();
 	                        }
 	                    }
-	                }, _callee6, this);
+	                }, _callee7, this);
 	            }));
 	        }, state);
 	        var store = { state: state, dispatcher: { subscribe: subject.subscribe, onNext: _observable.Subject.isSubject(dispatcher) ? dispatcher.onNext : undefined } };
@@ -5204,6 +5295,10 @@ return /******/ (function(modules) { // webpackBootstrap
 	
 	var _key2 = _interopRequireDefault(_key);
 	
+	var _async_iterator = __webpack_require__(83);
+	
+	var _async_iterator2 = _interopRequireDefault(_async_iterator);
+	
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 	
 	var __awaiter = undefined && undefined.__awaiter || function (thisArg, _arguments, Promise, generator) {
@@ -5278,7 +5373,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	        observable.subscribe({
 	            onNext: function onNext(value) {
 	                return _promise2.default.resolve(scanFn(memo, value)).then(function (value) {
-	                    memo = value;subject.onNext(value);
+	                    memo = value;return subject.onNext(value);
 	                });
 	            }
 	        });
@@ -5358,7 +5453,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	                }, _callee, this);
 	            }));
 	        }
-	        return { next: next };
+	        return _async_iterator2.default.create(next);
 	    }
 	    Observable.toIterator = toIterator;
 	})(Observable || (exports.Observable = Observable = {}));

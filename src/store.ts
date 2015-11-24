@@ -180,30 +180,28 @@ export module Store {
     return store = create(state, dispatcher);
   }
 
-  // export function take<V>(parent: Store<V>, count: number) {
-  //   var store: Store<V>,
-  //       state = State.take(parent.state, count);
-  //
-  //
-  //
-  //
-  //       dispatcher = Observable.map(parent.dispatcher, async (patch) => {
-  //         var parentState = parent.state,
-  //             storeState = store.state,
-  //             [from, to] = patch.range;
-  //
-  //
-  //
-  //         var added = State.lazy(async () => {
-  //           var last = await State.last(storeState, [{next: null}, from]);
-  //           return State.scan(State.slice(parentState, [{next: last}, {prev: null}]), scanFn, last !== Key.sentinel ? await storeState.get(last) : memo);
-  //         });
-  //
-  //         return { range: <Range> [from, {prev: null}], added };
-  //       });
-  //
-  //   return store = create(state, dispatcher);
-  // }
+  export function take<V>(parent: Store<V>, count: number) {
+    var store: Store<V>,
+        state = State.take(parent.state, count);
+
+    var indexed = Store.scan(parent, ([index], value) => <[number, V]>[index + 1, value], <[number, V]>[-1, null]);
+
+    var dispatcher = Observable.map(indexed.dispatcher, async (patch) => {
+      var [from] = patch.range,
+          parentState = parent.state,
+          indexedState = indexed.state;
+
+      var key = await State.last(indexedState, [{next: null}, from]);
+      var index = key === Key.sentinel ? -1 : (await indexedState.get(key))[0];
+
+      return {
+        range: patch.range,
+        added: State.take(State.map(patch.added, ([index, value]) => value), count - (index + 1))
+      }
+    });
+
+    return create(state, dispatcher);
+  }
 
   export function cache<V>(parent: Store<V>): Store<V> {
     var state = State.cache(parent.state),

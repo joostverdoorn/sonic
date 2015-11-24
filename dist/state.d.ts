@@ -27,6 +27,7 @@ export declare module State {
     function contains<V>(state: State<V>, value: V): Promise<boolean>;
     function empty<V>(state: State<V>): Promise<boolean>;
     function any<V>(state: State<V>): Promise<boolean>;
+    function size<V>(state: State<V>): Promise<number>;
     function slice<V>(parent: State<V>, range?: Range): State<V>;
     function splice<V>(parent: State<V>, range: Range, child?: State<V>): State<V>;
     function reverse<V>(parent: State<V>): State<V>;

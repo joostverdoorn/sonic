@@ -74,6 +74,10 @@ export module State {
     return state.next().then(next => next !== Key.sentinel);
   }
 
+  export function size<V>(state: State<V>): Promise<number> {
+    return AsyncIterator.size(keys(state));
+  }
+
   export function slice<V>(parent: State<V>, range: Range = Range.all): State<V> {
     return fromEntries(entries(parent, range));
   }
@@ -287,7 +291,7 @@ export module State {
       return iterate(current);
     }
 
-    return {next};
+    return AsyncIterator.create(next);
   }
 
   export function keys<V>(state: State<V>, range: Range = Range.all): AsyncIterator<Key> {

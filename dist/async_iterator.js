@@ -76,6 +76,11 @@ export var AsyncIterator;
         return find(iterator, () => 0 === index--);
     }
     AsyncIterator.at = at;
+    function size(iterator) {
+        var count = -1;
+        return forEach(iterator, () => { count++; }).then(() => count);
+    }
+    AsyncIterator.size = size;
     function contains(iterator, value) {
         return some(iterator, v => v === value);
     }
@@ -96,7 +101,7 @@ export var AsyncIterator;
                 return result.done ? AsyncIterator.done : { done: false, value: yield mapFn(result.value) };
             });
         }
-        return { next };
+        return create(next);
     }
     AsyncIterator.map = map;
     function filter(iterator, filterFn) {
@@ -110,7 +115,7 @@ export var AsyncIterator;
                 return next();
             });
         }
-        return { next };
+        return create(next);
     }
     AsyncIterator.filter = filter;
     function scan(iterator, scanFn, memo) {
@@ -123,7 +128,7 @@ export var AsyncIterator;
                 return { done: false, value: memo };
             });
         }
-        return { next };
+        return create(next);
     }
     AsyncIterator.scan = scan;
     function zip(iterator, other) {
@@ -138,7 +143,7 @@ export var AsyncIterator;
                 return { done: false, value: [result.value, otherResult.value] };
             });
         }
-        return { next };
+        return create(next);
     }
     AsyncIterator.zip = zip;
     function take(iterator, count) {
@@ -148,7 +153,7 @@ export var AsyncIterator;
                 return ++i > count ? AsyncIterator.done : iterator.next();
             });
         }
-        return { next };
+        return create(next);
     }
     AsyncIterator.take = take;
     function skip(iterator, count) {
@@ -160,7 +165,7 @@ export var AsyncIterator;
                 return iterator.next();
             });
         }
-        return { next };
+        return create(next);
     }
     AsyncIterator.skip = skip;
     function concat(...iterators) {
@@ -177,7 +182,7 @@ export var AsyncIterator;
                     return iterator.next();
                 });
             }
-            return { next };
+            return create(next);
         }, AsyncIterator.Empty);
     }
     AsyncIterator.concat = concat;
@@ -188,7 +193,7 @@ export var AsyncIterator;
                 return ++current >= array.length ? AsyncIterator.done : { done: false, value: array[current] };
             });
         }
-        return { next };
+        return create(next);
     }
     AsyncIterator.fromArray = fromArray;
     function fromObject(object) {
@@ -203,6 +208,15 @@ export var AsyncIterator;
         return reduce(iterator, (memo, [key, value]) => (memo[key] = value, memo), Object.create(null));
     }
     AsyncIterator.toObject = toObject;
+    function create(next) {
+        var queue = Promise.resolve(null);
+        return {
+            next() {
+                return queue = queue.then(next);
+            }
+        };
+    }
+    AsyncIterator.create = create;
 })(AsyncIterator || (AsyncIterator = {}));
 export default AsyncIterator;
 //# sourceMappingURL=async_iterator.js.map

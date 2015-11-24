@@ -61,6 +61,11 @@ export module AsyncIterator {
     return find(iterator, () => 0 === index--);
   }
 
+  export function size<T>(iterator: Iterator<T> | AsyncIterator<T>): Promise<number> {
+    var count = -1;
+    return forEach(iterator, () => {count++}).then(() => count);
+  }
+
   export function contains<T>(iterator: Iterator<T> | AsyncIterator<T>, value: T): Promise<boolean> {
     return some(iterator, v => v === value);
   }
@@ -78,7 +83,7 @@ export module AsyncIterator {
       return result.done ? done : { done: false, value: await mapFn(result.value) };
     }
 
-    return {next};
+    return create(next);
   }
 
   export function filter<T>(iterator: Iterator<T> | AsyncIterator<T>, filterFn: (value: T) => boolean | Promise<boolean>): AsyncIterator<T> {
@@ -89,7 +94,7 @@ export module AsyncIterator {
       return next();
     }
 
-    return {next};
+    return create(next);
   }
 
   export function scan<T, U>(iterator: Iterator<T> | AsyncIterator<T>, scanFn: (memo: U, value: T) => U | Promise<U>, memo?: U): AsyncIterator<U> {
@@ -100,7 +105,7 @@ export module AsyncIterator {
       return { done: false, value: memo };
     }
 
-    return {next};
+    return create(next);
   }
 
   export function zip<T, U>(iterator: Iterator<T> | AsyncIterator<T>, other: Iterator<T> | AsyncIterator<U>): AsyncIterator<[T, U]> {
@@ -114,7 +119,7 @@ export module AsyncIterator {
       return { done: false, value: [result.value, otherResult.value]}
     }
 
-    return {next};
+    return create(next);
   }
 
   export function take<T>(iterator: Iterator<T> | AsyncIterator<T>, count: number): AsyncIterator<T> {
@@ -124,7 +129,7 @@ export module AsyncIterator {
       return ++i > count ? done : iterator.next();
     }
 
-    return {next};
+    return create(next);
   }
 
   export function skip<T>(iterator: Iterator<T> | AsyncIterator<T>, count: number): AsyncIterator<T> {
@@ -135,7 +140,7 @@ export module AsyncIterator {
       return iterator.next();
     }
 
-    return {next};
+    return create(next);
   }
 
   export function concat<T>(...iterators: AsyncIterator<T>[]): AsyncIterator<T> {
@@ -153,7 +158,7 @@ export module AsyncIterator {
         return iterator.next();
       }
 
-      return {next};
+      return create(next);
     }, Empty);
   }
 
@@ -165,7 +170,7 @@ export module AsyncIterator {
       return ++current >= array.length ? done : {done: false, value: array[current]}
     }
 
-    return {next};
+    return create(next);
   }
 
   export function fromObject<V>(object: {[key: string]: V}): AsyncIterator<Entry<V>> {
@@ -178,6 +183,16 @@ export module AsyncIterator {
 
   export function toObject<V>(iterator: AsyncIterator<Entry<V>>): Promise<{[key: string]: V}> {
     return reduce(iterator, (memo: {[key: string]: V}, [key, value]) => (memo[key] = value, memo), Object.create(null));
+  }
+
+  export function create<T>(next: () => IteratorResult<T> | Promise<IteratorResult<T>>): AsyncIterator<T> {
+    var queue = Promise.resolve<any>(null);
+
+    return {
+      next(): Promise<IteratorResult<T>> {
+        return queue = queue.then(next);
+      }
+    };
   }
 }
 

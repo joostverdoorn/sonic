@@ -12,6 +12,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, Promi
     });
 };
 import Key from './key';
+import AsyncIterator from './async_iterator';
 export var Disposable;
 (function (Disposable) {
     function create(disposer) {
@@ -48,7 +49,7 @@ export var Observable;
     function scan(observable, scanFn, memo) {
         const subject = Subject.create();
         observable.subscribe({
-            onNext: value => Promise.resolve(scanFn(memo, value)).then(value => { memo = value; subject.onNext(value); })
+            onNext: value => Promise.resolve(scanFn(memo, value)).then(value => { memo = value; return subject.onNext(value); })
         });
         return { subscribe: subject.subscribe };
     }
@@ -98,7 +99,7 @@ export var Observable;
                 return deferred.promise;
             });
         }
-        return { next };
+        return AsyncIterator.create(next);
     }
     Observable.toIterator = toIterator;
 })(Observable || (Observable = {}));

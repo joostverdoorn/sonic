@@ -29,5 +29,8 @@
         "src/store.ts",
         "src/tree.ts"
     ],
-    "exclude": []
+    "exclude": [],
+    "atom": {
+        "rewriteTsconfig": true
+    }
 }

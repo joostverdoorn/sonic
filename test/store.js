@@ -125,22 +125,11 @@ test('filter', t => {
       await s.dispatcher.onNext(p);
       return State.is(u.state, state({d: 6, b: 4})).then(t.ok);
     });
-
-
-
-
-
-    // return State.toArray(u.state).then(t.comment);
-
-
   });
 });
 
 
 test('scan', t => {
-
-  // t.test(t => State.toArray(s).then(t.comment))
-  //
   t.test('add at the end', t => {
     var state = State.fromObject({a: 1, b: 2, c: 3});
     var subject = Subject.create();
@@ -193,6 +182,19 @@ test('scan', t => {
       .then(t.ok);
   });
 
+  t.test('add at the end, remove all but first', t => {
+    var state = State.fromObject({a: 1, b: 2, c: 3});
+    var subject = Subject.create();
+    var store = Store.create(state, subject);
+    var scanned = Store.scan(store, (x, y) => x + y, 0);
+    var patch = {range: [{prev: 'b'}, {prev: null}], added: State.fromObject({d: 4, e: 5})};
+    return State.is(scanned.state, State.fromObject({a: 1, b: 3, c: 6}))
+      .then(t.ok)
+      .then(subject.onNext(patch))
+      .then(() => State.is(scanned.state, State.fromObject({a: 1, d: 5, e: 10})))
+      .then(t.ok);
+  });
+
   t.test('add at the beginning, remove first', t => {
     var state = State.fromObject({a: 1, b: 2, c: 3});
     var subject = Subject.create();
@@ -219,4 +221,90 @@ test('scan', t => {
       .then(t.ok);
   });
 
+});
+
+test('take', t => {
+  t.test('add one, remove one in the middle', t => {
+    var state = State.fromObject({a: 1, b: 2, c: 3, d: 4});
+    var subject = Subject.create();
+    var store = Store.create(state, subject);
+    var taken = Store.take(store, 3);
+    var patch = {range: [{next: 'a'}, {prev: 'c'}], added: State.fromObject({e: 5})};
+
+    return State.is(taken.state, State.fromObject({a: 1, b: 2, c: 3}))
+      .then(t.ok)
+      .then(() => subject.onNext(patch))
+      .then(() => State.is(taken.state, State.fromObject({a: 1, e: 5, c: 3})))
+      .then(t.ok);
+  });
+
+  t.test('add one, remove two at the beginning', t => {
+    var state = State.fromObject({a: 1, b: 2, c: 3, d: 4});
+    var subject = Subject.create();
+    var store = Store.create(state, subject);
+    var taken = Store.take(store, 3);
+    var patch = {range: [{next: null}, {prev: 'c'}], added: State.fromObject({e: 5})};
+
+    return State.is(taken.state, State.fromObject({a: 1, b: 2, c: 3}))
+      .then(t.ok)
+      .then(() => subject.onNext(patch))
+      .then(() => State.is(taken.state, State.fromObject({e: 5, c: 3, d: 4})))
+      .then(t.ok);
+  });
+
+  t.test('add two, remove one at the end', t => {
+    var state = State.fromObject({a: 1, b: 2, c: 3, d: 4});
+    var subject = Subject.create();
+    var store = Store.create(state, subject);
+    var taken = Store.take(store, 3);
+    var patch = {range: [{next: 'c'}, {prev: null}], added: State.fromObject({e: 5})};
+
+    return State.is(taken.state, State.fromObject({a: 1, b: 2, c: 3}))
+      .then(t.ok)
+      .then(() => subject.onNext(patch))
+      .then(() => State.is(taken.state, State.fromObject({a: 1, b: 2, c: 3})))
+      .then(t.ok);
+  });
+
+  t.test('add none, remove one at the beginning', t => {
+    var state = State.fromObject({a: 1, b: 2, c: 3, d: 4});
+    var subject = Subject.create();
+    var store = Store.create(state, subject);
+    var taken = Store.take(store, 3);
+    var patch = {range: [{prev: 'a'}, {prev: 'b'}]};
+
+    return State.is(taken.state, State.fromObject({a: 1, b: 2, c: 3}))
+      .then(t.ok)
+      .then(() => subject.onNext(patch))
+      .then(() => State.is(taken.state, State.fromObject({b: 2, c: 3, d: 4})))
+      .then(t.ok);
+  });
+
+  t.test('add none, remove two at the end', t => {
+    var state = State.fromObject({a: 1, b: 2, c: 3, d: 4});
+    var subject = Subject.create();
+    var store = Store.create(state, subject);
+    var taken = Store.take(store, 3);
+    var patch = {range: [{next: 'b'}, {prev: null}]};
+
+    return State.is(taken.state, State.fromObject({a: 1, b: 2, c: 3}))
+      .then(t.ok)
+      .then(() => subject.onNext(patch))
+      .then(() => State.is(taken.state, State.fromObject({a: 1, b: 2})))
+      .then(t.ok);
+  });
+
+  t.test('add two, remove none at the beginning', t => {
+    var state = State.fromObject({a: 1, b: 2, c: 3, d: 4});
+    var subject = Subject.create();
+    var store = Store.create(state, subject);
+    var taken = Store.take(store, 3);
+    var patch = {range: [{next: null}, {next: null}], added: State.fromObject({e: 5, f: 6})};
+
+    return State.is(taken.state, State.fromObject({a: 1, b: 2, c: 3}))
+      .then(t.ok)
+      .then(() => subject.onNext(patch))
+      .then(() => State.is(taken.state, State.fromObject({e: 5, f: 6, a: 1})))
+      .then(t.ok);
+  });
 });

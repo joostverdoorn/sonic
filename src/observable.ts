@@ -57,7 +57,7 @@ export module Observable {
     const subject = Subject.create();
 
     observable.subscribe({
-      onNext: value => Promise.resolve(scanFn(memo, value)).then(value => { memo = value; subject.onNext(value) })
+      onNext: value => Promise.resolve(scanFn(memo, value)).then(value => { memo = value; return subject.onNext(value) })
     });
 
     return { subscribe: subject.subscribe };
@@ -115,7 +115,7 @@ export module Observable {
       return deferred.promise;
     }
 
-    return {next}
+    return AsyncIterator.create(next);
   }
 }
 

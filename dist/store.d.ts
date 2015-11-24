@@ -15,6 +15,7 @@ export declare module Store {
     function zoom<V>(parent: Store<V>, key: Key): Store<V>;
     function flatten<V>(parent: Store<Store<V>>): Store<V>;
     function scan<V, W>(parent: Store<V>, scanFn: (memo: W, value: V) => W | Promise<W>, memo?: W): Store<W>;
+    function take<V>(parent: Store<V>, count: number): Store<V>;
     function cache<V>(parent: Store<V>): Store<V>;
     function states<V>(store: Store<V>): Observable<State<V>>;
     function create<V>(state: State<V>, dispatcher: Subject<Patch<V>>, reducer?: (state: State<V>, patch: Patch<V>) => State<V> | Promise<State<V>>): MutableStore<V>;
