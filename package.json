@@ -32,7 +32,7 @@
   "scripts": {
     "ts": "tsc",
     "dist": "tsc && webpack --config webpack.src.config.js",
-    "test": "tsc && (webpack --config webpack.test.config.js && node build/test.js | faucet) || echo -e '\\u0007'",
+    "test": "tsc && (webpack --config webpack.test.config.js && node build/test.js | faucet); STATUS=$?; if [ $STATUS != 0 ]; then echo -e '\\u0007'; fi; exit $STATUS",
     "watch": "tsc -w & webpack -w --config webpack.src.config.js",
     "watch-test": "npm run watch & watch 'npm test' test",
     "d": "npm run dist",
