@@ -12,12 +12,17 @@
 - [ ] Make keys more lazy by not evaluating values (using entries)
 
 ## Store
+- [x] Add scan
+- [x] Add take
 - [x] Filter: fix rewriting of ranges to be as lazy as possible
 - [ ] Implement remaining functions from state, reactively
 - [ ] Implement reactive sort
 
 ## Observable
-- [ ] Don't subscribe unless subscribed to in map, filter, scan etc.
+- [x] Add toIterator
+- [x] Add fromIterator
+- [x] Don't subscribe unless subscribed to in map, filter, scan etc.
+- [x] Fix onComplete and onError behaviour
 
 ## Cache
 - [ ] Look at deleted items in cache

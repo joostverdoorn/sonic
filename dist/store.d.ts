@@ -10,6 +10,7 @@ export interface MutableStore<V> extends Store<V> {
     dispatcher: Subject<Patch<V>>;
 }
 export declare module Store {
+    function reverse<V>(parent: Store<V>): Store<V>;
     function map<V, W>(parent: Store<V>, mapFn: (value: V, key: Key) => W | Promise<W>): Store<W>;
     function filter<V>(parent: Store<V>, filterFn: (value: V, key: Key) => boolean | Promise<boolean>): Store<V>;
     function zoom<V>(parent: Store<V>, key: Key): Store<V>;

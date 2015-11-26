@@ -22,7 +22,8 @@ export var Disposable;
                 if (done)
                     return;
                 done = true;
-                disposer();
+                if (disposer)
+                    disposer();
             }
         };
     }
@@ -30,30 +31,71 @@ export var Disposable;
 })(Disposable || (Disposable = {}));
 export var Observable;
 (function (Observable) {
+    function create(fn) {
+        var subject;
+        function subscribe(observer) {
+            if (!subject) {
+                subject = Subject.create();
+                if (fn)
+                    fn(subject);
+            }
+            return subject.subscribe(observer);
+        }
+        return { subscribe };
+    }
+    Observable.create = create;
     function map(observable, mapFn) {
-        const subject = Subject.create();
-        observable.subscribe({
-            onNext: value => Promise.resolve(mapFn(value)).then(subject.onNext)
+        return create(subject => {
+            observable.subscribe({
+                onNext: value => Promise.resolve(mapFn(value)).then(subject.onNext)
+            });
         });
-        return { subscribe: subject.subscribe };
     }
     Observable.map = map;
     function filter(observable, filterFn) {
-        const subject = Subject.create();
-        observable.subscribe({
-            onNext: value => Promise.resolve(filterFn(value)).then(result => result ? subject.onNext(value) : undefined)
+        return create(subject => {
+            observable.subscribe({
+                onNext: value => Promise.resolve(filterFn(value)).then(result => result ? subject.onNext(value) : undefined)
+            });
         });
-        return { subscribe: subject.subscribe };
     }
     Observable.filter = filter;
     function scan(observable, scanFn, memo) {
-        const subject = Subject.create();
-        observable.subscribe({
-            onNext: value => Promise.resolve(scanFn(memo, value)).then(value => { memo = value; return subject.onNext(value); })
+        return create(subject => {
+            observable.subscribe({
+                onNext: value => Promise.resolve(scanFn(memo, value)).then(value => { memo = value; return subject.onNext(value); })
+            });
         });
-        return { subscribe: subject.subscribe };
     }
     Observable.scan = scan;
+    function forEach(observable, fn) {
+        return observable.subscribe({
+            onNext: fn
+        });
+    }
+    Observable.forEach = forEach;
+    function fromPromise(promise) {
+        return create(subject => {
+            promise.then(subject.onNext).then(subject.onComplete);
+        });
+    }
+    Observable.fromPromise = fromPromise;
+    function toPromise(observable) {
+        return new Promise((resolve, reject) => {
+            observable.subscribe({
+                onNext: resolve,
+                onComplete: resolve,
+                onError: reject
+            });
+        });
+    }
+    Observable.toPromise = toPromise;
+    function fromIterator(iterator) {
+        var subject = Subject.create();
+        AsyncIterator.forEach(iterator, subject.onNext);
+        return { subscribe: subject.subscribe };
+    }
+    Observable.fromIterator = fromIterator;
     function toIterator(observable) {
         function defer() {
             var resolve, reject, promise = new Promise((res, rej) => {
@@ -110,9 +152,16 @@ export var Subject;
     }
     Subject.isSubject = isSubject;
     function create() {
-        const observers = Object.create(null);
-        var current = Promise.resolve();
+        var observers = Object.create(null), current = Promise.resolve(), completed = false, result, errored = false, error;
         function subscribe(observer) {
+            if (completed) {
+                Promise.resolve(() => observer.onComplete(result));
+                return Disposable.create();
+            }
+            if (errored) {
+                Promise.resolve(() => observer.onError(error));
+                return Disposable.create();
+            }
             var observerKey = Key.create();
             observers[observerKey] = observer;
             return Disposable.create(() => delete observers[observerKey]);
@@ -122,14 +171,18 @@ export var Subject;
                 return current = current.then(() => Promise.all(Object.keys(observers).map(key => observers[key].onNext(value))).then(() => { }));
             });
         }
-        function onComplete() {
+        function onComplete(res) {
             return __awaiter(this, void 0, Promise, function* () {
-                return current = current.then(() => Promise.all(Object.keys(observers).map(key => observers[key].onComplete ? observers[key].onComplete() : undefined)).then(() => { }));
+                completed = true;
+                result = res;
+                return current = current.then(() => Promise.all(Object.keys(observers).map(key => observers[key].onComplete ? observers[key].onComplete(res) : undefined)).then(() => { observers = null; }));
             });
         }
         function onError(reason) {
             return __awaiter(this, void 0, Promise, function* () {
-                return current = current.then(() => Promise.all(Object.keys(observers).map(key => observers[key].onError ? observers[key].onError(reason) : undefined)).then(() => { }));
+                errored = true;
+                error = reason;
+                return current = current.then(() => Promise.all(Object.keys(observers).map(key => observers[key].onError ? observers[key].onError(reason) : undefined)).then(() => { observers = null; }));
             });
         }
         return { subscribe, onNext, onComplete, onError };

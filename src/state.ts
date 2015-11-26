@@ -241,7 +241,7 @@ export module State {
 
   export function keyBy<V>(parent: State<V>, keyFn: (value: V, key?: Key) => Key | Promise<Key>): State<V> {
     return fromEntries(AsyncIterator.map(entries(parent), entry => {
-      return Promise.resolve(keyFn(entry[1], entry[0])).then(key => [key, entry[1]]);
+      return Promise.resolve(keyFn(entry[1], entry[0])).then(key => <Entry<V>>[key, entry[1]]);
     }));
   }
 
@@ -354,7 +354,7 @@ export module State {
   }
 
   export function fromValues<V>(iterator: Iterator<V> | AsyncIterator<V>): State<V> {
-    return fromEntries(AsyncIterator.map(AsyncIterator.scan(iterator, (prev, value) => <[number, V]>[prev[0] + 1, value], <[number, V]>[-1, null]), ([n, value]) => [n.toString(), value]));
+    return fromEntries(AsyncIterator.map(AsyncIterator.scan(iterator, (prev, value) => <[number, V]>[prev[0] + 1, value], <[number, V]>[-1, null]), ([n, value]) => <Entry<V>>[n.toString(), value]));
   }
 
   export function fromArray<V>(values: V[]): State<V> {

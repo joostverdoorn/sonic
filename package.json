@@ -1,7 +1,7 @@
 {
   "name": "sonic",
   "description": "Async ops over async data",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "authors": [
     "Joost Verdoorn",
     "Steffan Sluis"

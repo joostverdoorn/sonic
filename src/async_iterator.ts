@@ -25,22 +25,22 @@ export module AsyncIterator {
   }
 
   export async function some<T>(iterator: Iterator<T> | AsyncIterator<T>, predicate: (value: T) => boolean | Promise<boolean>): Promise<boolean> {
-    return !(await every(iterator, async (value) => !(await predicate(value))));
+    return !(await every(iterator, async (value: T) => !(await predicate(value))));
   }
 
   export async function forEach<T>(iterator: Iterator<T> | AsyncIterator<T>, fn: (value: T) => void | Promise<void>): Promise<void> {
-    await every(iterator, async (value) => { fn(value); return true });
+    await every(iterator, async (value: T) => { fn(value); return true });
   }
 
   export async function reduce<T, U>(iterator: Iterator<T> | AsyncIterator<T>, fn: (memo: U, value: T) => U | Promise<U>, memo?: U): Promise<U> {
-    await forEach(iterator, async (value) => { memo = await fn(memo, value) });
+    await forEach(iterator, async (value: T) => { memo = await fn(memo, value) });
     return memo;
   }
 
   export async function find<T>(iterator: Iterator<T> | AsyncIterator<T>, predicate: (value: T) => boolean | Promise<boolean>): Promise<T> {
     var result: T;
 
-    if (await some(iterator, async (value) => !(await predicate(value)) ? false : (result = value, true))) {
+    if (await some(iterator, async (value: T) => !(await predicate(value)) ? false : (result = value, true))) {
       return result;
     } else {
       throw new NotFound;
@@ -71,7 +71,7 @@ export module AsyncIterator {
   }
 
   export async function is<T>(iterator: Iterator<T> | AsyncIterator<T>, other: AsyncIterator<T>, equals: (a: T, b: T) => boolean | Promise<boolean> = (a, b) => a === b): Promise<boolean> {
-    return await every(iterator, async (value) => {
+    return await every(iterator, async (value: T) => {
       var result = await other.next();
       return !result.done && equals(value, result.value);
     }) && (await other.next()).done;

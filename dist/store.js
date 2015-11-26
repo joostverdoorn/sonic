@@ -21,6 +21,14 @@ import AsyncIterator from './async_iterator';
 import { NotFound } from './exceptions';
 export var Store;
 (function (Store) {
+    function reverse(parent) {
+        var state = State.reverse(parent.state), dispatcher = Observable.map(parent.dispatcher, patch => ({
+            range: Range.reverse(patch.range),
+            added: patch.added ? State.reverse(patch.added) : undefined
+        }));
+        return create(state, dispatcher);
+    }
+    Store.reverse = reverse;
     function map(parent, mapFn) {
         var state = State.map(parent.state, mapFn), dispatcher = Observable.map(parent.dispatcher, patch => ({
             range: patch.range,
@@ -164,11 +172,11 @@ export var Store;
     Store.states = states;
     function create(state, dispatcher, reducer = Patch.apply) {
         var subject = Subject.create();
-        Observable.scan(dispatcher, (state, patch) => __awaiter(this, void 0, Promise, function* () {
-            store.state = yield reducer(state, patch);
-            yield subject.onNext(patch);
-            return store.state;
-        }), state);
+        var statePatches = Observable.scan(dispatcher, ([state], patch) => __awaiter(this, void 0, Promise, function* () { return [yield reducer(state, patch), patch]; }), [state, null]);
+        Observable.forEach(statePatches, ([state, patch]) => {
+            store.state = state;
+            return subject.onNext(patch);
+        });
         var store = { state, dispatcher: { subscribe: subject.subscribe, onNext: Subject.isSubject(dispatcher) ? dispatcher.onNext : undefined } };
         return store;
     }

@@ -24,6 +24,16 @@ export interface MutableStore<V> extends Store<V> {
 }
 
 export module Store {
+  export function reverse<V>(parent: Store<V>): Store<V> {
+    var state = State.reverse(parent.state),
+        dispatcher = Observable.map(parent.dispatcher, patch => ({
+          range: Range.reverse(patch.range),
+          added: patch.added ? State.reverse(patch.added) : undefined
+        }));
+
+    return create(state, dispatcher);
+  }
+
   export function map<V, W>(parent: Store<V>, mapFn: (value: V, key: Key) => W | Promise<W>): Store<W> {
     var state = State.map(parent.state, mapFn),
         dispatcher = Observable.map(parent.dispatcher, patch => ({
@@ -222,13 +232,12 @@ export module Store {
   export function create<V>(state: State<V>, dispatcher: Observable<Patch<V>>, reducer: (state: State<V>, patch: Patch<V>) => State<V> | Promise<State<V>> = Patch.apply): any {
 
     var subject = Subject.create();
+    var statePatches = Observable.scan<Patch<V>, [State<V>, Patch<V>]>(dispatcher, async ([state], patch) => [await reducer(state, patch), patch], [state, null]);
 
-
-    Observable.scan(dispatcher, async (state, patch) => {
-      store.state = await reducer(state, patch);
-      await subject.onNext(patch);
-      return store.state;
-    }, state);
+    Observable.forEach(statePatches, ([state, patch]) => {
+      store.state = state;
+      return subject.onNext(patch);
+    });
 
     var store = { state, dispatcher: { subscribe: subject.subscribe, onNext: Subject.isSubject(dispatcher) ? dispatcher.onNext : undefined }};
     return store;
