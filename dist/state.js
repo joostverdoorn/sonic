@@ -219,6 +219,10 @@ export var State;
         });
     }
     State.flatten = flatten;
+    function flatMap(parent, mapFn) {
+        return State.flatten(State.map(parent, mapFn));
+    }
+    State.flatMap = flatMap;
     function groupBy(parent, groupFn) {
         var states = {};
         var it = entries(parent);

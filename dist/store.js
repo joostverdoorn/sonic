@@ -79,10 +79,7 @@ export var Store;
     }
     Store.filter = filter;
     function zoom(parent, key) {
-        var parentState = parent.state, state = State.zoom(parent.state, key), dispatcher = Observable.map(Observable.filter(parent.dispatcher, patch => {
-            return AsyncIterator.some(State.entries(parentState, patch.range), entry => entry[0] === key)
-                .then(res => patch.added ? State.has(patch.added, key) : res);
-        }), patch => {
+        var parentState = parent.state, state = State.zoom(parent.state, key), dispatcher = Observable.map(Observable.filter(parent.dispatcher, patch => State.has(State.slice(parentState, patch.range), key)), patch => {
             parentState = parent.state;
             return {
                 range: Range.all,
@@ -131,6 +128,37 @@ export var Store;
         return create(state, dispatcher_);
     }
     Store.flatten = flatten;
+    function flatMap(parent, mapFn) {
+        return Store.flatten(Store.map(parent, mapFn));
+    }
+    Store.flatMap = flatMap;
+    function keyBy(parent, keyFn) {
+        var state = State.keyBy(parent.state, keyFn), parentState = parent.state, dispatcher = Observable.map(parent.dispatcher, (patch) => __awaiter(this, void 0, Promise, function* () {
+            var [from, to] = patch.range;
+            function mapPosition(position) {
+                return __awaiter(this, void 0, Promise, function* () {
+                    if (Position.isPrevPosition(position)) {
+                        if (position.prev === Key.sentinel)
+                            return position;
+                        return { prev: yield keyFn(yield parentState.get(position.prev), position.prev) };
+                    }
+                    else {
+                        if (position.next === Key.sentinel)
+                            return position;
+                        return { next: yield keyFn(yield parentState.get(position.next), position.next) };
+                    }
+                });
+            }
+            var range = (yield Promise.all([
+                mapPosition(from),
+                mapPosition(to)
+            ]));
+            parentState = parent.state;
+            return { range, added: patch.added ? State.keyBy(patch.added, keyFn) : undefined };
+        }));
+        return create(state, dispatcher);
+    }
+    Store.keyBy = keyBy;
     function scan(parent, scanFn, memo) {
         var store, state = State.scan(parent.state, scanFn, memo), dispatcher = Observable.map(parent.dispatcher, (patch) => __awaiter(this, void 0, Promise, function* () {
             var parentState = parent.state, storeState = store.state, [from, to] = patch.range;

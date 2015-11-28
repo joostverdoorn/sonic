@@ -216,6 +216,10 @@ export module State {
     });
   }
 
+  export function flatMap<V, W>(parent: State<V>, mapFn: (value: V, key: Key) => State<W>): State<W> {
+    return State.flatten(State.map(parent, mapFn));
+  }
+
   export function groupBy<V>(parent: State<V>, groupFn: (value: V, key: Key) => Key | Promise<Key>): Tree<V> {
     var states: {[key: string]: State<V>} = {};
 

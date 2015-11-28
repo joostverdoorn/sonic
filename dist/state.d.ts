@@ -39,6 +39,7 @@ export declare module State {
     function zip<V, W>(parent: State<V>, other: State<W>): State<[V, W]>;
     function zoom<V>(parent: State<V>, key: Key): State<V>;
     function flatten<V>(parent: Tree<V>): State<V>;
+    function flatMap<V, W>(parent: State<V>, mapFn: (value: V, key: Key) => State<W>): State<W>;
     function groupBy<V>(parent: State<V>, groupFn: (value: V, key: Key) => Key | Promise<Key>): Tree<V>;
     function unique<V>(parent: State<V>, uniqueFn?: (value: V, key: Key) => Key | Promise<Key>): State<V>;
     function union<V>(state: State<V>, other: State<V>, uniqueFn?: (value: V, key: Key) => Key | Promise<Key>): State<V>;

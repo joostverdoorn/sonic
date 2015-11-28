@@ -668,6 +668,10 @@ return /******/ (function(modules) { // webpackBootstrap
 	        });
 	    }
 	    State.flatten = flatten;
+	    function flatMap(parent, mapFn) {
+	        return State.flatten(State.map(parent, mapFn));
+	    }
+	    State.flatMap = flatMap;
 	    function groupBy(parent, groupFn) {
 	        var states = {};
 	        var it = entries(parent);
@@ -4931,11 +4935,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	        var parentState = parent.state,
 	            state = _state2.default.zoom(parent.state, key),
 	            dispatcher = _observable.Observable.map(_observable.Observable.filter(parent.dispatcher, function (patch) {
-	            return _async_iterator2.default.some(_state2.default.entries(parentState, patch.range), function (entry) {
-	                return entry[0] === key;
-	            }).then(function (res) {
-	                return patch.added ? _state2.default.has(patch.added, key) : res;
-	            });
+	            return _state2.default.has(_state2.default.slice(parentState, patch.range), key);
 	        }), function (patch) {
 	            parentState = parent.state;
 	            return {
@@ -4993,73 +4993,103 @@ return /******/ (function(modules) { // webpackBootstrap
 	        return create(state, dispatcher_);
 	    }
 	    Store.flatten = flatten;
-	    function scan(parent, scanFn, memo) {
+	    function flatMap(parent, mapFn) {
+	        return Store.flatten(Store.map(parent, mapFn));
+	    }
+	    Store.flatMap = flatMap;
+	    function keyBy(parent, keyFn) {
 	        var _this2 = this;
 	
-	        var store,
-	            state = _state2.default.scan(parent.state, scanFn, memo),
+	        var state = _state2.default.keyBy(parent.state, keyFn),
+	            parentState = parent.state,
 	            dispatcher = _observable.Observable.map(parent.dispatcher, function (patch) {
 	            return __awaiter(_this2, void 0, _promise2.default, _regenerator2.default.mark(function _callee5() {
-	                var _this3 = this;
-	
-	                var parentState, storeState, _patch$range, from, to, added;
+	                var _patch$range, from, to, mapPosition, range;
 	
 	                return _regenerator2.default.wrap(function _callee5$(_context5) {
 	                    while (1) {
 	                        switch (_context5.prev = _context5.next) {
 	                            case 0:
-	                                parentState = parent.state;
-	                                storeState = store.state;
-	                                _patch$range = (0, _slicedToArray3.default)(patch.range, 2);
-	                                from = _patch$range[0];
-	                                to = _patch$range[1];
-	                                added = _state2.default.lazy(function () {
-	                                    return __awaiter(_this3, void 0, _promise2.default, _regenerator2.default.mark(function _callee4() {
-	                                        var last;
+	                                mapPosition = function mapPosition(position) {
+	                                    return __awaiter(this, void 0, _promise2.default, _regenerator2.default.mark(function _callee4() {
 	                                        return _regenerator2.default.wrap(function _callee4$(_context4) {
 	                                            while (1) {
 	                                                switch (_context4.prev = _context4.next) {
 	                                                    case 0:
-	                                                        _context4.next = 2;
-	                                                        return _state2.default.last(storeState, [{ next: null }, from]);
-	
-	                                                    case 2:
-	                                                        last = _context4.sent;
-	                                                        _context4.t0 = _state2.default;
-	                                                        _context4.t1 = _state2.default.slice(parentState, [{ next: last }, { prev: null }]);
-	                                                        _context4.t2 = scanFn;
-	
-	                                                        if (!(last !== _key2.default.sentinel)) {
-	                                                            _context4.next = 12;
+	                                                        if (!_range.Position.isPrevPosition(position)) {
+	                                                            _context4.next = 13;
 	                                                            break;
 	                                                        }
 	
+	                                                        if (!(position.prev === _key2.default.sentinel)) {
+	                                                            _context4.next = 3;
+	                                                            break;
+	                                                        }
+	
+	                                                        return _context4.abrupt("return", position);
+	
+	                                                    case 3:
+	                                                        _context4.next = 5;
+	                                                        return parentState.get(position.prev);
+	
+	                                                    case 5:
+	                                                        _context4.t0 = _context4.sent;
+	                                                        _context4.t1 = position.prev;
 	                                                        _context4.next = 9;
-	                                                        return storeState.get(last);
+	                                                        return keyFn(_context4.t0, _context4.t1);
 	
 	                                                    case 9:
-	                                                        _context4.t3 = _context4.sent;
-	                                                        _context4.next = 13;
-	                                                        break;
-	
-	                                                    case 12:
-	                                                        _context4.t3 = memo;
+	                                                        _context4.t2 = _context4.sent;
+	                                                        return _context4.abrupt("return", {
+	                                                            prev: _context4.t2
+	                                                        });
 	
 	                                                    case 13:
-	                                                        _context4.t4 = _context4.t3;
-	                                                        return _context4.abrupt("return", _context4.t0.scan.call(_context4.t0, _context4.t1, _context4.t2, _context4.t4));
+	                                                        if (!(position.next === _key2.default.sentinel)) {
+	                                                            _context4.next = 15;
+	                                                            break;
+	                                                        }
+	
+	                                                        return _context4.abrupt("return", position);
 	
 	                                                    case 15:
+	                                                        _context4.next = 17;
+	                                                        return parentState.get(position.next);
+	
+	                                                    case 17:
+	                                                        _context4.t3 = _context4.sent;
+	                                                        _context4.t4 = position.next;
+	                                                        _context4.next = 21;
+	                                                        return keyFn(_context4.t3, _context4.t4);
+	
+	                                                    case 21:
+	                                                        _context4.t5 = _context4.sent;
+	                                                        return _context4.abrupt("return", {
+	                                                            next: _context4.t5
+	                                                        });
+	
+	                                                    case 23:
 	                                                    case "end":
 	                                                        return _context4.stop();
 	                                                }
 	                                            }
 	                                        }, _callee4, this);
 	                                    }));
-	                                });
-	                                return _context5.abrupt("return", { range: [from, { prev: null }], added: added });
+	                                };
 	
-	                            case 7:
+	                                _patch$range = (0, _slicedToArray3.default)(patch.range, 2);
+	                                from = _patch$range[0];
+	                                to = _patch$range[1];
+	                                _context5.next = 6;
+	                                return _promise2.default.all([mapPosition(from), mapPosition(to)]);
+	
+	                            case 6:
+	                                range = _context5.sent;
+	
+	                                parentState = parent.state;
+	                                return _context5.abrupt("return", { range: range, added: patch.added ? _state2.default.keyBy(patch.added, keyFn) : undefined });
+	
+	                            case 9:
 	                            case "end":
 	                                return _context5.stop();
 	                        }
@@ -5067,11 +5097,88 @@ return /******/ (function(modules) { // webpackBootstrap
 	                }, _callee5, this);
 	            }));
 	        });
+	        return create(state, dispatcher);
+	    }
+	    Store.keyBy = keyBy;
+	    function scan(parent, scanFn, memo) {
+	        var _this3 = this;
+	
+	        var store,
+	            state = _state2.default.scan(parent.state, scanFn, memo),
+	            dispatcher = _observable.Observable.map(parent.dispatcher, function (patch) {
+	            return __awaiter(_this3, void 0, _promise2.default, _regenerator2.default.mark(function _callee7() {
+	                var _this4 = this;
+	
+	                var parentState, storeState, _patch$range2, from, to, added;
+	
+	                return _regenerator2.default.wrap(function _callee7$(_context7) {
+	                    while (1) {
+	                        switch (_context7.prev = _context7.next) {
+	                            case 0:
+	                                parentState = parent.state;
+	                                storeState = store.state;
+	                                _patch$range2 = (0, _slicedToArray3.default)(patch.range, 2);
+	                                from = _patch$range2[0];
+	                                to = _patch$range2[1];
+	                                added = _state2.default.lazy(function () {
+	                                    return __awaiter(_this4, void 0, _promise2.default, _regenerator2.default.mark(function _callee6() {
+	                                        var last;
+	                                        return _regenerator2.default.wrap(function _callee6$(_context6) {
+	                                            while (1) {
+	                                                switch (_context6.prev = _context6.next) {
+	                                                    case 0:
+	                                                        _context6.next = 2;
+	                                                        return _state2.default.last(storeState, [{ next: null }, from]);
+	
+	                                                    case 2:
+	                                                        last = _context6.sent;
+	                                                        _context6.t0 = _state2.default;
+	                                                        _context6.t1 = _state2.default.slice(parentState, [{ next: last }, { prev: null }]);
+	                                                        _context6.t2 = scanFn;
+	
+	                                                        if (!(last !== _key2.default.sentinel)) {
+	                                                            _context6.next = 12;
+	                                                            break;
+	                                                        }
+	
+	                                                        _context6.next = 9;
+	                                                        return storeState.get(last);
+	
+	                                                    case 9:
+	                                                        _context6.t3 = _context6.sent;
+	                                                        _context6.next = 13;
+	                                                        break;
+	
+	                                                    case 12:
+	                                                        _context6.t3 = memo;
+	
+	                                                    case 13:
+	                                                        _context6.t4 = _context6.t3;
+	                                                        return _context6.abrupt("return", _context6.t0.scan.call(_context6.t0, _context6.t1, _context6.t2, _context6.t4));
+	
+	                                                    case 15:
+	                                                    case "end":
+	                                                        return _context6.stop();
+	                                                }
+	                                            }
+	                                        }, _callee6, this);
+	                                    }));
+	                                });
+	                                return _context7.abrupt("return", { range: [from, { prev: null }], added: added });
+	
+	                            case 7:
+	                            case "end":
+	                                return _context7.stop();
+	                        }
+	                    }
+	                }, _callee7, this);
+	            }));
+	        });
 	        return store = create(state, dispatcher);
 	    }
 	    Store.scan = scan;
 	    function take(parent, count) {
-	        var _this4 = this;
+	        var _this5 = this;
 	
 	        var store,
 	            state = _state2.default.take(parent.state, count);
@@ -5082,42 +5189,42 @@ return /******/ (function(modules) { // webpackBootstrap
 	            return [index + 1, value];
 	        }, [-1, null]);
 	        var dispatcher = _observable.Observable.map(indexed.dispatcher, function (patch) {
-	            return __awaiter(_this4, void 0, _promise2.default, _regenerator2.default.mark(function _callee6() {
-	                var _patch$range2, from, parentState, indexedState, key, index;
+	            return __awaiter(_this5, void 0, _promise2.default, _regenerator2.default.mark(function _callee8() {
+	                var _patch$range3, from, parentState, indexedState, key, index;
 	
-	                return _regenerator2.default.wrap(function _callee6$(_context6) {
+	                return _regenerator2.default.wrap(function _callee8$(_context8) {
 	                    while (1) {
-	                        switch (_context6.prev = _context6.next) {
+	                        switch (_context8.prev = _context8.next) {
 	                            case 0:
-	                                _patch$range2 = (0, _slicedToArray3.default)(patch.range, 1);
-	                                from = _patch$range2[0];
+	                                _patch$range3 = (0, _slicedToArray3.default)(patch.range, 1);
+	                                from = _patch$range3[0];
 	                                parentState = parent.state;
 	                                indexedState = indexed.state;
-	                                _context6.next = 6;
+	                                _context8.next = 6;
 	                                return _state2.default.last(indexedState, [{ next: null }, from]);
 	
 	                            case 6:
-	                                key = _context6.sent;
+	                                key = _context8.sent;
 	
 	                                if (!(key === _key2.default.sentinel)) {
-	                                    _context6.next = 11;
+	                                    _context8.next = 11;
 	                                    break;
 	                                }
 	
-	                                _context6.t0 = -1;
-	                                _context6.next = 14;
+	                                _context8.t0 = -1;
+	                                _context8.next = 14;
 	                                break;
 	
 	                            case 11:
-	                                _context6.next = 13;
+	                                _context8.next = 13;
 	                                return indexedState.get(key);
 	
 	                            case 13:
-	                                _context6.t0 = _context6.sent[0];
+	                                _context8.t0 = _context8.sent[0];
 	
 	                            case 14:
-	                                index = _context6.t0;
-	                                return _context6.abrupt("return", {
+	                                index = _context8.t0;
+	                                return _context8.abrupt("return", {
 	                                    range: patch.range,
 	                                    added: _state2.default.take(_state2.default.map(patch.added, function (_ref7) {
 	                                        var _ref8 = (0, _slicedToArray3.default)(_ref7, 2);
@@ -5130,10 +5237,10 @@ return /******/ (function(modules) { // webpackBootstrap
 	
 	                            case 16:
 	                            case "end":
-	                                return _context6.stop();
+	                                return _context8.stop();
 	                        }
 	                    }
-	                }, _callee6, this);
+	                }, _callee8, this);
 	            }));
 	        });
 	        return create(state, dispatcher);
@@ -5157,7 +5264,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    }
 	    Store.states = states;
 	    function create(state, dispatcher) {
-	        var _this5 = this;
+	        var _this6 = this;
 	
 	        var reducer = arguments.length <= 2 || arguments[2] === undefined ? _patch2.default.apply : arguments[2];
 	
@@ -5166,25 +5273,25 @@ return /******/ (function(modules) { // webpackBootstrap
 	            var _ref10 = (0, _slicedToArray3.default)(_ref9, 1);
 	
 	            var state = _ref10[0];
-	            return __awaiter(_this5, void 0, _promise2.default, _regenerator2.default.mark(function _callee7() {
-	                return _regenerator2.default.wrap(function _callee7$(_context7) {
+	            return __awaiter(_this6, void 0, _promise2.default, _regenerator2.default.mark(function _callee9() {
+	                return _regenerator2.default.wrap(function _callee9$(_context9) {
 	                    while (1) {
-	                        switch (_context7.prev = _context7.next) {
+	                        switch (_context9.prev = _context9.next) {
 	                            case 0:
-	                                _context7.next = 2;
+	                                _context9.next = 2;
 	                                return reducer(state, patch);
 	
 	                            case 2:
-	                                _context7.t0 = _context7.sent;
-	                                _context7.t1 = patch;
-	                                return _context7.abrupt("return", [_context7.t0, _context7.t1]);
+	                                _context9.t0 = _context9.sent;
+	                                _context9.t1 = patch;
+	                                return _context9.abrupt("return", [_context9.t0, _context9.t1]);
 	
 	                            case 5:
 	                            case "end":
-	                                return _context7.stop();
+	                                return _context9.stop();
 	                        }
 	                    }
-	                }, _callee7, this);
+	                }, _callee9, this);
 	            }));
 	        }, [state, null]);
 	        _observable.Observable.forEach(statePatches, function (_ref11) {

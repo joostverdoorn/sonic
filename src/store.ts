@@ -90,10 +90,7 @@ export module Store {
     var parentState = parent.state,
         state   = State.zoom(parent.state, key),
         dispatcher = Observable.map(
-          Observable.filter(parent.dispatcher, patch => {
-            return AsyncIterator.some(State.entries(parentState, patch.range), entry => entry[0] === key)
-              .then(res => patch.added ? State.has(patch.added, key) : res)
-          })
+          Observable.filter(parent.dispatcher, patch => State.has(State.slice(parentState, patch.range), key))
         , patch => {
           parentState = parent.state;
           return {
@@ -153,23 +150,38 @@ export module Store {
 
     return create(state, dispatcher_);
   }
-  //
-  // export function keyBy<V>(parent: Store<V>, keyFn: (value: V, key: Key) => Key): Store<V> {
-  //   var state   = State.keyBy(parent.state, keyFn),
-  //       parentState = parent.state,
-  //       dispatcher = Observable.map(parent.dispatcher, (patch) => {
-  //         parentState = parent.state;
-  //
-  //         return Promise.all([
-  //           patch.range[0] == Key.sentinel ? Promise.resolve(Key.sentinel) : parentState.get(patch.range[0]).then(value => keyFn(value, patch.range[0])),
-  //           patch.range[1] == Key.sentinel ? Promise.resolve(Key.sentinel) : parentState.get(patch.range[1]).then(value => keyFn(value, patch.range[1]))
-  //         ]).then((range: Range) => { return { range: range, added: patch.added ? State.keyBy(patch.added, keyFn) : undefined }});
-  //       });
-  //       // reducer = (state: State<V>, patch: Patch<V>) => {
-  //       // };
-  //
-  //   return create(state, dispatcher);
-  // }
+
+  export function flatMap<V, W>(parent: Store<V>, mapFn: (value: V, key: Key) => Store<W>): Store<W> {
+    return Store.flatten(Store.map(parent, mapFn));
+  }
+
+  export function keyBy<V>(parent: Store<V>, keyFn: (value: V, key: Key) => Key): Store<V> {
+    var state = State.keyBy(parent.state, keyFn),
+        parentState = parent.state,
+        dispatcher = Observable.map(parent.dispatcher, async (patch) => {
+          var [from, to] = patch.range;
+
+          async function mapPosition(position: Position): Promise<Position> {
+            if (Position.isPrevPosition(position)) {
+              if (position.prev === Key.sentinel) return position;
+              return {prev: await keyFn(await parentState.get(position.prev), position.prev)};
+            } else {
+              if (position.next === Key.sentinel) return position;
+              return {next: await keyFn(await parentState.get(position.next), position.next)};
+            }
+          }
+
+          var range = <Range>(await Promise.all([
+            mapPosition(from),
+            mapPosition(to)
+          ]));
+
+          parentState = parent.state;
+          return { range, added: patch.added ? State.keyBy(patch.added, keyFn) : undefined };
+        });
+
+    return create(state, dispatcher);
+  }
 
   export function scan<V, W>(parent: Store<V>, scanFn: (memo: W, value: V) => W | Promise<W>, memo?: W): Store<W> {
     var store: Store<W>,

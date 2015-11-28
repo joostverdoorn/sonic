@@ -37,6 +37,7 @@
 - [ ] Check enforcement of string-only keys
 - [ ] Don't break on invalid ranges
 - [ ] Create convenience API
+- [ ] Expand to allow non-string-only keys
 
 
 # Next
