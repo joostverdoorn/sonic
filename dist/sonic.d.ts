@@ -1,7 +1,7 @@
 import _State from './state';
 import _AsyncIterator from './async_iterator';
 import { Store as _Store, MutableStore as _MutabeStore } from './store';
-import _Tree from './tree';
+import { Tree as _Tree, Path as _Path } from './tree';
 import _Cache from './cache';
 import { Subject as _Subject, Observable as _Observable } from './observable';
 import _PromiseUtils from './promise_utils';
@@ -14,6 +14,7 @@ declare module Sonic {
     const AsyncIterator: typeof _AsyncIterator;
     const Store: typeof _Store;
     const Tree: typeof _Tree;
+    const Path: typeof _Path;
     const Subject: typeof _Subject;
     const Observable: typeof _Observable;
     const Cache: typeof _Cache;

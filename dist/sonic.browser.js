@@ -72,8 +72,6 @@ return /******/ (function(modules) { // webpackBootstrap
 	
 	var _tree = __webpack_require__(91);
 	
-	var _tree2 = _interopRequireDefault(_tree);
-	
 	var _cache = __webpack_require__(82);
 	
 	var _cache2 = _interopRequireDefault(_cache);
@@ -135,7 +133,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	    Sonic.State = _state2.default;
 	    Sonic.AsyncIterator = _async_iterator2.default;
 	    Sonic.Store = _store.Store;
-	    Sonic.Tree = _tree2.default;
+	    Sonic.Tree = _tree.Tree;
+	    Sonic.Path = _tree.Path;
 	    Sonic.Subject = _observable.Subject;
 	    Sonic.Observable = _observable.Observable;
 	    Sonic.Cache = _cache2.default;

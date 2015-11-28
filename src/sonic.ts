@@ -2,7 +2,8 @@ import _State                         from './state';
 import _AsyncIterator                 from './async_iterator';
 import { Store as _Store,
          MutableStore as _MutabeStore } from './store';
-import _Tree                          from './tree';
+import { Tree as _Tree,
+         Path as _Path }              from './tree';
 import _Cache                         from './cache';
 import { Subject as _Subject,
          Observable as _Observable }  from './observable';
@@ -23,6 +24,7 @@ module Sonic {
   export const AsyncIterator  = _AsyncIterator;
   export const Store          = _Store;
   export const Tree           = _Tree;
+  export const Path           = _Path;
   export const Subject        = _Subject;
   export const Observable     = _Observable;
   export const Cache          = _Cache;

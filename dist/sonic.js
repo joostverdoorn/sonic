@@ -14,7 +14,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, Promi
 import _State from './state';
 import _AsyncIterator from './async_iterator';
 import { Store as _Store } from './store';
-import _Tree from './tree';
+import { Tree as _Tree, Path as _Path } from './tree';
 import _Cache from './cache';
 import { Subject as _Subject, Observable as _Observable } from './observable';
 import _PromiseUtils from './promise_utils';
@@ -33,6 +33,7 @@ var Sonic;
     Sonic.AsyncIterator = _AsyncIterator;
     Sonic.Store = _Store;
     Sonic.Tree = _Tree;
+    Sonic.Path = _Path;
     Sonic.Subject = _Subject;
     Sonic.Observable = _Observable;
     Sonic.Cache = _Cache;
