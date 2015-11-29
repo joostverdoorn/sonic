@@ -1,8 +1,7 @@
-import Key from './key';
-export declare type Entry<V> = [Key, V];
+export declare type Entry<K, V> = [K, V];
 export declare module Entry {
-    function key<V>(entry: Entry<V>): Key;
-    function value<V>(entry: Entry<V>): V;
-    function is<V>(entry: Entry<V>, other: Entry<V>): boolean;
+    function key<K>(entry: Entry<K, any>): K;
+    function value<V>(entry: Entry<any, V>): V;
+    function is<K, V>(entry: Entry<K, V>, other: Entry<K, V>): boolean;
 }
 export default Entry;

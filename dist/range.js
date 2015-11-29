@@ -14,7 +14,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, Promi
 import Key from './key';
 export var Range;
 (function (Range) {
-    Range.all = [{ next: Key.sentinel }, { prev: Key.sentinel }];
+    Range.all = [{ next: Key.SENTINEL }, { prev: Key.SENTINEL }];
     function reverse([from, to]) {
         return [Position.reverse(to), Position.reverse(from)];
     }

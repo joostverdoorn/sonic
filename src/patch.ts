@@ -3,33 +3,33 @@ import { Position,
          Range } from './range';
 import   State   from './state';
 
-export interface Patch<V> {
-  range: Range
-  added?: State<V>
+export interface Patch<K, V> {
+  range: Range<K>
+  added?: State<K, V>
 };
 
 export module Patch {
-  export function apply<V>(state: State<V>, patch: Patch<V>): State<V> {
+  export function apply<K, V>(state: State<K, V>, patch: Patch<K, V>): State<K, V> {
     return State.splice(state, patch.range, patch.added);
   }
 
-  export function add<V>(value: V, key?: Key, position: Position = {prev: null}): Patch<V> {
+  export function add<K, V>(value: V, key?: K, position: Position<K> = {prev: null}): Patch<K, V> {
     return {added: State.unit(value, key), range: [position, position]};
   }
 
-  export function set<V>(value: V, key: Key): Patch<V> {
+  export function set<K, V>(value: V, key: K): Patch<K, V> {
     return {added: State.unit(value, key), range: [{prev: key}, {next: key}]};
   }
 
-  export function push<V>(value: V, key?: Key): Patch<V> {
+  export function push<K, V>(value: V, key?: K): Patch<K, V> {
     return add(value, key, {prev: null});
   }
 
-  export function unshift<V>(value: V, key?: Key): Patch<V> {
+  export function unshift<K, V>(value: V, key?: K): Patch<K, V> {
     return add(value, key, {next: null});
   }
 
-  export function remove(key: Key): Patch<any> {
+  export function remove<K>(key: K): Patch<K, any> {
     return {range: [{prev: key}, {next: key}]};
   }
 }

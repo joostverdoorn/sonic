@@ -10,6 +10,7 @@
 - [ ] Add remaining tests
 - [ ] Implement sort
 - [ ] Make keys more lazy by not evaluating values (using entries)
+- [x] Generate unique keys for unit
 
 ## Store
 - [x] Add scan
@@ -34,10 +35,10 @@
 - [ ] Test all the things
 
 ## Global
-- [ ] Check enforcement of string-only keys
+- [x] Check enforcement of string-only keys
 - [ ] Don't break on invalid ranges
 - [ ] Create convenience API
-- [ ] Expand to allow non-string-only keys
+- [x] Expand to allow non-string-only keys
 
 
 # Next

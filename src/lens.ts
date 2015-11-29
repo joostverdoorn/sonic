@@ -6,16 +6,16 @@ import { Store,
 import { Observable,
          Subject }     from './observable';
 
-export interface Lens<A,B> {
-  get(a: A, key: Key): B;
-  set(b: B, key: Key): A;
+export interface Lens<K, A, B> {
+  get(a: A, key: K): B;
+  set(b: B, key: K): A;
 }
 
 export module Lens {
 
-  export function compose<V,W>(parent: MutableStore<V>, lens: Lens<V, W>): MutableStore<W> {
-    var getSubject = Subject.create<Patch<W>>(),
-        setSubject = Subject.create<Patch<W>>();
+  export function compose<K, V, W>(parent: MutableStore<K, V>, lens: Lens<K, V, W>): MutableStore<K, W> {
+    var getSubject = Subject.create<Patch<K, W>>(),
+        setSubject = Subject.create<Patch<K, W>>();
 
     Observable.map(parent.dispatcher, patch => {
       if (patch.added) return { range: patch.range, added: State.map(patch.added, lens.get) };

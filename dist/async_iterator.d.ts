@@ -18,16 +18,17 @@ export declare module AsyncIterator {
     function map<T, U>(iterator: Iterator<T> | AsyncIterator<T>, mapFn: (value: T) => U | Promise<U>): AsyncIterator<U>;
     function filter<T>(iterator: Iterator<T> | AsyncIterator<T>, filterFn: (value: T) => boolean | Promise<boolean>): AsyncIterator<T>;
     function scan<T, U>(iterator: Iterator<T> | AsyncIterator<T>, scanFn: (memo: U, value: T) => U | Promise<U>, memo?: U): AsyncIterator<U>;
-    function zip<T, U>(iterator: Iterator<T> | AsyncIterator<T>, other: Iterator<T> | AsyncIterator<U>): AsyncIterator<[T, U]>;
+    function zip<T, U>(iterator: Iterator<T> | AsyncIterator<T>, other: Iterator<U> | AsyncIterator<U>, zipFn?: (t: T, u: U) => [T, U] | Promise<[T, U]>): AsyncIterator<[T, U]>;
     function take<T>(iterator: Iterator<T> | AsyncIterator<T>, count: number): AsyncIterator<T>;
     function skip<T>(iterator: Iterator<T> | AsyncIterator<T>, count: number): AsyncIterator<T>;
+    function unique<T, U>(iterator: Iterator<T> | AsyncIterator<T>, uniqueFn: (value: T) => U): AsyncIterator<T>;
     function concat<T>(...iterators: AsyncIterator<T>[]): AsyncIterator<T>;
     function fromArray<T>(array: T[]): AsyncIterator<T>;
     function fromObject<V>(object: {
         [key: string]: V;
-    }): AsyncIterator<Entry<V>>;
+    }): AsyncIterator<Entry<string, V>>;
     function toArray<T>(iterator: Iterator<T> | AsyncIterator<T>): Promise<T[]>;
-    function toObject<V>(iterator: AsyncIterator<Entry<V>>): Promise<{
+    function toObject<V>(iterator: AsyncIterator<Entry<string, V>>): Promise<{
         [key: string]: V;
     }>;
     function create<T>(next: () => IteratorResult<T> | Promise<IteratorResult<T>>): AsyncIterator<T>;

@@ -1,7 +1,5 @@
-declare type Key = string;
 declare module Key {
-    const sentinel: Key;
-    function key(key: Key): string;
-    function create(): string;
+    const SENTINEL: any;
+    function unique(): string;
 }
 export default Key;

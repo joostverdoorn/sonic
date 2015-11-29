@@ -15,7 +15,7 @@ import Key from './key';
 import Patch from './patch';
 import State from './state';
 import { Range, Position } from './range';
-import { Tree, Path } from './tree';
+import { Tree } from './tree';
 import { Observable, Subject } from './observable';
 import AsyncIterator from './async_iterator';
 import { NotFound } from './exceptions';
@@ -47,7 +47,7 @@ export var Store;
                 }
                 catch (error) {
                     if (error instanceof NotFound)
-                        return Key.sentinel;
+                        return Key.SENTINEL;
                     throw error;
                 }
             });
@@ -58,10 +58,10 @@ export var Store;
                 if (Position.isNextPosition(position)) {
                     if (!(yield State.empty(deleted)))
                         return { next: yield find(deleted, Range.all) };
-                    if (position.next === Key.sentinel)
-                        return { next: Key.sentinel };
+                    if (position.next === Key.SENTINEL)
+                        return { next: Key.SENTINEL };
                 }
-                return { prev: yield find(state, [position, { next: Key.sentinel }]) };
+                return { prev: yield find(state, [position, { next: Key.SENTINEL }]) };
             });
         }
         var dispatcher = Observable.map(parent.dispatcher, (patch) => __awaiter(this, void 0, Promise, function* () {
@@ -95,14 +95,14 @@ export var Store;
             Observable.map(store.dispatcher, patch => {
                 var from = patch.range[0], to = patch.range[1];
                 function mapPrevPosition(position) {
-                    if (position.prev === Key.sentinel)
-                        return store.state.prev(Key.sentinel).then(next => ({ next: Path.toKey([key, next]) }));
-                    return Promise.resolve({ prev: Path.toKey([key, position.prev]) });
+                    if (position.prev === Key.SENTINEL)
+                        return store.state.prev(Key.SENTINEL).then(next => ({ next: [key, next] }));
+                    return Promise.resolve({ prev: [key, position.prev] });
                 }
                 function mapNextPosition(position) {
-                    if (position.next === Key.sentinel)
-                        return store.state.next(Key.sentinel).then(prev => ({ prev: Path.toKey([key, prev]) }));
-                    return Promise.resolve({ next: Path.toKey([key, position.next]) });
+                    if (position.next === Key.SENTINEL)
+                        return store.state.next(Key.SENTINEL).then(prev => ({ prev: [key, prev] }));
+                    return Promise.resolve({ next: [key, position.next] });
                 }
                 return Promise.all([
                     Position.isNextPosition(from) ? mapNextPosition(from) : mapPrevPosition(from),
@@ -114,10 +114,10 @@ export var Store;
         Observable.map(parent.dispatcher, patch => {
             var from = patch.range[0], to = patch.range[1];
             function mapPrevPosition(position) {
-                return position.prev === Key.sentinel ? Promise.resolve({ prev: Key.sentinel }) : Tree.next(parent_.state, [position.prev]).then(Path.toKey).then(prev => ({ prev }));
+                return position.prev === Key.SENTINEL ? Promise.resolve({ prev: Key.SENTINEL }) : Tree.next(parent_.state, [position.prev, null]).then(prev => ({ prev }));
             }
             function mapNextPosition(position) {
-                return position.next === Key.sentinel ? Promise.resolve({ next: Key.sentinel }) : Tree.prev(parent_.state, [position.next]).then(Path.toKey).then(next => ({ next }));
+                return position.next === Key.SENTINEL ? Promise.resolve({ next: Key.SENTINEL }) : Tree.prev(parent_.state, [position.next, null]).then(next => ({ next }));
             }
             return Promise.all([
                 Position.isNextPosition(from) ? mapNextPosition(from) : mapPrevPosition(from),
@@ -138,13 +138,13 @@ export var Store;
             function mapPosition(position) {
                 return __awaiter(this, void 0, Promise, function* () {
                     if (Position.isPrevPosition(position)) {
-                        if (position.prev === Key.sentinel)
-                            return position;
+                        if (position.prev === Key.SENTINEL)
+                            return { prev: Key.SENTINEL };
                         return { prev: yield keyFn(yield parentState.get(position.prev), position.prev) };
                     }
                     else {
-                        if (position.next === Key.sentinel)
-                            return position;
+                        if (position.next === Key.SENTINEL)
+                            return { next: Key.SENTINEL };
                         return { next: yield keyFn(yield parentState.get(position.next), position.next) };
                     }
                 });
@@ -164,7 +164,7 @@ export var Store;
             var parentState = parent.state, storeState = store.state, [from, to] = patch.range;
             var added = State.lazy(() => __awaiter(this, void 0, Promise, function* () {
                 var last = yield State.last(storeState, [{ next: null }, from]);
-                return State.scan(State.slice(parentState, [{ next: last }, { prev: null }]), scanFn, last !== Key.sentinel ? yield storeState.get(last) : memo);
+                return State.scan(State.slice(parentState, [{ next: last }, { prev: null }]), scanFn, last !== Key.SENTINEL ? yield storeState.get(last) : memo);
             }));
             return { range: [from, { prev: null }], added };
         }));
@@ -177,7 +177,7 @@ export var Store;
         var dispatcher = Observable.map(indexed.dispatcher, (patch) => __awaiter(this, void 0, Promise, function* () {
             var [from] = patch.range, parentState = parent.state, indexedState = indexed.state;
             var key = yield State.last(indexedState, [{ next: null }, from]);
-            var index = key === Key.sentinel ? -1 : (yield indexedState.get(key))[0];
+            var index = key === Key.SENTINEL ? -1 : (yield indexedState.get(key))[0];
             return {
                 range: patch.range,
                 added: State.take(State.map(patch.added, ([index, value]) => value), count - (index + 1))

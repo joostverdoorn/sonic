@@ -16,14 +16,14 @@ import Entry from './entry';
 import { Position, Range } from './range';
 import Cache from './cache';
 import AsyncIterator from './async_iterator';
-import { Tree, Path } from './tree';
+import { Tree } from './tree';
 import { NotFound } from './exceptions';
 export var State;
 (function (State) {
     State.Empty = {
         get: (key) => Promise.reject(new NotFound),
-        prev: (key = Key.sentinel) => key === Key.sentinel ? Promise.resolve(Key.sentinel) : Promise.reject(new NotFound),
-        next: (key = Key.sentinel) => key === Key.sentinel ? Promise.resolve(Key.sentinel) : Promise.reject(new NotFound)
+        prev: (key = Key.SENTINEL) => key === Key.SENTINEL ? Promise.resolve(Key.SENTINEL) : Promise.reject(new NotFound),
+        next: (key = Key.SENTINEL) => key === Key.SENTINEL ? Promise.resolve(Key.SENTINEL) : Promise.reject(new NotFound)
     };
     function extend(parent, { get, prev, next }) {
         var state = Object.create(parent);
@@ -72,11 +72,11 @@ export var State;
     }
     State.contains = contains;
     function empty(state) {
-        return state.next().then(next => next === Key.sentinel);
+        return state.next().then(next => next === Key.SENTINEL);
     }
     State.empty = empty;
     function any(state) {
-        return state.next().then(next => next !== Key.sentinel);
+        return state.next().then(next => next !== Key.SENTINEL);
     }
     State.any = any;
     function size(state) {
@@ -94,12 +94,12 @@ export var State;
         var bridgedChild, bridgedParent, from = range[0], to = range[1];
         bridgedChild = extend(child, {
             prev: key => child.prev(key).then(prev => {
-                if (prev !== Key.sentinel)
+                if (prev !== Key.SENTINEL)
                     return Promise.resolve(prev);
                 return Position.isNextPosition(from) ? Promise.resolve(from.next) : parent.prev(from.prev);
             }),
             next: key => child.next(key).then(next => {
-                if (next !== Key.sentinel)
+                if (next !== Key.SENTINEL)
                     return Promise.resolve(next);
                 return Position.isPrevPosition(to) ? Promise.resolve(to.prev) : parent.next(to.next);
             })
@@ -107,26 +107,26 @@ export var State;
         bridgedParent = extend(filtered, {
             prev: key => parent.prev(key).then(prev => {
                 if (Position.isNextPosition(to) && prev === to.next)
-                    return bridgedChild.prev(Key.sentinel);
+                    return bridgedChild.prev(Key.SENTINEL);
                 return has(deleted, prev).then(res => res ? Promise.reject(new NotFound) : prev);
             }),
             next: key => parent.next(key).then(next => {
                 if (Position.isPrevPosition(from) && next === from.prev)
-                    return bridgedChild.next(Key.sentinel);
+                    return bridgedChild.next(Key.SENTINEL);
                 return has(deleted, next).then(res => res ? Promise.reject(new NotFound) : next);
             })
         });
         function get(key) {
             return has(child, key).then(res => res ? bridgedChild.get(key) : bridgedParent.get(key));
         }
-        function prev(key = Key.sentinel) {
+        function prev(key = Key.SENTINEL) {
             if (Position.isPrevPosition(to) && key === to.prev)
-                return bridgedChild.prev(Key.sentinel);
+                return bridgedChild.prev(Key.SENTINEL);
             return has(bridgedChild, key).then(res => res ? bridgedChild.prev(key) : bridgedParent.prev(key));
         }
-        function next(key = Key.sentinel) {
+        function next(key = Key.SENTINEL) {
             if (Position.isNextPosition(from) && key === from.next)
-                return bridgedChild.next(Key.sentinel);
+                return bridgedChild.next(Key.SENTINEL);
             return has(bridgedChild, key).then(res => res ? bridgedChild.next(key) : bridgedParent.next(key));
         }
         return { get, prev, next };
@@ -151,7 +151,8 @@ export var State;
     function filter(parent, filterFn) {
         var cache = Object.create(null);
         function have(key) {
-            return key in cache ? cache[key] : cache[key] = parent.get(key).then(value => filterFn(value, key));
+            var stringifiedKey = JSON.stringify(key);
+            return stringifiedKey in cache ? cache[stringifiedKey] : cache[stringifiedKey] = parent.get(key).then(value => filterFn(value, key));
         }
         function get(key) {
             return __awaiter(this, void 0, Promise, function* () {
@@ -161,10 +162,10 @@ export var State;
             });
         }
         function prev(key) {
-            return parent.prev(key).then(p => p === Key.sentinel ? Key.sentinel : have(p).then(res => res ? p : prev(p)));
+            return parent.prev(key).then(p => p === Key.SENTINEL ? Key.SENTINEL : have(p).then(res => res ? p : prev(p)));
         }
         function next(key) {
-            return parent.next(key).then(n => n === Key.sentinel ? Key.sentinel : have(n).then(res => res ? n : next(n)));
+            return parent.next(key).then(n => n === Key.SENTINEL ? Key.SENTINEL : have(n).then(res => res ? n : next(n)));
         }
         return extend(parent, { get, prev, next });
     }
@@ -172,7 +173,7 @@ export var State;
     function scan(parent, scanFn, memo) {
         return fromEntries(AsyncIterator.scan(entries(parent), (memoEntry, entry) => {
             return Promise.resolve(scanFn(memoEntry[1], entry[1], entry[0])).then(result => [entry[0], result]);
-        }, [Key.sentinel, memo]));
+        }, [Key.SENTINEL, memo]));
     }
     State.scan = scan;
     function pick(parent, picked) {
@@ -184,28 +185,28 @@ export var State;
     }
     State.omit = omit;
     function zip(parent, other) {
-        return fromValues(AsyncIterator.zip(values(parent), values(other)));
+        return fromEntries(AsyncIterator.zip(AsyncIterator.zip(keys(parent), keys(other)), AsyncIterator.zip(values(parent), values(other))));
     }
     State.zip = zip;
     function zoom(parent, key) {
         var have;
         function get(k) {
             return __awaiter(this, void 0, Promise, function* () {
-                if (k === key)
+                if (k === Key.SENTINEL)
                     return parent.get(key);
                 throw new NotFound;
             });
         }
-        function next(k = Key.sentinel) {
+        function next(k = Key.SENTINEL) {
             return __awaiter(this, void 0, Promise, function* () {
-                if (k !== key && k !== Key.sentinel)
+                if (k !== key && k !== Key.SENTINEL)
                     throw new NotFound;
                 if (!(yield has(parent, key)))
                     throw new NotFound;
-                if (k === Key.sentinel)
+                if (k === Key.SENTINEL)
                     return key;
                 if (k === key)
-                    return Key.sentinel;
+                    return Key.SENTINEL;
             });
         }
         return { get, prev: next, next };
@@ -213,9 +214,9 @@ export var State;
     State.zoom = zoom;
     function flatten(parent) {
         return extend(parent, {
-            get: key => Tree.get(parent, Path.fromKey(key)),
-            prev: key => Tree.prev(parent, Path.fromKey(key)).then(Path.toKey),
-            next: key => Tree.next(parent, Path.fromKey(key)).then(Path.toKey)
+            get: key => Tree.get(parent, key),
+            prev: key => Tree.prev(parent, key),
+            next: key => Tree.next(parent, key)
         });
     }
     State.flatten = flatten;
@@ -227,20 +228,20 @@ export var State;
         var states = {};
         var it = entries(parent);
         var groupKeyed = AsyncIterator.map(it, ([key, value]) => { return Promise.resolve(groupFn(value, key)).then(groupKey => [groupKey, value]); });
-        var filtered = AsyncIterator.filter(groupKeyed, ([groupKey, value]) => !(groupKey in states));
+        var filtered = AsyncIterator.filter(groupKeyed, ([groupKey, value]) => !(JSON.stringify(groupKey) in states));
         var mapped = AsyncIterator.map(filtered, ([groupKey, value]) => {
             var state = filter(parent, (value, key) => Promise.resolve(groupFn(value, key)).then(gk => gk === groupKey));
-            return [groupKey, states[groupKey] = state];
+            return [groupKey, states[JSON.stringify(groupKey)] = state];
         });
         return fromEntries(mapped);
     }
     State.groupBy = groupBy;
-    function unique(parent, uniqueFn = String) {
-        return map(groupBy(parent, uniqueFn), s => first(s).then(s.get));
+    function unique(parent, uniqueFn) {
+        return fromEntries(AsyncIterator.unique(entries(parent), ([key, value]) => __awaiter(this, void 0, Promise, function* () { return uniqueFn(value, key); })));
     }
     State.unique = unique;
     function union(state, other, uniqueFn) {
-        return unique(flatten(fromArray([state, other])), uniqueFn);
+        return fromEntries(AsyncIterator.unique(AsyncIterator.concat(entries(state), entries(other)), ([key, value]) => __awaiter(this, void 0, Promise, function* () { return uniqueFn(value, key); })));
     }
     State.union = union;
     function keyBy(parent, keyFn) {
@@ -261,37 +262,37 @@ export var State;
         return Cache.apply(parent, Cache.create());
     }
     State.cache = cache;
-    function unit(value, key = Key.create()) {
+    function unit(value, key = Key.unique()) {
         return {
-            get: k => k === key ? Promise.resolve(value) : Promise.reject(new NotFound),
-            prev: (k = Key.sentinel) => Promise.resolve(k === Key.sentinel ? key : Key.sentinel),
-            next: (k = Key.sentinel) => Promise.resolve(k === Key.sentinel ? key : Key.sentinel)
+            get: k => k === Key.SENTINEL ? Promise.resolve(value) : Promise.reject(new NotFound),
+            prev: (k = Key.SENTINEL) => Promise.resolve(k === Key.SENTINEL ? key : Key.SENTINEL),
+            next: (k = Key.SENTINEL) => Promise.resolve(k === Key.SENTINEL ? key : Key.SENTINEL)
         };
     }
     State.unit = unit;
     function entries(state, range = Range.all) {
-        var current = Key.sentinel, done = false, from = range[0], to = range[1];
+        var current = Key.SENTINEL, done = false, from = range[0], to = range[1];
         function get(key) {
-            if (key === Key.sentinel)
+            if (key === Key.SENTINEL)
                 return (done = true, Promise.resolve(AsyncIterator.done));
             return state.get(key).then(value => (current = key, { done: false, value: [key, value] }));
         }
         function iterate(key) {
             return state.next(key).then(next => {
                 if (Position.isPrevPosition(to) && to.prev === next)
-                    return get(Key.sentinel);
+                    return get(Key.SENTINEL);
                 return get(next);
             });
         }
         function next() {
             if (Position.isPrevPosition(from) && Position.isPrevPosition(to) && from.prev === to.prev)
-                return get(Key.sentinel);
+                return get(Key.SENTINEL);
             if (Position.isNextPosition(from) && Position.isNextPosition(to) && from.next === to.next)
-                return get(Key.sentinel);
-            if (current === Key.sentinel)
+                return get(Key.SENTINEL);
+            if (current === Key.SENTINEL)
                 return Position.isPrevPosition(from) ? get(from.prev) : iterate(from.next);
             if (Position.isNextPosition(to) && to.next === current)
-                return get(Key.sentinel);
+                return get(Key.SENTINEL);
             return iterate(current);
         }
         return AsyncIterator.create(next);
@@ -313,14 +314,14 @@ export var State;
                     var result = yield iterator.next();
                     if (result.done) {
                         exhausted = true;
-                        cache.prev[Key.sentinel] = Promise.resolve(currentKey);
-                        cache.next[currentKey] = Promise.resolve(Key.sentinel);
+                        cache.prev[JSON.stringify(Key.SENTINEL)] = Promise.resolve(currentKey);
+                        cache.next[JSON.stringify(currentKey)] = Promise.resolve(Key.SENTINEL);
                         return AsyncIterator.done;
                     }
                     var [key, value] = result.value;
-                    cache.prev[key] = Promise.resolve(currentKey);
-                    cache.next[currentKey] = Promise.resolve(key);
-                    cache.get[key] = Promise.resolve(value);
+                    cache.prev[JSON.stringify(key)] = Promise.resolve(currentKey);
+                    cache.next[JSON.stringify(currentKey)] = Promise.resolve(key);
+                    cache.get[JSON.stringify(key)] = Promise.resolve(value);
                     currentKey = key;
                     return { done: false, value: [key, value] };
                 });
@@ -334,14 +335,14 @@ export var State;
         function prev(key) {
             if (exhausted)
                 return Promise.reject(new NotFound);
-            return AsyncIterator.some(cachingIterator, entry => entry[0] === key).then(() => key in cache.prev ? cache.prev[key] : Promise.resolve(new NotFound));
+            return AsyncIterator.some(cachingIterator, entry => entry[0] === key).then(() => JSON.stringify(key) in cache.prev ? cache.prev[JSON.stringify(key)] : Promise.resolve(new NotFound));
         }
         function next(key) {
             if (exhausted)
                 return Promise.reject(new NotFound);
             if (key === currentKey)
-                return cachingIterator.next().then(result => result.done ? Key.sentinel : result.value[0]);
-            return AsyncIterator.find(cachingIterator, entry => entry[0] === key).then(() => cachingIterator.next()).then(result => result.done ? Key.sentinel : result.value[0]);
+                return cachingIterator.next().then(result => result.done ? Key.SENTINEL : result.value[0]);
+            return AsyncIterator.find(cachingIterator, entry => entry[0] === key).then(() => cachingIterator.next()).then(result => result.done ? Key.SENTINEL : result.value[0]);
         }
         return Cache.apply({ get, prev, next }, cache);
     }
@@ -351,7 +352,7 @@ export var State;
     }
     State.fromKeys = fromKeys;
     function fromValues(iterator) {
-        return fromEntries(AsyncIterator.map(AsyncIterator.scan(iterator, (prev, value) => [prev[0] + 1, value], [-1, null]), ([n, value]) => [n.toString(), value]));
+        return fromEntries(AsyncIterator.scan(iterator, (prev, value) => [prev[0] + 1, value], [-1, null]));
     }
     State.fromValues = fromValues;
     function fromArray(values) {

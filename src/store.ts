@@ -14,17 +14,17 @@ import   AsyncIterator from './async_iterator';
 import { NotFound }    from './exceptions';
 
 
-export interface Store<V> {
-  state: State<V>
-  dispatcher: Observable<Patch<V>>
+export interface Store<K, V> {
+  state: State<K, V>
+  dispatcher: Observable<Patch<K, V>>
 }
 
-export interface MutableStore<V> extends Store<V> {
-  dispatcher: Subject<Patch<V>>
+export interface MutableStore<K, V> extends Store<K, V> {
+  dispatcher: Subject<Patch<K, V>>
 }
 
 export module Store {
-  export function reverse<V>(parent: Store<V>): Store<V> {
+  export function reverse<K, V>(parent: Store<K, V>): Store<K, V> {
     var state = State.reverse(parent.state),
         dispatcher = Observable.map(parent.dispatcher, patch => ({
           range: Range.reverse(patch.range),
@@ -34,7 +34,7 @@ export module Store {
     return create(state, dispatcher);
   }
 
-  export function map<V, W>(parent: Store<V>, mapFn: (value: V, key: Key) => W | Promise<W>): Store<W> {
+  export function map<K, V, W>(parent: Store<K, V>, mapFn: (value: V, key: K) => W | Promise<W>): Store<K, W> {
     var state = State.map(parent.state, mapFn),
         dispatcher = Observable.map(parent.dispatcher, patch => ({
           range: patch.range,
@@ -44,34 +44,34 @@ export module Store {
     return create(state, dispatcher);
   }
 
-  export function filter<V>(parent: Store<V>, filterFn: (value: V, key: Key) => boolean | Promise<boolean>): Store<V> {
+  export function filter<K, V>(parent: Store<K, V>, filterFn: (value: V, key: K) => boolean | Promise<boolean>): Store<K, V> {
     var parentState = parent.state;
 
-    async function find(state: State<V>, range: Range): Promise<Key> {
+    async function find(state: State<K, V>, range: Range<K>): Promise<K> {
       try {
         var [key] = await AsyncIterator.find(State.entries(state, range), ([key, value]) => filterFn(value, key));
         return key;
       } catch (error) {
-        if (error instanceof NotFound) return Key.sentinel;
+        if (error instanceof NotFound) return Key.SENTINEL;
         throw error;
       }
     }
 
-    async function move(state: State<V>, range: Range): Promise<Position> {
+    async function move(state: State<K, V>, range: Range<K>): Promise<Position<K>> {
       var deleted = State.slice(State.reverse(state), Range.reverse(range)),
           position = range[1];
 
       if (Position.isNextPosition(position)) {
         if (!(await State.empty(deleted))) return { next: await find(deleted, Range.all) };
-        if (position.next === Key.sentinel) return { next: Key.sentinel };
+        if (position.next === Key.SENTINEL) return { next: Key.SENTINEL };
       }
 
-      return { prev: await find(state, [position, {next: Key.sentinel}]) };
+      return { prev: await find(state, [position, {next: Key.SENTINEL}]) };
     }
 
     var dispatcher = Observable.map(parent.dispatcher, async (patch) => {
-      var range = <Range> (await Promise.all([
-        move(State.reverse(parentState), Range.reverse(patch.range)).then(Position.reverse),
+      var range = <Range<K>> (await Promise.all([
+        move(State.reverse(parentState), Range.reverse<K>(patch.range)).then(Position.reverse),
         move(parentState, patch.range)
       ]));
 
@@ -86,7 +86,7 @@ export module Store {
     return create(State.filter(parent.state, filterFn), dispatcher);
   }
 
-  export function zoom<V>(parent: Store<V>, key: Key): Store<V> {
+  export function zoom<K, V>(parent: Store<K, V>, key: K): Store<K, V> {
     var parentState = parent.state,
         state   = State.zoom(parent.state, key),
         dispatcher = Observable.map(
@@ -102,27 +102,27 @@ export module Store {
     return create(state, dispatcher);
   }
 
-  export function flatten<V>(parent: Store<Store<V>>): Store<V> {
+  export function flatten<K, L, V>(parent: Store<K, Store<L, V>>): Store<[K, L], V> {
     var dispatcher_ = Subject.create();
     var parent_ = cache(map(parent, ((store, key) => {
       Observable.map(store.dispatcher, patch => {
         var from = patch.range[0],
             to   = patch.range[1];
 
-        function mapPrevPosition(position: PrevPosition): Promise<Position> {
-          if (position.prev === Key.sentinel) return store.state.prev(Key.sentinel).then(next => ({next: Path.toKey([key, next])}));
-          return Promise.resolve({prev: Path.toKey([key, position.prev])});
+        function mapPrevPosition(position: PrevPosition<L>): Promise<Position<[K, L]>> {
+          if (position.prev === Key.SENTINEL) return store.state.prev(Key.SENTINEL).then(next => ({next: <Path<K, L>>[key, next]}));
+          return Promise.resolve({prev: <Path<K, L>>[key, position.prev]});
         }
 
-        function mapNextPosition(position: NextPosition): Promise<Position> {
-          if (position.next === Key.sentinel) return store.state.next(Key.sentinel).then(prev => ({prev: Path.toKey([key, prev])}));
-          return Promise.resolve({next: Path.toKey([key, position.next])});
+        function mapNextPosition(position: NextPosition<L>): Promise<Position<[K, L]>> {
+          if (position.next === Key.SENTINEL) return store.state.next(Key.SENTINEL).then(prev => ({prev: <Path<K, L>>[key, prev]}));
+          return Promise.resolve({next: <Path<K, L>>[key, position.next]});
         }
 
         return Promise.all([
           Position.isNextPosition(from) ? mapNextPosition(from) : mapPrevPosition(from),
           Position.isNextPosition(to)   ? mapNextPosition(to)   : mapPrevPosition(to)
-        ]).then((range: Range) => ({ range: range, added: patch.added ? patch.added : undefined }));
+        ]).then((range: Range<[K, L]>) => ({ range: range, added: patch.added ? patch.added : undefined }));
       }).subscribe(dispatcher_);
 
       return store.state;
@@ -132,18 +132,18 @@ export module Store {
       var from = patch.range[0],
           to   = patch.range[1];
 
-      function mapPrevPosition(position: PrevPosition): Promise<Position> {
-        return position.prev === Key.sentinel ? Promise.resolve({prev: Key.sentinel}) : Tree.next(parent_.state, [position.prev]).then(Path.toKey).then(prev => ({prev}));
+      function mapPrevPosition(position: PrevPosition<K>): Promise<Position<Path<K, L>>> {
+        return position.prev === Key.SENTINEL ? Promise.resolve({prev: Key.SENTINEL}) : Tree.next(parent_.state, [position.prev, null]).then(prev => ({prev}));
       }
 
-      function mapNextPosition(position: NextPosition): Promise<Position> {
-        return position.next === Key.sentinel ? Promise.resolve({next: Key.sentinel}) : Tree.prev(parent_.state, [position.next]).then(Path.toKey).then(next => ({next}));
+      function mapNextPosition(position: NextPosition<K>): Promise<Position<Path<K, L>>> {
+        return position.next === Key.SENTINEL ? Promise.resolve({next: Key.SENTINEL}) : Tree.prev(parent_.state, [position.next, null]).then(next => ({next}));
       }
 
       return Promise.all([
         Position.isNextPosition(from) ? mapNextPosition(from) : mapPrevPosition(from),
         Position.isNextPosition(to)   ? mapNextPosition(to)   : mapPrevPosition(to)
-      ]).then((range: Range) => ({ range: range, added: patch.added ? State.flatten(State.map(patch.added, store => store.state)) : undefined }));
+      ]).then((range: Range<Path<K, L>>) => ({ range: range, added: patch.added ? State.flatten(State.map(patch.added, store => store.state)) : undefined }));
     }).subscribe(dispatcher_);
 
     var state = State.flatten(parent_.state);
@@ -151,27 +151,27 @@ export module Store {
     return create(state, dispatcher_);
   }
 
-  export function flatMap<V, W>(parent: Store<V>, mapFn: (value: V, key: Key) => Store<W>): Store<W> {
+  export function flatMap<K, L, V, W>(parent: Store<K, V>, mapFn: (value: V, key: K) => Store<L, W>): Store<Path<K, L>, W> {
     return Store.flatten(Store.map(parent, mapFn));
   }
 
-  export function keyBy<V>(parent: Store<V>, keyFn: (value: V, key: Key) => Key): Store<V> {
+  export function keyBy<K, L, V>(parent: Store<K, V>, keyFn: (value: V, key: K) => L | Promise<L>): Store<L, V> {
     var state = State.keyBy(parent.state, keyFn),
         parentState = parent.state,
         dispatcher = Observable.map(parent.dispatcher, async (patch) => {
           var [from, to] = patch.range;
 
-          async function mapPosition(position: Position): Promise<Position> {
+          async function mapPosition(position: Position<K>): Promise<Position<L>> {
             if (Position.isPrevPosition(position)) {
-              if (position.prev === Key.sentinel) return position;
+              if (position.prev === Key.SENTINEL) return {prev: Key.SENTINEL};
               return {prev: await keyFn(await parentState.get(position.prev), position.prev)};
             } else {
-              if (position.next === Key.sentinel) return position;
+              if (position.next === Key.SENTINEL) return {next: Key.SENTINEL};
               return {next: await keyFn(await parentState.get(position.next), position.next)};
             }
           }
 
-          var range = <Range>(await Promise.all([
+          var range = <Range<L>>(await Promise.all([
             mapPosition(from),
             mapPosition(to)
           ]));
@@ -183,8 +183,8 @@ export module Store {
     return create(state, dispatcher);
   }
 
-  export function scan<V, W>(parent: Store<V>, scanFn: (memo: W, value: V) => W | Promise<W>, memo?: W): Store<W> {
-    var store: Store<W>,
+  export function scan<K, V, W>(parent: Store<K, V>, scanFn: (memo: W, value: V) => W | Promise<W>, memo?: W): Store<K, W> {
+    var store: Store<K, W>,
         state = State.scan(parent.state, scanFn, memo),
         dispatcher = Observable.map(parent.dispatcher, async (patch) => {
           var parentState = parent.state,
@@ -193,17 +193,17 @@ export module Store {
 
           var added = State.lazy(async () => {
             var last = await State.last(storeState, [{next: null}, from]);
-            return State.scan(State.slice(parentState, [{next: last}, {prev: null}]), scanFn, last !== Key.sentinel ? await storeState.get(last) : memo);
+            return State.scan(State.slice(parentState, [{next: last}, {prev: null}]), scanFn, last !== Key.SENTINEL ? await storeState.get(last) : memo);
           });
 
-          return { range: <Range> [from, {prev: null}], added };
+          return { range: <Range<K>> [from, {prev: null}], added };
         });
 
     return store = create(state, dispatcher);
   }
 
-  export function take<V>(parent: Store<V>, count: number) {
-    var store: Store<V>,
+  export function take<K, V>(parent: Store<K, V>, count: number) {
+    var store: Store<K, V>,
         state = State.take(parent.state, count);
 
     var indexed = Store.scan(parent, ([index], value) => <[number, V]>[index + 1, value], <[number, V]>[-1, null]);
@@ -214,7 +214,7 @@ export module Store {
           indexedState = indexed.state;
 
       var key = await State.last(indexedState, [{next: null}, from]);
-      var index = key === Key.sentinel ? -1 : (await indexedState.get(key))[0];
+      var index = key === Key.SENTINEL ? -1 : (await indexedState.get(key))[0];
 
       return {
         range: patch.range,
@@ -225,7 +225,7 @@ export module Store {
     return create(state, dispatcher);
   }
 
-  export function cache<V>(parent: Store<V>): Store<V> {
+  export function cache<K, V>(parent: Store<K, V>): Store<K, V> {
     var state = State.cache(parent.state),
         dispatcher = Observable.map(parent.dispatcher, patch => ({
           range: patch.range,
@@ -235,16 +235,16 @@ export module Store {
     return Store.create(state, dispatcher);
   }
 
-  export function states<V>(store: Store<V>): Observable<State<V>> {
+  export function states<K, V>(store: Store<K, V>): Observable<State<K, V>> {
     return Observable.map(store.dispatcher, () => store.state);
   }
 
-  export function create<V>(state: State<V>, dispatcher: Subject<Patch<V>>, reducer?: (state: State<V>, patch: Patch<V>) => State<V> | Promise<State<V>>): MutableStore<V>
-  export function create<V>(state: State<V>, dispatcher: Observable<Patch<V>>, reducer?: (state: State<V>, patch: Patch<V>) => State<V> | Promise<State<V>>): Store<V>
-  export function create<V>(state: State<V>, dispatcher: Observable<Patch<V>>, reducer: (state: State<V>, patch: Patch<V>) => State<V> | Promise<State<V>> = Patch.apply): any {
+  export function create<K, V>(state: State<K, V>, dispatcher: Subject<Patch<K, V>>, reducer?: (state: State<K, V>, patch: Patch<K, V>) => State<K, V> | Promise<State<K, V>>): MutableStore<K, V>
+  export function create<K, V>(state: State<K, V>, dispatcher: Observable<Patch<K, V>>, reducer?: (state: State<K, V>, patch: Patch<K, V>) => State<K, V> | Promise<State<K, V>>): Store<K, V>
+  export function create<K, V>(state: State<K, V>, dispatcher: Observable<Patch<K, V>>, reducer: (state: State<K, V>, patch: Patch<K, V>) => State<K, V> | Promise<State<K, V>> = Patch.apply): any {
 
     var subject = Subject.create();
-    var statePatches = Observable.scan<Patch<V>, [State<V>, Patch<V>]>(dispatcher, async ([state], patch) => [await reducer(state, patch), patch], [state, null]);
+    var statePatches = Observable.scan<Patch<K, V>, [State<K, V>, Patch<K, V>]>(dispatcher, async ([state], patch) => [await reducer(state, patch), patch], [state, null]);
 
     Observable.forEach(statePatches, ([state, patch]) => {
       store.state = state;

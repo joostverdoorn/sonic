@@ -1,51 +1,31 @@
 import Key           from './key';
 import State         from './state';
 
-export type Path = Key[];
+export type Path<K, L> = [K, L];
 
 export module Path {
-  export function key(path: Path): string {
-    return path == null ? null : JSON.stringify(path);
-  }
-
-  export function fromKey(key: Key): Path {
-    return key == null ? null : key.toString().split('/');
-  }
-
-  export function toKey(path: Path): Key {
-    return path == null ? null : path.join('/');
-  }
-
-  export function head(path: Path): Key {
+  export function head<K, L>(path: Path<K, L>): K {
     return path ? path[0] : null;
   }
 
-  export function get(path: Path, index: number): Key {
-    return path ? path[index] : null;
-  }
-
-  export function tail(path: Path): Path {
-    return path == null ? [] : path.slice(1, path.length);
-  }
-
-  export function append(a: Key | Path, b: Key | Path): Path {
-    return [].concat(a).concat(b);
+  export function tail<K, L>(path: Path<K, L>): L {
+    return path ? path[1] : null;
   }
 }
 
-export type Tree<V> = State<State<V>>;
+export type Tree<K, L, V> = State<K, State<L, V>>;
 
 export module Tree {
-  export function get<V>(tree: Tree<V>, path: Path): Promise<Tree<V> | V> {
-    var head = Path.get(path, 0),
-        tail = Path.get(path, 1);
+  export function get<K, L, V>(tree: Tree<K, L, V>, path: Path<K, L>): Promise<V> {
+    var head = Path.head(path),
+        tail = Path.tail(path);
 
     return tree.get(head).then(state => state.get(tail));
   }
 
-  export function prev<V>(tree: Tree<V>, path: Path): Promise<Path> {
-    var head = Path.get(path, 0),
-        tail = Path.get(path, 1),
+  export function prev<K, L, V>(tree: Tree<K, L, V>, path: Path<K, L>): Promise<Path<K, L>> {
+    var head = Path.head(path),
+        tail = Path.tail(path),
         prevs = State.filter(State.map(tree, state => state.prev()), first => first != null),
         paths = State.map(prevs, (first, key) => [key, first]);
 
@@ -56,9 +36,9 @@ export module Tree {
       .then(prev => prev != null ? [head, prev] : paths.prev(head).then(prev => prev != null ? paths.get(prev) : null));
   }
 
-  export function next<V>(tree: Tree<V>, path: Path): Promise<Path> {
-    var head = Path.get(path, 0),
-        tail = Path.get(path, 1),
+  export function next<K, L, V>(tree: Tree<K, L, V>, path: Path<K, L>): Promise<Path<K, L>> {
+    var head = Path.head(path),
+        tail = Path.tail(path),
         nexts = State.filter(State.map(tree, state => state.next()), first => first != null),
         paths = State.map(nexts, (first, key) => [key, first]);
 

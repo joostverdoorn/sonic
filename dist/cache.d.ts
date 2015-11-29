@@ -1,19 +1,18 @@
-import Key from './key';
 import State from './state';
-export declare type Cache<V> = {
+export declare type Cache<K, V> = {
     get: {
         [key: string]: Promise<V>;
     };
     prev: {
-        [key: string]: Promise<Key>;
+        [key: string]: Promise<K>;
     };
     next: {
-        [key: string]: Promise<Key>;
+        [key: string]: Promise<K>;
     };
 };
 export declare module Cache {
-    function create<V>(): Cache<V>;
-    function extend<V>(cache: Cache<V>): Cache<V>;
-    function apply<V>(state: State<V>, cache: Cache<V>): State<V>;
+    function create<K, V>(): Cache<K, V>;
+    function extend<K, V>(cache: Cache<K, V>): Cache<K, V>;
+    function apply<K, V>(state: State<K, V>, cache: Cache<K, V>): State<K, V>;
 }
 export default Cache;

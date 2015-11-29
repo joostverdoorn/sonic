@@ -108,7 +108,7 @@ export module AsyncIterator {
     return create(next);
   }
 
-  export function zip<T, U>(iterator: Iterator<T> | AsyncIterator<T>, other: Iterator<T> | AsyncIterator<U>): AsyncIterator<[T, U]> {
+  export function zip<T, U>(iterator: Iterator<T> | AsyncIterator<T>, other: Iterator<U> | AsyncIterator<U>, zipFn: (t: T, u: U) => [T, U] | Promise<[T, U]> = (t, u) => [t, u]): AsyncIterator<[T, U]> {
     async function next() {
       var result = await iterator.next();
       if (result.done) return done;
@@ -116,7 +116,7 @@ export module AsyncIterator {
       var otherResult = await other.next();
       if (otherResult.done) return done;
 
-      return { done: false, value: [result.value, otherResult.value]}
+      return { done: false, value: await zipFn(result.value, otherResult.value)}
     }
 
     return create(next);
@@ -141,6 +141,15 @@ export module AsyncIterator {
     }
 
     return create(next);
+  }
+
+  export function unique<T, U>(iterator: Iterator<T> | AsyncIterator<T>, uniqueFn: (value: T) => U): AsyncIterator<T> {
+    var cache: {[key: string]: boolean} = Object.create(null);
+
+    return AsyncIterator.filter(iterator, async (value: T) => {
+      var u = JSON.stringify(await uniqueFn(value));
+      return (!cache[u]) || (cache[u] = true);
+    });
   }
 
   export function concat<T>(...iterators: AsyncIterator<T>[]): AsyncIterator<T> {
@@ -173,15 +182,15 @@ export module AsyncIterator {
     return create(next);
   }
 
-  export function fromObject<V>(object: {[key: string]: V}): AsyncIterator<Entry<V>> {
-    return fromArray(Object.keys(object).map<Entry<V>>(key => [key, object[key]]));
+  export function fromObject<V>(object: {[key: string]: V}): AsyncIterator<Entry<string, V>> {
+    return fromArray(Object.keys(object).map<Entry<string, V>>(key => [key, object[key]]));
   }
 
   export function toArray<T>(iterator: Iterator<T> | AsyncIterator<T>): Promise<T[]> {
     return reduce(iterator, (memo: T[], value: T) => (memo.push(value), memo), []);
   }
 
-  export function toObject<V>(iterator: AsyncIterator<Entry<V>>): Promise<{[key: string]: V}> {
+  export function toObject<V>(iterator: AsyncIterator<Entry<string, V>>): Promise<{[key: string]: V}> {
     return reduce(iterator, (memo: {[key: string]: V}, [key, value]) => (memo[key] = value, memo), Object.create(null));
   }
 

@@ -1,15 +1,11 @@
 var Key;
 (function (Key) {
-    Key.sentinel = null;
     var uniqueKey = 0;
-    function key(key) {
-        return key.toString();
-    }
-    Key.key = key;
-    function create() {
+    Key.SENTINEL = null;
+    function unique() {
         return "s_" + uniqueKey++;
     }
-    Key.create = create;
+    Key.unique = unique;
 })(Key || (Key = {}));
 export default Key;
 //# sourceMappingURL=key.js.map

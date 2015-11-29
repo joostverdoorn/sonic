@@ -1,6 +1,6 @@
 import _State from './state';
 import _AsyncIterator from './async_iterator';
-import { Store as _Store, MutableStore as _MutabeStore } from './store';
+import { Store as _Store, MutableStore as _MutableStore } from './store';
 import { Tree as _Tree, Path as _Path } from './tree';
 import _Cache from './cache';
 import { Subject as _Subject, Observable as _Observable } from './observable';
@@ -8,7 +8,7 @@ import _PromiseUtils from './promise_utils';
 import _Lens from './lens';
 import _Patch from './patch';
 import { Range as _Range, Position as _Position } from './range';
-declare function Sonic(obj: any): _MutabeStore<{}>;
+declare function Sonic<V>(obj: any): _MutableStore<string | number, V>;
 declare module Sonic {
     const State: typeof _State;
     const AsyncIterator: typeof _AsyncIterator;

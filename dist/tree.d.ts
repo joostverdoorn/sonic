@@ -1,19 +1,13 @@
-import Key from './key';
 import State from './state';
-export declare type Path = Key[];
+export declare type Path<K, L> = [K, L];
 export declare module Path {
-    function key(path: Path): string;
-    function fromKey(key: Key): Path;
-    function toKey(path: Path): Key;
-    function head(path: Path): Key;
-    function get(path: Path, index: number): Key;
-    function tail(path: Path): Path;
-    function append(a: Key | Path, b: Key | Path): Path;
+    function head<K, L>(path: Path<K, L>): K;
+    function tail<K, L>(path: Path<K, L>): L;
 }
-export declare type Tree<V> = State<State<V>>;
+export declare type Tree<K, L, V> = State<K, State<L, V>>;
 export declare module Tree {
-    function get<V>(tree: Tree<V>, path: Path): Promise<Tree<V> | V>;
-    function prev<V>(tree: Tree<V>, path: Path): Promise<Path>;
-    function next<V>(tree: Tree<V>, path: Path): Promise<Path>;
+    function get<K, L, V>(tree: Tree<K, L, V>, path: Path<K, L>): Promise<V>;
+    function prev<K, L, V>(tree: Tree<K, L, V>, path: Path<K, L>): Promise<Path<K, L>>;
+    function next<K, L, V>(tree: Tree<K, L, V>, path: Path<K, L>): Promise<Path<K, L>>;
 }
 export default Tree;

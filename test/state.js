@@ -1,6 +1,7 @@
 import test          from 'blue-tape';
 import State         from '../dist/state';
 import AsyncIterator from '../dist/async_iterator';
+import { Path }      from '../dist/tree';
 import Entry         from '../dist/entry';
 
 function slice(array, index, count) {
@@ -180,11 +181,18 @@ test('zip', t => {
 });
 
 test('flatten', t => {
-  var { flatten, is, entries } = State;
+  var { flatten, is, entries, toObject } = State;
   var tree = state({x: state({a: 3, b: 4, c: 5}), y: state({d: 6, e: 7, f: 8})});
-  var flattened = state({'x/a': 3, 'x/b': 4, 'x/c': 5, 'y/d': 6, 'y/e': 7, 'y/f': 8});
+  var flattened = {
+    'x,a': 3,
+    'x,b': 4,
+    'x,c': 5,
+    'y,d': 6,
+    'y,e': 7,
+    'y,f': 8
+  };
 
-  t.test('should flatten stuff', t => is(flatten(tree), flattened).then(t.ok));
+  t.test('should flatten stuff', async (t) => t.same(await toObject(flatten(tree)), flattened));
 });
 
 test('groupBy', t => {

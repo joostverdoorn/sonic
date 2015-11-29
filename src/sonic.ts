@@ -1,7 +1,7 @@
 import _State                         from './state';
 import _AsyncIterator                 from './async_iterator';
 import { Store as _Store,
-         MutableStore as _MutabeStore } from './store';
+         MutableStore as _MutableStore } from './store';
 import { Tree as _Tree,
          Path as _Path }              from './tree';
 import _Cache                         from './cache';
@@ -14,7 +14,7 @@ import { Range as _Range,
          Position as _Position }      from './range';
 
 
-function Sonic(obj: any) {
+function Sonic<V>(obj: any): _MutableStore<string | number, V> {
   if (obj instanceof Array)  return _Store.create(_State.fromArray(obj),  _Subject.create());
   if (obj instanceof Object) return _Store.create(_State.fromObject(obj), _Subject.create());
 }

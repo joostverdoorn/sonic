@@ -1,19 +1,18 @@
-import Key from './key';
-export declare type Range = [Position, Position];
-export declare type PrevPosition = {
-    prev: Key;
+export declare type Range<K> = [Position<K>, Position<K>];
+export declare type PrevPosition<K> = {
+    prev: K;
 };
-export declare type NextPosition = {
-    next: Key;
+export declare type NextPosition<K> = {
+    next: K;
 };
-export declare type Position = PrevPosition | NextPosition;
+export declare type Position<K> = PrevPosition<K> | NextPosition<K>;
 export declare module Range {
-    const all: Range;
-    function reverse([from, to]: Range): Range;
+    const all: Range<any>;
+    function reverse<K>([from, to]: Range<K>): Range<K>;
 }
 export declare module Position {
-    function isPrevPosition(position: Position): position is PrevPosition;
-    function isNextPosition(position: Position): position is NextPosition;
-    function reverse(position: Position): Position;
+    function isPrevPosition<K>(position: Position<K>): position is PrevPosition<K>;
+    function isNextPosition<K>(position: Position<K>): position is NextPosition<K>;
+    function reverse<K>(position: Position<K>): Position<K>;
 }
 export default Range;

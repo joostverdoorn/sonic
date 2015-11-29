@@ -182,7 +182,7 @@ export module Subject {
         return Disposable.create();
       }
 
-      var observerKey = Key.create();
+      var observerKey = Key.unique();
       observers[observerKey] = observer;
       return Disposable.create(() => delete observers[observerKey]);
     }

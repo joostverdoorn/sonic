@@ -32,13 +32,16 @@ export var Cache;
     Cache.extend = extend;
     function apply(state, cache) {
         function get(key) {
-            return key in cache.get ? cache.get[key] : cache.get[key] = state.get(key);
+            var stringifiedKey = JSON.stringify(key);
+            return stringifiedKey in cache.get ? cache.get[stringifiedKey] : cache.get[stringifiedKey] = state.get(key);
         }
-        function prev(key = Key.sentinel) {
-            return key in cache.prev ? cache.prev[key] : cache.prev[key] = state.prev(key).then(prev => { cache.next[prev] = Promise.resolve(key); return prev; });
+        function prev(key = Key.SENTINEL) {
+            var stringifiedKey = JSON.stringify(key);
+            return stringifiedKey in cache.prev ? cache.prev[stringifiedKey] : cache.prev[stringifiedKey] = state.prev(key).then(prev => { cache.next[JSON.stringify(prev)] = Promise.resolve(key); return prev; });
         }
-        function next(key = Key.sentinel) {
-            return key in cache.next ? cache.next[key] : cache.next[key] = state.next(key).then(next => { cache.prev[next] = Promise.resolve(key); return next; });
+        function next(key = Key.SENTINEL) {
+            var stringifiedKey = JSON.stringify(key);
+            return stringifiedKey in cache.next ? cache.next[stringifiedKey] : cache.next[stringifiedKey] = state.next(key).then(next => { cache.prev[JSON.stringify(next)] = Promise.resolve(key); return next; });
         }
         return { get, prev, next };
     }

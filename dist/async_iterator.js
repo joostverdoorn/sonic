@@ -131,7 +131,7 @@ export var AsyncIterator;
         return create(next);
     }
     AsyncIterator.scan = scan;
-    function zip(iterator, other) {
+    function zip(iterator, other, zipFn = (t, u) => [t, u]) {
         function next() {
             return __awaiter(this, void 0, Promise, function* () {
                 var result = yield iterator.next();
@@ -140,7 +140,7 @@ export var AsyncIterator;
                 var otherResult = yield other.next();
                 if (otherResult.done)
                     return AsyncIterator.done;
-                return { done: false, value: [result.value, otherResult.value] };
+                return { done: false, value: yield zipFn(result.value, otherResult.value) };
             });
         }
         return create(next);
@@ -168,6 +168,14 @@ export var AsyncIterator;
         return create(next);
     }
     AsyncIterator.skip = skip;
+    function unique(iterator, uniqueFn) {
+        var cache = Object.create(null);
+        return AsyncIterator.filter(iterator, (value) => __awaiter(this, void 0, Promise, function* () {
+            var u = JSON.stringify(yield uniqueFn(value));
+            return (!cache[u]) || (cache[u] = true);
+        }));
+    }
+    AsyncIterator.unique = unique;
     function concat(...iterators) {
         return iterators.reduce((memo, iterator) => {
             var iterated = false, queue = Promise.resolve(null);

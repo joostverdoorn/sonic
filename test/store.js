@@ -177,6 +177,7 @@ test('keyBy', t => {
     return State.is(keyed.state, State.fromObject({A: 1, B: 2, C: 3}))
       .then(t.ok)
       .then(() => subject.onNext(patch))
+      .then(() => State.toArray(keyed.state).then(t.comment))
       .then(() => State.is(keyed.state, State.fromObject({D: 4})))
       .then(t.ok);
   });
