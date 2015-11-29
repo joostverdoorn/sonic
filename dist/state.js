@@ -264,14 +264,14 @@ export var State;
     State.cache = cache;
     function unit(value, key = Key.unique()) {
         return {
-            get: k => k === Key.SENTINEL ? Promise.resolve(value) : Promise.reject(new NotFound),
+            get: k => k === key ? Promise.resolve(value) : Promise.reject(new NotFound),
             prev: (k = Key.SENTINEL) => Promise.resolve(k === Key.SENTINEL ? key : Key.SENTINEL),
             next: (k = Key.SENTINEL) => Promise.resolve(k === Key.SENTINEL ? key : Key.SENTINEL)
         };
     }
     State.unit = unit;
     function entries(state, range = Range.all) {
-        var current = Key.SENTINEL, done = false, from = range[0], to = range[1];
+        var current = Key.SENTINEL, done = false, [from, to] = range;
         function get(key) {
             if (key === Key.SENTINEL)
                 return (done = true, Promise.resolve(AsyncIterator.done));
@@ -307,21 +307,21 @@ export var State;
     }
     State.values = values;
     function fromEntries(iterator) {
-        var cache = Cache.create(), exhausted = false, currentKey = null, queue = Promise.resolve(null);
+        var cache = Cache.create(), exhausted = false, currentKey = Key.SENTINEL, queue = Promise.resolve(null);
         var cachingIterator = {
             next() {
                 return __awaiter(this, void 0, Promise, function* () {
                     var result = yield iterator.next();
                     if (result.done) {
                         exhausted = true;
-                        cache.prev[JSON.stringify(Key.SENTINEL)] = Promise.resolve(currentKey);
-                        cache.next[JSON.stringify(currentKey)] = Promise.resolve(Key.SENTINEL);
+                        yield cache.prev(Key.SENTINEL, currentKey);
+                        yield cache.next(currentKey, Key.SENTINEL);
                         return AsyncIterator.done;
                     }
                     var [key, value] = result.value;
-                    cache.prev[JSON.stringify(key)] = Promise.resolve(currentKey);
-                    cache.next[JSON.stringify(currentKey)] = Promise.resolve(key);
-                    cache.get[JSON.stringify(key)] = Promise.resolve(value);
+                    yield cache.prev(key, currentKey);
+                    yield cache.next(currentKey, key);
+                    yield cache.get(key, value);
                     currentKey = key;
                     return { done: false, value: [key, value] };
                 });
@@ -332,12 +332,15 @@ export var State;
                 return Promise.reject(new NotFound);
             return AsyncIterator.find(cachingIterator, entry => entry[0] === key).then(Entry.value);
         }
-        function prev(key) {
-            if (exhausted)
-                return Promise.reject(new NotFound);
-            return AsyncIterator.some(cachingIterator, entry => entry[0] === key).then(() => JSON.stringify(key) in cache.prev ? cache.prev[JSON.stringify(key)] : Promise.resolve(new NotFound));
+        function prev(key = Key.SENTINEL) {
+            return __awaiter(this, void 0, Promise, function* () {
+                if (exhausted)
+                    return Promise.reject(new NotFound);
+                yield AsyncIterator.some(cachingIterator, entry => entry[0] === key);
+                return cache.prev(key);
+            });
         }
-        function next(key) {
+        function next(key = Key.SENTINEL) {
             if (exhausted)
                 return Promise.reject(new NotFound);
             if (key === currentKey)

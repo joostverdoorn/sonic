@@ -64,7 +64,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	
 	var _state2 = _interopRequireDefault(_state);
 	
-	var _async_iterator = __webpack_require__(85);
+	var _async_iterator = __webpack_require__(87);
 	
 	var _async_iterator2 = _interopRequireDefault(_async_iterator);
 	
@@ -189,19 +189,19 @@ return /******/ (function(modules) { // webpackBootstrap
 	
 	var _entry2 = _interopRequireDefault(_entry);
 	
-	var _range = __webpack_require__(83);
+	var _range2 = __webpack_require__(83);
 	
 	var _cache = __webpack_require__(84);
 	
 	var _cache2 = _interopRequireDefault(_cache);
 	
-	var _async_iterator = __webpack_require__(85);
+	var _async_iterator = __webpack_require__(87);
 	
 	var _async_iterator2 = _interopRequireDefault(_async_iterator);
 	
 	var _tree = __webpack_require__(93);
 	
-	var _exceptions = __webpack_require__(91);
+	var _exceptions = __webpack_require__(85);
 	
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 	
@@ -262,7 +262,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    }
 	    State.extend = extend;
 	    function first(state) {
-	        var _ref2 = arguments.length <= 1 || arguments[1] === undefined ? _range.Range.all : arguments[1];
+	        var _ref2 = arguments.length <= 1 || arguments[1] === undefined ? _range2.Range.all : arguments[1];
 	
 	        var _ref3 = (0, _slicedToArray3.default)(_ref2, 2);
 	
@@ -274,7 +274,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	                while (1) {
 	                    switch (_context.prev = _context.next) {
 	                        case 0:
-	                            return _context.abrupt("return", _range.Position.isPrevPosition(from) ? from.prev : state.next(from.next));
+	                            return _context.abrupt("return", _range2.Position.isPrevPosition(from) ? from.prev : state.next(from.next));
 	
 	                        case 1:
 	                        case "end":
@@ -286,7 +286,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    }
 	    State.first = first;
 	    function last(state) {
-	        var _ref4 = arguments.length <= 1 || arguments[1] === undefined ? _range.Range.all : arguments[1];
+	        var _ref4 = arguments.length <= 1 || arguments[1] === undefined ? _range2.Range.all : arguments[1];
 	
 	        var _ref5 = (0, _slicedToArray3.default)(_ref4, 2);
 	
@@ -298,7 +298,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	                while (1) {
 	                    switch (_context2.prev = _context2.next) {
 	                        case 0:
-	                            return _context2.abrupt("return", _range.Position.isNextPosition(to) ? to.next : state.prev(to.prev));
+	                            return _context2.abrupt("return", _range2.Position.isNextPosition(to) ? to.next : state.prev(to.prev));
 	
 	                        case 1:
 	                        case "end":
@@ -374,7 +374,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    }
 	    State.size = size;
 	    function slice(parent) {
-	        var range = arguments.length <= 1 || arguments[1] === undefined ? _range.Range.all : arguments[1];
+	        var range = arguments.length <= 1 || arguments[1] === undefined ? _range2.Range.all : arguments[1];
 	
 	        return fromEntries(entries(parent, range));
 	    }
@@ -397,20 +397,20 @@ return /******/ (function(modules) { // webpackBootstrap
 	            prev: function prev(key) {
 	                return child.prev(key).then(function (prev) {
 	                    if (prev !== _key2.default.SENTINEL) return _promise2.default.resolve(prev);
-	                    return _range.Position.isNextPosition(from) ? _promise2.default.resolve(from.next) : parent.prev(from.prev);
+	                    return _range2.Position.isNextPosition(from) ? _promise2.default.resolve(from.next) : parent.prev(from.prev);
 	                });
 	            },
 	            next: function next(key) {
 	                return child.next(key).then(function (next) {
 	                    if (next !== _key2.default.SENTINEL) return _promise2.default.resolve(next);
-	                    return _range.Position.isPrevPosition(to) ? _promise2.default.resolve(to.prev) : parent.next(to.next);
+	                    return _range2.Position.isPrevPosition(to) ? _promise2.default.resolve(to.prev) : parent.next(to.next);
 	                });
 	            }
 	        });
 	        bridgedParent = extend(filtered, {
 	            prev: function prev(key) {
 	                return parent.prev(key).then(function (prev) {
-	                    if (_range.Position.isNextPosition(to) && prev === to.next) return bridgedChild.prev(_key2.default.SENTINEL);
+	                    if (_range2.Position.isNextPosition(to) && prev === to.next) return bridgedChild.prev(_key2.default.SENTINEL);
 	                    return has(deleted, prev).then(function (res) {
 	                        return res ? _promise2.default.reject(new _exceptions.NotFound()) : prev;
 	                    });
@@ -418,7 +418,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	            },
 	            next: function next(key) {
 	                return parent.next(key).then(function (next) {
-	                    if (_range.Position.isPrevPosition(from) && next === from.prev) return bridgedChild.next(_key2.default.SENTINEL);
+	                    if (_range2.Position.isPrevPosition(from) && next === from.prev) return bridgedChild.next(_key2.default.SENTINEL);
 	                    return has(deleted, next).then(function (res) {
 	                        return res ? _promise2.default.reject(new _exceptions.NotFound()) : next;
 	                    });
@@ -433,7 +433,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	        function prev() {
 	            var key = arguments.length <= 0 || arguments[0] === undefined ? _key2.default.SENTINEL : arguments[0];
 	
-	            if (_range.Position.isPrevPosition(to) && key === to.prev) return bridgedChild.prev(_key2.default.SENTINEL);
+	            if (_range2.Position.isPrevPosition(to) && key === to.prev) return bridgedChild.prev(_key2.default.SENTINEL);
 	            return has(bridgedChild, key).then(function (res) {
 	                return res ? bridgedChild.prev(key) : bridgedParent.prev(key);
 	            });
@@ -441,7 +441,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	        function next() {
 	            var key = arguments.length <= 0 || arguments[0] === undefined ? _key2.default.SENTINEL : arguments[0];
 	
-	            if (_range.Position.isNextPosition(from) && key === from.next) return bridgedChild.next(_key2.default.SENTINEL);
+	            if (_range2.Position.isNextPosition(from) && key === from.next) return bridgedChild.next(_key2.default.SENTINEL);
 	            return has(bridgedChild, key).then(function (res) {
 	                return res ? bridgedChild.next(key) : bridgedParent.next(key);
 	            });
@@ -786,7 +786,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	
 	        return {
 	            get: function get(k) {
-	                return k === _key2.default.SENTINEL ? _promise2.default.resolve(value) : _promise2.default.reject(new _exceptions.NotFound());
+	                return k === key ? _promise2.default.resolve(value) : _promise2.default.reject(new _exceptions.NotFound());
 	            },
 	            prev: function prev() {
 	                var k = arguments.length <= 0 || arguments[0] === undefined ? _key2.default.SENTINEL : arguments[0];
@@ -800,12 +800,13 @@ return /******/ (function(modules) { // webpackBootstrap
 	    }
 	    State.unit = unit;
 	    function entries(state) {
-	        var range = arguments.length <= 1 || arguments[1] === undefined ? _range.Range.all : arguments[1];
+	        var range = arguments.length <= 1 || arguments[1] === undefined ? _range2.Range.all : arguments[1];
+	        var current = _key2.default.SENTINEL;var done = false;
+	        var _range = (0, _slicedToArray3.default)(range, 2);
 	
-	        var current = _key2.default.SENTINEL,
-	            done = false,
-	            from = range[0],
-	            to = range[1];
+	        var from = _range[0];
+	        var to = _range[1];
+	
 	        function get(key) {
 	            if (key === _key2.default.SENTINEL) return done = true, _promise2.default.resolve(_async_iterator2.default.done);
 	            return state.get(key).then(function (value) {
@@ -814,28 +815,28 @@ return /******/ (function(modules) { // webpackBootstrap
 	        }
 	        function iterate(key) {
 	            return state.next(key).then(function (next) {
-	                if (_range.Position.isPrevPosition(to) && to.prev === next) return get(_key2.default.SENTINEL);
+	                if (_range2.Position.isPrevPosition(to) && to.prev === next) return get(_key2.default.SENTINEL);
 	                return get(next);
 	            });
 	        }
 	        function next() {
-	            if (_range.Position.isPrevPosition(from) && _range.Position.isPrevPosition(to) && from.prev === to.prev) return get(_key2.default.SENTINEL);
-	            if (_range.Position.isNextPosition(from) && _range.Position.isNextPosition(to) && from.next === to.next) return get(_key2.default.SENTINEL);
-	            if (current === _key2.default.SENTINEL) return _range.Position.isPrevPosition(from) ? get(from.prev) : iterate(from.next);
-	            if (_range.Position.isNextPosition(to) && to.next === current) return get(_key2.default.SENTINEL);
+	            if (_range2.Position.isPrevPosition(from) && _range2.Position.isPrevPosition(to) && from.prev === to.prev) return get(_key2.default.SENTINEL);
+	            if (_range2.Position.isNextPosition(from) && _range2.Position.isNextPosition(to) && from.next === to.next) return get(_key2.default.SENTINEL);
+	            if (current === _key2.default.SENTINEL) return _range2.Position.isPrevPosition(from) ? get(from.prev) : iterate(from.next);
+	            if (_range2.Position.isNextPosition(to) && to.next === current) return get(_key2.default.SENTINEL);
 	            return iterate(current);
 	        }
 	        return _async_iterator2.default.create(next);
 	    }
 	    State.entries = entries;
 	    function keys(state) {
-	        var range = arguments.length <= 1 || arguments[1] === undefined ? _range.Range.all : arguments[1];
+	        var range = arguments.length <= 1 || arguments[1] === undefined ? _range2.Range.all : arguments[1];
 	
 	        return _async_iterator2.default.map(entries(state, range), _entry2.default.key);
 	    }
 	    State.keys = keys;
 	    function values(state) {
-	        var range = arguments.length <= 1 || arguments[1] === undefined ? _range.Range.all : arguments[1];
+	        var range = arguments.length <= 1 || arguments[1] === undefined ? _range2.Range.all : arguments[1];
 	
 	        return _async_iterator2.default.map(entries(state, range), _entry2.default.value);
 	    }
@@ -843,7 +844,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    function fromEntries(iterator) {
 	        var cache = _cache2.default.create(),
 	            exhausted = false,
-	            currentKey = null,
+	            currentKey = _key2.default.SENTINEL,
 	            queue = _promise2.default.resolve(null);
 	        var cachingIterator = {
 	            next: function next() {
@@ -861,27 +862,41 @@ return /******/ (function(modules) { // webpackBootstrap
 	                                    result = _context11.sent;
 	
 	                                    if (!result.done) {
-	                                        _context11.next = 8;
+	                                        _context11.next = 10;
 	                                        break;
 	                                    }
 	
 	                                    exhausted = true;
-	                                    cache.prev[(0, _stringify2.default)(_key2.default.SENTINEL)] = _promise2.default.resolve(currentKey);
-	                                    cache.next[(0, _stringify2.default)(currentKey)] = _promise2.default.resolve(_key2.default.SENTINEL);
+	                                    _context11.next = 7;
+	                                    return cache.prev(_key2.default.SENTINEL, currentKey);
+	
+	                                case 7:
+	                                    _context11.next = 9;
+	                                    return cache.next(currentKey, _key2.default.SENTINEL);
+	
+	                                case 9:
 	                                    return _context11.abrupt("return", _async_iterator2.default.done);
 	
-	                                case 8:
+	                                case 10:
 	                                    _result$value = (0, _slicedToArray3.default)(result.value, 2);
 	                                    key = _result$value[0];
 	                                    value = _result$value[1];
+	                                    _context11.next = 15;
+	                                    return cache.prev(key, currentKey);
 	
-	                                    cache.prev[(0, _stringify2.default)(key)] = _promise2.default.resolve(currentKey);
-	                                    cache.next[(0, _stringify2.default)(currentKey)] = _promise2.default.resolve(key);
-	                                    cache.get[(0, _stringify2.default)(key)] = _promise2.default.resolve(value);
+	                                case 15:
+	                                    _context11.next = 17;
+	                                    return cache.next(currentKey, key);
+	
+	                                case 17:
+	                                    _context11.next = 19;
+	                                    return cache.get(key, value);
+	
+	                                case 19:
 	                                    currentKey = key;
 	                                    return _context11.abrupt("return", { done: false, value: [key, value] });
 	
-	                                case 16:
+	                                case 21:
 	                                case "end":
 	                                    return _context11.stop();
 	                            }
@@ -896,15 +911,41 @@ return /******/ (function(modules) { // webpackBootstrap
 	                return entry[0] === key;
 	            }).then(_entry2.default.value);
 	        }
-	        function prev(key) {
-	            if (exhausted) return _promise2.default.reject(new _exceptions.NotFound());
-	            return _async_iterator2.default.some(cachingIterator, function (entry) {
-	                return entry[0] === key;
-	            }).then(function () {
-	                return (0, _stringify2.default)(key) in cache.prev ? cache.prev[(0, _stringify2.default)(key)] : _promise2.default.resolve(new _exceptions.NotFound());
-	            });
+	        function prev() {
+	            var key = arguments.length <= 0 || arguments[0] === undefined ? _key2.default.SENTINEL : arguments[0];
+	
+	            return __awaiter(this, void 0, _promise2.default, _regenerator2.default.mark(function _callee12() {
+	                return _regenerator2.default.wrap(function _callee12$(_context12) {
+	                    while (1) {
+	                        switch (_context12.prev = _context12.next) {
+	                            case 0:
+	                                if (!exhausted) {
+	                                    _context12.next = 2;
+	                                    break;
+	                                }
+	
+	                                return _context12.abrupt("return", _promise2.default.reject(new _exceptions.NotFound()));
+	
+	                            case 2:
+	                                _context12.next = 4;
+	                                return _async_iterator2.default.some(cachingIterator, function (entry) {
+	                                    return entry[0] === key;
+	                                });
+	
+	                            case 4:
+	                                return _context12.abrupt("return", cache.prev(key));
+	
+	                            case 5:
+	                            case "end":
+	                                return _context12.stop();
+	                        }
+	                    }
+	                }, _callee12, this);
+	            }));
 	        }
-	        function next(key) {
+	        function next() {
+	            var key = arguments.length <= 0 || arguments[0] === undefined ? _key2.default.SENTINEL : arguments[0];
+	
 	            if (exhausted) return _promise2.default.reject(new _exceptions.NotFound());
 	            if (key === currentKey) return cachingIterator.next().then(function (result) {
 	                return result.done ? _key2.default.SENTINEL : result.value[0];
@@ -944,36 +985,36 @@ return /******/ (function(modules) { // webpackBootstrap
 	        var state,
 	            queue = _promise2.default.resolve();
 	        function createState() {
-	            return __awaiter(this, void 0, _promise2.default, _regenerator2.default.mark(function _callee12() {
-	                return _regenerator2.default.wrap(function _callee12$(_context12) {
+	            return __awaiter(this, void 0, _promise2.default, _regenerator2.default.mark(function _callee13() {
+	                return _regenerator2.default.wrap(function _callee13$(_context13) {
 	                    while (1) {
-	                        switch (_context12.prev = _context12.next) {
+	                        switch (_context13.prev = _context13.next) {
 	                            case 0:
 	                                if (!state) {
-	                                    _context12.next = 4;
+	                                    _context13.next = 4;
 	                                    break;
 	                                }
 	
-	                                _context12.t0 = state;
-	                                _context12.next = 7;
+	                                _context13.t0 = state;
+	                                _context13.next = 7;
 	                                break;
 	
 	                            case 4:
-	                                _context12.next = 6;
+	                                _context13.next = 6;
 	                                return fn();
 	
 	                            case 6:
-	                                _context12.t0 = state = _context12.sent;
+	                                _context13.t0 = state = _context13.sent;
 	
 	                            case 7:
-	                                return _context12.abrupt("return", _context12.t0);
+	                                return _context13.abrupt("return", _context13.t0);
 	
 	                            case 8:
 	                            case "end":
-	                                return _context12.stop();
+	                                return _context13.stop();
 	                        }
 	                    }
-	                }, _callee12, this);
+	                }, _callee13, this);
 	            }));
 	        }
 	        function get(key) {
@@ -995,13 +1036,13 @@ return /******/ (function(modules) { // webpackBootstrap
 	    }
 	    State.lazy = lazy;
 	    function toObject(state) {
-	        var range = arguments.length <= 1 || arguments[1] === undefined ? _range.Range.all : arguments[1];
+	        var range = arguments.length <= 1 || arguments[1] === undefined ? _range2.Range.all : arguments[1];
 	
 	        return _async_iterator2.default.toObject(entries(state, range));
 	    }
 	    State.toObject = toObject;
 	    function toArray(state) {
-	        var range = arguments.length <= 1 || arguments[1] === undefined ? _range.Range.all : arguments[1];
+	        var range = arguments.length <= 1 || arguments[1] === undefined ? _range2.Range.all : arguments[1];
 	
 	        return _async_iterator2.default.toArray(values(state, range));
 	    }
@@ -3637,13 +3678,17 @@ return /******/ (function(modules) { // webpackBootstrap
 	});
 	exports.Cache = undefined;
 	
-	var _promise = __webpack_require__(44);
+	var _regenerator = __webpack_require__(5);
 	
-	var _promise2 = _interopRequireDefault(_promise);
+	var _regenerator2 = _interopRequireDefault(_regenerator);
 	
 	var _stringify = __webpack_require__(2);
 	
 	var _stringify2 = _interopRequireDefault(_stringify);
+	
+	var _promise = __webpack_require__(44);
+	
+	var _promise2 = _interopRequireDefault(_promise);
 	
 	var _create = __webpack_require__(38);
 	
@@ -3652,6 +3697,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	var _key = __webpack_require__(81);
 	
 	var _key2 = _interopRequireDefault(_key);
+	
+	var _exceptions = __webpack_require__(85);
 	
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 	
@@ -3686,12 +3733,127 @@ return /******/ (function(modules) { // webpackBootstrap
 	};
 	var Cache = exports.Cache = undefined;
 	(function (Cache) {
+	    var NONE = {};
 	    function create() {
-	        return {
+	        var cache = {
 	            get: (0, _create2.default)(null),
 	            prev: (0, _create2.default)(null),
 	            next: (0, _create2.default)(null)
 	        };
+	        function get(key) {
+	            var value = arguments.length <= 1 || arguments[1] === undefined ? NONE : arguments[1];
+	
+	            return __awaiter(this, void 0, _promise2.default, _regenerator2.default.mark(function _callee() {
+	                var string;
+	                return _regenerator2.default.wrap(function _callee$(_context) {
+	                    while (1) {
+	                        switch (_context.prev = _context.next) {
+	                            case 0:
+	                                string = (0, _stringify2.default)(key);
+	
+	                                if (!(value === NONE)) {
+	                                    _context.next = 5;
+	                                    break;
+	                                }
+	
+	                                if (string in cache.get) {
+	                                    _context.next = 4;
+	                                    break;
+	                                }
+	
+	                                throw new _exceptions.NotFound();
+	
+	                            case 4:
+	                                return _context.abrupt("return", cache.get[string]);
+	
+	                            case 5:
+	                                return _context.abrupt("return", cache.get[string] = _promise2.default.resolve(value));
+	
+	                            case 6:
+	                            case "end":
+	                                return _context.stop();
+	                        }
+	                    }
+	                }, _callee, this);
+	            }));
+	        }
+	        function prev() {
+	            var key = arguments.length <= 0 || arguments[0] === undefined ? _key2.default.SENTINEL : arguments[0];
+	            var p = arguments.length <= 1 || arguments[1] === undefined ? NONE : arguments[1];
+	
+	            return __awaiter(this, void 0, _promise2.default, _regenerator2.default.mark(function _callee2() {
+	                var string;
+	                return _regenerator2.default.wrap(function _callee2$(_context2) {
+	                    while (1) {
+	                        switch (_context2.prev = _context2.next) {
+	                            case 0:
+	                                string = (0, _stringify2.default)(key);
+	
+	                                if (!(p === NONE)) {
+	                                    _context2.next = 5;
+	                                    break;
+	                                }
+	
+	                                if (string in cache.prev) {
+	                                    _context2.next = 4;
+	                                    break;
+	                                }
+	
+	                                throw new _exceptions.NotFound();
+	
+	                            case 4:
+	                                return _context2.abrupt("return", cache.prev[string]);
+	
+	                            case 5:
+	                                return _context2.abrupt("return", cache.prev[string] = _promise2.default.resolve(p));
+	
+	                            case 6:
+	                            case "end":
+	                                return _context2.stop();
+	                        }
+	                    }
+	                }, _callee2, this);
+	            }));
+	        }
+	        function next() {
+	            var key = arguments.length <= 0 || arguments[0] === undefined ? _key2.default.SENTINEL : arguments[0];
+	            var n = arguments.length <= 1 || arguments[1] === undefined ? NONE : arguments[1];
+	
+	            return __awaiter(this, void 0, _promise2.default, _regenerator2.default.mark(function _callee3() {
+	                var string;
+	                return _regenerator2.default.wrap(function _callee3$(_context3) {
+	                    while (1) {
+	                        switch (_context3.prev = _context3.next) {
+	                            case 0:
+	                                string = (0, _stringify2.default)(key);
+	
+	                                if (!(n === NONE)) {
+	                                    _context3.next = 5;
+	                                    break;
+	                                }
+	
+	                                if (string in cache.next) {
+	                                    _context3.next = 4;
+	                                    break;
+	                                }
+	
+	                                return _context3.abrupt("return", _promise2.default.reject(new _exceptions.NotFound()));
+	
+	                            case 4:
+	                                return _context3.abrupt("return", cache.next[string]);
+	
+	                            case 5:
+	                                return _context3.abrupt("return", cache.next[string] = _promise2.default.resolve(n));
+	
+	                            case 6:
+	                            case "end":
+	                                return _context3.stop();
+	                        }
+	                    }
+	                }, _callee3, this);
+	            }));
+	        }
+	        return { get: get, prev: prev, next: next };
 	    }
 	    Cache.create = create;
 	    function extend(cache) {
@@ -3704,24 +3866,65 @@ return /******/ (function(modules) { // webpackBootstrap
 	    Cache.extend = extend;
 	    function apply(state, cache) {
 	        function get(key) {
-	            var stringifiedKey = (0, _stringify2.default)(key);
-	            return stringifiedKey in cache.get ? cache.get[stringifiedKey] : cache.get[stringifiedKey] = state.get(key);
+	            return __awaiter(this, void 0, _promise2.default, _regenerator2.default.mark(function _callee4() {
+	                return _regenerator2.default.wrap(function _callee4$(_context4) {
+	                    while (1) {
+	                        switch (_context4.prev = _context4.next) {
+	                            case 0:
+	                                return _context4.abrupt("return", cache.get(key).catch(function (reason) {
+	                                    if (reason instanceof _exceptions.NotFound) return cache.get(key, state.get(key));
+	                                    throw reason;
+	                                }));
+	
+	                            case 1:
+	                            case "end":
+	                                return _context4.stop();
+	                        }
+	                    }
+	                }, _callee4, this);
+	            }));
 	        }
 	        function prev() {
 	            var key = arguments.length <= 0 || arguments[0] === undefined ? _key2.default.SENTINEL : arguments[0];
 	
-	            var stringifiedKey = (0, _stringify2.default)(key);
-	            return stringifiedKey in cache.prev ? cache.prev[stringifiedKey] : cache.prev[stringifiedKey] = state.prev(key).then(function (prev) {
-	                cache.next[(0, _stringify2.default)(prev)] = _promise2.default.resolve(key);return prev;
-	            });
+	            return __awaiter(this, void 0, _promise2.default, _regenerator2.default.mark(function _callee5() {
+	                return _regenerator2.default.wrap(function _callee5$(_context5) {
+	                    while (1) {
+	                        switch (_context5.prev = _context5.next) {
+	                            case 0:
+	                                return _context5.abrupt("return", cache.prev(key).catch(function (reason) {
+	                                    if (reason instanceof _exceptions.NotFound) return cache.prev(key, state.prev(key));
+	                                    throw reason;
+	                                }));
+	
+	                            case 1:
+	                            case "end":
+	                                return _context5.stop();
+	                        }
+	                    }
+	                }, _callee5, this);
+	            }));
 	        }
 	        function next() {
 	            var key = arguments.length <= 0 || arguments[0] === undefined ? _key2.default.SENTINEL : arguments[0];
 	
-	            var stringifiedKey = (0, _stringify2.default)(key);
-	            return stringifiedKey in cache.next ? cache.next[stringifiedKey] : cache.next[stringifiedKey] = state.next(key).then(function (next) {
-	                cache.prev[(0, _stringify2.default)(next)] = _promise2.default.resolve(key);return next;
-	            });
+	            return __awaiter(this, void 0, _promise2.default, _regenerator2.default.mark(function _callee6() {
+	                return _regenerator2.default.wrap(function _callee6$(_context6) {
+	                    while (1) {
+	                        switch (_context6.prev = _context6.next) {
+	                            case 0:
+	                                return _context6.abrupt("return", cache.next(key).catch(function (reason) {
+	                                    if (reason instanceof _exceptions.NotFound) return cache.next(key, state.next(key));
+	                                    throw reason;
+	                                }));
+	
+	                            case 1:
+	                            case "end":
+	                                return _context6.stop();
+	                        }
+	                    }
+	                }, _callee6, this);
+	            }));
 	        }
 	        return { get: get, prev: prev, next: next };
 	    }
@@ -3737,6 +3940,44 @@ return /******/ (function(modules) { // webpackBootstrap
 	"use strict";
 	
 	Object.defineProperty(exports, "__esModule", {
+	  value: true
+	});
+	exports.NotFound = undefined;
+	
+	var _classCallCheck2 = __webpack_require__(86);
+	
+	var _classCallCheck3 = _interopRequireDefault(_classCallCheck2);
+	
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+	
+	var NotFound = exports.NotFound = function NotFound() {
+	  (0, _classCallCheck3.default)(this, NotFound);
+	};
+	
+	;
+	//# sourceMappingURL=exceptions.js.map
+
+/***/ },
+/* 86 */
+/***/ function(module, exports) {
+
+	"use strict";
+	
+	exports.default = function (instance, Constructor) {
+	  if (!(instance instanceof Constructor)) {
+	    throw new TypeError("Cannot call a class as a function");
+	  }
+	};
+	
+	exports.__esModule = true;
+
+/***/ },
+/* 87 */
+/***/ function(module, exports, __webpack_require__) {
+
+	"use strict";
+	
+	Object.defineProperty(exports, "__esModule", {
 	    value: true
 	});
 	exports.AsyncIterator = undefined;
@@ -3745,7 +3986,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	
 	var _slicedToArray3 = _interopRequireDefault(_slicedToArray2);
 	
-	var _keys = __webpack_require__(86);
+	var _keys = __webpack_require__(88);
 	
 	var _keys2 = _interopRequireDefault(_keys);
 	
@@ -3765,7 +4006,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	
 	var _promise2 = _interopRequireDefault(_promise);
 	
-	var _exceptions = __webpack_require__(91);
+	var _exceptions = __webpack_require__(85);
 	
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 	
@@ -4546,33 +4787,33 @@ return /******/ (function(modules) { // webpackBootstrap
 	//# sourceMappingURL=async_iterator.js.map
 
 /***/ },
-/* 86 */
-/***/ function(module, exports, __webpack_require__) {
-
-	module.exports = { "default": __webpack_require__(87), __esModule: true };
-
-/***/ },
-/* 87 */
-/***/ function(module, exports, __webpack_require__) {
-
-	__webpack_require__(88);
-	module.exports = __webpack_require__(4).Object.keys;
-
-/***/ },
 /* 88 */
 /***/ function(module, exports, __webpack_require__) {
 
+	module.exports = { "default": __webpack_require__(89), __esModule: true };
+
+/***/ },
+/* 89 */
+/***/ function(module, exports, __webpack_require__) {
+
+	__webpack_require__(90);
+	module.exports = __webpack_require__(4).Object.keys;
+
+/***/ },
+/* 90 */
+/***/ function(module, exports, __webpack_require__) {
+
 	// 19.1.2.14 Object.keys(O)
-	var toObject = __webpack_require__(89);
+	var toObject = __webpack_require__(91);
 	
-	__webpack_require__(90)('keys', function($keys){
+	__webpack_require__(92)('keys', function($keys){
 	  return function keys(it){
 	    return $keys(toObject(it));
 	  };
 	});
 
 /***/ },
-/* 89 */
+/* 91 */
 /***/ function(module, exports, __webpack_require__) {
 
 	// 7.1.13 ToObject(argument)
@@ -4582,7 +4823,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	};
 
 /***/ },
-/* 90 */
+/* 92 */
 /***/ function(module, exports, __webpack_require__) {
 
 	// most Object methods by ES6 should accept primitives
@@ -4595,44 +4836,6 @@ return /******/ (function(modules) { // webpackBootstrap
 	  exp[KEY] = exec(fn);
 	  $export($export.S + $export.F * fails(function(){ fn(1); }), 'Object', exp);
 	};
-
-/***/ },
-/* 91 */
-/***/ function(module, exports, __webpack_require__) {
-
-	"use strict";
-	
-	Object.defineProperty(exports, "__esModule", {
-	  value: true
-	});
-	exports.NotFound = undefined;
-	
-	var _classCallCheck2 = __webpack_require__(92);
-	
-	var _classCallCheck3 = _interopRequireDefault(_classCallCheck2);
-	
-	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-	
-	var NotFound = exports.NotFound = function NotFound() {
-	  (0, _classCallCheck3.default)(this, NotFound);
-	};
-	
-	;
-	//# sourceMappingURL=exceptions.js.map
-
-/***/ },
-/* 92 */
-/***/ function(module, exports) {
-
-	"use strict";
-	
-	exports.default = function (instance, Constructor) {
-	  if (!(instance instanceof Constructor)) {
-	    throw new TypeError("Cannot call a class as a function");
-	  }
-	};
-	
-	exports.__esModule = true;
 
 /***/ },
 /* 93 */
@@ -4792,11 +4995,11 @@ return /******/ (function(modules) { // webpackBootstrap
 	
 	var _observable = __webpack_require__(96);
 	
-	var _async_iterator = __webpack_require__(85);
+	var _async_iterator = __webpack_require__(87);
 	
 	var _async_iterator2 = _interopRequireDefault(_async_iterator);
 	
-	var _exceptions = __webpack_require__(91);
+	var _exceptions = __webpack_require__(85);
 	
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 	
@@ -5462,7 +5665,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	});
 	exports.Subject = exports.Observable = exports.Disposable = undefined;
 	
-	var _keys = __webpack_require__(86);
+	var _keys = __webpack_require__(88);
 	
 	var _keys2 = _interopRequireDefault(_keys);
 	
@@ -5482,7 +5685,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	
 	var _key2 = _interopRequireDefault(_key);
 	
-	var _async_iterator = __webpack_require__(85);
+	var _async_iterator = __webpack_require__(87);
 	
 	var _async_iterator2 = _interopRequireDefault(_async_iterator);
 	

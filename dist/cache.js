@@ -12,14 +12,50 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, Promi
     });
 };
 import Key from './key';
+import { NotFound } from './exceptions';
 export var Cache;
 (function (Cache) {
+    const NONE = {};
     function create() {
-        return {
+        var cache = {
             get: Object.create(null),
             prev: Object.create(null),
             next: Object.create(null)
         };
+        function get(key, value = NONE) {
+            return __awaiter(this, void 0, Promise, function* () {
+                var string = JSON.stringify(key);
+                if (value === NONE) {
+                    if (!(string in cache.get))
+                        throw new NotFound;
+                    return cache.get[string];
+                }
+                return cache.get[string] = Promise.resolve(value);
+            });
+        }
+        function prev(key = Key.SENTINEL, p = NONE) {
+            return __awaiter(this, void 0, Promise, function* () {
+                var string = JSON.stringify(key);
+                if (p === NONE) {
+                    if (!(string in cache.prev))
+                        throw new NotFound;
+                    return cache.prev[string];
+                }
+                return cache.prev[string] = Promise.resolve(p);
+            });
+        }
+        function next(key = Key.SENTINEL, n = NONE) {
+            return __awaiter(this, void 0, Promise, function* () {
+                var string = JSON.stringify(key);
+                if (n === NONE) {
+                    if (!(string in cache.next))
+                        return Promise.reject(new NotFound);
+                    return cache.next[string];
+                }
+                return cache.next[string] = Promise.resolve(n);
+            });
+        }
+        return { get, prev, next };
     }
     Cache.create = create;
     function extend(cache) {
@@ -32,16 +68,31 @@ export var Cache;
     Cache.extend = extend;
     function apply(state, cache) {
         function get(key) {
-            var stringifiedKey = JSON.stringify(key);
-            return stringifiedKey in cache.get ? cache.get[stringifiedKey] : cache.get[stringifiedKey] = state.get(key);
+            return __awaiter(this, void 0, Promise, function* () {
+                return cache.get(key).catch(reason => {
+                    if (reason instanceof NotFound)
+                        return cache.get(key, state.get(key));
+                    throw reason;
+                });
+            });
         }
         function prev(key = Key.SENTINEL) {
-            var stringifiedKey = JSON.stringify(key);
-            return stringifiedKey in cache.prev ? cache.prev[stringifiedKey] : cache.prev[stringifiedKey] = state.prev(key).then(prev => { cache.next[JSON.stringify(prev)] = Promise.resolve(key); return prev; });
+            return __awaiter(this, void 0, Promise, function* () {
+                return cache.prev(key).catch(reason => {
+                    if (reason instanceof NotFound)
+                        return cache.prev(key, state.prev(key));
+                    throw reason;
+                });
+            });
         }
         function next(key = Key.SENTINEL) {
-            var stringifiedKey = JSON.stringify(key);
-            return stringifiedKey in cache.next ? cache.next[stringifiedKey] : cache.next[stringifiedKey] = state.next(key).then(next => { cache.prev[JSON.stringify(next)] = Promise.resolve(key); return next; });
+            return __awaiter(this, void 0, Promise, function* () {
+                return cache.next(key).catch(reason => {
+                    if (reason instanceof NotFound)
+                        return cache.next(key, state.next(key));
+                    throw reason;
+                });
+            });
         }
         return { get, prev, next };
     }

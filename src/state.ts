@@ -6,9 +6,9 @@ import   Patch         from './patch';
 import   Cache         from './cache';
 import   AsyncIterator from './async_iterator';
 import { Tree,
-       Path }        from './tree'
+         Path }        from './tree'
 import   PromiseUtils  from './promise_utils';
-import  { NotFound }   from './exceptions';
+import { NotFound }    from './exceptions';
 
 export interface State<K, V> {
   get:  (key: K)  => Promise<V>;
@@ -269,7 +269,7 @@ export module State {
   export function unit<K, V>(value: V, key: K): State<K, V>;
   export function unit<V>(value: V, key = Key.unique()): State<string, V> {
     return {
-      get:  k => k === Key.SENTINEL ? Promise.resolve(value) : Promise.reject<any>(new NotFound),
+      get:  k => k === key ? Promise.resolve(value) : Promise.reject<any>(new NotFound),
       prev: (k = Key.SENTINEL) => Promise.resolve(k === Key.SENTINEL ? key : Key.SENTINEL),
       next: (k = Key.SENTINEL) => Promise.resolve(k === Key.SENTINEL ? key : Key.SENTINEL)
     };
@@ -278,8 +278,7 @@ export module State {
   export function entries<K, V>(state: State<K, V>, range: Range<K> = Range.all): AsyncIterator<Entry<K, V>> {
     var current = Key.SENTINEL,
         done = false,
-        from = range[0],
-        to   = range[1];
+        [from, to] = range;
 
     function get(key: K) {
       if (key === Key.SENTINEL) return (done = true, Promise.resolve(AsyncIterator.done));
@@ -313,9 +312,9 @@ export module State {
   }
 
   export function fromEntries<K, V>(iterator: Iterator<Entry<K, V>> | AsyncIterator<Entry<K, V>>): State<K, V> {
-    var cache = Cache.create(),
+    var cache = Cache.create<K, V>(),
         exhausted = false,
-        currentKey: K = null,
+        currentKey: K = Key.SENTINEL,
         queue = Promise.resolve(null);
 
     var cachingIterator = {
@@ -324,16 +323,16 @@ export module State {
 
         if (result.done) {
           exhausted = true;
-          cache.prev[JSON.stringify(Key.SENTINEL)] = Promise.resolve(currentKey);
-          cache.next[JSON.stringify(currentKey)] = Promise.resolve(Key.SENTINEL);
+          await cache.prev(Key.SENTINEL, currentKey);
+          await cache.next(currentKey, Key.SENTINEL);
           return AsyncIterator.done;
         }
 
         var [key, value] = result.value;
 
-        cache.prev[JSON.stringify(key)] = Promise.resolve(currentKey);
-        cache.next[JSON.stringify(currentKey)] = Promise.resolve(key);
-        cache.get[JSON.stringify(key)] = Promise.resolve(value);
+        await cache.prev(key, currentKey);
+        await cache.next(currentKey, key);
+        await cache.get(key, value);
         currentKey = key;
 
         return {done: false, value: [key, value]};
@@ -345,12 +344,13 @@ export module State {
       return AsyncIterator.find(cachingIterator, entry => entry[0] === key).then(Entry.value);
     }
 
-    function prev(key: K): Promise<K> {
+    async function prev(key: K = Key.SENTINEL): Promise<K> {
       if (exhausted) return Promise.reject<any>(new NotFound);
-      return AsyncIterator.some(cachingIterator, entry => entry[0] === key).then(() => JSON.stringify(key) in cache.prev ? cache.prev[JSON.stringify(key)] : Promise.resolve<any>(new NotFound));
+      await AsyncIterator.some(cachingIterator, entry => entry[0] === key);
+      return cache.prev(key);
     }
 
-    function next(key: K): Promise<K> {
+    function next(key: K = Key.SENTINEL): Promise<K> {
       if (exhausted) return Promise.reject<any>(new NotFound);
       if (key === currentKey) return cachingIterator.next().then(result => result.done ? Key.SENTINEL : result.value[0])
       return AsyncIterator.find(cachingIterator, entry => entry[0] === key).then(() => cachingIterator.next()).then(result => result.done ? Key.SENTINEL : result.value[0]);
