@@ -10,6 +10,7 @@ module.exports = {
   entry: glob.sync(__dirname + '/test/*.js'),
   cache: true,
   debug: true,
+  devtool: 'source-map',
 
   output: {
     path: __dirname + '/build',
@@ -22,7 +23,7 @@ module.exports = {
       {
         test: /\.js$/,
         exclude: /(node_modules|bower_components)/,
-        loader: 'babel?presets[]=es2015&plugins[]=transform-async-to-generator&plugins[]=transform-runtime'
+        loader: 'babel'
       }
     ]
   }

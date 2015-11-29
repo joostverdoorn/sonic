@@ -25,6 +25,8 @@
     "blue-tape": "^0.1.10",
     "faucet": "0.0.1",
     "glob": "^6.0.1",
+    "nyc": "^4.0.1",
+    "tap": "github:isaacs/node-tap",
     "typescript": "^1.8.0-dev.20151115",
     "watch": "^0.16.0",
     "webpack": "^1.12.6"
@@ -32,7 +34,8 @@
   "scripts": {
     "ts": "tsc",
     "dist": "tsc && webpack --config webpack.src.config.js",
-    "test": "tsc && (webpack --config webpack.test.config.js && node build/test.js | faucet); STATUS=$?; if [ $STATUS != 0 ]; then echo -e '\\u0007'; fi; exit $STATUS",
+    "test": "tsc && (nyc --require babel-core/register tap -Rdot test/sonic.js); STATUS=$?; if [ $STATUS != 0 ]; then echo -e '\\u0007'; fi; exit $STATUS",
+    "coverage": "npm test & nyc report --reporter=text-lcov | coveralls",
     "watch": "tsc -w & webpack -w --config webpack.src.config.js",
     "watch-test": "npm run watch & watch 'npm test' test",
     "d": "npm run dist",
