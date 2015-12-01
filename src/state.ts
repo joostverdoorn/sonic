@@ -249,10 +249,26 @@ export module State {
     return fromEntries(AsyncIterator.unique(AsyncIterator.concat(entries(state), entries(other)), async ([key, value]) => uniqueFn(value, key)));
   }
 
-  export function keyBy<K, L, V>(parent: State<K, V>, keyFn: (value: V, key?: K) => L | Promise<L>): State<L, V> {
-    return fromEntries(AsyncIterator.map(entries(parent), entry => {
+  export function keyBy<K, L, V>(parent: State<K, V>, keyFn: (value: V, key?: K) => L | Promise<L>, reverseKeyFn?: (key: L) => K | Promise<K>): State<L, V> {
+    if (!reverseKeyFn) return fromEntries(AsyncIterator.map(entries(parent), entry => {
       return Promise.resolve(keyFn(entry[1], entry[0])).then(key => <Entry<L, V>>[key, entry[1]]);
     }));
+
+    return {
+      async get(key: L): Promise<V> {
+        return parent.get(await reverseKeyFn(key));
+      },
+
+      async prev(key: L): Promise<L> {
+        var prev = await parent.prev(await reverseKeyFn(key));
+        return keyFn(await parent.get(prev), prev);
+      },
+
+      async next(key: L) {
+        var next = await parent.next(await reverseKeyFn(key));
+        return keyFn(await parent.get(next), next);
+      }
+    }
   }
 
   export function take<K, V>(parent: State<K, V>, count: number): State<K, V> {

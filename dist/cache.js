@@ -33,26 +33,26 @@ export var Cache;
                 return cache.get[string] = Promise.resolve(value);
             });
         }
-        function prev(key = Key.SENTINEL, p = NONE) {
+        function prev(key = Key.SENTINEL, prevKey = NONE) {
             return __awaiter(this, void 0, Promise, function* () {
                 var string = JSON.stringify(key);
-                if (p === NONE) {
+                if (prevKey === NONE) {
                     if (!(string in cache.prev))
                         throw new NotFound;
                     return cache.prev[string];
                 }
-                return cache.prev[string] = Promise.resolve(p);
+                return cache.prev[string] = Promise.resolve(prevKey);
             });
         }
-        function next(key = Key.SENTINEL, n = NONE) {
+        function next(key = Key.SENTINEL, nextKey = NONE) {
             return __awaiter(this, void 0, Promise, function* () {
                 var string = JSON.stringify(key);
-                if (n === NONE) {
+                if (nextKey === NONE) {
                     if (!(string in cache.next))
                         return Promise.reject(new NotFound);
                     return cache.next[string];
                 }
-                return cache.next[string] = Promise.resolve(n);
+                return cache.next[string] = Promise.resolve(nextKey);
             });
         }
         return { get, prev, next };

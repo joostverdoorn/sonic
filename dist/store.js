@@ -132,8 +132,8 @@ export var Store;
         return Store.flatten(Store.map(parent, mapFn));
     }
     Store.flatMap = flatMap;
-    function keyBy(parent, keyFn) {
-        var state = State.keyBy(parent.state, keyFn), parentState = parent.state, dispatcher = Observable.map(parent.dispatcher, (patch) => __awaiter(this, void 0, Promise, function* () {
+    function keyBy(parent, keyFn, reverseKeyFn) {
+        var state = State.keyBy(parent.state, keyFn, reverseKeyFn), parentState = parent.state, dispatcher = Observable.map(parent.dispatcher, (patch) => __awaiter(this, void 0, Promise, function* () {
             var [from, to] = patch.range;
             function mapPosition(position) {
                 return __awaiter(this, void 0, Promise, function* () {

@@ -155,8 +155,8 @@ export module Store {
     return Store.flatten(Store.map(parent, mapFn));
   }
 
-  export function keyBy<K, L, V>(parent: Store<K, V>, keyFn: (value: V, key: K) => L | Promise<L>): Store<L, V> {
-    var state = State.keyBy(parent.state, keyFn),
+  export function keyBy<K, L, V>(parent: Store<K, V>, keyFn: (value: V, key: K) => L | Promise<L>, reverseKeyFn: (key: L) => K | Promise<K>): Store<L, V> {
+    var state = State.keyBy(parent.state, keyFn, reverseKeyFn),
         parentState = parent.state,
         dispatcher = Observable.map(parent.dispatcher, async (patch) => {
           var [from, to] = patch.range;

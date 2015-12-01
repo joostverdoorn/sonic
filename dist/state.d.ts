@@ -42,7 +42,7 @@ export declare module State {
     function groupBy<K, L, V>(parent: State<K, V>, groupFn: (value: V, key: K) => L | Promise<L>): Tree<L, K, V>;
     function unique<K, L, V>(parent: State<K, V>, uniqueFn: (value: V, key: K) => L | Promise<L>): State<K, V>;
     function union<K, V>(state: State<K, V>, other: State<K, V>, uniqueFn?: (value: V, key: K) => K | Promise<K>): State<K, V>;
-    function keyBy<K, L, V>(parent: State<K, V>, keyFn: (value: V, key?: K) => L | Promise<L>): State<L, V>;
+    function keyBy<K, L, V>(parent: State<K, V>, keyFn: (value: V, key?: K) => L | Promise<L>, reverseKeyFn?: (key: L) => K | Promise<K>): State<L, V>;
     function take<K, V>(parent: State<K, V>, count: number): State<K, V>;
     function skip<K, V>(parent: State<K, V>, count: number): State<K, V>;
     function cache<K, V>(parent: State<K, V>): State<K, V>;

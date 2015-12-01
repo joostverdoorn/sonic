@@ -244,10 +244,30 @@ export var State;
         return fromEntries(AsyncIterator.unique(AsyncIterator.concat(entries(state), entries(other)), ([key, value]) => __awaiter(this, void 0, Promise, function* () { return uniqueFn(value, key); })));
     }
     State.union = union;
-    function keyBy(parent, keyFn) {
-        return fromEntries(AsyncIterator.map(entries(parent), entry => {
-            return Promise.resolve(keyFn(entry[1], entry[0])).then(key => [key, entry[1]]);
-        }));
+    function keyBy(parent, keyFn, reverseKeyFn) {
+        if (!reverseKeyFn)
+            return fromEntries(AsyncIterator.map(entries(parent), entry => {
+                return Promise.resolve(keyFn(entry[1], entry[0])).then(key => [key, entry[1]]);
+            }));
+        return {
+            get(key) {
+                return __awaiter(this, void 0, Promise, function* () {
+                    return parent.get(yield reverseKeyFn(key));
+                });
+            },
+            prev(key) {
+                return __awaiter(this, void 0, Promise, function* () {
+                    var prev = yield parent.prev(yield reverseKeyFn(key));
+                    return keyFn(yield parent.get(prev), prev);
+                });
+            },
+            next(key) {
+                return __awaiter(this, void 0, Promise, function* () {
+                    var next = yield parent.next(yield reverseKeyFn(key));
+                    return keyFn(yield parent.get(next), next);
+                });
+            }
+        };
     }
     State.keyBy = keyBy;
     function take(parent, count) {

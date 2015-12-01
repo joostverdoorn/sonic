@@ -761,12 +761,104 @@ return /******/ (function(modules) { // webpackBootstrap
 	        }));
 	    }
 	    State.union = union;
-	    function keyBy(parent, keyFn) {
-	        return fromEntries(_async_iterator2.default.map(entries(parent), function (entry) {
+	    function keyBy(parent, keyFn, reverseKeyFn) {
+	        if (!reverseKeyFn) return fromEntries(_async_iterator2.default.map(entries(parent), function (entry) {
 	            return _promise2.default.resolve(keyFn(entry[1], entry[0])).then(function (key) {
 	                return [key, entry[1]];
 	            });
 	        }));
+	        return {
+	            get: function get(key) {
+	                return __awaiter(this, void 0, _promise2.default, _regenerator2.default.mark(function _callee11() {
+	                    return _regenerator2.default.wrap(function _callee11$(_context11) {
+	                        while (1) {
+	                            switch (_context11.prev = _context11.next) {
+	                                case 0:
+	                                    _context11.t0 = parent;
+	                                    _context11.next = 3;
+	                                    return reverseKeyFn(key);
+	
+	                                case 3:
+	                                    _context11.t1 = _context11.sent;
+	                                    return _context11.abrupt("return", _context11.t0.get.call(_context11.t0, _context11.t1));
+	
+	                                case 5:
+	                                case "end":
+	                                    return _context11.stop();
+	                            }
+	                        }
+	                    }, _callee11, this);
+	                }));
+	            },
+	            prev: function prev(key) {
+	                return __awaiter(this, void 0, _promise2.default, _regenerator2.default.mark(function _callee12() {
+	                    var prev;
+	                    return _regenerator2.default.wrap(function _callee12$(_context12) {
+	                        while (1) {
+	                            switch (_context12.prev = _context12.next) {
+	                                case 0:
+	                                    _context12.t0 = parent;
+	                                    _context12.next = 3;
+	                                    return reverseKeyFn(key);
+	
+	                                case 3:
+	                                    _context12.t1 = _context12.sent;
+	                                    _context12.next = 6;
+	                                    return _context12.t0.prev.call(_context12.t0, _context12.t1);
+	
+	                                case 6:
+	                                    prev = _context12.sent;
+	                                    _context12.next = 9;
+	                                    return parent.get(prev);
+	
+	                                case 9:
+	                                    _context12.t2 = _context12.sent;
+	                                    _context12.t3 = prev;
+	                                    return _context12.abrupt("return", keyFn(_context12.t2, _context12.t3));
+	
+	                                case 12:
+	                                case "end":
+	                                    return _context12.stop();
+	                            }
+	                        }
+	                    }, _callee12, this);
+	                }));
+	            },
+	            next: function next(key) {
+	                return __awaiter(this, void 0, _promise2.default, _regenerator2.default.mark(function _callee13() {
+	                    var next;
+	                    return _regenerator2.default.wrap(function _callee13$(_context13) {
+	                        while (1) {
+	                            switch (_context13.prev = _context13.next) {
+	                                case 0:
+	                                    _context13.t0 = parent;
+	                                    _context13.next = 3;
+	                                    return reverseKeyFn(key);
+	
+	                                case 3:
+	                                    _context13.t1 = _context13.sent;
+	                                    _context13.next = 6;
+	                                    return _context13.t0.next.call(_context13.t0, _context13.t1);
+	
+	                                case 6:
+	                                    next = _context13.sent;
+	                                    _context13.next = 9;
+	                                    return parent.get(next);
+	
+	                                case 9:
+	                                    _context13.t2 = _context13.sent;
+	                                    _context13.t3 = next;
+	                                    return _context13.abrupt("return", keyFn(_context13.t2, _context13.t3));
+	
+	                                case 12:
+	                                case "end":
+	                                    return _context13.stop();
+	                            }
+	                        }
+	                    }, _callee13, this);
+	                }));
+	            }
+	        };
 	    }
 	    State.keyBy = keyBy;
 	    function take(parent, count) {
@@ -848,60 +940,60 @@ return /******/ (function(modules) { // webpackBootstrap
 	            queue = _promise2.default.resolve(null);
 	        var cachingIterator = {
 	            next: function next() {
-	                return __awaiter(this, void 0, _promise2.default, _regenerator2.default.mark(function _callee11() {
+	                return __awaiter(this, void 0, _promise2.default, _regenerator2.default.mark(function _callee14() {
 	                    var result, _result$value, key, value;
 	
-	                    return _regenerator2.default.wrap(function _callee11$(_context11) {
+	                    return _regenerator2.default.wrap(function _callee14$(_context14) {
 	                        while (1) {
-	                            switch (_context11.prev = _context11.next) {
+	                            switch (_context14.prev = _context14.next) {
 	                                case 0:
-	                                    _context11.next = 2;
+	                                    _context14.next = 2;
 	                                    return iterator.next();
 	
 	                                case 2:
-	                                    result = _context11.sent;
+	                                    result = _context14.sent;
 	
 	                                    if (!result.done) {
-	                                        _context11.next = 10;
+	                                        _context14.next = 10;
 	                                        break;
 	                                    }
 	
 	                                    exhausted = true;
-	                                    _context11.next = 7;
+	                                    _context14.next = 7;
 	                                    return cache.prev(_key2.default.SENTINEL, currentKey);
 	
 	                                case 7:
-	                                    _context11.next = 9;
+	                                    _context14.next = 9;
 	                                    return cache.next(currentKey, _key2.default.SENTINEL);
 	
 	                                case 9:
-	                                    return _context11.abrupt("return", _async_iterator2.default.done);
+	                                    return _context14.abrupt("return", _async_iterator2.default.done);
 	
 	                                case 10:
 	                                    _result$value = (0, _slicedToArray3.default)(result.value, 2);
 	                                    key = _result$value[0];
 	                                    value = _result$value[1];
-	                                    _context11.next = 15;
+	                                    _context14.next = 15;
 	                                    return cache.prev(key, currentKey);
 	
 	                                case 15:
-	                                    _context11.next = 17;
+	                                    _context14.next = 17;
 	                                    return cache.next(currentKey, key);
 	
 	                                case 17:
-	                                    _context11.next = 19;
+	                                    _context14.next = 19;
 	                                    return cache.get(key, value);
 	
 	                                case 19:
 	                                    currentKey = key;
-	                                    return _context11.abrupt("return", { done: false, value: [key, value] });
+	                                    return _context14.abrupt("return", { done: false, value: [key, value] });
 	
 	                                case 21:
 	                                case "end":
-	                                    return _context11.stop();
+	                                    return _context14.stop();
 	                            }
 	                        }
-	                    }, _callee11, this);
+	                    }, _callee14, this);
 	                }));
 	            }
 	        };
@@ -914,33 +1006,33 @@ return /******/ (function(modules) { // webpackBootstrap
 	        function prev() {
 	            var key = arguments.length <= 0 || arguments[0] === undefined ? _key2.default.SENTINEL : arguments[0];
 	
-	            return __awaiter(this, void 0, _promise2.default, _regenerator2.default.mark(function _callee12() {
-	                return _regenerator2.default.wrap(function _callee12$(_context12) {
+	            return __awaiter(this, void 0, _promise2.default, _regenerator2.default.mark(function _callee15() {
+	                return _regenerator2.default.wrap(function _callee15$(_context15) {
 	                    while (1) {
-	                        switch (_context12.prev = _context12.next) {
+	                        switch (_context15.prev = _context15.next) {
 	                            case 0:
 	                                if (!exhausted) {
-	                                    _context12.next = 2;
+	                                    _context15.next = 2;
 	                                    break;
 	                                }
 	
-	                                return _context12.abrupt("return", _promise2.default.reject(new _exceptions.NotFound()));
+	                                return _context15.abrupt("return", _promise2.default.reject(new _exceptions.NotFound()));
 	
 	                            case 2:
-	                                _context12.next = 4;
+	                                _context15.next = 4;
 	                                return _async_iterator2.default.some(cachingIterator, function (entry) {
 	                                    return entry[0] === key;
 	                                });
 	
 	                            case 4:
-	                                return _context12.abrupt("return", cache.prev(key));
+	                                return _context15.abrupt("return", cache.prev(key));
 	
 	                            case 5:
 	                            case "end":
-	                                return _context12.stop();
+	                                return _context15.stop();
 	                        }
 	                    }
-	                }, _callee12, this);
+	                }, _callee15, this);
 	            }));
 	        }
 	        function next() {
@@ -985,36 +1077,36 @@ return /******/ (function(modules) { // webpackBootstrap
 	        var state,
 	            queue = _promise2.default.resolve();
 	        function createState() {
-	            return __awaiter(this, void 0, _promise2.default, _regenerator2.default.mark(function _callee13() {
-	                return _regenerator2.default.wrap(function _callee13$(_context13) {
+	            return __awaiter(this, void 0, _promise2.default, _regenerator2.default.mark(function _callee16() {
+	                return _regenerator2.default.wrap(function _callee16$(_context16) {
 	                    while (1) {
-	                        switch (_context13.prev = _context13.next) {
+	                        switch (_context16.prev = _context16.next) {
 	                            case 0:
 	                                if (!state) {
-	                                    _context13.next = 4;
+	                                    _context16.next = 4;
 	                                    break;
 	                                }
 	
-	                                _context13.t0 = state;
-	                                _context13.next = 7;
+	                                _context16.t0 = state;
+	                                _context16.next = 7;
 	                                break;
 	
 	                            case 4:
-	                                _context13.next = 6;
+	                                _context16.next = 6;
 	                                return fn();
 	
 	                            case 6:
-	                                _context13.t0 = state = _context13.sent;
+	                                _context16.t0 = state = _context16.sent;
 	
 	                            case 7:
-	                                return _context13.abrupt("return", _context13.t0);
+	                                return _context16.abrupt("return", _context16.t0);
 	
 	                            case 8:
 	                            case "end":
-	                                return _context13.stop();
+	                                return _context16.stop();
 	                        }
 	                    }
-	                }, _callee13, this);
+	                }, _callee16, this);
 	            }));
 	        }
 	        function get(key) {
@@ -3779,7 +3871,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	        }
 	        function prev() {
 	            var key = arguments.length <= 0 || arguments[0] === undefined ? _key2.default.SENTINEL : arguments[0];
-	            var p = arguments.length <= 1 || arguments[1] === undefined ? NONE : arguments[1];
+	            var prevKey = arguments.length <= 1 || arguments[1] === undefined ? NONE : arguments[1];
 	
 	            return __awaiter(this, void 0, _promise2.default, _regenerator2.default.mark(function _callee2() {
 	                var string;
@@ -3789,7 +3881,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	                            case 0:
 	                                string = (0, _stringify2.default)(key);
 	
-	                                if (!(p === NONE)) {
+	                                if (!(prevKey === NONE)) {
 	                                    _context2.next = 5;
 	                                    break;
 	                                }
@@ -3805,7 +3897,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	                                return _context2.abrupt("return", cache.prev[string]);
 	
 	                            case 5:
-	                                return _context2.abrupt("return", cache.prev[string] = _promise2.default.resolve(p));
+	                                return _context2.abrupt("return", cache.prev[string] = _promise2.default.resolve(prevKey));
 	
 	                            case 6:
 	                            case "end":
@@ -3817,7 +3909,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	        }
 	        function next() {
 	            var key = arguments.length <= 0 || arguments[0] === undefined ? _key2.default.SENTINEL : arguments[0];
-	            var n = arguments.length <= 1 || arguments[1] === undefined ? NONE : arguments[1];
+	            var nextKey = arguments.length <= 1 || arguments[1] === undefined ? NONE : arguments[1];
 	
 	            return __awaiter(this, void 0, _promise2.default, _regenerator2.default.mark(function _callee3() {
 	                var string;
@@ -3827,7 +3919,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	                            case 0:
 	                                string = (0, _stringify2.default)(key);
 	
-	                                if (!(n === NONE)) {
+	                                if (!(nextKey === NONE)) {
 	                                    _context3.next = 5;
 	                                    break;
 	                                }
@@ -3843,7 +3935,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	                                return _context3.abrupt("return", cache.next[string]);
 	
 	                            case 5:
-	                                return _context3.abrupt("return", cache.next[string] = _promise2.default.resolve(n));
+	                                return _context3.abrupt("return", cache.next[string] = _promise2.default.resolve(nextKey));
 	
 	                            case 6:
 	                            case "end":
@@ -5260,10 +5352,10 @@ return /******/ (function(modules) { // webpackBootstrap
 	        return Store.flatten(Store.map(parent, mapFn));
 	    }
 	    Store.flatMap = flatMap;
-	    function keyBy(parent, keyFn) {
+	    function keyBy(parent, keyFn, reverseKeyFn) {
 	        var _this2 = this;
 	
-	        var state = _state2.default.keyBy(parent.state, keyFn),
+	        var state = _state2.default.keyBy(parent.state, keyFn, reverseKeyFn),
 	            parentState = parent.state,
 	            dispatcher = _observable.Observable.map(parent.dispatcher, function (patch) {
 	            return __awaiter(_this2, void 0, _promise2.default, _regenerator2.default.mark(function _callee5() {

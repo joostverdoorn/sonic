@@ -2,15 +2,11 @@ import Key   from './key';
 import State from './state';
 import Patch from './patch';
 import { NotFound } from './exceptions';
-// export type Cache<K, V> = {
-//   get : {[key: string]: Promise<V>}
-//   prev: {[key: string]: Promise<K>}
-//   next: {[key: string]: Promise<K>}
-// }
+
 export type Cache<K, V> = {
-  get : (key: K, value?: V | Promise<V>) => Promise<V>,
-  prev: (key: K, p?: K | Promise<K>) => Promise<K>,
-  next: (key: K, n?: K | Promise<K>) => Promise<K>
+  get : (key: K, value?:   V | Promise<V>) => Promise<V>,
+  prev: (key: K, prevKey?: K | Promise<K>) => Promise<K>,
+  next: (key: K, nextKey?: K | Promise<K>) => Promise<K>
 };
 
 export module Cache {
@@ -35,26 +31,26 @@ export module Cache {
       return cache.get[string] = Promise.resolve(value);
     }
 
-    async function prev(key: K = Key.SENTINEL, p: K | Promise<K> = NONE): Promise<K> {
+    async function prev(key: K = Key.SENTINEL, prevKey: K | Promise<K> = NONE): Promise<K> {
       var string = JSON.stringify(key);
 
-      if (p === NONE) {
+      if (prevKey === NONE) {
         if (!(string in cache.prev)) throw new NotFound;
         return cache.prev[string];
       }
 
-      return cache.prev[string] = Promise.resolve(p);
+      return cache.prev[string] = Promise.resolve(prevKey);
     }
 
-    async function next(key: K = Key.SENTINEL, n: K | Promise<K> = NONE): Promise<K> {
+    async function next(key: K = Key.SENTINEL, nextKey: K | Promise<K> = NONE): Promise<K> {
       var string = JSON.stringify(key);
 
-      if (n === NONE) {
+      if (nextKey === NONE) {
         if (!(string in cache.next)) return Promise.reject<any>(new NotFound);
         return cache.next[string];
       }
 
-      return cache.next[string] = Promise.resolve(n);
+      return cache.next[string] = Promise.resolve(nextKey);
     }
 
     return {get, prev, next}
