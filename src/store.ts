@@ -20,7 +20,7 @@ export interface Store<K, V> {
 }
 
 export interface MutableStore<K, V> extends Store<K, V> {
-  dispatcher: Subject<Patch<K, V>>
+  dispatcher: Subject<Patch<K, V>, Patch<K, V>>
 }
 
 export module Store {
@@ -239,7 +239,7 @@ export module Store {
     return Observable.map(store.dispatcher, () => store.state);
   }
 
-  export function create<K, V>(state: State<K, V>, dispatcher: Subject<Patch<K, V>>, reducer?: (state: State<K, V>, patch: Patch<K, V>) => State<K, V> | Promise<State<K, V>>): MutableStore<K, V>
+  export function create<K, V>(state: State<K, V>, dispatcher: Subject<Patch<K, V>, Patch<K, V>>, reducer?: (state: State<K, V>, patch: Patch<K, V>) => State<K, V> | Promise<State<K, V>>): MutableStore<K, V>
   export function create<K, V>(state: State<K, V>, dispatcher: Observable<Patch<K, V>>, reducer?: (state: State<K, V>, patch: Patch<K, V>) => State<K, V> | Promise<State<K, V>>): Store<K, V>
   export function create<K, V>(state: State<K, V>, dispatcher: Observable<Patch<K, V>>, reducer: (state: State<K, V>, patch: Patch<K, V>) => State<K, V> | Promise<State<K, V>> = Patch.apply): any {
 

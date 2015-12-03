@@ -16,7 +16,7 @@ export interface Observable<T> {
   subscribe(observer: Observer<T>): Disposable;
 }
 
-export interface Subject<T> extends Observable<T>, Observer<T> {}
+export interface Subject<T, U> extends Observable<U>, Observer<T> {}
 
 export module Disposable {
   export function create(disposer?: () => void): Disposable {
@@ -28,13 +28,13 @@ export module Disposable {
         done = true;
         if (disposer) disposer();
       }
-    }
+    };
   }
 }
 
 export module Observable {
-  export function create<T>(fn?: (subject: Subject<T>) => void) {
-    var subject: Subject<T>;
+  export function create<T>(fn?: (subject: Subject<T, T>) => void) {
+    var subject: Subject<T, T>;
 
     function subscribe(observer: Observer<T>): Disposable {
       if (!subject) {
@@ -46,6 +46,13 @@ export module Observable {
     }
 
     return { subscribe };
+  }
+
+  export function pipe<T, U>(observable: Observable<T>, observer: Subject<T, U>): Subject<T, U>;
+  export function pipe<T>(observable: Observable<T>, observer: Observer<T>): Observer<T>;
+  export function pipe<T>(observable: Observable<T>, observer: Observer<T>): any {
+    observable.subscribe(observer);
+    return observer;
   }
 
   export function map<T, U>(observable: Observable<T>, mapFn: (value: T) => U | Promise<U>): Observable<U> {
@@ -159,11 +166,11 @@ export module Observable {
 }
 
 export module Subject {
-  export function isSubject<T>(obj: any): obj is Subject<T> {
+  export function isSubject<T, U>(obj: any): obj is Subject<T, U> {
     return typeof obj["onNext"] === "function";
   }
 
-  export function create<T>(): Subject<T> {
+  export function create<T>(): Subject<T, T> {
     var observers: {[key: string]: Observer<T>} = Object.create(null),
         current = Promise.resolve(),
         completed = false,

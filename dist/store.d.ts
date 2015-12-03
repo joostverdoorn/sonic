@@ -7,7 +7,7 @@ export interface Store<K, V> {
     dispatcher: Observable<Patch<K, V>>;
 }
 export interface MutableStore<K, V> extends Store<K, V> {
-    dispatcher: Subject<Patch<K, V>>;
+    dispatcher: Subject<Patch<K, V>, Patch<K, V>>;
 }
 export declare module Store {
     function reverse<K, V>(parent: Store<K, V>): Store<K, V>;
@@ -21,7 +21,7 @@ export declare module Store {
     function take<K, V>(parent: Store<K, V>, count: number): Store<K, V>;
     function cache<K, V>(parent: Store<K, V>): Store<K, V>;
     function states<K, V>(store: Store<K, V>): Observable<State<K, V>>;
-    function create<K, V>(state: State<K, V>, dispatcher: Subject<Patch<K, V>>, reducer?: (state: State<K, V>, patch: Patch<K, V>) => State<K, V> | Promise<State<K, V>>): MutableStore<K, V>;
+    function create<K, V>(state: State<K, V>, dispatcher: Subject<Patch<K, V>, Patch<K, V>>, reducer?: (state: State<K, V>, patch: Patch<K, V>) => State<K, V> | Promise<State<K, V>>): MutableStore<K, V>;
     function create<K, V>(state: State<K, V>, dispatcher: Observable<Patch<K, V>>, reducer?: (state: State<K, V>, patch: Patch<K, V>) => State<K, V> | Promise<State<K, V>>): Store<K, V>;
 }
 export default Store;

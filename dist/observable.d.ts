@@ -10,15 +10,17 @@ export interface Observer<T> {
 export interface Observable<T> {
     subscribe(observer: Observer<T>): Disposable;
 }
-export interface Subject<T> extends Observable<T>, Observer<T> {
+export interface Subject<T, U> extends Observable<U>, Observer<T> {
 }
 export declare module Disposable {
     function create(disposer?: () => void): Disposable;
 }
 export declare module Observable {
-    function create<T>(fn?: (subject: Subject<T>) => void): {
+    function create<T>(fn?: (subject: Subject<T, T>) => void): {
         subscribe: (observer: Observer<T>) => Disposable;
     };
+    function pipe<T, U>(observable: Observable<T>, observer: Subject<T, U>): Subject<T, U>;
+    function pipe<T>(observable: Observable<T>, observer: Observer<T>): Observer<T>;
     function map<T, U>(observable: Observable<T>, mapFn: (value: T) => U | Promise<U>): Observable<U>;
     function filter<T>(observable: Observable<T>, filterFn: (value: T) => boolean | Promise<boolean>): Observable<T>;
     function scan<T, U>(observable: Observable<T>, scanFn: (memo: U, value: T) => U | Promise<U>, memo: U): Observable<U>;
@@ -31,6 +33,6 @@ export declare module Observable {
     function toIterator<T>(observable: Observable<T>): AsyncIterator<T>;
 }
 export declare module Subject {
-    function isSubject<T>(obj: any): obj is Subject<T>;
-    function create<T>(): Subject<T>;
+    function isSubject<T, U>(obj: any): obj is Subject<T, U>;
+    function create<T>(): Subject<T, T>;
 }

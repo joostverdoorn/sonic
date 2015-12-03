@@ -5840,6 +5840,11 @@ return /******/ (function(modules) { // webpackBootstrap
 	        return { subscribe: subscribe };
 	    }
 	    Observable.create = create;
+	    function pipe(observable, observer) {
+	        observable.subscribe(observer);
+	        return observer;
+	    }
+	    Observable.pipe = pipe;
 	    function map(observable, mapFn) {
 	        return create(function (subject) {
 	            observable.subscribe({
