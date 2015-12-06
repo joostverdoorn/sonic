@@ -29,6 +29,12 @@ export module State {
     next: (key = Key.SENTINEL) => key === Key.SENTINEL ? Promise.resolve(Key.SENTINEL) : Promise.reject(new NotFound)
   }
 
+  export function isState<K, V>(state: State<K, V>): state is State<K, V> {
+    return typeof state.get === 'function'
+        && typeof state.prev === 'function'
+        && typeof state.next === 'function'
+  }
+
   export function extend<K, V, L, W>(parent: State<K, V>, { get, prev, next }: Partial<L, W>): State<K | L, V | W> {
     var state = Object.create(parent);
     if (get)  state.get  = get;

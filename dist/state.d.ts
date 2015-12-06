@@ -18,6 +18,7 @@ export declare module State {
         prev: (key?: any) => Promise<any>;
         next: (key?: any) => Promise<any>;
     };
+    function isState<K, V>(state: State<K, V>): state is State<K, V>;
     function extend<K, V, L, W>(parent: State<K, V>, {get, prev, next}: Partial<L, W>): State<K | L, V | W>;
     function first<K, V>(state: State<K, V>, [from, to]?: Range<K>): Promise<K>;
     function last<K, V>(state: State<K, V>, [from, to]?: Range<K>): Promise<K>;

@@ -33,6 +33,14 @@ module Sonic {
   export const Patch          = _Patch;
   export const Range          = _Range;
   export const Position       = _Position;
+
+  export function map<T, U>(mapFn: (value: T) => U) {
+    if (State.isState(this)) return State.map(this, mapFn);
+  }
+
+  export function toArray<T>() {
+    if (State.isState(this)) return State.toArray(this);
+  }
 };
 
 export default Sonic;

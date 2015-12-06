@@ -25,6 +25,12 @@ export var State;
         prev: (key = Key.SENTINEL) => key === Key.SENTINEL ? Promise.resolve(Key.SENTINEL) : Promise.reject(new NotFound),
         next: (key = Key.SENTINEL) => key === Key.SENTINEL ? Promise.resolve(Key.SENTINEL) : Promise.reject(new NotFound)
     };
+    function isState(state) {
+        return typeof state.get === 'function'
+            && typeof state.prev === 'function'
+            && typeof state.next === 'function';
+    }
+    State.isState = isState;
     function extend(parent, { get, prev, next }) {
         var state = Object.create(parent);
         if (get)

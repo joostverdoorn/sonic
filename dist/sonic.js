@@ -42,6 +42,16 @@ var Sonic;
     Sonic.Patch = _Patch;
     Sonic.Range = _Range;
     Sonic.Position = _Position;
+    function map(mapFn) {
+        if (Sonic.State.isState(this))
+            return Sonic.State.map(this, mapFn);
+    }
+    Sonic.map = map;
+    function toArray() {
+        if (Sonic.State.isState(this))
+            return Sonic.State.toArray(this);
+    }
+    Sonic.toArray = toArray;
 })(Sonic || (Sonic = {}));
 ;
 export default Sonic;

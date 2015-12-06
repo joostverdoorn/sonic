@@ -23,5 +23,7 @@ declare module Sonic {
     const Patch: typeof _Patch;
     const Range: typeof _Range;
     const Position: typeof _Position;
+    function map<T, U>(mapFn: (value: T) => U): _State<{}, U>;
+    function toArray<T>(): Promise<{}[]>;
 }
 export default Sonic;
