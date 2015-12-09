@@ -192,7 +192,7 @@ export var State;
         var have;
         function get(k) {
             return __awaiter(this, void 0, Promise, function* () {
-                if (k === Key.SENTINEL)
+                if (k === key)
                     return parent.get(key);
                 throw new NotFound;
             });

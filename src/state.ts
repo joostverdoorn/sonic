@@ -200,7 +200,7 @@ export module State {
     var have: boolean;
 
     async function get(k: K) {
-      if (k === Key.SENTINEL) return parent.get(key);
+      if (k === key) return parent.get(key);
       throw new NotFound;
     }
 
