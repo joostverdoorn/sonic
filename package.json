@@ -1,7 +1,7 @@
 {
-  "name": "sonic",
-  "description": "Async ops over async data",
-  "version": "0.3.0",
+  "name": "sonic.ts",
+  "description": "Reactive async operations",
+  "version": "0.4.0",
   "authors": [
     "Joost Verdoorn",
     "Steffan Sluis"
@@ -11,6 +11,21 @@
   "files": [
     "dist",
     "src"
+  ],
+  "keywords": [
+    "reactive",
+    "functional",
+    "async",
+    "observable",
+    "immutable",
+    "iteration",
+    "iterator",
+    "lazy",
+    "store",
+    "list",
+    "flux",
+    "promise",
+    "typescript"
   ],
   "license": "MIT",
   "repository": {
