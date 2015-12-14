@@ -10,6 +10,7 @@ import { Subject as _Subject,
 import _PromiseUtils                  from './promise_utils';
 import _Lens                          from './lens';
 import _Patch                         from './patch';
+import { NotFound as _NotFound }      from './exceptions';
 import { Range as _Range,
          Position as _Position }      from './range';
 
@@ -33,6 +34,7 @@ module Sonic {
   export const Patch          = _Patch;
   export const Range          = _Range;
   export const Position       = _Position;
+  export const NotFound       = _NotFound;
 };
 
 export default Sonic;
