@@ -203,7 +203,6 @@ export module Store {
     }
 
     var store: Store<K, W>,
-
         dispatcher = Observable.map(parent.dispatcher, async (patch) => {
           var parentState = parent.state,
               storeState = store.state,
@@ -217,7 +216,7 @@ export module Store {
           return { range: <Range<K>> [from, {prev: null}], added };
         });
 
-    return store = create(getState(), dispatcher, getState);
+    return store = create(getState(), dispatcher);
   }
 
   export function take<K, V>(parent: Store<K, V>, count: number) {
@@ -244,13 +243,9 @@ export module Store {
   }
 
   export function cache<K, V>(parent: Store<K, V>): Store<K, V> {
-    var state = State.cache(parent.state),
-        dispatcher = Observable.map(parent.dispatcher, patch => ({
-          range: patch.range,
-          added: patch.added ? State.cache(patch.added) : undefined
-        }));
-
-    return Store.create(state, dispatcher);
+    return Store.create(State.cache(parent.state), parent.dispatcher, (state, patch) => {
+      return State.cache(Patch.apply(state, patch));
+    });
   }
 
   export function states<K, V>(store: Store<K, V>): Observable<State<K, V>> {

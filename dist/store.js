@@ -184,7 +184,7 @@ export var Store;
             }));
             return { range: [from, { prev: null }], added };
         }));
-        return store = create(getState(), dispatcher, getState);
+        return store = create(getState(), dispatcher);
     }
     Store.scan = scan;
     function take(parent, count) {
@@ -203,11 +203,9 @@ export var Store;
     }
     Store.take = take;
     function cache(parent) {
-        var state = State.cache(parent.state), dispatcher = Observable.map(parent.dispatcher, patch => ({
-            range: patch.range,
-            added: patch.added ? State.cache(patch.added) : undefined
-        }));
-        return Store.create(state, dispatcher);
+        return Store.create(State.cache(parent.state), parent.dispatcher, (state, patch) => {
+            return State.cache(Patch.apply(state, patch));
+        });
     }
     Store.cache = cache;
     function states(store) {
