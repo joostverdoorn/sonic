@@ -7,6 +7,7 @@ import { Subject as _Subject, Observable as _Observable } from './observable';
 import _PromiseUtils from './promise_utils';
 import _Lens from './lens';
 import _Patch from './patch';
+import { NotFound as _NotFound } from './exceptions';
 import { Range as _Range, Position as _Position } from './range';
 declare function Sonic<V>(obj: any): _MutableStore<string | number, V>;
 declare module Sonic {
@@ -23,5 +24,6 @@ declare module Sonic {
     const Patch: typeof _Patch;
     const Range: typeof _Range;
     const Position: typeof _Position;
+    const NotFound: typeof _NotFound;
 }
 export default Sonic;

@@ -20,6 +20,7 @@ import { Subject as _Subject, Observable as _Observable } from './observable';
 import _PromiseUtils from './promise_utils';
 import _Lens from './lens';
 import _Patch from './patch';
+import { NotFound as _NotFound } from './exceptions';
 import { Range as _Range, Position as _Position } from './range';
 function Sonic(obj) {
     if (obj instanceof Array)
@@ -42,6 +43,7 @@ var Sonic;
     Sonic.Patch = _Patch;
     Sonic.Range = _Range;
     Sonic.Position = _Position;
+    Sonic.NotFound = _NotFound;
 })(Sonic || (Sonic = {}));
 ;
 export default Sonic;

@@ -7,7 +7,7 @@ Sonic
 
 ## Installing
 ```bash
-npm install sonic.ts
+npm install sonicjs
 ```
 
 ## Examples
