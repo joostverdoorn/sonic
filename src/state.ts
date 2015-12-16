@@ -82,6 +82,16 @@ export module State {
     return fromEntries(entries(parent, range));
   }
 
+  // export function splice<K, V>(parent: State<K, V>, range: Range<K>, child?: State<K, V>): State<K, V> {
+  //
+  //   async function next(key: Key) {
+  //
+  //   }
+  //
+  //   return null;
+  // }
+
+
   export function splice<K, V>(parent: State<K, V>, range: Range<K>, child?: State<K, V>): State<K, V> {
     var deleted = slice(parent, range),
         filtered = filter(parent, (value, key) => deleted.get(key).then(() => false, () => true));
@@ -133,6 +143,8 @@ export module State {
 
     return {get, prev, next};
   }
+
+  // export function concat<K, V>()
 
   export function reverse<K, V>(parent: State<K, V>): State<K, V> {
     return extend(parent, {
@@ -339,16 +351,16 @@ export module State {
 
         if (result.done) {
           exhausted = true;
-          await cache.prev(Key.SENTINEL, currentKey);
-          await cache.next(currentKey, Key.SENTINEL);
+          cache.prev(Key.SENTINEL, currentKey);
+          cache.next(currentKey, Key.SENTINEL);
           return AsyncIterator.done;
         }
 
         var [key, value] = result.value;
 
-        await cache.prev(key, currentKey);
-        await cache.next(currentKey, key);
-        await cache.get(key, value);
+        cache.prev(key, currentKey);
+        cache.next(currentKey, key);
+        cache.get(key, value);
         currentKey = key;
 
         return {done: false, value: [key, value]};

@@ -4,9 +4,9 @@ import Patch from './patch';
 import { NotFound } from './exceptions';
 
 export type Cache<K, V> = {
-  get : (key: K, value?:   V | Promise<V>) => Promise<V>,
-  prev: (key: K, prevKey?: K | Promise<K>) => Promise<K>,
-  next: (key: K, nextKey?: K | Promise<K>) => Promise<K>
+  get : (key: K, value?:   V) => V,
+  prev: (key: K, prevKey?: K) => K,
+  next: (key: K, nextKey?: K) => K
 };
 
 export module Cache {
@@ -14,46 +14,26 @@ export module Cache {
 
   export function create<K, V>(): Cache<K, V> {
 
-    var cache = {
+    const cache = {
       get : Object.create(null),
       prev: Object.create(null),
       next: Object.create(null)
     };
 
-    async function get(key: K, value: V | Promise<V> = NONE): Promise<V> {
-      var string = JSON.stringify(key);
-
-      if (value === NONE) {
-        if (!(string in cache.get)) throw new NotFound;
-        return cache.get[string];
+    function createCache<T, U>(c: {[key: string]: U}): (t: T, u?: U) => U {
+      return function(t: T, u?: U): U {
+        const label = JSON.stringify(t);
+        if (arguments.length > 1) return c[label] = u;
+        if (label in c) return c[label];
+        throw new NotFound();
       }
-
-      return cache.get[string] = Promise.resolve(value);
     }
 
-    async function prev(key: K = Key.SENTINEL, prevKey: K | Promise<K> = NONE): Promise<K> {
-      var string = JSON.stringify(key);
-
-      if (prevKey === NONE) {
-        if (!(string in cache.prev)) throw new NotFound;
-        return cache.prev[string];
-      }
-
-      return cache.prev[string] = Promise.resolve(prevKey);
+    return {
+      get:  createCache<K, V>(cache.get),
+      prev: createCache<K, K>(cache.prev),
+      next: createCache<K, K>(cache.next)
     }
-
-    async function next(key: K = Key.SENTINEL, nextKey: K | Promise<K> = NONE): Promise<K> {
-      var string = JSON.stringify(key);
-
-      if (nextKey === NONE) {
-        if (!(string in cache.next)) return Promise.reject<any>(new NotFound);
-        return cache.next[string];
-      }
-
-      return cache.next[string] = Promise.resolve(nextKey);
-    }
-
-    return {get, prev, next}
 
   }
 
@@ -67,28 +47,23 @@ export module Cache {
 
   export function apply<K, V>(state: State<K, V>, cache: Cache<K, V>): State<K, V> {
 
-    async function get(key: K): Promise<V> {
-      return cache.get(key).catch(reason => {
-        if (reason instanceof NotFound) return cache.get(key, state.get(key));
-        throw reason;
-      });
+    function cacheFn<T, U>(fn: (t: T) => U | Promise<U>, cacher: (t: T, u?: U) => U): (t: T) => Promise<U> {
+      return async (t: T): Promise<U> => {
+        try {
+          return cacher(t)
+        }
+        catch (reason) {
+          if (reason instanceof NotFound) return cacher(t, await fn(t));
+          throw reason;
+        }
+      }
     }
 
-    async function prev(key: K = Key.SENTINEL): Promise<K> {
-      return cache.prev(key).catch(reason => {
-        if (reason instanceof NotFound) return cache.prev(key, state.prev(key));
-        throw reason;
-      });
-    }
-
-    async function next(key: K = Key.SENTINEL): Promise<K> {
-      return cache.next(key).catch(reason => {
-        if (reason instanceof NotFound) return cache.next(key, state.next(key));
-        throw reason;
-      });
-    }
-
-    return {get, prev, next};
+    return {
+      get:  cacheFn<K, V>(state.get, cache.get),
+      prev: cacheFn<K, K>(state.prev, cache.prev),
+      next: cacheFn<K, K>(state.next, cache.next)
+    };
   }
 }
 

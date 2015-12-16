@@ -29,7 +29,7 @@ export module AsyncIterator {
   }
 
   export async function forEach<T>(iterator: Iterator<T> | AsyncIterator<T>, fn: (value: T) => void | Promise<void>): Promise<void> {
-    await every(iterator, async (value: T) => { fn(value); return true });
+    await every(iterator, async (value: T) => { await fn(value); return true });
   }
 
   export async function reduce<T, U>(iterator: Iterator<T> | AsyncIterator<T>, fn: (memo: U, value: T) => U | Promise<U>, memo?: U): Promise<U> {

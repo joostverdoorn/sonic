@@ -334,14 +334,14 @@ export var State;
                     var result = yield iterator.next();
                     if (result.done) {
                         exhausted = true;
-                        yield cache.prev(Key.SENTINEL, currentKey);
-                        yield cache.next(currentKey, Key.SENTINEL);
+                        cache.prev(Key.SENTINEL, currentKey);
+                        cache.next(currentKey, Key.SENTINEL);
                         return AsyncIterator.done;
                     }
                     var [key, value] = result.value;
-                    yield cache.prev(key, currentKey);
-                    yield cache.next(currentKey, key);
-                    yield cache.get(key, value);
+                    cache.prev(key, currentKey);
+                    cache.next(currentKey, key);
+                    cache.get(key, value);
                     currentKey = key;
                     return { done: false, value: [key, value] };
                 });

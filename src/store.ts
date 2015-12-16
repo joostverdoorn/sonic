@@ -255,16 +255,23 @@ export module Store {
   export function create<K, V>(state: State<K, V>, dispatcher: Subject<Patch<K, V>, Patch<K, V>>, reducer?: (state: State<K, V>, patch: Patch<K, V>) => State<K, V> | Promise<State<K, V>>): MutableStore<K, V>
   export function create<K, V>(state: State<K, V>, dispatcher: Observable<Patch<K, V>>, reducer?: (state: State<K, V>, patch: Patch<K, V>) => State<K, V> | Promise<State<K, V>>): Store<K, V>
   export function create<K, V>(state: State<K, V>, dispatcher: Observable<Patch<K, V>>, reducer: (state: State<K, V>, patch: Patch<K, V>) => State<K, V> | Promise<State<K, V>> = Patch.apply): any {
-
     var subject = Subject.create();
-    var statePatches = Observable.scan<Patch<K, V>, [State<K, V>, Patch<K, V>]>(dispatcher, async ([state], patch) => [await reducer(state, patch), patch], [state, null]);
 
-    Observable.forEach(statePatches, ([state, patch]) => {
-      store.state = state;
-      return subject.onNext(patch);
+    dispatcher.subscribe({
+      onNext: async (patch) => {
+        store.state = await reducer(store.state, patch);
+        return subject.onNext(patch);
+      }
     });
 
-    var store = { state, dispatcher: { subscribe: subject.subscribe, onNext: Subject.isSubject(dispatcher) ? dispatcher.onNext : undefined }};
+    const store = {
+      state,
+      dispatcher: {
+        subscribe: subject.subscribe,
+        onNext: Subject.isSubject(dispatcher) ? dispatcher.onNext : undefined
+      }
+    };
+
     return store;
   }
 }

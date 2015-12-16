@@ -1,8 +1,8 @@
 import State from './state';
 export declare type Cache<K, V> = {
-    get: (key: K, value?: V | Promise<V>) => Promise<V>;
-    prev: (key: K, prevKey?: K | Promise<K>) => Promise<K>;
-    next: (key: K, nextKey?: K | Promise<K>) => Promise<K>;
+    get: (key: K, value?: V) => V;
+    prev: (key: K, prevKey?: K) => K;
+    next: (key: K, nextKey?: K) => K;
 };
 export declare module Cache {
     function create<K, V>(): Cache<K, V>;

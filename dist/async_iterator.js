@@ -37,7 +37,7 @@ export var AsyncIterator;
     AsyncIterator.some = some;
     function forEach(iterator, fn) {
         return __awaiter(this, void 0, Promise, function* () {
-            yield every(iterator, (value) => __awaiter(this, void 0, Promise, function* () { fn(value); return true; }));
+            yield every(iterator, (value) => __awaiter(this, void 0, Promise, function* () { yield fn(value); return true; }));
         });
     }
     AsyncIterator.forEach = forEach;

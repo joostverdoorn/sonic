@@ -18,7 +18,7 @@ export var Disposable;
     function create(disposer) {
         var done = false;
         return {
-            dispose: () => {
+            dispose() {
                 if (done)
                     return;
                 done = true;

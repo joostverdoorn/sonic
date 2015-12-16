@@ -214,12 +214,19 @@ export var Store;
     Store.states = states;
     function create(state, dispatcher, reducer = Patch.apply) {
         var subject = Subject.create();
-        var statePatches = Observable.scan(dispatcher, ([state], patch) => __awaiter(this, void 0, Promise, function* () { return [yield reducer(state, patch), patch]; }), [state, null]);
-        Observable.forEach(statePatches, ([state, patch]) => {
-            store.state = state;
-            return subject.onNext(patch);
+        dispatcher.subscribe({
+            onNext: (patch) => __awaiter(this, void 0, Promise, function* () {
+                store.state = yield reducer(store.state, patch);
+                return subject.onNext(patch);
+            })
         });
-        var store = { state, dispatcher: { subscribe: subject.subscribe, onNext: Subject.isSubject(dispatcher) ? dispatcher.onNext : undefined } };
+        const store = {
+            state,
+            dispatcher: {
+                subscribe: subject.subscribe,
+                onNext: Subject.isSubject(dispatcher) ? dispatcher.onNext : undefined
+            }
+        };
         return store;
     }
     Store.create = create;
