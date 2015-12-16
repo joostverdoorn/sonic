@@ -82,19 +82,8 @@ export module State {
     return fromEntries(entries(parent, range));
   }
 
-  // export function splice<K, V>(parent: State<K, V>, range: Range<K>, child?: State<K, V>): State<K, V> {
-  //
-  //   async function next(key: Key) {
-  //
-  //   }
-  //
-  //   return null;
-  // }
-
-
   export function splice<K, V>(parent: State<K, V>, range: Range<K>, child?: State<K, V>): State<K, V> {
-    const cache = Cache,
-          deleted = slice(parent, range),
+    const deleted = slice(parent, range),
           filtered = filter(parent, (value, key) => deleted.get(key).then(() => false, () => true));
 
     if (child == null) return filtered;
@@ -106,30 +95,39 @@ export module State {
 
     bridgedChild = extend(child, <Partial<K, V>>{
       prev: key => child.prev(key).then(prev => {
-        if (prev !== Key.SENTINEL) return Promise.resolve(prev);
-        return Position.isNextPosition(from) ? Promise.resolve(from.next) : parent.prev(from.prev);
+        if (prev !== Key.SENTINEL) return prev;
+        return Position.isNextPosition(from) ? from.next : parent.prev(from.prev);
       }),
 
       next: key => child.next(key).then(next => {
-        if (next !== Key.SENTINEL) return Promise.resolve(next);
-        return Position.isPrevPosition(to) ? Promise.resolve(to.prev) : parent.next(to.next);
+        if (next !== Key.SENTINEL) return next;
+        return Position.isPrevPosition(to) ? to.prev : parent.next(to.next);
       })
     });
 
     bridgedParent = extend(filtered, <Partial<K, V>>{
       prev: key => parent.prev(key).then(prev => {
         if (Position.isNextPosition(to) && prev === to.next) return bridgedChild.prev(Key.SENTINEL);
-        return has(deleted, prev).then(res => res ? Promise.reject<any>(new NotFound) : prev);
+        return has(deleted, prev).then(res => {
+          if (res) throw new NotFound;
+          return prev;
+        });
       }),
 
       next: key => parent.next(key).then(next => {
         if (Position.isPrevPosition(from) && next === from.prev) return bridgedChild.next(Key.SENTINEL);
-        return has(deleted, next).then(res => res ? Promise.reject<any>(new NotFound) : next);
+        return has(deleted, next).then(res => {
+          if (res) throw new NotFound;
+          return next;
+        });
       })
     });
 
     function get(key: K): Promise<V> {
-      return has(child, key).then(res => res ? bridgedChild.get(key) : bridgedParent.get(key));
+      return bridgedChild.get(key).catch(reason => {
+        if (!(reason instanceof NotFound)) throw reason;
+        return bridgedParent.get(key);
+      });
     }
 
     function prev(key: K = Key.SENTINEL): Promise<K> {
@@ -144,8 +142,6 @@ export module State {
 
     return {get, prev, next};
   }
-
-  // export function concat<K, V>()
 
   export function reverse<K, V>(parent: State<K, V>): State<K, V> {
     return extend(parent, {
