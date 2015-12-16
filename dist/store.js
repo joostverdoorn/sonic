@@ -103,45 +103,59 @@ export var Store;
     }
     Store.zoom = zoom;
     function flatten(parent) {
-        var dispatcher_ = Subject.create();
-        var parent_ = cache(map(parent, (store, key) => {
+        var dispatcher = Subject.create();
+        var statesState;
+        var states = cache(map(parent, (store, key) => {
+            var storeState = store.state;
             Observable.map(store.dispatcher, patch => {
                 var from = patch.range[0], to = patch.range[1];
                 function mapPrevPosition(position) {
                     if (position.prev === Key.SENTINEL)
-                        return store.state.prev(Key.SENTINEL).then(next => ({ next: [key, next] }));
+                        return storeState.prev(Key.SENTINEL).then(next => ({ next: [key, next] }));
                     return Promise.resolve({ prev: [key, position.prev] });
                 }
                 function mapNextPosition(position) {
                     if (position.next === Key.SENTINEL)
-                        return store.state.next(Key.SENTINEL).then(prev => ({ prev: [key, prev] }));
+                        return storeState.next(Key.SENTINEL).then(prev => ({ prev: [key, prev] }));
                     return Promise.resolve({ next: [key, position.next] });
                 }
                 return Promise.all([
                     Position.isNextPosition(from) ? mapNextPosition(from) : mapPrevPosition(from),
                     Position.isNextPosition(to) ? mapNextPosition(to) : mapPrevPosition(to)
-                ]).then((range) => ({ range: range, added: patch.added ? patch.added : undefined }));
-            }).subscribe(dispatcher_);
-            return store.state;
+                ]).then((range) => {
+                    storeState = store.state;
+                    return {
+                        range,
+                        added: patch.added ? patch.added : undefined
+                    };
+                });
+            }).subscribe(dispatcher);
+            return storeState;
         }));
         Observable.map(parent.dispatcher, patch => {
             var from = patch.range[0], to = patch.range[1];
             function mapPrevPosition(position) {
-                return position.prev === Key.SENTINEL ? Promise.resolve({ prev: Key.SENTINEL }) : Tree.next(parent_.state, [position.prev, null]).then(prev => ({ prev }));
+                return position.prev === Key.SENTINEL ? Promise.resolve({ prev: Key.SENTINEL }) : Tree.next(statesState, [position.prev, null]).then(prev => ({ prev }));
             }
             function mapNextPosition(position) {
-                return position.next === Key.SENTINEL ? Promise.resolve({ next: Key.SENTINEL }) : Tree.prev(parent_.state, [position.next, null]).then(next => ({ next }));
+                return position.next === Key.SENTINEL ? Promise.resolve({ next: Key.SENTINEL }) : Tree.prev(statesState, [position.next, null]).then(next => ({ next }));
             }
             return Promise.all([
                 Position.isNextPosition(from) ? mapNextPosition(from) : mapPrevPosition(from),
                 Position.isNextPosition(to) ? mapNextPosition(to) : mapPrevPosition(to)
-            ]).then((range) => ({ range: range, added: patch.added ? State.flatten(State.map(patch.added, store => store.state)) : undefined }));
-        }).subscribe(dispatcher_);
-        var state = State.flatten(parent_.state);
+            ]).then((range) => {
+                statesState = states.state;
+                return {
+                    range,
+                    added: patch.added ? State.flatten(State.map(patch.added, store => store.state)) : undefined
+                };
+            });
+        }).subscribe(dispatcher);
+        statesState = states.state;
         function getState() {
-            return State.flatten(parent_.state);
+            return State.flatten(statesState);
         }
-        return create(getState(), dispatcher_, getState);
+        return create(getState(), dispatcher, getState);
     }
     Store.flatten = flatten;
     function flatMap(parent, mapFn) {

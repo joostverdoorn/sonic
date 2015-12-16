@@ -117,56 +117,72 @@ export module Store {
   }
 
   export function flatten<K, L, V>(parent: Store<K, Store<L, V>>): Store<[K, L], V> {
-    var dispatcher_ = Subject.create();
-    var parent_ = cache(map(parent, (store, key) => {
+    var dispatcher = Subject.create();
+    var statesState: State<K, State<L, V>>;
+    var states = cache(map(parent, (store, key) => {
+      var storeState = store.state;
+
       Observable.map(store.dispatcher, patch => {
         var from = patch.range[0],
             to   = patch.range[1];
 
         function mapPrevPosition(position: PrevPosition<L>): Promise<Position<[K, L]>> {
-          if (position.prev === Key.SENTINEL) return store.state.prev(Key.SENTINEL).then(next => ({next: <Path<K, L>>[key, next]}));
+          if (position.prev === Key.SENTINEL) return storeState.prev(Key.SENTINEL).then(next => ({next: <Path<K, L>>[key, next]}));
           return Promise.resolve({prev: <Path<K, L>>[key, position.prev]});
         }
 
         function mapNextPosition(position: NextPosition<L>): Promise<Position<[K, L]>> {
-          if (position.next === Key.SENTINEL) return store.state.next(Key.SENTINEL).then(prev => ({prev: <Path<K, L>>[key, prev]}));
+          if (position.next === Key.SENTINEL) return storeState.next(Key.SENTINEL).then(prev => ({prev: <Path<K, L>>[key, prev]}));
           return Promise.resolve({next: <Path<K, L>>[key, position.next]});
         }
 
         return Promise.all([
           Position.isNextPosition(from) ? mapNextPosition(from) : mapPrevPosition(from),
           Position.isNextPosition(to)   ? mapNextPosition(to)   : mapPrevPosition(to)
-        ]).then((range: Range<[K, L]>) => ({ range: range, added: patch.added ? patch.added : undefined }));
-      }).subscribe(dispatcher_);
+        ]).then((range: Range<[K, L]>) => {
+          storeState = store.state;
+          return {
+            range,
+            added: patch.added ? patch.added : undefined
+          };
+        });
+      }).subscribe(dispatcher);
 
-      return store.state;
+      return storeState;
     }));
+
 
     Observable.map(parent.dispatcher, patch => {
       var from = patch.range[0],
           to   = patch.range[1];
 
       function mapPrevPosition(position: PrevPosition<K>): Promise<Position<Path<K, L>>> {
-        return position.prev === Key.SENTINEL ? Promise.resolve({prev: Key.SENTINEL}) : Tree.next(parent_.state, [position.prev, null]).then(prev => ({prev}));
+        return position.prev === Key.SENTINEL ? Promise.resolve({prev: Key.SENTINEL}) : Tree.next(statesState, [position.prev, null]).then(prev => ({prev}));
       }
 
       function mapNextPosition(position: NextPosition<K>): Promise<Position<Path<K, L>>> {
-        return position.next === Key.SENTINEL ? Promise.resolve({next: Key.SENTINEL}) : Tree.prev(parent_.state, [position.next, null]).then(next => ({next}));
+        return position.next === Key.SENTINEL ? Promise.resolve({next: Key.SENTINEL}) : Tree.prev(statesState, [position.next, null]).then(next => ({next}));
       }
 
       return Promise.all([
         Position.isNextPosition(from) ? mapNextPosition(from) : mapPrevPosition(from),
         Position.isNextPosition(to)   ? mapNextPosition(to)   : mapPrevPosition(to)
-      ]).then((range: Range<Path<K, L>>) => ({ range: range, added: patch.added ? State.flatten(State.map(patch.added, store => store.state)) : undefined }));
-    }).subscribe(dispatcher_);
+      ]).then((range: Range<Path<K, L>>) => {
+        statesState = states.state;
+        return {
+          range,
+          added: patch.added ? State.flatten(State.map(patch.added, store => store.state)) : undefined
+        };
+      });
+    }).subscribe(dispatcher);
 
-    var state = State.flatten(parent_.state);
+    statesState = states.state;
 
     function getState() {
-      return State.flatten(parent_.state)
+      return State.flatten(statesState)
     }
 
-    return create(getState(), dispatcher_, getState);
+    return create(getState(), dispatcher, getState);
   }
 
   export function flatMap<K, L, V, W>(parent: Store<K, V>, mapFn: (value: V, key: K) => Store<L, W>): Store<Path<K, L>, W> {
