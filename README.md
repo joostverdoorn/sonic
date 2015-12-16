@@ -1,6 +1,6 @@
 Sonic
 =====
-[![npm version](https://badge.fury.io/js/sonic.ts.svg)](https://badge.fury.io/js/sonic.ts)
+[![npm version](https://badge.fury.io/js/sonicjs.svg)](https://badge.fury.io/js/sonicjs)
 [![Build Status](https://travis-ci.org/joostverdoorn/sonic.svg?branch=develop)](https://travis-ci.org/joostverdoorn/sonic)
 [![Coverage Status](https://coveralls.io/repos/joostverdoorn/sonic/badge.svg?branch=develop&service=github)](https://coveralls.io/github/joostverdoorn/sonic?branch=develop)
 [![Join the chat at https://gitter.im/joostverdoorn/sonic](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/joostverdoorn/sonic?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)

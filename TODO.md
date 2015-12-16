@@ -18,6 +18,7 @@
 - [x] Filter: fix rewriting of ranges to be as lazy as possible
 - [ ] Implement remaining functions from state, reactively
 - [ ] Implement reactive sort
+- [ ] Look at `states` function
 
 ## Observable
 - [x] Add toIterator

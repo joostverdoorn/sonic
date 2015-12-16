@@ -215,23 +215,18 @@ export var State;
     function zoom(parent, key) {
         var have;
         function get(k) {
-            return __awaiter(this, void 0, Promise, function* () {
-                if (k === key)
-                    return parent.get(key);
-                throw new NotFound;
-            });
+            if (k === key)
+                return parent.get(key);
+            return Promise.reject(new NotFound);
         }
         function next(k = Key.SENTINEL) {
-            return __awaiter(this, void 0, Promise, function* () {
-                if (k !== key && k !== Key.SENTINEL)
-                    throw new NotFound;
-                if (!(yield has(parent, key)))
-                    throw new NotFound;
-                if (k === Key.SENTINEL)
-                    return key;
-                if (k === key)
-                    return Key.SENTINEL;
-            });
+            if (k !== key && k !== Key.SENTINEL)
+                return Promise.reject(new NotFound);
+            if (k === key)
+                return Promise.resolve(Key.SENTINEL);
+            if (have !== undefined)
+                return Promise.resolve(have ? key : Key.SENTINEL);
+            return has(parent, key).then(res => (have = res) ? key : Key.SENTINEL);
         }
         return { get, prev: next, next };
     }

@@ -221,16 +221,16 @@ export module State {
   export function zoom<K, V>(parent: State<K, V>, key: K): State<K, V> {
     var have: boolean;
 
-    async function get(k: K) {
+    function get(k: K) {
       if (k === key) return parent.get(key);
-      throw new NotFound;
+      return Promise.reject<any>(new NotFound);
     }
 
-    async function next(k: K = Key.SENTINEL) {
-      if (k !== key && k !== Key.SENTINEL) throw new NotFound;
-      if (!(await has(parent, key))) throw new NotFound;
-      if (k === Key.SENTINEL) return key;
-      if (k === key) return Key.SENTINEL;
+    function next(k: K = Key.SENTINEL) {
+      if (k !== key && k !== Key.SENTINEL) return Promise.reject<any>(new NotFound);
+      if (k === key) return Promise.resolve(Key.SENTINEL);
+      if (have !== undefined) return Promise.resolve(have ? key : Key.SENTINEL);
+      return has(parent, key).then(res => (have = res) ? key : Key.SENTINEL);
     }
 
     return { get, prev: next, next }
