@@ -1,36 +1,37 @@
 # TODO
 
 ## Iterator
-- [x] Fix exceptions to remove lazypromise
+- [x] Fix exceptions to remove `lazypromise`
 - [ ] Add remaining tests
-- [x] Queue iterator implementations
-- [ ] Flatmap for iterators?
+- [x] Queue `iterator` implementations
+- [ ] `flatMap` for iterators?
 
 ## State
 - [ ] Add remaining tests
-- [ ] Implement sort
-- [ ] Make keys more lazy by not evaluating values (using entries)
-- [x] Generate unique keys for unit
+- [ ] Implement `sort`
+- [ ] Make `keys` more lazy by not evaluating values (using entries)
+- [x] Generate unique keys for `unit`
 
 ## Store
-- [x] Add scan
-- [x] Add take
+- [x] Add `scan`
+- [x] Add `take`
 - [x] Filter: fix rewriting of ranges to be as lazy as possible
-- [ ] Implement remaining functions from state, reactively
-- [ ] Implement reactive sort
-- [ ] Look at `states` function
+- [ ] Implement remaining functions from `state`, reactively
+- [ ] Implement reactive `sort`
+- [x] Look at `states` function
+- [ ] Take a long, hard look at `flatten`
 
 ## Observable
-- [x] Add toIterator
-- [x] Add fromIterator
-- [x] Don't subscribe unless subscribed to in map, filter, scan etc.
-- [x] Fix onComplete and onError behaviour
+- [x] Add `toIterator`
+- [x] Add `fromIterator`
+- [x] Don't subscribe unless subscribed to in `map`, `filter`, `scan` etc.
+- [x] Fix `onComplete` and `onError` behaviour
 
 ## Cache
-- [ ] Look at deleted items in cache
+- [ ] Look at deleted items in `cache`
 
 ## Exceptions
-- [ ] Fix weirdness with extending Error
+- [ ] Fix weirdness with extending `Error`
 
 ## Patch
 - [ ] Test all the things

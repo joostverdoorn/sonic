@@ -118,7 +118,7 @@ export module Store {
 
   export function flatten<K, L, V>(parent: Store<K, Store<L, V>>): Store<[K, L], V> {
     var dispatcher_ = Subject.create();
-    var parent_ = cache(map(parent, ((store, key) => {
+    var parent_ = cache(map(parent, (store, key) => {
       Observable.map(store.dispatcher, patch => {
         var from = patch.range[0],
             to   = patch.range[1];
@@ -140,7 +140,7 @@ export module Store {
       }).subscribe(dispatcher_);
 
       return store.state;
-    })));
+    }));
 
     Observable.map(parent.dispatcher, patch => {
       var from = patch.range[0],
@@ -162,7 +162,11 @@ export module Store {
 
     var state = State.flatten(parent_.state);
 
-    return create(state, dispatcher_);
+    function getState() {
+      return State.flatten(parent_.state)
+    }
+
+    return create(getState(), dispatcher_, getState);
   }
 
   export function flatMap<K, L, V, W>(parent: Store<K, V>, mapFn: (value: V, key: K) => Store<L, W>): Store<Path<K, L>, W> {

@@ -104,7 +104,7 @@ export var Store;
     Store.zoom = zoom;
     function flatten(parent) {
         var dispatcher_ = Subject.create();
-        var parent_ = cache(map(parent, ((store, key) => {
+        var parent_ = cache(map(parent, (store, key) => {
             Observable.map(store.dispatcher, patch => {
                 var from = patch.range[0], to = patch.range[1];
                 function mapPrevPosition(position) {
@@ -123,7 +123,7 @@ export var Store;
                 ]).then((range) => ({ range: range, added: patch.added ? patch.added : undefined }));
             }).subscribe(dispatcher_);
             return store.state;
-        })));
+        }));
         Observable.map(parent.dispatcher, patch => {
             var from = patch.range[0], to = patch.range[1];
             function mapPrevPosition(position) {
@@ -138,7 +138,10 @@ export var Store;
             ]).then((range) => ({ range: range, added: patch.added ? State.flatten(State.map(patch.added, store => store.state)) : undefined }));
         }).subscribe(dispatcher_);
         var state = State.flatten(parent_.state);
-        return create(state, dispatcher_);
+        function getState() {
+            return State.flatten(parent_.state);
+        }
+        return create(getState(), dispatcher_, getState);
     }
     Store.flatten = flatten;
     function flatMap(parent, mapFn) {
