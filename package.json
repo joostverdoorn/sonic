@@ -1,7 +1,7 @@
 {
   "name": "sonicjs",
   "description": "Reactive async operations",
-  "version": "0.5.1",
+  "version": "0.5.2",
   "authors": [
     "Joost Verdoorn",
     "Steffan Sluis"
