@@ -49,7 +49,7 @@
   "scripts": {
     "ts": "tsc",
     "dist": "tsc && webpack --config webpack.src.config.js",
-    "test": "tsc && (nyc --require babel-core/register tap -R tap test/store.js); STATUS=$?; if [ $STATUS != 0 ]; then echo -e '\\u0007'; fi; exit $STATUS",
+    "test": "tsc && (nyc --require babel-core/register tap -R tap test/sonic.js); STATUS=$?; if [ $STATUS != 0 ]; then echo -e '\\u0007'; fi; exit $STATUS",
     "coverage": "npm test & nyc report --reporter=text-lcov | coveralls",
     "watch": "tsc -w & webpack -w --config webpack.src.config.js",
     "watch-test": "npm run watch & watch 'npm test' test",

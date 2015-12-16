@@ -88,7 +88,7 @@ export var State;
     }
     State.slice = slice;
     function splice(parent, range, child) {
-        var deleted = slice(parent, range), filtered = filter(parent, (value, key) => deleted.get(key).then(() => false, () => true));
+        const cache = Cache, deleted = slice(parent, range), filtered = filter(parent, (value, key) => deleted.get(key).then(() => false, () => true));
         if (child == null)
             return filtered;
         var bridgedChild, bridgedParent, from = range[0], to = range[1];
@@ -141,9 +141,7 @@ export var State;
     State.reverse = reverse;
     function map(parent, mapFn) {
         function get(key) {
-            return __awaiter(this, void 0, Promise, function* () {
-                return mapFn(yield parent.get(key), key);
-            });
+            return parent.get(key).then(value => mapFn(value, key));
         }
         return extend(parent, { get });
     }
@@ -151,21 +149,35 @@ export var State;
     function filter(parent, filterFn) {
         var cache = Object.create(null);
         function have(key) {
-            var stringifiedKey = JSON.stringify(key);
-            return stringifiedKey in cache ? cache[stringifiedKey] : cache[stringifiedKey] = parent.get(key).then(value => filterFn(value, key));
+            var label = JSON.stringify(key);
+            return label in cache ? cache[label] : cache[label] = parent.get(key).then(value => filterFn(value, key));
+        }
+        function find(state, from) {
+            return AsyncIterator.filter(keys(state, [{ next: from }, { prev: null }]), have)
+                .next().then(result => result.done ? Key.SENTINEL : result.value);
         }
         function get(key) {
-            return __awaiter(this, void 0, Promise, function* () {
-                if (yield (have(key)))
-                    return parent.get(key);
-                throw new NotFound;
+            return have(key).then(res => {
+                if (!res)
+                    throw new NotFound;
+                return parent.get(key);
             });
         }
-        function prev(key) {
-            return parent.prev(key).then(p => p === Key.SENTINEL ? Key.SENTINEL : have(p).then(res => res ? p : prev(p)));
+        function prev(key = Key.SENTINEL) {
+            if (key === Key.SENTINEL)
+                return find(reverse(parent), key);
+            return have(key).then(res => {
+                if (!res)
+                    throw new NotFound;
+            }).then(() => find(reverse(parent), key));
         }
-        function next(key) {
-            return parent.next(key).then(n => n === Key.SENTINEL ? Key.SENTINEL : have(n).then(res => res ? n : next(n)));
+        function next(key = Key.SENTINEL) {
+            if (key === Key.SENTINEL)
+                return find(parent, key);
+            return have(key).then(res => {
+                if (!res)
+                    throw new NotFound;
+            }).then(() => find(parent, key));
         }
         return extend(parent, { get, prev, next });
     }
@@ -328,25 +340,21 @@ export var State;
     State.values = values;
     function fromEntries(iterator) {
         var cache = Cache.create(), exhausted = false, currentKey = Key.SENTINEL, queue = Promise.resolve(null);
-        var cachingIterator = {
-            next() {
-                return __awaiter(this, void 0, Promise, function* () {
-                    var result = yield iterator.next();
-                    if (result.done) {
-                        exhausted = true;
-                        cache.prev(Key.SENTINEL, currentKey);
-                        cache.next(currentKey, Key.SENTINEL);
-                        return AsyncIterator.done;
-                    }
-                    var [key, value] = result.value;
-                    cache.prev(key, currentKey);
-                    cache.next(currentKey, key);
-                    cache.get(key, value);
-                    currentKey = key;
-                    return { done: false, value: [key, value] };
-                });
+        var cachingIterator = AsyncIterator.create(() => __awaiter(this, void 0, Promise, function* () {
+            var result = yield iterator.next();
+            if (result.done) {
+                exhausted = true;
+                cache.prev(Key.SENTINEL, currentKey);
+                cache.next(currentKey, Key.SENTINEL);
+                return AsyncIterator.done;
             }
-        };
+            var [key, value] = result.value;
+            cache.prev(key, currentKey);
+            cache.next(currentKey, key);
+            cache.get(key, value);
+            currentKey = key;
+            return { done: false, value: [key, value] };
+        }));
         function get(key) {
             if (exhausted)
                 return Promise.reject(new NotFound);

@@ -93,8 +93,9 @@ export module State {
 
 
   export function splice<K, V>(parent: State<K, V>, range: Range<K>, child?: State<K, V>): State<K, V> {
-    var deleted = slice(parent, range),
-        filtered = filter(parent, (value, key) => deleted.get(key).then(() => false, () => true));
+    const cache = Cache,
+          deleted = slice(parent, range),
+          filtered = filter(parent, (value, key) => deleted.get(key).then(() => false, () => true));
 
     if (child == null) return filtered;
 
@@ -154,8 +155,8 @@ export module State {
   }
 
   export function map<K, V, W>(parent: State<K, V>, mapFn: (value: V, key?: K) => W | Promise<W>): State<K, W> {
-    async function get(key: K) {
-      return mapFn(await parent.get(key), key);
+    function get(key: K) {
+      return parent.get(key).then(value => mapFn(value, key));
     }
 
     return extend(parent, {get});
@@ -165,21 +166,34 @@ export module State {
     var cache: {[key: string]: Promise<boolean>} = Object.create(null);
 
     function have(key: K): Promise<boolean> {
-      var stringifiedKey = JSON.stringify(key);
-      return stringifiedKey in cache ? cache[stringifiedKey] : cache[stringifiedKey] = parent.get(key).then(value => filterFn(value, key));
+      var label = JSON.stringify(key);
+      return label in cache ? cache[label] : cache[label] = parent.get(key).then(value => filterFn(value, key));
     }
 
-    async function get(key: K): Promise<V> {
-      if (await(have(key))) return parent.get(key);
-      throw new NotFound;
+    function find(state: State<K, V>, from: K): Promise<K> {
+      return AsyncIterator.filter(keys(state, [{next: from}, {prev: null}]), have)
+        .next().then(result => result.done ? Key.SENTINEL : result.value);
     }
 
-    function prev(key: K): Promise<K> {
-      return parent.prev(key).then(p => p === Key.SENTINEL ? Key.SENTINEL : have(p).then(res => res ? p : prev(p)));
+    function get(key: K): Promise<V> {
+      return have(key).then(res => {
+        if (!res) throw new NotFound;
+        return parent.get(key)
+      });
     }
 
-    function next(key: K): Promise<K> {
-      return parent.next(key).then(n => n === Key.SENTINEL ? Key.SENTINEL : have(n).then(res => res ? n : next(n)));
+    function prev(key: K = Key.SENTINEL): Promise<K> {
+      if (key === Key.SENTINEL) return find(reverse(parent), key);
+      return have(key).then(res => {
+        if (!res) throw new NotFound;
+      }).then(() => find(reverse(parent), key));
+    }
+
+    function next(key: K = Key.SENTINEL): Promise<K> {
+      if (key === Key.SENTINEL) return find(parent, key);
+      return have(key).then(res => {
+        if (!res) throw new NotFound;
+      }).then(() => find(parent, key));
     }
 
     return extend(parent, { get, prev, next });
@@ -345,27 +359,25 @@ export module State {
         currentKey: K = Key.SENTINEL,
         queue = Promise.resolve(null);
 
-    var cachingIterator = {
-      async next() {
-        var result = await iterator.next();
+    var cachingIterator = AsyncIterator.create(async () => {
+      var result = await iterator.next();
 
-        if (result.done) {
-          exhausted = true;
-          cache.prev(Key.SENTINEL, currentKey);
-          cache.next(currentKey, Key.SENTINEL);
-          return AsyncIterator.done;
-        }
-
-        var [key, value] = result.value;
-
-        cache.prev(key, currentKey);
-        cache.next(currentKey, key);
-        cache.get(key, value);
-        currentKey = key;
-
-        return {done: false, value: [key, value]};
+      if (result.done) {
+        exhausted = true;
+        cache.prev(Key.SENTINEL, currentKey);
+        cache.next(currentKey, Key.SENTINEL);
+        return AsyncIterator.done;
       }
-    };
+
+      var [key, value] = result.value;
+
+      cache.prev(key, currentKey);
+      cache.next(currentKey, key);
+      cache.get(key, value);
+      currentKey = key;
+
+      return {done: false, value: [key, value]};
+    });
 
     function get(key: K): Promise<V> {
       if (exhausted) return Promise.reject<any>(new NotFound);

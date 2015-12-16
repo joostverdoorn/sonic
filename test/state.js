@@ -199,7 +199,7 @@ test('groupBy', t => {
   var { groupBy, flatten, is, toArray } = State;
 
   var s = state([0,1,2,3,4,5]);
-  var grouped = groupBy(s, x => String(x % 2));
+  var grouped = groupBy(s, x => x % 2);
 
   t.test(t => toArray(flatten(grouped)).then(t.comment));
 });
