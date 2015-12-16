@@ -23,7 +23,7 @@ export module Disposable {
     var done = false;
 
     return {
-      dispose: () => {
+      dispose() {
         if (done) return;
         done = true;
         if (disposer) disposer();

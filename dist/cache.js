@@ -11,51 +11,31 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, Promi
         step("next", void 0);
     });
 };
-import Key from './key';
 import { NotFound } from './exceptions';
 export var Cache;
 (function (Cache) {
     const NONE = {};
     function create() {
-        var cache = {
+        const cache = {
             get: Object.create(null),
             prev: Object.create(null),
             next: Object.create(null)
         };
-        function get(key, value = NONE) {
-            return __awaiter(this, void 0, Promise, function* () {
-                var string = JSON.stringify(key);
-                if (value === NONE) {
-                    if (!(string in cache.get))
-                        throw new NotFound;
-                    return cache.get[string];
-                }
-                return cache.get[string] = Promise.resolve(value);
-            });
+        function createCache(c) {
+            return function (t, u) {
+                const label = JSON.stringify(t);
+                if (arguments.length > 1)
+                    return c[label] = u;
+                if (label in c)
+                    return c[label];
+                throw new NotFound();
+            };
         }
-        function prev(key = Key.SENTINEL, prevKey = NONE) {
-            return __awaiter(this, void 0, Promise, function* () {
-                var string = JSON.stringify(key);
-                if (prevKey === NONE) {
-                    if (!(string in cache.prev))
-                        throw new NotFound;
-                    return cache.prev[string];
-                }
-                return cache.prev[string] = Promise.resolve(prevKey);
-            });
-        }
-        function next(key = Key.SENTINEL, nextKey = NONE) {
-            return __awaiter(this, void 0, Promise, function* () {
-                var string = JSON.stringify(key);
-                if (nextKey === NONE) {
-                    if (!(string in cache.next))
-                        return Promise.reject(new NotFound);
-                    return cache.next[string];
-                }
-                return cache.next[string] = Promise.resolve(nextKey);
-            });
-        }
-        return { get, prev, next };
+        return {
+            get: createCache(cache.get),
+            prev: createCache(cache.prev),
+            next: createCache(cache.next)
+        };
     }
     Cache.create = create;
     function extend(cache) {
@@ -67,34 +47,23 @@ export var Cache;
     }
     Cache.extend = extend;
     function apply(state, cache) {
-        function get(key) {
-            return __awaiter(this, void 0, Promise, function* () {
-                return cache.get(key).catch(reason => {
+        function cacheFn(fn, cacher) {
+            return (t) => __awaiter(this, void 0, Promise, function* () {
+                try {
+                    return cacher(t);
+                }
+                catch (reason) {
                     if (reason instanceof NotFound)
-                        return cache.get(key, state.get(key));
+                        return cacher(t, yield fn(t));
                     throw reason;
-                });
+                }
             });
         }
-        function prev(key = Key.SENTINEL) {
-            return __awaiter(this, void 0, Promise, function* () {
-                return cache.prev(key).catch(reason => {
-                    if (reason instanceof NotFound)
-                        return cache.prev(key, state.prev(key));
-                    throw reason;
-                });
-            });
-        }
-        function next(key = Key.SENTINEL) {
-            return __awaiter(this, void 0, Promise, function* () {
-                return cache.next(key).catch(reason => {
-                    if (reason instanceof NotFound)
-                        return cache.next(key, state.next(key));
-                    throw reason;
-                });
-            });
-        }
-        return { get, prev, next };
+        return {
+            get: cacheFn(state.get, cache.get),
+            prev: cacheFn(state.prev, cache.prev),
+            next: cacheFn(state.next, cache.next)
+        };
     }
     Cache.apply = apply;
 })(Cache || (Cache = {}));

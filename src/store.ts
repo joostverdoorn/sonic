@@ -25,27 +25,37 @@ export interface MutableStore<K, V> extends Store<K, V> {
 
 export module Store {
   export function reverse<K, V>(parent: Store<K, V>): Store<K, V> {
-    var state = State.reverse(parent.state),
-        dispatcher = Observable.map(parent.dispatcher, patch => ({
-          range: Range.reverse(patch.range),
-          added: patch.added ? State.reverse(patch.added) : undefined
-        }));
+    function getState() {
+      return State.reverse(parent.state);
+    }
 
-    return create(state, dispatcher);
+    const dispatcher = Observable.map(parent.dispatcher, patch => ({
+      range: Range.reverse(patch.range),
+      added: patch.added ? State.reverse(patch.added) : undefined
+    }));
+
+    return create(getState(), dispatcher, getState);
   }
 
   export function map<K, V, W>(parent: Store<K, V>, mapFn: (value: V, key: K) => W | Promise<W>): Store<K, W> {
-    var state = State.map(parent.state, mapFn),
-        dispatcher = Observable.map(parent.dispatcher, patch => ({
-          range: patch.range,
-          added: patch.added ? State.map(patch.added, mapFn) : undefined
-        }));
+    function getState() {
+      return State.map(parent.state, mapFn);
+    }
 
-    return create(state, dispatcher);
+    const dispatcher = Observable.map(parent.dispatcher, patch => ({
+      range: patch.range,
+      added: patch.added ? State.map(patch.added, mapFn) : undefined
+    }));
+
+    return create(getState(), dispatcher, getState);
   }
 
   export function filter<K, V>(parent: Store<K, V>, filterFn: (value: V, key: K) => boolean | Promise<boolean>): Store<K, V> {
     var parentState = parent.state;
+
+    function getState() {
+      return State.filter(parent.state, filterFn);
+    }
 
     async function find(state: State<K, V>, range: Range<K>): Promise<K> {
       try {
@@ -83,23 +93,27 @@ export module Store {
       };
     });
 
-    return create(State.filter(parent.state, filterFn), dispatcher);
+    return create(getState(), dispatcher, getState);
   }
 
   export function zoom<K, V>(parent: Store<K, V>, key: K): Store<K, V> {
-    var parentState = parent.state,
-        state   = State.zoom(parent.state, key),
-        dispatcher = Observable.map(
-          Observable.filter(parent.dispatcher, patch => State.has(State.slice(parentState, patch.range), key))
-        , patch => {
-          parentState = parent.state;
-          return {
-            range: Range.all,
-            added: patch.added ? State.zoom(patch.added, key) : undefined
-          }
-        });
+    var parentState = parent.state;
 
-    return create(state, dispatcher);
+    function getState() {
+      return State.zoom(parent.state, key);
+    }
+
+    const dispatcher = Observable.map(
+      Observable.filter(parent.dispatcher, patch => State.has(State.slice(parentState, patch.range), key))
+    , patch => {
+      parentState = parent.state;
+      return {
+        range: Range.all,
+        added: patch.added ? State.zoom(patch.added, key) : undefined
+      }
+    });
+
+    return create(getState(), dispatcher, getState);
   }
 
   export function flatten<K, L, V>(parent: Store<K, Store<L, V>>): Store<[K, L], V> {
@@ -184,8 +198,11 @@ export module Store {
   }
 
   export function scan<K, V, W>(parent: Store<K, V>, scanFn: (memo: W, value: V) => W | Promise<W>, memo?: W): Store<K, W> {
+    function getState() {
+      return State.scan(parent.state, scanFn, memo);
+    }
+
     var store: Store<K, W>,
-        state = State.scan(parent.state, scanFn, memo),
         dispatcher = Observable.map(parent.dispatcher, async (patch) => {
           var parentState = parent.state,
               storeState = store.state,
@@ -199,7 +216,7 @@ export module Store {
           return { range: <Range<K>> [from, {prev: null}], added };
         });
 
-    return store = create(state, dispatcher);
+    return store = create(getState(), dispatcher);
   }
 
   export function take<K, V>(parent: Store<K, V>, count: number) {
@@ -226,13 +243,9 @@ export module Store {
   }
 
   export function cache<K, V>(parent: Store<K, V>): Store<K, V> {
-    var state = State.cache(parent.state),
-        dispatcher = Observable.map(parent.dispatcher, patch => ({
-          range: patch.range,
-          added: patch.added ? State.cache(patch.added) : undefined
-        }));
-
-    return Store.create(state, dispatcher);
+    return Store.create(State.cache(parent.state), parent.dispatcher, (state, patch) => {
+      return State.cache(Patch.apply(state, patch));
+    });
   }
 
   export function states<K, V>(store: Store<K, V>): Observable<State<K, V>> {
@@ -242,16 +255,23 @@ export module Store {
   export function create<K, V>(state: State<K, V>, dispatcher: Subject<Patch<K, V>, Patch<K, V>>, reducer?: (state: State<K, V>, patch: Patch<K, V>) => State<K, V> | Promise<State<K, V>>): MutableStore<K, V>
   export function create<K, V>(state: State<K, V>, dispatcher: Observable<Patch<K, V>>, reducer?: (state: State<K, V>, patch: Patch<K, V>) => State<K, V> | Promise<State<K, V>>): Store<K, V>
   export function create<K, V>(state: State<K, V>, dispatcher: Observable<Patch<K, V>>, reducer: (state: State<K, V>, patch: Patch<K, V>) => State<K, V> | Promise<State<K, V>> = Patch.apply): any {
-
     var subject = Subject.create();
-    var statePatches = Observable.scan<Patch<K, V>, [State<K, V>, Patch<K, V>]>(dispatcher, async ([state], patch) => [await reducer(state, patch), patch], [state, null]);
 
-    Observable.forEach(statePatches, ([state, patch]) => {
-      store.state = state;
-      return subject.onNext(patch);
+    dispatcher.subscribe({
+      onNext: async (patch) => {
+        store.state = await reducer(store.state, patch);
+        return subject.onNext(patch);
+      }
     });
 
-    var store = { state, dispatcher: { subscribe: subject.subscribe, onNext: Subject.isSubject(dispatcher) ? dispatcher.onNext : undefined }};
+    const store = {
+      state,
+      dispatcher: {
+        subscribe: subject.subscribe,
+        onNext: Subject.isSubject(dispatcher) ? dispatcher.onNext : undefined
+      }
+    };
+
     return store;
   }
 }

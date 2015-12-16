@@ -22,23 +22,32 @@ import { NotFound } from './exceptions';
 export var Store;
 (function (Store) {
     function reverse(parent) {
-        var state = State.reverse(parent.state), dispatcher = Observable.map(parent.dispatcher, patch => ({
+        function getState() {
+            return State.reverse(parent.state);
+        }
+        const dispatcher = Observable.map(parent.dispatcher, patch => ({
             range: Range.reverse(patch.range),
             added: patch.added ? State.reverse(patch.added) : undefined
         }));
-        return create(state, dispatcher);
+        return create(getState(), dispatcher, getState);
     }
     Store.reverse = reverse;
     function map(parent, mapFn) {
-        var state = State.map(parent.state, mapFn), dispatcher = Observable.map(parent.dispatcher, patch => ({
+        function getState() {
+            return State.map(parent.state, mapFn);
+        }
+        const dispatcher = Observable.map(parent.dispatcher, patch => ({
             range: patch.range,
             added: patch.added ? State.map(patch.added, mapFn) : undefined
         }));
-        return create(state, dispatcher);
+        return create(getState(), dispatcher, getState);
     }
     Store.map = map;
     function filter(parent, filterFn) {
         var parentState = parent.state;
+        function getState() {
+            return State.filter(parent.state, filterFn);
+        }
         function find(state, range) {
             return __awaiter(this, void 0, Promise, function* () {
                 try {
@@ -75,18 +84,22 @@ export var Store;
                 added: patch.added ? State.filter(patch.added, filterFn) : undefined
             };
         }));
-        return create(State.filter(parent.state, filterFn), dispatcher);
+        return create(getState(), dispatcher, getState);
     }
     Store.filter = filter;
     function zoom(parent, key) {
-        var parentState = parent.state, state = State.zoom(parent.state, key), dispatcher = Observable.map(Observable.filter(parent.dispatcher, patch => State.has(State.slice(parentState, patch.range), key)), patch => {
+        var parentState = parent.state;
+        function getState() {
+            return State.zoom(parent.state, key);
+        }
+        const dispatcher = Observable.map(Observable.filter(parent.dispatcher, patch => State.has(State.slice(parentState, patch.range), key)), patch => {
             parentState = parent.state;
             return {
                 range: Range.all,
                 added: patch.added ? State.zoom(patch.added, key) : undefined
             };
         });
-        return create(state, dispatcher);
+        return create(getState(), dispatcher, getState);
     }
     Store.zoom = zoom;
     function flatten(parent) {
@@ -160,7 +173,10 @@ export var Store;
     }
     Store.keyBy = keyBy;
     function scan(parent, scanFn, memo) {
-        var store, state = State.scan(parent.state, scanFn, memo), dispatcher = Observable.map(parent.dispatcher, (patch) => __awaiter(this, void 0, Promise, function* () {
+        function getState() {
+            return State.scan(parent.state, scanFn, memo);
+        }
+        var store, dispatcher = Observable.map(parent.dispatcher, (patch) => __awaiter(this, void 0, Promise, function* () {
             var parentState = parent.state, storeState = store.state, [from, to] = patch.range;
             var added = State.lazy(() => __awaiter(this, void 0, Promise, function* () {
                 var last = yield State.last(storeState, [{ next: null }, from]);
@@ -168,7 +184,7 @@ export var Store;
             }));
             return { range: [from, { prev: null }], added };
         }));
-        return store = create(state, dispatcher);
+        return store = create(getState(), dispatcher);
     }
     Store.scan = scan;
     function take(parent, count) {
@@ -187,11 +203,9 @@ export var Store;
     }
     Store.take = take;
     function cache(parent) {
-        var state = State.cache(parent.state), dispatcher = Observable.map(parent.dispatcher, patch => ({
-            range: patch.range,
-            added: patch.added ? State.cache(patch.added) : undefined
-        }));
-        return Store.create(state, dispatcher);
+        return Store.create(State.cache(parent.state), parent.dispatcher, (state, patch) => {
+            return State.cache(Patch.apply(state, patch));
+        });
     }
     Store.cache = cache;
     function states(store) {
@@ -200,12 +214,19 @@ export var Store;
     Store.states = states;
     function create(state, dispatcher, reducer = Patch.apply) {
         var subject = Subject.create();
-        var statePatches = Observable.scan(dispatcher, ([state], patch) => __awaiter(this, void 0, Promise, function* () { return [yield reducer(state, patch), patch]; }), [state, null]);
-        Observable.forEach(statePatches, ([state, patch]) => {
-            store.state = state;
-            return subject.onNext(patch);
+        dispatcher.subscribe({
+            onNext: (patch) => __awaiter(this, void 0, Promise, function* () {
+                store.state = yield reducer(store.state, patch);
+                return subject.onNext(patch);
+            })
         });
-        var store = { state, dispatcher: { subscribe: subject.subscribe, onNext: Subject.isSubject(dispatcher) ? dispatcher.onNext : undefined } };
+        const store = {
+            state,
+            dispatcher: {
+                subscribe: subject.subscribe,
+                onNext: Subject.isSubject(dispatcher) ? dispatcher.onNext : undefined
+            }
+        };
         return store;
     }
     Store.create = create;

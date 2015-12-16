@@ -83,8 +83,8 @@ export module State {
   }
 
   export function splice<K, V>(parent: State<K, V>, range: Range<K>, child?: State<K, V>): State<K, V> {
-    var deleted = slice(parent, range),
-        filtered = filter(parent, (value, key) => deleted.get(key).then(() => false, () => true));
+    const deleted = slice(parent, range),
+          filtered = filter(parent, (value, key) => deleted.get(key).then(() => false, () => true));
 
     if (child == null) return filtered;
 
@@ -95,30 +95,39 @@ export module State {
 
     bridgedChild = extend(child, <Partial<K, V>>{
       prev: key => child.prev(key).then(prev => {
-        if (prev !== Key.SENTINEL) return Promise.resolve(prev);
-        return Position.isNextPosition(from) ? Promise.resolve(from.next) : parent.prev(from.prev);
+        if (prev !== Key.SENTINEL) return prev;
+        return Position.isNextPosition(from) ? from.next : parent.prev(from.prev);
       }),
 
       next: key => child.next(key).then(next => {
-        if (next !== Key.SENTINEL) return Promise.resolve(next);
-        return Position.isPrevPosition(to) ? Promise.resolve(to.prev) : parent.next(to.next);
+        if (next !== Key.SENTINEL) return next;
+        return Position.isPrevPosition(to) ? to.prev : parent.next(to.next);
       })
     });
 
     bridgedParent = extend(filtered, <Partial<K, V>>{
       prev: key => parent.prev(key).then(prev => {
         if (Position.isNextPosition(to) && prev === to.next) return bridgedChild.prev(Key.SENTINEL);
-        return has(deleted, prev).then(res => res ? Promise.reject<any>(new NotFound) : prev);
+        return has(deleted, prev).then(res => {
+          if (res) throw new NotFound;
+          return prev;
+        });
       }),
 
       next: key => parent.next(key).then(next => {
         if (Position.isPrevPosition(from) && next === from.prev) return bridgedChild.next(Key.SENTINEL);
-        return has(deleted, next).then(res => res ? Promise.reject<any>(new NotFound) : next);
+        return has(deleted, next).then(res => {
+          if (res) throw new NotFound;
+          return next;
+        });
       })
     });
 
     function get(key: K): Promise<V> {
-      return has(child, key).then(res => res ? bridgedChild.get(key) : bridgedParent.get(key));
+      return bridgedChild.get(key).catch(reason => {
+        if (!(reason instanceof NotFound)) throw reason;
+        return bridgedParent.get(key);
+      });
     }
 
     function prev(key: K = Key.SENTINEL): Promise<K> {
@@ -142,8 +151,8 @@ export module State {
   }
 
   export function map<K, V, W>(parent: State<K, V>, mapFn: (value: V, key?: K) => W | Promise<W>): State<K, W> {
-    async function get(key: K) {
-      return mapFn(await parent.get(key), key);
+    function get(key: K) {
+      return parent.get(key).then(value => mapFn(value, key));
     }
 
     return extend(parent, {get});
@@ -153,21 +162,34 @@ export module State {
     var cache: {[key: string]: Promise<boolean>} = Object.create(null);
 
     function have(key: K): Promise<boolean> {
-      var stringifiedKey = JSON.stringify(key);
-      return stringifiedKey in cache ? cache[stringifiedKey] : cache[stringifiedKey] = parent.get(key).then(value => filterFn(value, key));
+      var label = JSON.stringify(key);
+      return label in cache ? cache[label] : cache[label] = parent.get(key).then(value => filterFn(value, key));
     }
 
-    async function get(key: K): Promise<V> {
-      if (await(have(key))) return parent.get(key);
-      throw new NotFound;
+    function find(state: State<K, V>, from: K): Promise<K> {
+      return AsyncIterator.filter(keys(state, [{next: from}, {prev: null}]), have)
+        .next().then(result => result.done ? Key.SENTINEL : result.value);
     }
 
-    function prev(key: K): Promise<K> {
-      return parent.prev(key).then(p => p === Key.SENTINEL ? Key.SENTINEL : have(p).then(res => res ? p : prev(p)));
+    function get(key: K): Promise<V> {
+      return have(key).then(res => {
+        if (!res) throw new NotFound;
+        return parent.get(key)
+      });
     }
 
-    function next(key: K): Promise<K> {
-      return parent.next(key).then(n => n === Key.SENTINEL ? Key.SENTINEL : have(n).then(res => res ? n : next(n)));
+    function prev(key: K = Key.SENTINEL): Promise<K> {
+      if (key === Key.SENTINEL) return find(reverse(parent), key);
+      return have(key).then(res => {
+        if (!res) throw new NotFound;
+      }).then(() => find(reverse(parent), key));
+    }
+
+    function next(key: K = Key.SENTINEL): Promise<K> {
+      if (key === Key.SENTINEL) return find(parent, key);
+      return have(key).then(res => {
+        if (!res) throw new NotFound;
+      }).then(() => find(parent, key));
     }
 
     return extend(parent, { get, prev, next });
@@ -333,27 +355,25 @@ export module State {
         currentKey: K = Key.SENTINEL,
         queue = Promise.resolve(null);
 
-    var cachingIterator = {
-      async next() {
-        var result = await iterator.next();
+    var cachingIterator = AsyncIterator.create(async () => {
+      var result = await iterator.next();
 
-        if (result.done) {
-          exhausted = true;
-          await cache.prev(Key.SENTINEL, currentKey);
-          await cache.next(currentKey, Key.SENTINEL);
-          return AsyncIterator.done;
-        }
-
-        var [key, value] = result.value;
-
-        await cache.prev(key, currentKey);
-        await cache.next(currentKey, key);
-        await cache.get(key, value);
-        currentKey = key;
-
-        return {done: false, value: [key, value]};
+      if (result.done) {
+        exhausted = true;
+        cache.prev(Key.SENTINEL, currentKey);
+        cache.next(currentKey, Key.SENTINEL);
+        return AsyncIterator.done;
       }
-    };
+
+      var [key, value] = result.value;
+
+      cache.prev(key, currentKey);
+      cache.next(currentKey, key);
+      cache.get(key, value);
+      currentKey = key;
+
+      return {done: false, value: [key, value]};
+    });
 
     function get(key: K): Promise<V> {
       if (exhausted) return Promise.reject<any>(new NotFound);
