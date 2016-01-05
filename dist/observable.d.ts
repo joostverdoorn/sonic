@@ -16,18 +16,14 @@ export declare module Disposable {
     function create(disposer?: () => void): Disposable;
 }
 export declare module Observable {
-    function create<T>(fn?: (subject: Subject<T, T>) => void): {
-        subscribe: (observer: Observer<T>) => Disposable;
-    };
+    function create<T>(fn?: (subject: Subject<T, T>) => void): Observable<T>;
     function pipe<T, U>(observable: Observable<T>, observer: Subject<T, U>): Subject<T, U>;
     function pipe<T>(observable: Observable<T>, observer: Observer<T>): Observer<T>;
     function map<T, U>(observable: Observable<T>, mapFn: (value: T) => U | Promise<U>): Observable<U>;
     function filter<T>(observable: Observable<T>, filterFn: (value: T) => boolean | Promise<boolean>): Observable<T>;
     function scan<T, U>(observable: Observable<T>, scanFn: (memo: U, value: T) => U | Promise<U>, memo: U): Observable<U>;
     function forEach<T>(observable: Observable<T>, fn: (value: T) => void | Promise<void>): Disposable;
-    function fromPromise<T>(promise: Promise<T>): {
-        subscribe: (observer: Observer<{}>) => Disposable;
-    };
+    function fromPromise<T>(promise: Promise<T>): Observable<{}>;
     function toPromise<T>(observable: Observable<T>): Promise<T>;
     function fromIterator<T>(iterator: Iterator<T> | AsyncIterator<T>): Observable<T>;
     function toIterator<T>(observable: Observable<T>): AsyncIterator<T>;

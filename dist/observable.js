@@ -172,23 +172,17 @@ export var Subject;
             return Disposable.create(() => delete observers[observerKey]);
         }
         function onNext(value) {
-            return __awaiter(this, void 0, Promise, function* () {
-                return current = current.then(() => Promise.all(Object.keys(observers).map(key => observers[key].onNext(value))).then(() => { }));
-            });
+            return current = current.then(() => Promise.all(Object.keys(observers).map(key => observers[key].onNext(value))).then(() => { }));
         }
         function onComplete(res) {
-            return __awaiter(this, void 0, Promise, function* () {
-                completed = true;
-                result = res;
-                return current = current.then(() => Promise.all(Object.keys(observers).map(key => observers[key].onComplete ? observers[key].onComplete(res) : undefined)).then(() => { observers = null; }));
-            });
+            completed = true;
+            result = res;
+            return current = current.then(() => Promise.all(Object.keys(observers).map(key => observers[key].onComplete ? observers[key].onComplete(res) : undefined)).then(() => { observers = null; }));
         }
         function onError(reason) {
-            return __awaiter(this, void 0, Promise, function* () {
-                errored = true;
-                error = reason;
-                return current = current.then(() => Promise.all(Object.keys(observers).map(key => observers[key].onError ? observers[key].onError(reason) : undefined)).then(() => { observers = null; }));
-            });
+            errored = true;
+            error = reason;
+            return current = current.then(() => Promise.all(Object.keys(observers).map(key => observers[key].onError ? observers[key].onError(reason) : undefined)).then(() => { observers = null; }));
         }
         return { subscribe, onNext, onComplete, onError };
     }

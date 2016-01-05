@@ -128,6 +128,243 @@ test('filter', t => {
   });
 });
 
+test('flatten', t => {
+  t.test('should work reactively', t => {
+    t.test('remove all in left leaf', async (t) => {
+      var q = store([1,2,3]);
+      var r = store([4,5,6]);
+      var s = store([7,8,9]);
+
+      var e = store([q,r,s]);
+      var f = Store.flatten(e);
+      var p = {range: [{next: null}, {prev: null}]};
+
+      await q.dispatcher.onNext(p);
+      return t.same(await State.toArray(f.state), [4,5,6,7,8,9]);
+    });
+
+    t.test('remove all but first in left leaf', async (t) => {
+      var q = store([1,2,3]);
+      var r = store([4,5,6]);
+      var s = store([7,8,9]);
+
+      var e = store([q,r,s]);
+      var f = Store.flatten(e);
+      var p = {range: [{next: 0}, {prev: null}]};
+
+      await q.dispatcher.onNext(p);
+      return t.same(await State.toArray(f.state), [1,4,5,6,7,8,9]);
+    });
+
+    t.test('remove all but last in left leaf', async (t) => {
+      var q = store([1,2,3]);
+      var r = store([4,5,6]);
+      var s = store([7,8,9]);
+
+      var e = store([q,r,s]);
+      var f = Store.flatten(e);
+      var p = {range: [{prev: 0}, {prev: 2}]};
+
+      await q.dispatcher.onNext(p);
+      return t.same(await State.toArray(f.state), [3,4,5,6,7,8,9]);
+    });
+
+    t.test('remove all in middle leaf', async (t) => {
+      var q = store([1,2,3]);
+      var r = store([4,5,6]);
+      var s = store([7,8,9]);
+
+      var e = store([q,r,s]);
+      var f = Store.flatten(e);
+      var p = {range: [{next: null}, {prev: null}]};
+
+      await r.dispatcher.onNext(p);
+      return t.same(await State.toArray(f.state), [1,2,3,7,8,9]);
+    });
+
+    t.test('remove all but first in middle leaf', async (t) => {
+      var q = store([1,2,3]);
+      var r = store([4,5,6]);
+      var s = store([7,8,9]);
+
+      var e = store([q,r,s]);
+      var f = Store.flatten(e);
+      var p = {range: [{next: 0}, {next: 2}]};
+
+      await r.dispatcher.onNext(p);
+      return t.same(await State.toArray(f.state), [1,2,3,4,7,8,9]);
+    });
+
+    t.test('remove all but last in middle leaf', async (t) => {
+      var q = store([1,2,3]);
+      var r = store([4,5,6]);
+      var s = store([7,8,9]);
+
+      var e = store([q,r,s]);
+      var f = Store.flatten(e);
+      var p = {range: [{next: null}, {prev: 2}]};
+
+      await r.dispatcher.onNext(p);
+      return t.same(await State.toArray(f.state), [1,2,3,6,7,8,9]);
+    });
+
+    t.test('remove all in right leaf', async (t) => {
+      var q = store([1,2,3]);
+      var r = store([4,5,6]);
+      var s = store([7,8,9]);
+
+      var e = store([q,r,s]);
+      var f = Store.flatten(e);
+      var p = {range: [{next: null}, {prev: null}]};
+
+      await s.dispatcher.onNext(p);
+      return t.same(await State.toArray(f.state), [1,2,3,4,5,6]);
+    });
+
+    t.test('remove all but first in right leaf', async (t) => {
+      var q = store([1,2,3]);
+      var r = store([4,5,6]);
+      var s = store([7,8,9]);
+
+      var e = store([q,r,s]);
+      var f = Store.flatten(e);
+      var p = {range: [{next: 0}, {next: 2}]};
+
+      await s.dispatcher.onNext(p);
+      return t.same(await State.toArray(f.state), [1,2,3,4,5,6,7]);
+    });
+
+    t.test('remove all but last in right leaf', async (t) => {
+      var q = store([1,2,3]);
+      var r = store([4,5,6]);
+      var s = store([7,8,9]);
+
+      var e = store([q,r,s]);
+      var f = Store.flatten(e);
+      var p = {range: [{prev: 0}, {prev: 2}]};
+
+      await s.dispatcher.onNext(p);
+      return t.same(await State.toArray(f.state), [1,2,3,4,5,6,9]);
+    });
+
+    t.test('remove left leaf', async (t) => {
+      var q = store([1,2,3]);
+      var r = store([4,5,6]);
+      var s = store([7,8,9]);
+
+      var e = store([q,r,s]);
+      var f = Store.flatten(e);
+      var p = {range: [{next: null}, {next: 0}]};
+
+      await e.dispatcher.onNext(p);
+      return t.same(await State.toArray(f.state), [4,5,6,7,8,9]);
+    });
+
+    t.test('remove middle leaf', async (t) => {
+      var q = store([1,2,3]);
+      var r = store([4,5,6]);
+      var s = store([7,8,9]);
+
+      var e = store([q,r,s]);
+      var f = Store.flatten(e);
+      var p = {range: [{next: 0}, {prev: 2}]};
+
+      f.dispatcher.subscribe({onNext: (x) => t.comment(JSON.stringify(x))})
+      await e.dispatcher.onNext(p);
+      return t.same(await State.toArray(f.state), [1,2,3,7,8,9]);
+    });
+
+    // t.test('remove all but first in right leaf', async (t) => {
+    //   var q = store([1,2,3]);
+    //   var r = store([4,5,6]);
+    //   var s = store([7,8,9]);
+    //
+    //   var e = store([q,r,s]);
+    //   var f = Store.flatten(e);
+    //   var p = {range: [{next: 0}, {next: 2}]};
+    //
+    //   await s.dispatcher.onNext(p);
+    //   return t.same(await State.toArray(f.state), [1,2,3,4,5,6,7]);
+    // });
+
+
+
+
+
+    // t.test('remove all but first', async (t) => {
+    //   var s = store({a: 3, b: 4, c: 5});
+    //   var u = Store.filter(s, x => x % 2 === 0);
+    //   var p = {range: [{next: 'b'}, {prev: null}]};
+    //
+    //   await s.dispatcher.onNext(p);
+    //   return State.is(u.state, state({b: 4})).then(t.ok);
+    // });
+    //
+    // t.test('remove all but last', async (t) => {
+    //   var s = store({a: 3, b: 4, c: 5});
+    //   var u = Store.filter(s, x => x % 2 === 0);
+    //   var p = {range: [{next: null}, {prev: 'b'}]};
+    //
+    //   await s.dispatcher.onNext(p);
+    //   return State.is(u.state, state({b: 4})).then(t.ok);
+    // });
+    //
+    // t.test('remove none', async (t) => {
+    //   var s = store({a: 3, b: 4, c: 5});
+    //   var u = Store.filter(s, x => x % 2 === 0);
+    //   var p = {range: [{next: 'a'}, {next: 'a'}]};
+    //
+    //   await s.dispatcher.onNext(p);
+    //   return State.is(u.state, state({b: 4 })).then(t.ok);
+    // });
+    //
+    // t.test('remove none, add something', async (t) => {
+    //   var s = store({a: 3, b: 4, c: 5});
+    //   var u = Store.filter(s, x => x % 2 === 0);
+    //   var p = {range: [{next: 'a'}, {next: 'a'}], added: state({d: 6})};
+    //
+    //   await s.dispatcher.onNext(p);
+    //   return State.is(u.state, state({d: 6, b: 4 })).then(t.ok);
+    // });
+    //
+    // t.test('remove none, add something at beginning', async (t) => {
+    //   var s = store({a: 3, b: 4, c: 5});
+    //   var u = Store.filter(s, x => x % 2 === 0);
+    //   var p = {range: [{next: null}, {prev: 'a'}], added: state({d: 6})};
+    //
+    //   await s.dispatcher.onNext(p);
+    //   return State.is(u.state, state({d: 6, b: 4 })).then(t.ok);
+    // });
+    //
+    // t.test('remove none, add something at end', async (t) => {
+    //   var s = store({a: 3, b: 4, c: 5});
+    //   var u = Store.filter(s, x => x % 2 === 0);
+    //   var p = {range: [{prev: null}, {prev: null}], added: state({d: 6})};
+    //
+    //   await s.dispatcher.onNext(p);
+    //   return State.is(u.state, state({b: 4, d: 6 })).then(t.ok);
+    // });
+    //
+    // t.test('remove all, add something', async (t) => {
+    //   var s = store({a: 3, b: 4, c: 5});
+    //   var u = Store.filter(s, x => x % 2 === 0);
+    //   var p = {range: [{next: null}, {prev: null}], added: state({d: 6})};
+    //
+    //   await s.dispatcher.onNext(p);
+    //   return State.is(u.state, state({d: 6})).then(t.ok);
+    // });
+    //
+    // t.test('remove first, add something', async (t) => {
+    //   var s = store({a: 3, b: 4, c: 5});
+    //   var u = Store.filter(s, x => x % 2 === 0);
+    //   var p = {range: [{next: null}, {next: 'a'}], added: State.fromObject({d: 6})};
+    //
+    //   await s.dispatcher.onNext(p);
+    //   return State.is(u.state, state({d: 6, b: 4})).then(t.ok);
+    // });
+  });
+});
+
 test('keyBy', t => {
   t.test('adding one, removing one in the middle', t => {
     var state = State.fromObject({a: 1, b: 2, c: 3});

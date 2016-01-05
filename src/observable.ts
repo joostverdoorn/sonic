@@ -33,7 +33,7 @@ export module Disposable {
 }
 
 export module Observable {
-  export function create<T>(fn?: (subject: Subject<T, T>) => void) {
+  export function create<T>(fn?: (subject: Subject<T, T>) => void): Observable<T> {
     var subject: Subject<T, T>;
 
     function subscribe(observer: Observer<T>): Disposable {
@@ -194,17 +194,17 @@ export module Subject {
       return Disposable.create(() => delete observers[observerKey]);
     }
 
-    async function onNext(value: T): Promise<void> {
+    function onNext(value: T): Promise<void> {
       return current = current.then(() => Promise.all(Object.keys(observers).map(key => observers[key].onNext(value))).then(() => {}));
     }
 
-    async function onComplete(res?: any): Promise<void> {
+    function onComplete(res?: any): Promise<void> {
       completed = true;
       result = res;
       return current = current.then(() => Promise.all(Object.keys(observers).map(key => observers[key].onComplete ? observers[key].onComplete(res) : undefined)).then(() => {observers = null;}));
     }
 
-    async function onError(reason?: any): Promise<void> {
+    function onError(reason?: any): Promise<void> {
       errored = true;
       error = reason;
       return current = current.then(() => Promise.all(Object.keys(observers).map(key => observers[key].onError ? observers[key].onError(reason) : undefined)).then(() => {observers = null;}));

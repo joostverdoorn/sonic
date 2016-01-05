@@ -150,10 +150,11 @@ export var Store;
                     added: patch.added ? State.flatten(State.map(patch.added, store => store.state)) : undefined
                 };
             });
-        }).subscribe(dispatcher);
+        })
+            .subscribe(dispatcher);
         statesState = states.state;
         function getState() {
-            return State.flatten(statesState);
+            return State.flatten(State.map(parent.state, store => store.state));
         }
         return create(getState(), dispatcher, getState);
     }
