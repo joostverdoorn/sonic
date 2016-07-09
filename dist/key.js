@@ -1,3 +1,4 @@
+"use strict";
 var Key;
 (function (Key) {
     var uniqueKey = 0;
@@ -7,5 +8,6 @@ var Key;
     }
     Key.unique = unique;
 })(Key || (Key = {}));
-export default Key;
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.default = Key;
 //# sourceMappingURL=key.js.map

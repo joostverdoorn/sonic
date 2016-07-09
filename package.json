@@ -6,8 +6,8 @@
     "Joost Verdoorn",
     "Steffan Sluis"
   ],
-  "main": "dist/sonic.js",
-  "browser": "dist/sonic.browser.js",
+  "main": "dist/index.js",
+  "typings": "dist/index.d.ts",
   "files": [
     "dist",
     "src"
@@ -57,5 +57,8 @@
     "t": "npm run test",
     "w": "npm run watch",
     "wt": "npm run watch-test"
+  },
+  "dependencies": {
+    "typescript": "^2.0.0-dev.20160707"
   }
 }

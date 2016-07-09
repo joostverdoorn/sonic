@@ -1,3 +1,4 @@
+"use strict";
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     return new (P || (P = Promise))(function (resolve, reject) {
         function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
@@ -6,8 +7,8 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments)).next());
     });
 };
-import { NotFound } from './exceptions';
-export var Cache;
+const exceptions_1 = require('./exceptions');
+var Cache;
 (function (Cache) {
     const NONE = {};
     function create() {
@@ -23,7 +24,7 @@ export var Cache;
                     return c[label] = u;
                 if (label in c)
                     return c[label];
-                throw new NotFound();
+                throw new exceptions_1.NotFound();
             };
         }
         return {
@@ -43,12 +44,12 @@ export var Cache;
     Cache.extend = extend;
     function apply(state, cache) {
         function cacheFn(fn, cacher) {
-            return (t) => __awaiter(this, void 0, Promise, function* () {
+            return (t) => __awaiter(this, void 0, void 0, function* () {
                 try {
                     return cacher(t);
                 }
                 catch (reason) {
-                    if (reason instanceof NotFound)
+                    if (reason instanceof exceptions_1.NotFound)
                         return cacher(t, yield fn(t));
                     throw reason;
                 }
@@ -61,6 +62,7 @@ export var Cache;
         };
     }
     Cache.apply = apply;
-})(Cache || (Cache = {}));
-export default Cache;
+})(Cache = exports.Cache || (exports.Cache = {}));
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.default = Cache;
 //# sourceMappingURL=cache.js.map

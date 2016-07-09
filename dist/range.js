@@ -1,13 +1,14 @@
-import Key from './key';
-export var Range;
+"use strict";
+const key_1 = require('./key');
+var Range;
 (function (Range) {
-    Range.all = [{ next: Key.SENTINEL }, { prev: Key.SENTINEL }];
+    Range.all = [{ next: key_1.default.SENTINEL }, { prev: key_1.default.SENTINEL }];
     function reverse([from, to]) {
         return [Position.reverse(to), Position.reverse(from)];
     }
     Range.reverse = reverse;
-})(Range || (Range = {}));
-export var Position;
+})(Range = exports.Range || (exports.Range = {}));
+var Position;
 (function (Position) {
     function isPrevPosition(position) {
         return 'prev' in position;
@@ -21,6 +22,7 @@ export var Position;
         return Position.isPrevPosition(position) ? { next: position.prev } : { prev: position.next };
     }
     Position.reverse = reverse;
-})(Position || (Position = {}));
-export default Range;
+})(Position = exports.Position || (exports.Position = {}));
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.default = Range;
 //# sourceMappingURL=range.js.map

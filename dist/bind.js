@@ -1,5 +1,8 @@
-export function bind(fn, context) {
+"use strict";
+function bind(fn, context) {
     return (...args) => fn.apply(context, args);
 }
-export default bind;
+exports.bind = bind;
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.default = bind;
 //# sourceMappingURL=bind.js.map

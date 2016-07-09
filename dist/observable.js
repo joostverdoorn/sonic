@@ -1,3 +1,4 @@
+"use strict";
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     return new (P || (P = Promise))(function (resolve, reject) {
         function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
@@ -6,9 +7,9 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments)).next());
     });
 };
-import Key from './key';
-import AsyncIterator from './async_iterator';
-export var Disposable;
+const key_1 = require('./key');
+const async_iterator_1 = require('./async_iterator');
+var Disposable;
 (function (Disposable) {
     function create(disposer) {
         var done = false;
@@ -23,8 +24,8 @@ export var Disposable;
         };
     }
     Disposable.create = create;
-})(Disposable || (Disposable = {}));
-export var Observable;
+})(Disposable = exports.Disposable || (exports.Disposable = {}));
+var Observable;
 (function (Observable) {
     function create(fn) {
         var subject;
@@ -92,7 +93,7 @@ export var Observable;
     Observable.toPromise = toPromise;
     function fromIterator(iterator) {
         var subject = Subject.create();
-        AsyncIterator.forEach(iterator, subject.onNext);
+        async_iterator_1.default.forEach(iterator, subject.onNext);
         return { subscribe: subject.subscribe };
     }
     Observable.fromIterator = fromIterator;
@@ -129,7 +130,7 @@ export var Observable;
             }
         });
         function next() {
-            return __awaiter(this, void 0, Promise, function* () {
+            return __awaiter(this, void 0, void 0, function* () {
                 if (done && !values.length)
                     return { done: true };
                 if (errored && !values.length)
@@ -141,11 +142,11 @@ export var Observable;
                 return deferred.promise;
             });
         }
-        return AsyncIterator.create(next);
+        return async_iterator_1.default.create(next);
     }
     Observable.toIterator = toIterator;
-})(Observable || (Observable = {}));
-export var Subject;
+})(Observable = exports.Observable || (exports.Observable = {}));
+var Subject;
 (function (Subject) {
     function isSubject(obj) {
         return typeof obj["onNext"] === "function";
@@ -162,24 +163,24 @@ export var Subject;
                 Promise.resolve(() => observer.onError(error));
                 return Disposable.create();
             }
-            var observerKey = Key.unique();
+            var observerKey = key_1.default.unique();
             observers[observerKey] = observer;
             return Disposable.create(() => delete observers[observerKey]);
         }
         function onNext(value) {
-            return __awaiter(this, void 0, Promise, function* () {
+            return __awaiter(this, void 0, void 0, function* () {
                 return current = current.then(() => Promise.all(Object.keys(observers).map(key => observers[key].onNext(value))).then(() => { }));
             });
         }
         function onComplete(res) {
-            return __awaiter(this, void 0, Promise, function* () {
+            return __awaiter(this, void 0, void 0, function* () {
                 completed = true;
                 result = res;
                 return current = current.then(() => Promise.all(Object.keys(observers).map(key => observers[key].onComplete ? observers[key].onComplete(res) : undefined)).then(() => { observers = null; }));
             });
         }
         function onError(reason) {
-            return __awaiter(this, void 0, Promise, function* () {
+            return __awaiter(this, void 0, void 0, function* () {
                 errored = true;
                 error = reason;
                 return current = current.then(() => Promise.all(Object.keys(observers).map(key => observers[key].onError ? observers[key].onError(reason) : undefined)).then(() => { observers = null; }));
@@ -188,5 +189,5 @@ export var Subject;
         return { subscribe, onNext, onComplete, onError };
     }
     Subject.create = create;
-})(Subject || (Subject = {}));
+})(Subject = exports.Subject || (exports.Subject = {}));
 //# sourceMappingURL=observable.js.map

@@ -1,4 +1,5 @@
-export var PromiseUtils;
+"use strict";
+var PromiseUtils;
 (function (PromiseUtils) {
     function lazy(executor) {
         var promise;
@@ -10,6 +11,7 @@ export var PromiseUtils;
         return Promise.resolve({ then });
     }
     PromiseUtils.lazy = lazy;
-})(PromiseUtils || (PromiseUtils = {}));
-export default PromiseUtils;
+})(PromiseUtils = exports.PromiseUtils || (exports.PromiseUtils = {}));
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.default = PromiseUtils;
 //# sourceMappingURL=promise_utils.js.map
