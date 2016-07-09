@@ -17,7 +17,7 @@ export module AsyncIterator {
   export async function every<T>(iterator: Iterator<T> | AsyncIterator<T>, predicate: (value: T) => boolean | Promise<boolean>): Promise<boolean> {
     var result: IteratorResult<T>;
 
-    while ((result = await iterator.next()) && !result.done) {
+    while ((result = await (<AsyncIterator<T>> iterator).next()) && !result.done) {
       if (!(await predicate(result.value))) return false;
     }
 
@@ -79,7 +79,7 @@ export module AsyncIterator {
 
   export function map<T, U>(iterator: Iterator<T> | AsyncIterator<T>, mapFn: (value: T) => U | Promise<U>): AsyncIterator<U> {
     async function next() {
-      var result = await iterator.next();
+      var result = await (<AsyncIterator<T>> iterator).next();
       return result.done ? done : { done: false, value: await mapFn(result.value) };
     }
 
@@ -88,7 +88,7 @@ export module AsyncIterator {
 
   export function filter<T>(iterator: Iterator<T> | AsyncIterator<T>, filterFn: (value: T) => boolean | Promise<boolean>): AsyncIterator<T> {
     async function next(): Promise<IteratorResult<T>> {
-      var result = await iterator.next();
+      var result = await (<AsyncIterator<T>> iterator).next();
       if (result.done) return done;
       if (await filterFn(result.value)) return result;
       return next();
@@ -99,7 +99,7 @@ export module AsyncIterator {
 
   export function scan<T, U>(iterator: Iterator<T> | AsyncIterator<T>, scanFn: (memo: U, value: T) => U | Promise<U>, memo?: U): AsyncIterator<U> {
     async function next() {
-      var result = await iterator.next();
+      var result = await (<AsyncIterator<T>> iterator).next();
       if (result.done) return done;
       memo = await scanFn(memo, result.value);
       return { done: false, value: memo };
@@ -110,10 +110,10 @@ export module AsyncIterator {
 
   export function zip<T, U>(iterator: Iterator<T> | AsyncIterator<T>, other: Iterator<U> | AsyncIterator<U>, zipFn: (t: T, u: U) => [T, U] | Promise<[T, U]> = (t, u) => [t, u]): AsyncIterator<[T, U]> {
     async function next() {
-      var result = await iterator.next();
+      var result = await (<AsyncIterator<T>> iterator).next();
       if (result.done) return done;
 
-      var otherResult = await other.next();
+      var otherResult = await (<AsyncIterator<U>> other).next();
       if (otherResult.done) return done;
 
       return { done: false, value: await zipFn(result.value, otherResult.value)}
@@ -126,7 +126,7 @@ export module AsyncIterator {
     var i = 0;
 
     async function next() {
-      return ++i > count ? done : iterator.next();
+      return ++i > count ? done : (<AsyncIterator<T>> iterator).next();
     }
 
     return create(next);
@@ -137,7 +137,7 @@ export module AsyncIterator {
 
     async function next(): Promise<IteratorResult<T>> {
       if (i < count) await some(iterator, () => ++i >= count);
-      return iterator.next();
+      return (<AsyncIterator<T>> iterator).next();
     }
 
     return create(next);
@@ -191,7 +191,7 @@ export module AsyncIterator {
   }
 
   export function toObject<V>(iterator: AsyncIterator<Entry<string, V>>): Promise<{[key: string]: V}> {
-    return reduce(iterator, (memo: {[key: string]: V}, [key, value]) => (memo[key] = value, memo), Object.create(null));
+    return reduce(iterator, (memo: {[key: string]: V}, [key, value]: Entry<string, V>) => (memo[key] = value, memo), Object.create(null));
   }
 
   export function create<T>(next: () => IteratorResult<T> | Promise<IteratorResult<T>>): AsyncIterator<T> {

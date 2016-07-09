@@ -1,14 +1,9 @@
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, Promise, generator) {
-    return new Promise(function (resolve, reject) {
-        generator = generator.call(thisArg, _arguments);
-        function cast(value) { return value instanceof Promise && value.constructor === Promise ? value : new Promise(function (resolve) { resolve(value); }); }
-        function onfulfill(value) { try { step("next", value); } catch (e) { reject(e); } }
-        function onreject(value) { try { step("throw", value); } catch (e) { reject(e); } }
-        function step(verb, value) {
-            var result = generator[verb](value);
-            result.done ? resolve(result.value) : cast(result.value).then(onfulfill, onreject);
-        }
-        step("next", void 0);
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator.throw(value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : new P(function (resolve) { resolve(result.value); }).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments)).next());
     });
 };
 import Key from './key';
@@ -73,7 +68,7 @@ export var Store;
                 return { prev: yield find(state, [position, { next: Key.SENTINEL }]) };
             });
         }
-        var dispatcher = Observable.map(parent.dispatcher, (patch) => __awaiter(this, void 0, Promise, function* () {
+        var dispatcher = Observable.map(parent.dispatcher, (patch) => __awaiter(this, void 0, void 0, function* () {
             var range = (yield Promise.all([
                 move(State.reverse(parentState), Range.reverse(patch.range)).then(Position.reverse),
                 move(parentState, patch.range)
@@ -149,7 +144,7 @@ export var Store;
     }
     Store.flatMap = flatMap;
     function keyBy(parent, keyFn, reverseKeyFn) {
-        var state = State.keyBy(parent.state, keyFn, reverseKeyFn), parentState = parent.state, dispatcher = Observable.map(parent.dispatcher, (patch) => __awaiter(this, void 0, Promise, function* () {
+        var state = State.keyBy(parent.state, keyFn, reverseKeyFn), parentState = parent.state, dispatcher = Observable.map(parent.dispatcher, (patch) => __awaiter(this, void 0, void 0, function* () {
             var [from, to] = patch.range;
             function mapPosition(position) {
                 return __awaiter(this, void 0, Promise, function* () {
@@ -179,9 +174,9 @@ export var Store;
         function getState() {
             return State.scan(parent.state, scanFn, memo);
         }
-        var store, dispatcher = Observable.map(parent.dispatcher, (patch) => __awaiter(this, void 0, Promise, function* () {
+        var store, dispatcher = Observable.map(parent.dispatcher, (patch) => __awaiter(this, void 0, void 0, function* () {
             var parentState = parent.state, storeState = store.state, [from, to] = patch.range;
-            var added = State.lazy(() => __awaiter(this, void 0, Promise, function* () {
+            var added = State.lazy(() => __awaiter(this, void 0, void 0, function* () {
                 var last = yield State.last(storeState, [{ next: null }, from]);
                 return State.scan(State.slice(parentState, [{ next: last }, { prev: null }]), scanFn, last !== Key.SENTINEL ? yield storeState.get(last) : memo);
             }));
@@ -193,7 +188,7 @@ export var Store;
     function take(parent, count) {
         var store, state = State.take(parent.state, count);
         var indexed = Store.scan(parent, ([index], value) => [index + 1, value], [-1, null]);
-        var dispatcher = Observable.map(indexed.dispatcher, (patch) => __awaiter(this, void 0, Promise, function* () {
+        var dispatcher = Observable.map(indexed.dispatcher, (patch) => __awaiter(this, void 0, void 0, function* () {
             var [from] = patch.range, parentState = parent.state, indexedState = indexed.state;
             var key = yield State.last(indexedState, [{ next: null }, from]);
             var index = key === Key.SENTINEL ? -1 : (yield indexedState.get(key))[0];
@@ -218,7 +213,7 @@ export var Store;
     function create(state, dispatcher, reducer = Patch.apply) {
         var subject = Subject.create();
         dispatcher.subscribe({
-            onNext: (patch) => __awaiter(this, void 0, Promise, function* () {
+            onNext: (patch) => __awaiter(this, void 0, void 0, function* () {
                 store.state = yield reducer(store.state, patch);
                 return subject.onNext(patch);
             })

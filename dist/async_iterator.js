@@ -1,14 +1,9 @@
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, Promise, generator) {
-    return new Promise(function (resolve, reject) {
-        generator = generator.call(thisArg, _arguments);
-        function cast(value) { return value instanceof Promise && value.constructor === Promise ? value : new Promise(function (resolve) { resolve(value); }); }
-        function onfulfill(value) { try { step("next", value); } catch (e) { reject(e); } }
-        function onreject(value) { try { step("throw", value); } catch (e) { reject(e); } }
-        function step(verb, value) {
-            var result = generator[verb](value);
-            result.done ? resolve(result.value) : cast(result.value).then(onfulfill, onreject);
-        }
-        step("next", void 0);
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator.throw(value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : new P(function (resolve) { resolve(result.value); }).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments)).next());
     });
 };
 import { NotFound } from './exceptions';
@@ -31,19 +26,19 @@ export var AsyncIterator;
     AsyncIterator.every = every;
     function some(iterator, predicate) {
         return __awaiter(this, void 0, Promise, function* () {
-            return !(yield every(iterator, (value) => __awaiter(this, void 0, Promise, function* () { return !(yield predicate(value)); })));
+            return !(yield every(iterator, (value) => __awaiter(this, void 0, void 0, function* () { return !(yield predicate(value)); })));
         });
     }
     AsyncIterator.some = some;
     function forEach(iterator, fn) {
         return __awaiter(this, void 0, Promise, function* () {
-            yield every(iterator, (value) => __awaiter(this, void 0, Promise, function* () { yield fn(value); return true; }));
+            yield every(iterator, (value) => __awaiter(this, void 0, void 0, function* () { yield fn(value); return true; }));
         });
     }
     AsyncIterator.forEach = forEach;
     function reduce(iterator, fn, memo) {
         return __awaiter(this, void 0, Promise, function* () {
-            yield forEach(iterator, (value) => __awaiter(this, void 0, Promise, function* () { memo = yield fn(memo, value); }));
+            yield forEach(iterator, (value) => __awaiter(this, void 0, void 0, function* () { memo = yield fn(memo, value); }));
             return memo;
         });
     }
@@ -51,7 +46,7 @@ export var AsyncIterator;
     function find(iterator, predicate) {
         return __awaiter(this, void 0, Promise, function* () {
             var result;
-            if (yield some(iterator, (value) => __awaiter(this, void 0, Promise, function* () { return !(yield predicate(value)) ? false : (result = value, true); }))) {
+            if (yield some(iterator, (value) => __awaiter(this, void 0, void 0, function* () { return !(yield predicate(value)) ? false : (result = value, true); }))) {
                 return result;
             }
             else {
@@ -87,7 +82,7 @@ export var AsyncIterator;
     AsyncIterator.contains = contains;
     function is(iterator, other, equals = (a, b) => a === b) {
         return __awaiter(this, void 0, Promise, function* () {
-            return (yield every(iterator, (value) => __awaiter(this, void 0, Promise, function* () {
+            return (yield every(iterator, (value) => __awaiter(this, void 0, void 0, function* () {
                 var result = yield other.next();
                 return !result.done && equals(value, result.value);
             }))) && (yield other.next()).done;
@@ -96,7 +91,7 @@ export var AsyncIterator;
     AsyncIterator.is = is;
     function map(iterator, mapFn) {
         function next() {
-            return __awaiter(this, void 0, Promise, function* () {
+            return __awaiter(this, void 0, void 0, function* () {
                 var result = yield iterator.next();
                 return result.done ? AsyncIterator.done : { done: false, value: yield mapFn(result.value) };
             });
@@ -120,7 +115,7 @@ export var AsyncIterator;
     AsyncIterator.filter = filter;
     function scan(iterator, scanFn, memo) {
         function next() {
-            return __awaiter(this, void 0, Promise, function* () {
+            return __awaiter(this, void 0, void 0, function* () {
                 var result = yield iterator.next();
                 if (result.done)
                     return AsyncIterator.done;
@@ -133,7 +128,7 @@ export var AsyncIterator;
     AsyncIterator.scan = scan;
     function zip(iterator, other, zipFn = (t, u) => [t, u]) {
         function next() {
-            return __awaiter(this, void 0, Promise, function* () {
+            return __awaiter(this, void 0, void 0, function* () {
                 var result = yield iterator.next();
                 if (result.done)
                     return AsyncIterator.done;
@@ -149,7 +144,7 @@ export var AsyncIterator;
     function take(iterator, count) {
         var i = 0;
         function next() {
-            return __awaiter(this, void 0, Promise, function* () {
+            return __awaiter(this, void 0, void 0, function* () {
                 return ++i > count ? AsyncIterator.done : iterator.next();
             });
         }
@@ -170,7 +165,7 @@ export var AsyncIterator;
     AsyncIterator.skip = skip;
     function unique(iterator, uniqueFn) {
         var cache = Object.create(null);
-        return AsyncIterator.filter(iterator, (value) => __awaiter(this, void 0, Promise, function* () {
+        return AsyncIterator.filter(iterator, (value) => __awaiter(this, void 0, void 0, function* () {
             var u = JSON.stringify(yield uniqueFn(value));
             return (!cache[u]) || (cache[u] = true);
         }));
@@ -180,7 +175,7 @@ export var AsyncIterator;
         return iterators.reduce((memo, iterator) => {
             var iterated = false, queue = Promise.resolve(null);
             function next() {
-                return __awaiter(this, void 0, Promise, function* () {
+                return __awaiter(this, void 0, void 0, function* () {
                     if (iterated)
                         return iterator.next();
                     var result = yield memo.next();
@@ -197,7 +192,7 @@ export var AsyncIterator;
     function fromArray(array) {
         var current = -1, queue = Promise.resolve(null);
         function next() {
-            return __awaiter(this, void 0, Promise, function* () {
+            return __awaiter(this, void 0, void 0, function* () {
                 return ++current >= array.length ? AsyncIterator.done : { done: false, value: array[current] };
             });
         }

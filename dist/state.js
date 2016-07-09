@@ -1,14 +1,9 @@
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, Promise, generator) {
-    return new Promise(function (resolve, reject) {
-        generator = generator.call(thisArg, _arguments);
-        function cast(value) { return value instanceof Promise && value.constructor === Promise ? value : new Promise(function (resolve) { resolve(value); }); }
-        function onfulfill(value) { try { step("next", value); } catch (e) { reject(e); } }
-        function onreject(value) { try { step("throw", value); } catch (e) { reject(e); } }
-        function step(verb, value) {
-            var result = generator[verb](value);
-            result.done ? resolve(result.value) : cast(result.value).then(onfulfill, onreject);
-        }
-        step("next", void 0);
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator.throw(value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : new P(function (resolve) { resolve(result.value); }).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments)).next());
     });
 };
 import Key from './key';
@@ -205,7 +200,7 @@ export var State;
     }
     State.pick = pick;
     function omit(parent, omitted) {
-        return filter(parent, (value, key) => __awaiter(this, void 0, Promise, function* () { return !(yield has(omitted, key)); }));
+        return filter(parent, (value, key) => __awaiter(this, void 0, void 0, function* () { return !(yield has(omitted, key)); }));
     }
     State.omit = omit;
     function zip(parent, other) {
@@ -256,11 +251,11 @@ export var State;
     }
     State.groupBy = groupBy;
     function unique(parent, uniqueFn) {
-        return fromEntries(AsyncIterator.unique(entries(parent), ([key, value]) => __awaiter(this, void 0, Promise, function* () { return uniqueFn(value, key); })));
+        return fromEntries(AsyncIterator.unique(entries(parent), ([key, value]) => __awaiter(this, void 0, void 0, function* () { return uniqueFn(value, key); })));
     }
     State.unique = unique;
     function union(state, other, uniqueFn) {
-        return fromEntries(AsyncIterator.unique(AsyncIterator.concat(entries(state), entries(other)), ([key, value]) => __awaiter(this, void 0, Promise, function* () { return uniqueFn(value, key); })));
+        return fromEntries(AsyncIterator.unique(AsyncIterator.concat(entries(state), entries(other)), ([key, value]) => __awaiter(this, void 0, void 0, function* () { return uniqueFn(value, key); })));
     }
     State.union = union;
     function keyBy(parent, keyFn, reverseKeyFn) {
@@ -281,7 +276,7 @@ export var State;
                 });
             },
             next(key) {
-                return __awaiter(this, void 0, Promise, function* () {
+                return __awaiter(this, void 0, void 0, function* () {
                     var next = yield parent.next(yield reverseKeyFn(key));
                     return keyFn(yield parent.get(next), next);
                 });
@@ -347,7 +342,7 @@ export var State;
     State.values = values;
     function fromEntries(iterator) {
         var cache = Cache.create(), exhausted = false, currentKey = Key.SENTINEL, queue = Promise.resolve(null);
-        var cachingIterator = AsyncIterator.create(() => __awaiter(this, void 0, Promise, function* () {
+        var cachingIterator = AsyncIterator.create(() => __awaiter(this, void 0, void 0, function* () {
             var result = yield iterator.next();
             if (result.done) {
                 exhausted = true;
@@ -404,7 +399,7 @@ export var State;
     function lazy(fn) {
         var state, queue = Promise.resolve();
         function createState() {
-            return __awaiter(this, void 0, Promise, function* () {
+            return __awaiter(this, void 0, void 0, function* () {
                 return state ? state : state = yield fn();
             });
         }

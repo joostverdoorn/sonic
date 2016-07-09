@@ -356,7 +356,7 @@ export module State {
         queue = Promise.resolve(null);
 
     var cachingIterator = AsyncIterator.create(async () => {
-      var result = await iterator.next();
+      var result = await (<AsyncIterator<Entry<K, V>>> iterator).next();
 
       if (result.done) {
         exhausted = true;
